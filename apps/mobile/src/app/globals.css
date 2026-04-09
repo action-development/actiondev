@@ -4,6 +4,15 @@
   --font-sans: "Inter", system-ui, sans-serif;
 }
 
+html, body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  touch-action: manipulation;
+}
+
 @keyframes blink-loop {
   0%, 4% { opacity: 1; }
   5%, 7% { opacity: 0; }
@@ -248,8 +257,8 @@
 /* ======================= */
 
 .toast-wrapper {
-  max-height: 44px;
-  margin-bottom: 6px;
+  max-height: 60px;
+  margin-bottom: 8px;
   transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
               margin-bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
@@ -297,5 +306,34 @@
   to {
     opacity: 0;
     transform: translateY(-4px) scale(0.96);
+  }
+}
+
+/* ======================= */
+/* WORK TAP ANIMATION      */
+/* ======================= */
+
+.animate-work-tap {
+  animation: work-tap 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes work-tap {
+  0%, 100% {
+    transform: translate(0, 0) rotate(-8deg) scale(1);
+  }
+  15% {
+    transform: translate(-8px, -12px) rotate(-5deg) scale(1.03);
+  }
+  30% {
+    transform: translate(-4px, 0) rotate(-8deg) scale(0.97);
+  }
+  45% {
+    transform: translate(-8px, -12px) rotate(-5deg) scale(1.03);
+  }
+  60% {
+    transform: translate(-4px, 0) rotate(-8deg) scale(0.97);
+  }
+  75%, 100% {
+    transform: translate(0, 0) rotate(-8deg) scale(1);
   }
 }

@@ -1,6 +1,27 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
+
+const Logo3DEasterEgg = dynamic(
+  () => import("@/components/Logo3DEasterEgg"),
+  { ssr: false }
+);
+
+const LogoHeader3D = dynamic(
+  () => import("@/components/LogoHeader3D"),
+  { ssr: false }
+);
+
+const WorkFeed = dynamic(
+  () => import("@/components/WorkFeed"),
+  { ssr: false }
+);
+
+const AboutExperience = dynamic(
+  () => import("@/components/AboutExperience"),
+  { ssr: false }
+);
 
 // "word" = animate whole word, "letter" = animate each letter individually
 type FxType = { class: string; mode: "word" } | { class: string; mode: "letter" };
@@ -205,6 +226,14 @@ export default function Home() {
   >([]);
   const toastIdRef = useRef(0);
   const [idle, setIdle] = useState(false);
+  const [logoAnimating, setLogoAnimating] = useState(false);
+  const [activeSection, setActiveSection] = useState("home");
+  const [workFeedOpen, setWorkFeedOpen] = useState(false);
+  const [aboutProgress, setAboutProgress] = useState(0);
+  const aboutSectionRef = useRef<HTMLElement>(null);
+  const logoContainerRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isFinished = wordIndex >= WORDS.length - 1;
   const currentWord = WORDS[wordIndex];
 
@@ -222,6 +251,77 @@ export default function Home() {
       return () => clearTimeout(timer);
     }
   }, [isFinished]);
+
+  // Sync safe areas / theme-color with work feed state
+  useEffect(() => {
+    const meta = document.getElementById("theme-color-meta");
+    if (meta) meta.setAttribute("content", workFeedOpen ? "#000000" : "#ffffff");
+    document.body.style.background = workFeedOpen ? "#000000" : "#ffffff";
+    return () => {
+      if (meta) meta.setAttribute("content", "#ffffff");
+      document.body.style.background = "#ffffff";
+    };
+  }, [workFeedOpen]);
+
+  // Track about scroll progress
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const aboutEl = aboutSectionRef.current;
+    if (!container || !aboutEl) return;
+
+    const onScroll = () => {
+      const containerRect = container.getBoundingClientRect();
+      const aboutRect = aboutEl.getBoundingClientRect();
+      // How far past the snap point we've scrolled into About
+      const scrolledInto = containerRect.top - aboutRect.top;
+      const scrollableHeight = aboutEl.clientHeight - container.clientHeight;
+      if (scrolledInto > 0 && scrollableHeight > 0) {
+        setAboutProgress(Math.min(scrolledInto / scrollableHeight, 1));
+      } else {
+        setAboutProgress(0);
+      }
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Track active section via scroll position
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      const sections = container.querySelectorAll("section[id]");
+      let closest = "home";
+      let minDist = Infinity;
+
+      sections.forEach((section) => {
+        const rect = section.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const offset = Math.abs(rect.top - containerRect.top);
+        if (offset < minDist) {
+          minDist = offset;
+          closest = section.id;
+        }
+      });
+
+      setActiveSection(closest);
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const scrollTo = useCallback((id: string) => {
+    const container = scrollContainerRef.current;
+    const target = document.getElementById(id);
+    if (!container || !target) return;
+    container.scrollTo({
+      top: target.offsetTop,
+      behavior: "smooth",
+    });
+  }, []);
 
   const handleClick = useCallback(() => {
     if (isFinished) return;
@@ -267,7 +367,8 @@ export default function Home() {
       if (
         target.closest("nav") ||
         target.closest("[data-cart]") ||
-        target.closest("[data-sidebar]")
+        target.closest("[data-sidebar]") ||
+        target.closest("[data-logo]")
       )
         return;
       handleClick();
@@ -288,89 +389,169 @@ export default function Home() {
 
   return (
     <div
-      className="relative flex h-dvh w-full select-none flex-col overflow-hidden bg-white"
+      className="relative h-dvh w-full select-none overflow-hidden bg-white"
       onClick={handleScreenTap}
     >
-      {/* Header */}
-      <header className="flex items-start justify-between p-5">
+      {/* Scroll-snap container — blurs during Easter egg */}
+      <div
+        ref={scrollContainerRef}
+        className="h-full snap-y snap-mandatory overflow-y-auto transition-[filter] duration-700 ease-in-out"
+        style={{ filter: logoAnimating ? "blur(12px)" : "blur(0px)" }}
+      >
+
+      {/* ===== HOME SECTION ===== */}
+      <section id="home" className="relative flex h-dvh snap-start flex-col">
+        {/* Header */}
+        <header className="flex items-start justify-between p-5">
+          <div ref={logoContainerRef} data-logo>
+            <LogoHeader3D
+              visible={!logoAnimating}
+              onClick={() => setLogoAnimating(true)}
+            />
+          </div>
+
+          <button
+            data-cart
+            className="flex items-center gap-1.5 text-xl font-medium"
+            onClick={() => {
+              if (cartCount === 0) {
+                handleClick();
+              } else {
+                setCartOpen(true);
+              }
+            }}
+          >
+            <span>{cartCount}</span>
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="8" cy="21" r="1" />
+              <circle cx="19" cy="21" r="1" />
+              <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+            </svg>
+          </button>
+        </header>
+
+        {/* Toasts */}
+        <div className="absolute top-14 right-5 left-5 z-50 flex max-h-[40dvh] flex-col-reverse items-end overflow-hidden">
+          {[...toasts].reverse().map((t) => (
+            <div
+              key={t.id}
+              className={`toast-wrapper ${t.exiting ? "toast-collapse" : ""}`}
+            >
+              <div
+                className={`toast-pill ${t.exiting ? "toast-fade-out" : "toast-fade-in"}`}
+              >
+                &ldquo;{t.word}&rdquo; successfully added to cart
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Main word / end state */}
+        <main ref={mainRef} className="flex flex-1 items-center justify-center px-8">
+          {isFinished ? (
+            <div className="flex flex-col items-center gap-6">
+              <button
+                className="text-5xl font-bold text-black transition-opacity hover:opacity-60"
+                onClick={() => scrollTo("work")}
+              >
+                Works
+              </button>
+              <button
+                className="text-5xl font-bold text-black/40 transition-opacity hover:opacity-60"
+                onClick={() => scrollTo("about")}
+              >
+                About
+              </button>
+            </div>
+          ) : (
+            <WordDisplay
+              word={currentWord}
+              wordIndex={wordIndex}
+              idle={idle}
+              isFinished={isFinished}
+            />
+          )}
+        </main>
+      </section>
+
+      {/* ===== WORK SECTION ===== */}
+      <section id="work" className="relative flex h-dvh snap-start flex-col items-center justify-center overflow-hidden">
+        {/* Finger tap image — background layer with animation */}
         <img
-          src="/logos/action_globe.webp"
-          alt="Action Dev"
-          className="h-10 w-auto"
+          src="/recursos/dedo-clic.webp"
+          alt=""
+          className={`pointer-events-none absolute left-[62%] top-[53%] -translate-x-1/3 -translate-y-1/3 transition-opacity duration-700 ${activeSection === "work" ? "animate-work-tap opacity-100" : "opacity-0"}`}
+          style={{ transitionDelay: activeSection === "work" ? "1s" : "0s", width: "35%" }}
         />
 
         <button
-          data-cart
-          className="flex items-center gap-1.5 text-xl font-medium"
-          onClick={() => {
-            if (cartCount === 0) {
-              handleClick();
-            } else {
-              setCartOpen(true);
-            }
-          }}
+          onClick={(e) => { e.stopPropagation(); setWorkFeedOpen(true); }}
+          className="group relative z-10 flex flex-col items-center gap-3"
         >
-          <span>{cartCount}</span>
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="8" cy="21" r="1" />
-            <circle cx="19" cy="21" r="1" />
-            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
-          </svg>
+          <h1 className="text-6xl font-bold text-black transition-transform duration-300 group-active:scale-95">Work</h1>
+          <span className="animate-pulse text-sm font-medium tracking-wider text-black/30 uppercase">Tap to explore</span>
         </button>
-      </header>
+      </section>
 
-      {/* Toasts */}
-      <div className="absolute top-14 right-5 left-5 z-50 flex max-h-[40dvh] flex-col-reverse items-end overflow-hidden">
-        {[...toasts].reverse().map((t) => (
-          <div
-            key={t.id}
-            className={`toast-wrapper ${t.exiting ? "toast-collapse" : ""}`}
-          >
-            <div
-              className={`toast-pill ${t.exiting ? "toast-fade-out" : "toast-fade-in"}`}
-            >
-              &ldquo;{t.word}&rdquo; successfully added to cart
-            </div>
-          </div>
-        ))}
+      {/* ===== ABOUT SECTION ===== */}
+      <section ref={aboutSectionRef} id="about" className="snap-start" style={{ height: "600vh" }}>
+        <div className="sticky top-0 h-dvh">
+          <AboutExperience progress={aboutProgress} />
+        </div>
+      </section>
+
       </div>
 
-      {/* Main word / end state */}
-      <main className="flex flex-1 items-center justify-center px-8">
-        {isFinished ? (
-          <div className="flex flex-col items-center gap-6">
-            <button className="text-5xl font-bold text-black transition-opacity hover:opacity-60">
-              Works
-            </button>
-            <button className="text-5xl font-bold text-black/40 transition-opacity hover:opacity-60">
-              About
-            </button>
-          </div>
-        ) : (
-          <WordDisplay
-            word={currentWord}
-            wordIndex={wordIndex}
-            idle={idle}
-            isFinished={isFinished}
-          />
-        )}
-      </main>
-
-      {/* Side nav */}
-      <nav className="absolute bottom-32 left-5 flex flex-col gap-1">
-        <span className="text-lg font-bold text-black">Home</span>
-        <span className="text-lg font-medium text-black/40">Work</span>
-        <span className="text-lg font-medium text-black/40">About</span>
+      {/* Side nav — vertical, bottom-left, fixed over sections */}
+      <nav className="absolute bottom-28 left-8 z-50 flex origin-bottom-left -rotate-90 items-baseline gap-4">
+        {[
+          { id: "about", label: "About" },
+          { id: "work", label: "Work" },
+          { id: "home", label: "Home" },
+        ].map(({ id, label }) => (
+          <button
+            key={id}
+            onClick={(e) => { e.stopPropagation(); scrollTo(id); }}
+            className={`text-lg transition-colors duration-300 ${
+              activeSection === id
+                ? "font-bold text-black"
+                : "font-medium text-black/40"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </nav>
+
+      {/* Work feed overlay */}
+      <div
+        className={`fixed inset-0 z-[150] bg-black transition-all duration-500 ${
+          workFeedOpen
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+      >
+        {workFeedOpen && (
+          <WorkFeed onBack={() => setWorkFeedOpen(false)} />
+        )}
+      </div>
+
+      {/* 3D Logo Easter Egg */}
+      <Logo3DEasterEgg
+        active={logoAnimating}
+        logoRect={logoContainerRef.current?.getBoundingClientRect() ?? null}
+        targetRect={mainRef.current?.getBoundingClientRect() ?? null}
+        onAnimationEnd={() => setLogoAnimating(false)}
+      />
 
       {/* Cart sidebar overlay */}
       <div
@@ -474,6 +655,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }
