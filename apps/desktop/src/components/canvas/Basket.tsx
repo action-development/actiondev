@@ -9,6 +9,7 @@ import {
 } from "@react-three/rapier";
 import * as THREE from "three";
 import type { PageCubeData } from "./PageCube";
+import { thrownCubeIds } from "./GameScene";
 
 /**
  * Basket — Basketball hoop with backboard, rim, net, and pole.
@@ -154,10 +155,14 @@ export function Basket({ position, onScore }: BasketProps) {
     const rigidBodyObject = payload.other.rigidBodyObject;
     if (!rigidBodyObject) return;
     const userData = rigidBodyObject.userData as { pageData?: PageCubeData } | undefined;
-    if (userData?.pageData) {
-      setConfettiBurst((c) => c + 1);
-      onScore?.(userData.pageData);
-    }
+    if (!userData?.pageData) return;
+
+    // Only count scores for cubes the player actively threw
+    if (!thrownCubeIds.has(userData.pageData.id)) return;
+    thrownCubeIds.delete(userData.pageData.id);
+
+    setConfettiBurst((c) => c + 1);
+    onScore?.(userData.pageData);
   }, [onScore]);
 
   return (

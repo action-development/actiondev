@@ -1,10 +1,15 @@
+import { ContentLayout } from "@/components/layout/ContentLayout";
 import { Projects } from "@/components/sections/Projects";
 
 export const metadata = {
-  title: "Projects — Action",
-  description: "Selected work from our digital agency.",
+  title: "Work — Action",
+  description: "Selected projects from our digital agency.",
 };
 
 export default function ProjectsPage() {
-  return <Projects />;
+  return (
+    <ContentLayout>
+      <Projects />
+    </ContentLayout>
+  );
 }

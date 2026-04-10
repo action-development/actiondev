@@ -37,8 +37,8 @@ import * as THREE from "three";
 const PAGE_CUBES: PageCubeData[] = [
   { id: "projects", label: "Work", href: "/projects", color: "#6366f1", size: 2.0 },
   { id: "contact", label: "Contact", href: "/contact", color: "#c8ff00", size: 1.6 },
-  { id: "testimonials", label: "Reviews", href: "#testimonials", color: "#ec4899", size: 1.3 },
-  { id: "map", label: "Map", href: "#map", color: "#22d3ee", size: 1.0 },
+  { id: "testimonials", label: "Reviews", href: "/reviews", color: "#ec4899", size: 1.3 },
+  { id: "map", label: "Map", href: "/map", color: "#22d3ee", size: 1.0 },
 ];
 
 /**
@@ -70,6 +70,9 @@ const _aimPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 
 // Module-level UI state for DOM power bar and tutorial (no React re-renders)
 const uiState = { power: 0, charging: false, holding: false, justThrew: false };
+
+/** IDs of cubes the player has actively thrown — prevents accidental scores from falling/bouncing */
+export const thrownCubeIds = new Set<string>();
 
 /** Track left mouse button state via window events (no re-renders). */
 function useMouseButton(): MutableRefObject<boolean> {
@@ -220,6 +223,7 @@ function GameWorld() {
         true
       );
 
+      thrownCubeIds.add(currentHeld.id);
       heldCubeRef.current = null;
       throwCooldown.current = 0.4;
       isAiming.current = false;
