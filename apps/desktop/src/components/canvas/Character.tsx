@@ -35,6 +35,7 @@ export const Character = forwardRef<CharacterHandle, CharacterProps>(
     const facingDir = useRef(1);
     const isGrounded = useRef(false);
     const jumpCooldown = useRef(0);
+    const jumpWasPressed = useRef(false);
 
     useImperativeHandle(
       ref,
@@ -60,8 +61,9 @@ export const Character = forwardRef<CharacterHandle, CharacterProps>(
       const vel = rb.linvel();
       const pos = rb.translation();
 
-      // Ground check
-      isGrounded.current = pos.y < 1.5 && Math.abs(vel.y) < 0.5;
+      // Ground check — character is grounded when barely moving vertically
+      // pos.y is in world space (group offset -4), capsule bottom at RB.y + 0.0
+      isGrounded.current = Math.abs(vel.y) < 0.3;
 
       if (jumpCooldown.current > 0) jumpCooldown.current -= delta;
 
@@ -78,15 +80,17 @@ export const Character = forwardRef<CharacterHandle, CharacterProps>(
         rb.setTranslation({ x: pos.x, y: pos.y, z: 0 }, true);
       }
 
-      // Jump
-      const wantJump =
+      // Jump — only on key DOWN (not hold), and only when grounded
+      const jumpPressed =
         activeKeys.has("Space") ||
         activeKeys.has("ArrowUp") ||
         activeKeys.has("KeyW");
+      const jumpJustPressed = jumpPressed && !jumpWasPressed.current;
+      jumpWasPressed.current = jumpPressed;
 
-      if (wantJump && isGrounded.current && jumpCooldown.current <= 0) {
+      if (jumpJustPressed && isGrounded.current && jumpCooldown.current <= 0) {
         rb.applyImpulse({ x: 0, y: JUMP_IMPULSE, z: 0 }, true);
-        jumpCooldown.current = 0.3;
+        jumpCooldown.current = 0.4;
       }
 
       // Visual flip

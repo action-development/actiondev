@@ -58,22 +58,27 @@ export function AimLine({ stateRef }: AimLineProps) {
     let y = s.originY;
 
     for (let i = 0; i < DOT_COUNT; i++) {
-      // Simulate STEPS_PER_DOT physics steps (matches Rapier's integrator)
-      for (let step = 0; step < STEPS_PER_DOT; step++) {
-        vy -= GRAVITY * PHYSICS_DT; // gravity
-        vx *= DAMP_FACTOR;          // linear damping
-        vy *= DAMP_FACTOR;
-        x += vx * PHYSICS_DT;       // integrate position
-        y += vy * PHYSICS_DT;
+      const child = group.children[i] as THREE.Mesh;
+      if (!child) continue;
+
+      if (i === 0) {
+        // First dot sits exactly at the cube origin
+        child.position.set(x, y, 0.1);
+      } else {
+        // Simulate STEPS_PER_DOT physics steps (matches Rapier's integrator)
+        for (let step = 0; step < STEPS_PER_DOT; step++) {
+          vy -= GRAVITY * PHYSICS_DT;
+          vx *= DAMP_FACTOR;
+          vy *= DAMP_FACTOR;
+          x += vx * PHYSICS_DT;
+          y += vy * PHYSICS_DT;
+        }
+        child.position.set(x, y, 0.1);
       }
 
-      const child = group.children[i] as THREE.Mesh;
-      if (child) {
-        child.position.set(x, y, 0.1);
-        const fade = 1 - i / DOT_COUNT;
-        child.scale.setScalar(0.04 + s.power * 0.06 * fade);
-        (child.material as THREE.MeshBasicMaterial).opacity = fade * 0.8;
-      }
+      const fade = 1 - i / DOT_COUNT;
+      child.scale.setScalar(0.04 + s.power * 0.06 * fade);
+      (child.material as THREE.MeshBasicMaterial).opacity = fade * 0.8;
     }
   });
 

@@ -57,7 +57,9 @@ export function Basket({ position, onScore }: BasketProps) {
   const rimRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.PointLight>(null);
 
-  const netLines = useMemo(() => generateNetLines(12, 1.35, 1.6), []);
+  const rimRadius = 1.8;
+  const netDepth = 2.0;
+  const netLines = useMemo(() => generateNetLines(12, rimRadius, netDepth), []);
 
   useFrame((state) => {
     if (rimRef.current) {
@@ -82,35 +84,35 @@ export function Basket({ position, onScore }: BasketProps) {
     <RigidBody type="fixed" position={position} colliders={false}>
       {/* === Physics colliders === */}
       {/* Backboard */}
-      <CuboidCollider args={[0.12, 2, 1.2]} position={[1.35, 1.5, 0]} restitution={0.4} />
+      <CuboidCollider args={[0.12, 2.5, 1.6]} position={[rimRadius, 1.5, 0]} restitution={0.4} />
       {/* Rim left edge */}
-      <CuboidCollider args={[0.1, 0.1, 0.1]} position={[-1.35, 0, 0]} restitution={0.6} />
+      <CuboidCollider args={[0.12, 0.12, 0.12]} position={[-rimRadius, 0, 0]} restitution={0.6} />
       {/* Rim right edge (near backboard) */}
-      <CuboidCollider args={[0.1, 0.1, 0.1]} position={[1.05, 0, 0]} restitution={0.6} />
+      <CuboidCollider args={[0.12, 0.12, 0.12]} position={[rimRadius - 0.3, 0, 0]} restitution={0.6} />
 
       {/* Score sensor — area below the rim */}
       <CuboidCollider
-        args={[0.8, 0.3, 0.8]}
-        position={[0, -0.8, 0]}
+        args={[1.2, 0.3, 1.2]}
+        position={[0, -1.0, 0]}
         sensor
         onIntersectionEnter={handleScore}
       />
 
       <group>
         {/* ========== POLE — vertical cylinder to ground ========== */}
-        <mesh position={[1.35, -2, 0]} castShadow>
-          <cylinderGeometry args={[0.1, 0.1, 7, 8]} />
+        <mesh position={[rimRadius, -2, 0]} castShadow>
+          <cylinderGeometry args={[0.12, 0.12, 7, 8]} />
           <meshStandardMaterial color="#333333" metalness={0.8} roughness={0.3} />
         </mesh>
 
         {/* ========== BACKBOARD — white rectangle ========== */}
-        <mesh position={[1.35, 1.5, 0]} castShadow>
-          <boxGeometry args={[0.15, 4, 2.4]} />
+        <mesh position={[rimRadius, 1.5, 0]} castShadow>
+          <boxGeometry args={[0.15, 5, 3.2]} />
           <meshStandardMaterial color="#eeeeee" metalness={0.1} roughness={0.6} />
         </mesh>
         {/* Backboard inner rectangle (target square) */}
-        <mesh position={[1.26, 1.7, 0]}>
-          <boxGeometry args={[0.02, 1.6, 1.4]} />
+        <mesh position={[rimRadius - 0.09, 1.7, 0]}>
+          <boxGeometry args={[0.02, 2.0, 1.8]} />
           <meshStandardMaterial
             color="#ff4444"
             emissive="#ff4444"
@@ -121,13 +123,13 @@ export function Basket({ position, onScore }: BasketProps) {
 
         {/* ========== ARM — horizontal bar from backboard to rim ========== */}
         <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[2.4, 0.08, 0.08]} />
+          <boxGeometry args={[rimRadius * 2, 0.1, 0.1]} />
           <meshStandardMaterial color="#ff6600" metalness={0.9} roughness={0.2} />
         </mesh>
 
         {/* ========== RIM — orange torus ========== */}
         <mesh ref={rimRef} position={[0, 0, 0]} rotation={[Math.PI * 0.5, 0, 0]}>
-          <torusGeometry args={[1.35, 0.05, 8, 32]} />
+          <torusGeometry args={[rimRadius, 0.06, 8, 32]} />
           <meshStandardMaterial
             color="#ff6600"
             emissive="#ff6600"
@@ -174,10 +176,10 @@ export function Basket({ position, onScore }: BasketProps) {
         {[0.25, 0.55, 0.85].map((t, i) => (
           <mesh
             key={`net-ring-${i}`}
-            position={[0, -t * 1.6, 0]}
+            position={[0, -t * netDepth, 0]}
             rotation={[Math.PI * 0.5, 0, 0]}
           >
-            <torusGeometry args={[1.35 * (1 - t * 0.65), 0.01, 4, 16]} />
+            <torusGeometry args={[rimRadius * (1 - t * 0.65), 0.012, 4, 16]} />
             <meshBasicMaterial color="#ffffff" transparent opacity={0.35} />
           </mesh>
         ))}

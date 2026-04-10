@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useEffect, Suspense, MutableRefObject } from "react";
+import { useRef, useCallback, useEffect, useState, Suspense, MutableRefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   Physics,
@@ -35,27 +35,26 @@ import * as THREE from "three";
  */
 
 const PAGE_CUBES: PageCubeData[] = [
-  { id: "projects", label: "Projects", href: "/projects", color: "#6366f1" },
-  { id: "testimonials", label: "Testimonials", href: "#testimonials", color: "#ec4899" },
-  { id: "contact", label: "Contact", href: "/contact", color: "#c8ff00" },
-  { id: "map", label: "Map", href: "#map", color: "#22d3ee" },
-  { id: "home", label: "Home", href: "/", color: "#a855f7" },
+  { id: "projects", label: "Work", href: "/projects", color: "#6366f1", size: 2.0 },
+  { id: "contact", label: "Contact", href: "/contact", color: "#c8ff00", size: 1.6 },
+  { id: "testimonials", label: "Reviews", href: "#testimonials", color: "#ec4899", size: 1.3 },
+  { id: "map", label: "Map", href: "#map", color: "#22d3ee", size: 1.0 },
 ];
 
 /**
- * Pre-computed spawn positions — staggered heights so cubes land at different
- * times naturally (no React re-renders, no shader recompilation mid-session).
- * Avoids the basket zone (x 7-11).
+ * Pre-computed spawn positions — tight cluster so cubes collide on the way
+ * down and pile up with visible physics interactions.
+ * Center around x=-2, narrow spread (~3 units), slight height stagger so
+ * they land almost together but not perfectly stacked.
  */
 function generateSpawnPositions(count: number): [number, number, number][] {
   const positions: [number, number, number][] = [];
+  const centerX = -2;
+  const spread = 3;
   for (let i = 0; i < count; i++) {
-    let x: number;
-    do {
-      x = -10 + Math.random() * 20;
-    } while (x > 7 && x < 11);
-    // Stagger heights: each cube ~2 units higher → lands ~0.4s later. Max y=17 (below ceiling at 18)
-    const y = 10 + i * 1.8 + Math.random() * 1;
+    const x = centerX + (Math.random() - 0.5) * spread;
+    // Small height stagger (0.6 units apart) so they land nearly together
+    const y = 12 + i * 0.6 + Math.random() * 0.4;
     positions.push([x, y, 0]);
   }
   return positions;
@@ -69,8 +68,8 @@ const _aimDir = new THREE.Vector3();
 const _raycaster = new THREE.Raycaster();
 const _aimPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 
-// Module-level UI state for DOM power bar (no React re-renders)
-const uiState = { power: 0, charging: false };
+// Module-level UI state for DOM power bar and tutorial (no React re-renders)
+const uiState = { power: 0, charging: false, holding: false, justThrew: false };
 
 /** Track left mouse button state via window events (no re-renders). */
 function useMouseButton(): MutableRefObject<boolean> {
@@ -155,6 +154,7 @@ function GameWorld() {
         heldCubeRef.current = nearbyCubeRef.current;
         rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
         rb.setAngvel({ x: 0, y: 0, z: 0 }, true);
+        uiState.holding = true;
       } else if (heldCubeRef.current && !isAiming.current) {
         // DROP (only if not mid-aim — release click handles throw)
         heldCubeRef.current = null;
@@ -175,20 +175,24 @@ function GameWorld() {
     _raycaster.setFromCamera(pointer, camera);
     _raycaster.ray.intersectPlane(_aimPlane, _aimWorldPos);
 
+    // Convert world mouse pos to local group space (group offset is [0, -4, 0])
+    const mouseLocalX = _aimWorldPos.x;
+    const mouseLocalY = _aimWorldPos.y + 4;
+
     const holdX = charPos.x;
     const holdY = charPos.y + HOLD_OFFSET_Y;
-    const dx = _aimWorldPos.x - holdX;
-    const dy = _aimWorldPos.y - holdY;
+    const dx = mouseLocalX - holdX;
+    const dy = mouseLocalY - holdY;
     const aimDist = Math.sqrt(dx * dx + dy * dy);
 
     _aimDir.set(dx, dy, 0).normalize();
 
-    // Power & force from mouse distance (far = strong, close = weak)
     const power = Math.min(Math.max((aimDist - MIN_AIM_DIST) / (MAX_AIM_DIST - MIN_AIM_DIST), 0), 1);
     const force = MIN_FORCE + power * (MAX_FORCE - MIN_FORCE);
 
+    // Convert world coords to local group space (group offset [0, -4, 0])
     aimState.current.originX = holdX;
-    aimState.current.originY = holdY;
+    aimState.current.originY = holdY + 4;
     aimState.current.dirX = _aimDir.x;
     aimState.current.dirY = _aimDir.y;
 
@@ -224,6 +228,8 @@ function GameWorld() {
       aimState.current.force = 0;
       uiState.power = 0;
       uiState.charging = false;
+      uiState.holding = false;
+      uiState.justThrew = true;
       return;
     }
 
@@ -265,41 +271,44 @@ function GameWorld() {
       {/* === Atmosphere === */}
       <fog attach="fog" args={["#0a0a12", 50, 110]} />
       <Starfield />
-      <Decorations />
 
-      {/* === AimLine (outside Physics — visual only) === */}
-      <AimLine stateRef={aimState} />
+      {/* Shift entire game down so ground sits in the lower quarter */}
+      <group position={[0, -4, 0]}>
+        <Decorations />
+        {/* === AimLine (outside Physics — visual only) === */}
+        <AimLine stateRef={aimState} />
 
-      <Physics gravity={[0, -GRAVITY, 0]} timeStep={1 / 60}>
-        {/* Invisible ground — collider only, no mesh */}
-        <CuboidCollider
-          position={[0, -2.5, 0]}
-          args={[15, 0.5, 5]}
-          restitution={0.2}
-          friction={0.8}
-        />
-
-        {/* Walls */}
-        <CuboidCollider position={[-13, 6, 0]} args={[0.5, 15, 5]} />
-        <CuboidCollider position={[13, 6, 0]} args={[0.5, 15, 5]} />
-        <CuboidCollider position={[0, 18, 0]} args={[15, 0.5, 5]} />
-        <CuboidCollider position={[0, 6, -3]} args={[15, 15, 0.5]} />
-        <CuboidCollider position={[0, 6, 3]} args={[15, 15, 0.5]} />
-
-        <Character ref={characterRef} position={[-11, 0, 0]} keys={keys} />
-
-        {PAGE_CUBES.map((cube, i) => (
-          <PageCube
-            key={cube.id}
-            data={cube}
-            position={CUBE_POSITIONS[i]}
-            onNearby={handleNearby}
-            onNearbyExit={handleNearbyExit}
+        <Physics gravity={[0, -GRAVITY, 0]} timeStep={1 / 60}>
+          {/* Invisible ground — collider only, no mesh */}
+          <CuboidCollider
+            position={[0, -2.5, 0]}
+            args={[20, 0.5, 5]}
+            restitution={0.2}
+            friction={0.8}
           />
-        ))}
 
-        <Basket position={[9, 4, 0]} onScore={handleScore} />
-      </Physics>
+          {/* Walls — at screen edges */}
+          <CuboidCollider position={[-19, 6, 0]} args={[0.5, 20, 5]} />
+          <CuboidCollider position={[19, 6, 0]} args={[0.5, 20, 5]} />
+          <CuboidCollider position={[0, 22, 0]} args={[20, 0.5, 5]} />
+          <CuboidCollider position={[0, 6, -3]} args={[20, 20, 0.5]} />
+          <CuboidCollider position={[0, 6, 3]} args={[20, 20, 0.5]} />
+
+          <Character ref={characterRef} position={[-11, 0, 0]} keys={keys} />
+
+          {PAGE_CUBES.map((cube, i) => (
+            <PageCube
+              key={cube.id}
+              data={cube}
+              position={CUBE_POSITIONS[i]}
+              onNearby={handleNearby}
+              onNearbyExit={handleNearbyExit}
+            />
+          ))}
+
+          <Basket position={[12, 4, 0]} onScore={handleScore} />
+        </Physics>
+      </group>
     </>
   );
 }
@@ -346,12 +355,136 @@ function PowerBarOverlay() {
   );
 }
 
+type TutorialStep = {
+  label: string;
+  action: string;
+  trigger: "key" | "pickup" | "throw";
+  keys?: string[];
+};
+
+const TUTORIAL_STEPS: TutorialStep[] = [
+  { label: "A / D", action: "to move", trigger: "key", keys: ["KeyA", "KeyD", "ArrowLeft", "ArrowRight"] },
+  { label: "SPACE", action: "to jump", trigger: "key", keys: ["Space"] },
+  { label: "E", action: "to pick up", trigger: "pickup" },
+  { label: "CLICK & DRAG", action: "to aim & throw", trigger: "throw" },
+];
+
+function TutorialOverlay() {
+  const [step, setStep] = useState(0);
+  const [visible, setVisible] = useState(false);
+  const [fading, setFading] = useState(false);
+
+  // Delay tutorial start so cubes have time to fall
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!visible || step >= TUTORIAL_STEPS.length) return;
+
+    const current = TUTORIAL_STEPS[step];
+
+    const advance = () => {
+      setFading(true);
+      setTimeout(() => {
+        setFading(false);
+        if (step + 1 >= TUTORIAL_STEPS.length) {
+          setVisible(false);
+        } else {
+          setStep(step + 1);
+        }
+      }, 400);
+    };
+
+    // Key-based steps
+    if (current.trigger === "key" && current.keys) {
+      const onKey = (e: KeyboardEvent) => {
+        if (current.keys!.includes(e.code)) advance();
+      };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }
+
+    // Pickup — poll uiState.holding
+    if (current.trigger === "pickup") {
+      const interval = setInterval(() => {
+        if (uiState.holding) advance();
+      }, 100);
+      return () => clearInterval(interval);
+    }
+
+    // Throw — poll uiState.justThrew
+    if (current.trigger === "throw") {
+      uiState.justThrew = false;
+      const interval = setInterval(() => {
+        if (uiState.justThrew) {
+          uiState.justThrew = false;
+          advance();
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [step, visible]);
+
+  if (!visible || step >= TUTORIAL_STEPS.length) return null;
+
+  const current = TUTORIAL_STEPS[step];
+
+  return (
+    <div
+      className="absolute inset-0 z-30 flex items-start justify-center pt-[30vh] pointer-events-none"
+      style={{
+        opacity: fading ? 0 : 1,
+        transition: "opacity 0.4s ease",
+      }}
+    >
+      <div className="flex flex-col items-center gap-3">
+        <div className="px-8 py-4 rounded-2xl bg-black border border-white/5">
+          <p className="text-center font-mono tracking-widest">
+            <span
+              className="font-bold text-xl text-white"
+              style={{
+                textShadow: "0 0 10px rgba(255,255,255,0.8), 0 0 30px rgba(255,255,255,0.4), 0 0 60px rgba(255,255,255,0.2)",
+              }}
+            >
+              {current.label}
+            </span>
+            <span
+              className="ml-4 text-sm text-white/40"
+              style={{
+                textShadow: "0 0 8px rgba(255,255,255,0.15)",
+              }}
+            >
+              {current.action}
+            </span>
+          </p>
+        </div>
+        <div className="flex gap-2 mt-1">
+          {TUTORIAL_STEPS.map((_, i) => (
+            <div
+              key={i}
+              className="w-1.5 h-1.5 rounded-full"
+              style={i <= step ? {
+                backgroundColor: "#fff",
+                boxShadow: "0 0 4px #fff, 0 0 10px rgba(255,255,255,0.5)",
+              } : {
+                backgroundColor: "rgba(255,255,255,0.1)",
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function GameScene() {
   return (
     <div className="w-screen h-screen bg-black relative animate-fade-in">
       <Canvas
         shadows
-        camera={{ position: [0, 8, 28], fov: 40 }}
+        camera={{ position: [0, -3, 28], fov: 40 }}
         gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
         dpr={[1, 2]}
         style={{ width: "100vw", height: "100vh" }}
@@ -362,18 +495,7 @@ export function GameScene() {
         </Suspense>
       </Canvas>
 
-      <div className="absolute top-6 right-6 z-10 pointer-events-none text-right">
-        <p className="text-muted/60 text-[11px] font-mono leading-relaxed">
-          <span className="text-accent">A/D</span> move
-          <span className="text-muted/30 mx-1.5">·</span>
-          <span className="text-accent">SPACE</span> jump
-          <span className="text-muted/30 mx-1.5">·</span>
-          <span className="text-accent">E</span> pickup / drop
-          <span className="text-muted/30 mx-1.5">·</span>
-          <span className="text-accent">CLICK</span> aim & throw
-        </p>
-      </div>
-
+      <TutorialOverlay />
       <PowerBarOverlay />
     </div>
   );

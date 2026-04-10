@@ -25,6 +25,7 @@ export interface PageCubeData {
   label: string;
   href: string;
   color: string;
+  size: number;
 }
 
 interface PageCubeProps {
@@ -38,6 +39,14 @@ const JELLY_STIFFNESS = 200;
 const JELLY_DAMPING = 10;
 const IMPACT_THRESHOLD = 2.5;
 
+/** Compute fontSize that fits the label within the cube face at given size. */
+function labelFontSize(label: string, cubeSize: number): number {
+  const maxWidth = cubeSize * 0.78;
+  const charWidthRatio = 0.55;
+  const idealSize = maxWidth / (label.length * charWidthRatio);
+  return Math.min(Math.max(idealSize, 0.1), cubeSize * 0.19);
+}
+
 export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubeProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Mesh>(null);
@@ -49,6 +58,9 @@ export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubePro
   const prevLinVel = useRef(new THREE.Vector3());
 
   const floatPhase = useMemo(() => Math.random() * Math.PI * 2, []);
+  const s = data.size;
+  const half = s / 2;
+  const fontSize = useMemo(() => labelFontSize(data.label, s), [data.label, s]);
 
   const handleCharacterNear = useCallback(() => {
     const rb = rigidBodyRef.current;
@@ -119,18 +131,19 @@ export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubePro
     <RigidBody
       ref={rigidBodyRef}
       position={position}
-      restitution={0.6}
-      friction={0.4}
+      restitution={0.9}
+      friction={0.15}
+      mass={0.3}
       linearDamping={CUBE_LINEAR_DAMPING}
       angularDamping={CUBE_ANGULAR_DAMPING}
       colliders={false}
       name={`cube-${data.id}`}
       userData={{ pageData: data }}
     >
-      <CuboidCollider args={[0.7, 0.7, 0.7]} />
+      <CuboidCollider args={[half, half, half]} />
 
       <BallCollider
-        args={[1.2]}
+        args={[s * 0.85]}
         sensor
         onIntersectionEnter={(payload) => {
           if (payload.other.rigidBodyObject?.name === "character") {
@@ -145,7 +158,7 @@ export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubePro
       />
 
       <group>
-        {/* === Cube mesh — premium physical material === */}
+        {/* === Glass cube === */}
         <mesh
           ref={meshRef}
           castShadow
@@ -159,19 +172,38 @@ export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubePro
             document.body.style.cursor = "default";
           }}
         >
-          <RoundedBox args={[1.4, 1.4, 1.4]} radius={0.16} smoothness={4}>
+          <RoundedBox args={[s, s, s]} radius={s * 0.13} smoothness={4}>
             <meshPhysicalMaterial
               color={data.color}
-              emissive={data.color}
-              emissiveIntensity={hovered ? 0.8 : 0.25}
-              metalness={0.92}
-              roughness={0.06}
+              transmission={0.92}
+              thickness={s}
+              roughness={0.05}
+              ior={1.5}
+              envMapIntensity={2.5}
               clearcoat={1}
-              clearcoatRoughness={0.04}
-              iridescence={0.4}
-              iridescenceIOR={1.6}
-              iridescenceThicknessRange={[100, 800]}
-              envMapIntensity={1.8}
+              clearcoatRoughness={0.02}
+              iridescence={0.3}
+              iridescenceIOR={1.3}
+              iridescenceThicknessRange={[100, 400]}
+              metalness={0}
+              emissive={data.color}
+              emissiveIntensity={hovered ? 0.4 : 0.08}
+              transparent
+              opacity={1}
+              toneMapped={false}
+              side={THREE.FrontSide}
+            />
+          </RoundedBox>
+        </mesh>
+
+        {/* === Colored edge wireframe for definition === */}
+        <mesh>
+          <RoundedBox args={[s + 0.02, s + 0.02, s + 0.02]} radius={s * 0.13} smoothness={4}>
+            <meshBasicMaterial
+              color={data.color}
+              wireframe
+              transparent
+              opacity={hovered ? 0.25 : 0.1}
               toneMapped={false}
             />
           </RoundedBox>
@@ -182,62 +214,38 @@ export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubePro
           ref={glowRef}
           color={data.color}
           intensity={6}
-          distance={4}
+          distance={5}
           decay={2}
         />
 
-        {/* === Text glow backing — front === */}
-        <mesh position={[0, 0, 0.76]}>
-          <planeGeometry args={[1.2, 0.4]} />
-          <meshBasicMaterial
-            color={data.color}
-            transparent
-            opacity={0.12}
-            toneMapped={false}
-          />
-        </mesh>
-
-        {/* === Label — front face === */}
-        <Text
-          position={[0, 0, 0.78]}
-          fontSize={0.28}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.025}
-          outlineColor={data.color}
-          maxWidth={1.2}
-          letterSpacing={0.06}
-        >
-          {data.label.toUpperCase()}
-        </Text>
-
-        {/* === Text glow backing — back === */}
-        <mesh position={[0, 0, -0.76]} rotation={[0, Math.PI, 0]}>
-          <planeGeometry args={[1.2, 0.4]} />
-          <meshBasicMaterial
-            color={data.color}
-            transparent
-            opacity={0.12}
-            toneMapped={false}
-          />
-        </mesh>
-
-        {/* === Label — back face === */}
-        <Text
-          position={[0, 0, -0.78]}
-          fontSize={0.28}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-          rotation={[0, Math.PI, 0]}
-          outlineWidth={0.025}
-          outlineColor={data.color}
-          maxWidth={1.2}
-          letterSpacing={0.06}
-        >
-          {data.label.toUpperCase()}
-        </Text>
+        {/* === Labels on all 6 faces === */}
+        {([
+          { pos: [0, 0, half + 0.03] as const, rot: [0, 0, 0] as const },
+          { pos: [0, 0, -(half + 0.03)] as const, rot: [0, Math.PI, 0] as const },
+          { pos: [half + 0.03, 0, 0] as const, rot: [0, Math.PI / 2, 0] as const },
+          { pos: [-(half + 0.03), 0, 0] as const, rot: [0, -Math.PI / 2, 0] as const },
+          { pos: [0, half + 0.03, 0] as const, rot: [-Math.PI / 2, 0, 0] as const },
+          { pos: [0, -(half + 0.03), 0] as const, rot: [Math.PI / 2, 0, 0] as const },
+        ]).map((face, i) => (
+          <Text
+            key={i}
+            position={[face.pos[0], face.pos[1], face.pos[2]]}
+            rotation={[face.rot[0], face.rot[1], face.rot[2]]}
+            fontSize={fontSize}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.03}
+            outlineBlur={0.05}
+            outlineColor={data.color}
+            letterSpacing={0.1}
+            fontWeight={700}
+            maxWidth={s * 0.85}
+            material-depthOffset={-1}
+          >
+            {data.label.toUpperCase()}
+          </Text>
+        ))}
       </group>
     </RigidBody>
   );

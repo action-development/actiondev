@@ -11,8 +11,8 @@ export const GRAVITY = 20;
 /** Fixed physics timestep in seconds. Matches Physics timeStep={1/60} */
 export const PHYSICS_DT = 1 / 60;
 
-/** PageCube linear velocity damping. Lower = more projectile-like flight. */
-export const CUBE_LINEAR_DAMPING = 0.2;
+/** PageCube linear velocity damping. Lower = cubes fly further on contact. */
+export const CUBE_LINEAR_DAMPING = 0.05;
 
 /** PageCube angular velocity damping. */
 export const CUBE_ANGULAR_DAMPING = 1;
@@ -25,5 +25,5 @@ export const MAX_FORCE = 25;
 export const MIN_AIM_DIST = 2;
 export const MAX_AIM_DIST = 15;
 
-/** Y offset of held cube above character base */
-export const HOLD_OFFSET_Y = 2.2;
+/** Y offset of held cube above character base — must clear capsule top + cube half-height */
+export const HOLD_OFFSET_Y = 2.9;
