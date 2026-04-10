@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState, useCallback } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
   RigidBody,
@@ -53,9 +53,88 @@ function generateNetLines(segments: number, rimRadius: number, depth: number) {
   return lines;
 }
 
+const CONFETTI_COUNT = 60;
+const CONFETTI_COLORS = ["#c8ff00", "#6366f1", "#ec4899", "#22d3ee", "#ffffff", "#ff6600"];
+
+interface ConfettiParticle {
+  x: number; y: number; z: number;
+  vx: number; vy: number; vz: number;
+  rotSpeed: number;
+  scale: number;
+  color: THREE.Color;
+  life: number;
+}
+
+function Confetti({ active }: { active: number }) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const particles = useRef<ConfettiParticle[]>([]);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const prevActive = useRef(0);
+
+  useFrame((_, delta) => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+
+    // Spawn new burst when active changes
+    if (active !== prevActive.current) {
+      prevActive.current = active;
+      for (let i = 0; i < CONFETTI_COUNT; i++) {
+        particles.current.push({
+          x: (Math.random() - 0.5) * 1.5,
+          y: -0.5,
+          z: (Math.random() - 0.5) * 1.5,
+          vx: (Math.random() - 0.5) * 6,
+          vy: Math.random() * 8 + 4,
+          vz: (Math.random() - 0.5) * 6,
+          rotSpeed: (Math.random() - 0.5) * 10,
+          scale: 0.06 + Math.random() * 0.08,
+          color: new THREE.Color(CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]),
+          life: 1.5 + Math.random() * 1,
+        });
+      }
+    }
+
+    // Update particles
+    const alive = particles.current;
+    for (let i = alive.length - 1; i >= 0; i--) {
+      const p = alive[i];
+      p.life -= delta;
+      if (p.life <= 0) { alive.splice(i, 1); continue; }
+      p.vy -= 9 * delta;
+      p.x += p.vx * delta;
+      p.y += p.vy * delta;
+      p.z += p.vz * delta;
+      p.vx *= 0.98;
+      p.vz *= 0.98;
+    }
+
+    // Write to instanced mesh
+    mesh.count = Math.min(alive.length, CONFETTI_COUNT * 3);
+    for (let i = 0; i < mesh.count; i++) {
+      const p = alive[i];
+      dummy.position.set(p.x, p.y, p.z);
+      dummy.rotation.set(p.life * p.rotSpeed, p.life * p.rotSpeed * 0.7, 0);
+      dummy.scale.setScalar(p.scale * Math.min(p.life * 2, 1));
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      mesh.setColorAt(i, p.color);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, CONFETTI_COUNT * 3]}>
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial transparent opacity={0.9} toneMapped={false} side={THREE.DoubleSide} />
+    </instancedMesh>
+  );
+}
+
 export function Basket({ position, onScore }: BasketProps) {
   const rimRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.PointLight>(null);
+  const [confettiBurst, setConfettiBurst] = useState(0);
 
   const rimRadius = 1.8;
   const netDepth = 2.0;
@@ -71,14 +150,15 @@ export function Basket({ position, onScore }: BasketProps) {
     }
   });
 
-  const handleScore = (payload: IntersectionEnterPayload) => {
+  const handleScore = useCallback((payload: IntersectionEnterPayload) => {
     const rigidBodyObject = payload.other.rigidBodyObject;
     if (!rigidBodyObject) return;
     const userData = rigidBodyObject.userData as { pageData?: PageCubeData } | undefined;
-    if (userData?.pageData && onScore) {
-      onScore(userData.pageData);
+    if (userData?.pageData) {
+      setConfettiBurst((c) => c + 1);
+      onScore?.(userData.pageData);
     }
-  };
+  }, [onScore]);
 
   return (
     <RigidBody type="fixed" position={position} colliders={false}>
@@ -193,6 +273,8 @@ export function Basket({ position, onScore }: BasketProps) {
           distance={6}
           decay={2}
         />
+        {/* ========== CONFETTI ========== */}
+        <Confetti active={confettiBurst} />
       </group>
     </RigidBody>
   );
