@@ -1,126 +1,234 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useGSAP } from "@gsap/react";
-import { gsap } from "@/lib/gsap-config";
-import { testimonials } from "@/data/testimonials";
+
+import { testimonials, type Testimonial } from "@/data/testimonials";
+
+gsap.registerPlugin(ScrollTrigger);
+
+const FloatingCubeCanvas = dynamic(
+	() => import("@/components/canvas/FloatingCube").then((m) => m.FloatingCubeCanvas),
+	{ ssr: false }
+);
+
+// Import path separately to avoid dynamic import issues
+import { CUBE_PATHS } from "@/components/canvas/FloatingCube";
+
+/**
+ * Testimonials — Hero headline transitions into split layout on scroll.
+ *
+ * 1. Page opens with "Trusted by visionaries" centered fullscreen
+ * 2. On scroll, headline moves to left column (sticky)
+ * 3. Cards appear on the right — initially showing challenge + author only
+ * 4. As each card scrolls into view, the result quote reveals smoothly
+ */
+
+function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
+	const expandRef = useRef<HTMLDivElement>(null);
+	const collapsed = useRef(false);
+
+	// Collapse on first render — before GSAP runs, the element is full size in the DOM
+	useGSAP(() => {
+		const expand = expandRef.current;
+		if (!expand || collapsed.current) return;
+		gsap.set(expand, { height: 0, overflow: "hidden", opacity: 0 });
+		collapsed.current = true;
+	}, { scope: expandRef });
+
+	// Expand when triggered
+	useGSAP(() => {
+		const expand = expandRef.current;
+		if (!expand || !expanded) return;
+
+		// Temporarily set auto to measure real height
+		gsap.set(expand, { height: "auto" });
+		const realHeight = expand.offsetHeight;
+		gsap.set(expand, { height: 0 });
+
+		gsap.to(expand, {
+			height: realHeight,
+			opacity: 1,
+			duration: 0.9,
+			ease: "power2.out",
+			onComplete: () => {
+				gsap.set(expand, { height: "auto", overflow: "visible" });
+			},
+		});
+	}, { dependencies: [expanded] });
+
+	return (
+		<div
+			className="group relative rounded-2xl border border-white/[0.06] bg-[#0e0e0e] px-10 py-9 transition-all duration-500 hover:-translate-y-1 hover:border-white/[0.12] hover:bg-[#141414] hover:shadow-[0_8px_40px_rgba(255,255,255,0.03)]"
+		>
+			{/* Hover inner glow — top edge */}
+			<div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/0 to-transparent transition-all duration-500 group-hover:via-white/[0.15]" />
+
+			{/* Challenge + Author — always visible */}
+			<div className="flex items-start justify-between gap-6">
+				<div className="flex-1">
+					<p className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-white/25">
+						The challenge
+					</p>
+					<p className="max-w-2xl text-base leading-relaxed text-white/50 italic">
+						&ldquo;{t.idea}&rdquo;
+					</p>
+				</div>
+				<div className="flex shrink-0 items-center gap-3 pt-4">
+					<Image
+						src={t.avatar}
+						alt={t.name}
+						width={40}
+						height={40}
+						className="h-10 w-10 rounded-full object-cover ring-1 ring-white/10 transition-all duration-500 group-hover:ring-white/20"
+					/>
+					<div>
+						<p className="text-sm font-semibold text-foreground/80">{t.name}</p>
+						<p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
+							{t.project}
+						</p>
+					</div>
+				</div>
+			</div>
+
+			{/* Expandable result — grows downward on scroll */}
+			<div ref={expandRef}>
+				<div className="mt-7 h-px w-full bg-white/[0.08]" />
+				<div className="pt-7">
+					<p className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-white/25">
+						What they said
+					</p>
+					<p className="max-w-2xl text-xl font-medium leading-[1.5] tracking-tight text-foreground/90">
+						&ldquo;{t.quote}&rdquo;
+					</p>
+				</div>
+			</div>
+		</div>
+	);
+}
 
 export function Testimonials() {
-  const sectionRef = useRef<HTMLElement>(null);
+	const sectionRef = useRef<HTMLDivElement>(null);
+	const heroRef = useRef<HTMLDivElement>(null);
+	const headlineRef = useRef<HTMLHeadingElement>(null);
+	const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+	const expandedSet = useRef(new Set<number>());
+	const [expandedState, setExpandedState] = useState<boolean[]>(
+		() => testimonials.map(() => false)
+	);
+	const cubeScrollRef = useRef({ progress: 0 });
 
-  useGSAP(
-    () => {
-      const tl = gsap.timeline();
-      tl.from("[data-anim='label']", { y: 30, opacity: 0, duration: 0.6 })
-        .from(
-          "[data-anim='heading']",
-          { y: 80, opacity: 0, duration: 1 },
-          "-=0.3"
-        )
-        .from(
-          "[data-anim='rule']",
-          { scaleX: 0, transformOrigin: "left", duration: 0.8 },
-          "-=0.5"
-        );
+	// Cube scroll progress
+	useEffect(() => {
+		const section = sectionRef.current;
+		if (!section) return;
 
-      const cards = gsap.utils.toArray(
-        "[data-anim='testimonial']"
-      ) as HTMLElement[];
-      cards.forEach((card, i) => {
-        gsap.from(card, {
-          y: 60,
-          opacity: 0,
-          duration: 0.9,
-          delay: i * 0.08,
-          ease: "power3.out",
-          scrollTrigger: { trigger: card, start: "top 88%" },
-        });
-      });
-    },
-    { scope: sectionRef }
-  );
+		const ctx = gsap.context(() => {
+			ScrollTrigger.create({
+				trigger: section,
+				start: "top top",
+				end: "bottom bottom",
+				onUpdate: (self) => {
+					cubeScrollRef.current.progress = self.progress;
+				},
+			});
+		});
 
-  const featured = testimonials[0];
-  const rest = testimonials.slice(1);
+		return () => ctx.revert();
+	}, []);
 
-  return (
-    <section
-      ref={sectionRef}
-      className="relative overflow-hidden px-6 pb-32 pt-12"
-    >
-      <div className="mx-auto max-w-7xl">
-        {/* ── Title ── */}
-        <div className="mb-32">
-          <p
-            data-anim="label"
-            className="mb-5 text-xs uppercase tracking-[0.3em] text-muted font-mono"
-          >
-            What They Say
-          </p>
-          <h1
-            data-anim="heading"
-            className="text-7xl font-bold tracking-tighter leading-[0.85] md:text-[9rem]"
-          >
-            Reviews
-          </h1>
-          <div data-anim="rule" className="mt-8 h-px w-32 bg-[#ec4899]" />
-        </div>
+	useGSAP(() => {
+		const hero = heroRef.current;
+		const headline = headlineRef.current;
+		if (!hero || !headline) return;
 
-        {/* ── Featured Testimonial ── */}
-        <div data-anim="testimonial" className="relative mb-28">
-          {/* Decorative quote mark */}
-          <span
-            className="pointer-events-none absolute -left-4 -top-20 select-none font-serif text-[14rem] leading-none text-[#ec4899]/[0.06]"
-            aria-hidden="true"
-          >
-            &ldquo;
-          </span>
+		// Headline animation: center → left
+		const maxW = 1280;
+		const targetLeft = Math.max(24, (window.innerWidth - maxW) / 2);
+		const targetTop = 128;
+		const targetScale = 0.65;
 
-          <blockquote className="relative">
-            <p className="max-w-4xl text-3xl font-medium leading-[1.35] tracking-tight md:text-5xl md:leading-[1.25]">
-              {featured.quote}
-            </p>
-            <footer className="mt-12 flex items-center gap-5">
-              {/* Avatar placeholder */}
-              <div className="h-14 w-14 rounded-full border border-border/50 bg-border/20" />
-              <div>
-                <p className="text-base font-semibold">{featured.name}</p>
-                <p className="text-sm text-muted">
-                  {featured.role},{" "}
-                  <span className="text-[#ec4899]">{featured.company}</span>
-                </p>
-              </div>
-            </footer>
-          </blockquote>
-        </div>
+		gsap.to(headline, {
+			left: targetLeft,
+			top: targetTop,
+			xPercent: 0,
+			yPercent: 0,
+			scale: targetScale,
+			transformOrigin: "top left",
+			ease: "none",
+			scrollTrigger: {
+				trigger: hero,
+				start: "top top",
+				end: "bottom top",
+				scrub: 0.5,
+			},
+		});
 
-        {/* ── Remaining Testimonials ── */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {rest.map((t) => (
-            <blockquote
-              key={t.id}
-              data-anim="testimonial"
-              className="rounded-2xl border border-border/40 p-8 transition-all duration-500 hover:border-border hover:bg-white/[0.01]"
-            >
-              <p className="mb-8 text-lg leading-relaxed text-foreground/90">
-                &ldquo;{t.quote}&rdquo;
-              </p>
-              <footer className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full border border-border/50 bg-border/20" />
-                <div>
-                  <p className="text-sm font-medium">{t.name}</p>
-                  <p className="text-xs text-muted">
-                    {t.role}, {t.company}
-                  </p>
-                </div>
-              </footer>
-            </blockquote>
-          ))}
-        </div>
-      </div>
+		// Single scroll listener — checks each card's real-time position
+		const checkCards = () => {
+			const threshold = window.innerHeight * 0.55;
+			let changed = false;
 
-      {/* Decorative — pink glow orb */}
-      <div className="pointer-events-none absolute left-0 top-1/3 -z-10 h-[550px] w-[550px] rounded-full bg-[#ec4899]/[0.03] blur-[150px]" />
-    </section>
-  );
+			cardRefs.current.forEach((card, i) => {
+				if (!card || expandedSet.current.has(i)) return;
+				const rect = card.getBoundingClientRect();
+				if (rect.top < threshold) {
+					expandedSet.current.add(i);
+					changed = true;
+				}
+			});
+
+			if (changed) {
+				setExpandedState(
+					testimonials.map((_, i) => expandedSet.current.has(i))
+				);
+			}
+		};
+
+		ScrollTrigger.create({
+			trigger: sectionRef.current,
+			start: "top bottom",
+			end: "bottom top",
+			onUpdate: checkCards,
+		});
+	}, { scope: sectionRef });
+
+	return (
+		<div ref={sectionRef}>
+			<FloatingCubeCanvas scrollRef={cubeScrollRef} color="#ec4899" path={CUBE_PATHS.reviews} />
+
+			{/* ── Hero spacer ── */}
+			<div ref={heroRef} className="h-screen" />
+
+			{/* ── Headline: fixed, starts centered, animates to left ── */}
+			<h2
+				ref={headlineRef}
+				className="fixed left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 text-center text-6xl font-bold leading-[0.95] tracking-tighter will-change-transform md:text-8xl"
+			>
+				Trusted by
+				<br />
+				<span className="text-accent">visionaries</span>
+			</h2>
+
+			{/* ── Cards section ── */}
+			<div className="relative z-[2] px-6 pb-[50vh]">
+				<div className="mx-auto max-w-7xl md:pl-[40%]">
+					<div className="flex flex-col gap-16">
+						{testimonials.map((t, i) => (
+							<div
+								key={t.id}
+								ref={(el) => { cardRefs.current[i] = el; }}
+							>
+								<ReviewCard t={t} expanded={expandedState[i]} />
+							</div>
+						))}
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }

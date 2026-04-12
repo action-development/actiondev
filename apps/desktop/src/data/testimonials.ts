@@ -1,38 +1,56 @@
 export interface Testimonial {
   id: string;
   name: string;
-  role: string;
-  company: string;
+  project: string;
   quote: string;
   avatar: string;
+  idea: string;
 }
 
 export const testimonials: Testimonial[] = [
   {
-    id: "testimonial-1",
-    name: "Sarah Chen",
-    role: "CEO",
-    company: "Lumina Studio",
+    id: "carlos",
+    name: "Carlos P.",
+    project: "Timetracker",
     quote:
-      "They turned our vision into a digital experience that tripled our online sales. Absolutely world-class.",
-    avatar: "/avatars/sarah.jpg",
+      "Action transformed our legacy infrastructure into a world-class fintech ecosystem. The speed and security they achieved is unmatched.",
+    avatar: "/avatars/carlos.webp",
+    idea: "I needed a system for my team to track work hours without friction. Something simple but that gave me real data for billing.",
   },
   {
-    id: "testimonial-2",
-    name: "Marcus Webb",
-    role: "Creative Director",
-    company: "Vertex Architecture",
+    id: "marta",
+    name: "Marta R.",
+    project: "Cliché",
     quote:
-      "The attention to detail and animation quality is unlike anything we've seen. Our portfolio finally matches our work.",
-    avatar: "/avatars/marcus.jpg",
+      "Our conversion rates doubled after launch. They understood that digital luxury isn't just aesthetics — it's performance.",
+    avatar: "/avatars/marta.webp",
+    idea: "I wanted an online store that conveyed the same luxury as our garments. Buying should be an experience, not a chore.",
   },
   {
-    id: "testimonial-3",
-    name: "Elena Torres",
-    role: "Founder",
-    company: "Neon Health",
+    id: "javier",
+    name: "Javier G.",
+    project: "True Trading",
     quote:
-      "From concept to launch in 8 weeks. The team understood our complex requirements and delivered beyond expectations.",
-    avatar: "/avatars/elena.jpg",
+      "The trading platform they built redefined how our users operate. The real-time experience is simply magical.",
+    avatar: "/avatars/javier.webp",
+    idea: "My users needed to see real-time market data with zero latency. A platform to compete with the big players, but more agile.",
+  },
+  {
+    id: "laura",
+    name: "Laura M.",
+    project: "Musa",
+    quote:
+      "They captured the essence of our brand perfectly. The booking system is intuitive and visually stunning.",
+    avatar: "/avatars/laura.webp",
+    idea: "I had a restaurant with soul but no digital presence. I wanted the website to feel like walking through our door.",
+  },
+  {
+    id: "ana",
+    name: "Ana B.",
+    project: "XauLabs",
+    quote:
+      "Visualising complex data was never this simple. Their dashboard empowered our team to make better decisions.",
+    avatar: "/avatars/ana.webp",
+    idea: "We managed tons of data in spreadsheets. I needed a dashboard that turned that chaos into clear decisions.",
   },
 ];

@@ -1,482 +1,330 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useGSAP } from "@gsap/react";
-import { gsap, ScrollTrigger } from "@/lib/gsap-config";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import dynamic from "next/dynamic";
+import { type RefObject, useEffect, useRef } from "react";
+import { CardBackgroundPreview } from "@/components/effects/card-background-preview";
 import { projects } from "@/data/projects";
-import Link from "next/link";
 
-/** Inline transition styles — stagger on enter, instant on leave */
-function staggerStyle(
-  order: number,
-  isActive: boolean
-): React.CSSProperties {
-  return {
-    opacity: isActive ? 1 : 0,
-    transform: isActive ? "translateY(0)" : "translateY(28px)",
-    transition:
-      "opacity 700ms cubic-bezier(0.16,1,0.3,1), transform 700ms cubic-bezier(0.16,1,0.3,1)",
-    transitionDelay: isActive ? `${order * 90}ms` : "0ms",
-  };
+const Carousel3D = dynamic(
+	() => import("@/components/effects/carousel-3d").then((m) => m.Carousel3D),
+	{ ssr: false }
+);
+
+const FloatingCubeCanvas = dynamic(
+	() => import("@/components/canvas/FloatingCube").then((m) => m.FloatingCubeCanvas),
+	{ ssr: false }
+);
+
+gsap.registerPlugin(ScrollTrigger);
+
+// --- Constants ──────────────────────────────────────────────────────────────
+
+const NUM = projects.length;
+const ANGLE_STEP = 65;
+const TOTAL_ROTATION = (NUM - 1) * ANGLE_STEP;
+const Y_STEP = 270;
+const TOTAL_Y = (NUM - 1) * Y_STEP;
+
+// --- Sub-components (DOM overlays) ──────────────────────────────────────────
+
+function CentralColumn({ textRef }: { textRef: RefObject<HTMLSpanElement | null> }) {
+	return (
+		<div className="pointer-events-none absolute inset-0 flex select-none items-center justify-center overflow-hidden">
+			<div
+				className="relative flex h-screen items-start justify-center"
+				style={{ perspective: "800px" }}
+			>
+				<span
+					ref={textRef}
+					className="block font-mono font-bold leading-[0.75] tracking-[-0.05em] text-white/[0.12] will-change-transform"
+					style={{
+						writingMode: "vertical-rl",
+						textOrientation: "mixed",
+						fontSize: "clamp(18rem, 40vh, 45rem)",
+						transform: "rotateY(-12deg) rotateX(3deg) translateY(10%)",
+						transformStyle: "preserve-3d",
+					}}
+				>
+					PROJECTS
+				</span>
+			</div>
+		</div>
+	);
 }
 
-/* ── Wireframe placeholders per category ──
-   Minimal, monochrome mockups that represent each project type.
-   Replace with <video> or <Image> when real assets exist. */
-
-function PlaceholderEcommerce() {
-  return (
-    <div className="flex h-full w-full flex-col bg-black p-6">
-      {/* Nav */}
-      <div className="flex items-center justify-between">
-        <div className="h-2 w-16 rounded-full bg-white/[0.08]" />
-        <div className="flex gap-3">
-          <div className="h-2 w-10 rounded-full bg-white/[0.05]" />
-          <div className="h-2 w-10 rounded-full bg-white/[0.05]" />
-          <div className="h-2 w-10 rounded-full bg-white/[0.05]" />
-        </div>
-      </div>
-      {/* Hero */}
-      <div className="mt-6 flex-1 rounded-lg bg-white/[0.03]" />
-      {/* Product grid */}
-      <div className="mt-4 grid grid-cols-4 gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex flex-col gap-2">
-            <div className="aspect-square rounded-md bg-white/[0.04]" />
-            <div className="h-1.5 w-3/4 rounded-full bg-white/[0.06]" />
-            <div className="h-1.5 w-1/2 rounded-full bg-white/[0.03]" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+function ProjectIndicator({ nameRef }: { nameRef: RefObject<HTMLSpanElement | null> }) {
+	return (
+		<div className="absolute bottom-8 right-8 z-20 hidden items-center gap-4 md:flex">
+			<span className="font-mono text-xs text-white/30">&lt;&lt;</span>
+			<span
+				ref={nameRef}
+				className="min-w-[140px] text-center font-mono text-[11px] uppercase tracking-[0.2em] text-white/50"
+			/>
+			<span className="font-mono text-xs text-white/30">&gt;&gt;</span>
+		</div>
+	);
 }
 
-function PlaceholderPortfolio() {
-  return (
-    <div className="flex h-full w-full flex-col bg-black p-6">
-      {/* Nav */}
-      <div className="flex items-center justify-between">
-        <div className="h-2 w-20 rounded-full bg-white/[0.08]" />
-        <div className="h-2 w-12 rounded-full bg-white/[0.05]" />
-      </div>
-      {/* Hero with large text block */}
-      <div className="mt-8 flex flex-col gap-2">
-        <div className="h-3 w-3/4 rounded-full bg-white/[0.1]" />
-        <div className="h-3 w-1/2 rounded-full bg-white/[0.07]" />
-      </div>
-      {/* Gallery grid */}
-      <div className="mt-6 grid flex-1 grid-cols-3 gap-3">
-        <div className="col-span-2 rounded-lg bg-white/[0.04]" />
-        <div className="flex flex-col gap-3">
-          <div className="flex-1 rounded-lg bg-white/[0.03]" />
-          <div className="flex-1 rounded-lg bg-white/[0.03]" />
-        </div>
-      </div>
-      {/* Bottom bar */}
-      <div className="mt-4 flex gap-3">
-        <div className="h-8 flex-1 rounded-md bg-white/[0.02]" />
-        <div className="h-8 flex-1 rounded-md bg-white/[0.02]" />
-        <div className="h-8 flex-1 rounded-md bg-white/[0.02]" />
-      </div>
-    </div>
-  );
+function ProgressBar({
+	barRef,
+	labelRef,
+}: {
+	barRef: RefObject<HTMLDivElement | null>;
+	labelRef: RefObject<HTMLSpanElement | null>;
+}) {
+	return (
+		<div className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-center gap-1 md:flex">
+			<div className="h-32 w-px overflow-hidden rounded-full bg-white/10">
+				<div
+					ref={barRef}
+					className="h-full w-full origin-top rounded-full bg-white/40"
+					style={{ transform: "scaleY(0)" }}
+				/>
+			</div>
+			<span ref={labelRef} className="mt-1 font-mono text-[9px] text-white/30">
+				0%
+			</span>
+		</div>
+	);
 }
 
-function PlaceholderSaas() {
-  return (
-    <div className="flex h-full w-full bg-black">
-      {/* Sidebar */}
-      <div className="flex w-1/5 flex-col gap-3 border-r border-white/[0.04] p-4">
-        <div className="h-2.5 w-full rounded-full bg-white/[0.08]" />
-        <div className="mt-3 h-2 w-3/4 rounded-full bg-white/[0.04]" />
-        <div className="h-2 w-full rounded-full bg-white/[0.04]" />
-        <div className="h-2 w-2/3 rounded-full bg-white/[0.06]" />
-        <div className="h-2 w-3/4 rounded-full bg-white/[0.04]" />
-        <div className="mt-auto h-2 w-1/2 rounded-full bg-white/[0.03]" />
-      </div>
-      {/* Main content */}
-      <div className="flex flex-1 flex-col p-5">
-        {/* Top bar */}
-        <div className="flex items-center justify-between">
-          <div className="h-2.5 w-24 rounded-full bg-white/[0.07]" />
-          <div className="h-6 w-6 rounded-full bg-white/[0.04]" />
-        </div>
-        {/* Metric cards */}
-        <div className="mt-5 grid grid-cols-3 gap-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex flex-col gap-2 rounded-lg border border-white/[0.04] p-3"
-            >
-              <div className="h-1.5 w-1/2 rounded-full bg-white/[0.05]" />
-              <div className="h-3 w-2/3 rounded-full bg-white/[0.1]" />
-            </div>
-          ))}
-        </div>
-        {/* Chart area */}
-        <div className="mt-4 flex-1 rounded-lg border border-white/[0.04] p-4">
-          <div className="flex h-full items-end gap-2">
-            {[40, 65, 45, 80, 55, 70, 90, 60, 75, 50, 85, 68].map(
-              (h, i) => (
-                <div
-                  key={i}
-                  className="flex-1 rounded-sm bg-white/[0.06]"
-                  style={{ height: `${h}%` }}
-                />
-              )
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PlaceholderProduct() {
-  return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-black p-6">
-      {/* Nav */}
-      <div className="absolute left-6 right-6 top-6 flex items-center justify-between">
-        <div className="h-2 w-14 rounded-full bg-white/[0.08]" />
-        <div className="flex gap-3">
-          <div className="h-2 w-8 rounded-full bg-white/[0.05]" />
-          <div className="h-2 w-8 rounded-full bg-white/[0.05]" />
-        </div>
-      </div>
-      {/* Centered product */}
-      <div className="h-28 w-28 rounded-2xl bg-white/[0.04]" />
-      <div className="mt-6 h-3 w-40 rounded-full bg-white/[0.1]" />
-      <div className="mt-2 h-2 w-56 rounded-full bg-white/[0.04]" />
-      <div className="mt-1 h-2 w-44 rounded-full bg-white/[0.04]" />
-      {/* CTA */}
-      <div className="mt-6 h-8 w-28 rounded-full bg-white/[0.08]" />
-    </div>
-  );
-}
-
-const PLACEHOLDERS: Record<string, () => React.JSX.Element> = {
-  "E-commerce": PlaceholderEcommerce,
-  Portfolio: PlaceholderPortfolio,
-  SaaS: PlaceholderSaas,
-  Product: PlaceholderProduct,
-};
-
-function ProjectPlaceholder({ category }: { category: string }) {
-  const Component = PLACEHOLDERS[category] ?? PlaceholderProduct;
-  return <Component />;
-}
-
-/* ═══════════════════════════════════════════════ */
+// --- Projects (main section) ────────────────────────────────────────────────
 
 export function Projects() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+	const wrapperRef = useRef<HTMLDivElement>(null);
+	const sectionRef = useRef<HTMLElement>(null);
+	const heroRef = useRef<HTMLDivElement>(null);
+	const line1Ref = useRef<HTMLSpanElement>(null);
+	const line2Ref = useRef<HTMLSpanElement>(null);
+	const indicatorRef = useRef<HTMLSpanElement>(null);
+	const progressBarRef = useRef<HTMLDivElement>(null);
+	const progressLabelRef = useRef<HTMLSpanElement>(null);
+	const columnTextRef = useRef<HTMLSpanElement>(null);
 
-  useGSAP(
-    () => {
-      /* ── Entrance timeline ── */
-      const tl = gsap.timeline();
-      tl.from("[data-anim='label']", {
-        y: 30,
-        opacity: 0,
-        duration: 0.6,
-      })
-        .from(
-          "[data-anim='heading']",
-          { y: 80, opacity: 0, duration: 1 },
-          "-=0.3"
-        )
-        .from(
-          "[data-anim='rule']",
-          { scaleX: 0, transformOrigin: "left", duration: 0.8 },
-          "-=0.5"
-        )
-        .from(
-          "[data-anim='count']",
-          { y: 20, opacity: 0, duration: 0.5 },
-          "-=0.3"
-        );
+	const lastIndexRef = useRef(0);
+	const lastPercentRef = useRef(0);
 
-      /* ── Hero parallax fade on scroll ── */
-      gsap.to("[data-anim='hero']", {
-        y: -120,
-        opacity: 0,
-        ease: "none",
-        scrollTrigger: {
-          trigger: "[data-anim='hero']",
-          start: "top top+=100",
-          end: "+=500",
-          scrub: 1.5,
-        },
-      });
+	// Mutable scroll state shared with Three.js scenes (no re-renders)
+	const scrollRef = useRef({ rotation: 0, y: 0 });
+	// Page-wide scroll progress for the floating cube (0→1 over entire page)
+	const cubeScrollRef = useRef({ progress: 0 });
 
-      /* ── Rule line extends to full width on scroll ── */
-      gsap.to("[data-anim='rule']", {
-        width: "100%",
-        ease: "none",
-        scrollTrigger: {
-          trigger: "[data-anim='rule']",
-          start: "top 80%",
-          end: "top 30%",
-          scrub: 1,
-        },
-      });
+	// --- Hero headline animations ---
+	useEffect(() => {
+		const hero = heroRef.current;
+		if (!hero) return;
 
-      /* ── Sticky video subtle parallax ── */
-      gsap.to("[data-sticky-video]", {
-        y: 50,
-        ease: "none",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 2,
-        },
-      });
+		const ctx = gsap.context(() => {
+			// Entrance: words reveal with stagger — fast, no delay
+			const words = hero.querySelectorAll("[data-word]");
+			gsap.set(words, { opacity: 0, y: 30, rotateX: -30 });
+			gsap.to(words, {
+				opacity: 1,
+				y: 0,
+				rotateX: 0,
+				duration: 0.5,
+				ease: "power3.out",
+				stagger: 0.06,
+			});
 
-      /* ── Scroll-driven project activation ── */
-      const panels = gsap.utils.toArray(
-        "[data-project-panel]"
-      ) as HTMLElement[];
-      panels.forEach((panel, i) => {
-        ScrollTrigger.create({
-          trigger: panel,
-          start: "top center",
-          end: "bottom center",
-          onEnter: () => setActiveIndex(i),
-          onEnterBack: () => setActiveIndex(i),
-        });
-      });
-    },
-    { scope: sectionRef }
-  );
+			// Scroll exit: lines split to opposite sides
+			const tl = gsap.timeline({
+				scrollTrigger: {
+					trigger: hero,
+					start: "top top",
+					end: "40% top",
+					scrub: 0.3,
+				},
+			});
 
-  const active = projects[activeIndex];
+			tl.to(
+				line1Ref.current,
+				{ xPercent: -120, opacity: 0, ease: "power2.in" },
+				0
+			);
+			tl.to(
+				line2Ref.current,
+				{ xPercent: 120, opacity: 0, ease: "power2.in" },
+				0
+			);
+		}, hero);
 
-  return (
-    <section ref={sectionRef} className="relative bg-black text-white">
-      {/* ═══════════ Hero ═══════════ */}
-      <div data-anim="hero" className="px-6 pb-8 pt-12">
-        <div className="mx-auto max-w-[1400px]">
-          <div className="flex items-end justify-between">
-            <div>
-              <p
-                data-anim="label"
-                className="mb-5 font-mono text-[10px] uppercase tracking-[0.3em] text-neutral-500"
-              >
-                Selected Work
-              </p>
-              <h1
-                data-anim="heading"
-                className="text-6xl font-bold leading-[0.85] tracking-tighter md:text-8xl"
-              >
-                Projects
-              </h1>
-            </div>
-            <p
-              data-anim="count"
-              className="hidden font-mono text-sm text-neutral-600 md:block"
-            >
-              {String(projects.length).padStart(2, "0")} Projects
-            </p>
-          </div>
-          <div
-            data-anim="rule"
-            className="mt-8 h-px w-32 bg-white/[0.08]"
-          />
-        </div>
-      </div>
+		return () => ctx.revert();
+	}, []);
 
-      {/* ═══════════ Split scroll ═══════════ */}
-      <div className="mx-auto max-w-[1400px] px-6">
-        <div className="grid grid-cols-12 gap-x-8 md:gap-x-12">
-          {/* ── LEFT: Scrollable project list ── */}
-          <div className="col-span-12 md:col-span-5">
-            {projects.map((project, i) => {
-              const isActive = i === activeIndex;
+	// --- Page-wide scroll progress for floating cube ---
+	useEffect(() => {
+		const wrapper = wrapperRef.current;
+		if (!wrapper) return;
 
-              return (
-                <div
-                  key={project.id}
-                  data-project-panel
-                  className="flex min-h-[90vh] items-center py-8"
-                >
-                  <div className="w-full">
-                    {/* Number */}
-                    <span
-                      className="block font-mono text-[7rem] font-bold leading-none text-white/[0.04] md:text-[9rem]"
-                      style={staggerStyle(0, isActive)}
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
+		const ctx = gsap.context(() => {
+			ScrollTrigger.create({
+				trigger: wrapper,
+				start: "top top",
+				end: "bottom bottom",
+				onUpdate: (self) => {
+					cubeScrollRef.current.progress = self.progress;
+				},
+			});
+		});
 
-                    {/* Title */}
-                    <h2
-                      className="-mt-6 text-3xl font-bold tracking-tight md:-mt-8 md:text-4xl"
-                      style={staggerStyle(1, isActive)}
-                    >
-                      {project.title}
-                    </h2>
+		return () => ctx.revert();
+	}, []);
 
-                    {/* Category */}
-                    <span
-                      className="mt-3 inline-block font-mono text-[10px] uppercase tracking-[0.25em] text-white/40"
-                      style={staggerStyle(2, isActive)}
-                    >
-                      {project.category}
-                    </span>
+	// --- Carousel scroll animations ---
+	useEffect(() => {
+		const section = sectionRef.current;
+		if (!section) return;
 
-                    {/* Description */}
-                    <p
-                      className="mt-5 max-w-sm text-[15px] leading-relaxed text-neutral-400"
-                      style={staggerStyle(3, isActive)}
-                    >
-                      {project.description}
-                    </p>
+		const indicator = indicatorRef.current;
+		const bar = progressBarRef.current;
+		const label = progressLabelRef.current;
 
-                    {/* Tech pills */}
-                    <div
-                      className="mt-6 flex flex-wrap gap-2"
-                      style={staggerStyle(4, isActive)}
-                    >
-                      {project.technologies.map((tech) => (
-                        <span
-                          key={tech}
-                          className="rounded-full border border-white/[0.08] px-3 py-1 text-[10px] uppercase tracking-wider text-neutral-500"
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
+		if (indicator) indicator.textContent = projects[0].title;
 
-                    {/* Year + link */}
-                    <div
-                      className="mt-8 flex items-center gap-6"
-                      style={staggerStyle(5, isActive)}
-                    >
-                      <span className="font-mono text-xs text-neutral-600">
-                        {project.year}
-                      </span>
-                      <Link
-                        href={project.url}
-                        className="group/link flex items-center gap-2 text-xs font-medium text-neutral-500 transition-colors duration-300 hover:text-white"
-                      >
-                        View project
-                        <span className="inline-block transition-transform duration-300 group-hover/link:translate-x-1">
-                          &rarr;
-                        </span>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+		const ctx = gsap.context(() => {
+			ScrollTrigger.create({
+				trigger: section,
+				start: "top top",
+				end: "bottom bottom",
+				scrub: 1,
+				onUpdate: (self) => {
+					const progress = self.progress;
+					const rotation = progress * TOTAL_ROTATION;
 
-          {/* ── RIGHT: Sticky preview ── */}
-          <div className="col-span-7 hidden md:block">
-            <div data-sticky-video className="sticky top-[12vh]">
-              {/* Browser mockup */}
-              <div className="relative overflow-hidden rounded-xl border border-white/[0.06] bg-black shadow-2xl shadow-black/80">
-                {/* Chrome */}
-                <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
-                  <div className="flex gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-white/[0.08]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-white/[0.08]" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-white/[0.08]" />
-                  </div>
-                  <div className="ml-3 flex h-6 flex-1 items-center rounded-md bg-white/[0.03] px-3">
-                    <span className="font-mono text-[10px] text-neutral-600 transition-all duration-500">
-                      {active.url === "#"
-                        ? `${active.title.toLowerCase().replace(/\s+/g, "")}.com`
-                        : active.url}
-                    </span>
-                  </div>
-                </div>
+					// Update shared scroll state for Three.js
+					scrollRef.current.rotation = rotation;
+					scrollRef.current.y = progress * TOTAL_Y;
 
-                {/* Preview area */}
-                <div className="relative aspect-[16/10]">
-                  {projects.map((project, i) => (
-                    <div
-                      key={project.id}
-                      className="absolute inset-0"
-                      style={{
-                        opacity: i === activeIndex ? 1 : 0,
-                        transform:
-                          i === activeIndex
-                            ? "scale(1)"
-                            : "scale(1.04)",
-                        filter:
-                          i === activeIndex
-                            ? "blur(0px)"
-                            : "blur(8px)",
-                        transition:
-                          "opacity 700ms cubic-bezier(0.16,1,0.3,1), transform 700ms cubic-bezier(0.16,1,0.3,1), filter 700ms cubic-bezier(0.16,1,0.3,1)",
-                      }}
-                    >
-                      <ProjectPlaceholder
-                        category={project.category}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
+					// Indicator — only on index change
+					const idx = Math.round(rotation / ANGLE_STEP) % NUM;
+					if (idx !== lastIndexRef.current) {
+						lastIndexRef.current = idx;
+						if (indicator && projects[idx]) {
+							indicator.textContent = projects[idx].title;
+						}
+					}
 
-              {/* Progress bar */}
-              <div className="mt-6 flex items-center gap-3">
-                {projects.map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-px flex-1 overflow-hidden bg-white/[0.04]"
-                  >
-                    <div
-                      className="h-full bg-white"
-                      style={{
-                        transform:
-                          i === activeIndex
-                            ? "scaleX(1)"
-                            : "scaleX(0)",
-                        transformOrigin: "left",
-                        transition:
-                          "transform 700ms cubic-bezier(0.16,1,0.3,1)",
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
+					// Progress bar
+					if (bar) bar.style.transform = `scaleY(${progress})`;
 
-              {/* Counter */}
-              <div className="mt-3 flex items-center justify-between">
-                <span className="font-mono text-[10px] text-neutral-500">
-                  {String(activeIndex + 1).padStart(2, "0")}
-                </span>
-                <span className="font-mono text-[10px] text-neutral-700">
-                  {String(projects.length).padStart(2, "0")}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+					// Progress label
+					const pct = Math.round(progress * 100);
+					if (pct !== lastPercentRef.current) {
+						lastPercentRef.current = pct;
+						if (label) label.textContent = `${pct}%`;
+					}
+				},
+			});
 
-      {/* ═══════════ Bottom CTA ═══════════ */}
-      <div className="border-t border-white/[0.06] px-6 py-20">
-        <div className="mx-auto flex max-w-[1400px] flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-          <p className="text-sm text-neutral-600">
-            Want to see your project here?
-          </p>
-          <Link
-            href="/contact"
-            className="group/btn flex items-center gap-3 rounded-full border border-white/[0.1] px-6 py-3 text-sm font-medium transition-all duration-300 hover:border-white/30 hover:bg-white/[0.03]"
-          >
-            Start a project
-            <span className="inline-block transition-transform duration-300 group-hover/btn:translate-x-1">
-              &rarr;
-            </span>
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
+			// Column text scroll
+			if (columnTextRef.current) {
+				gsap.to(columnTextRef.current, {
+					yPercent: -85,
+					ease: "none",
+					scrollTrigger: {
+						trigger: section,
+						start: "top top",
+						end: "bottom bottom",
+						scrub: 1,
+					},
+				});
+			}
+		});
+
+		return () => ctx.revert();
+	}, []);
+
+	return (
+		<div ref={wrapperRef}>
+			{/* Floating cube — scroll-driven, drifts behind all content */}
+			<FloatingCubeCanvas scrollRef={cubeScrollRef} />
+
+			{/* Hero headline — text reveals on load, splits on scroll */}
+			<div
+				ref={heroRef}
+				className="relative z-[2] flex h-[80vh] flex-col items-center justify-center overflow-hidden px-6"
+				style={{ perspective: "600px" }}
+			>
+				<h1 className="max-w-5xl text-center text-[clamp(2.8rem,7vw,6.5rem)] font-extrabold leading-[0.95] tracking-[-0.04em] text-white">
+					<span ref={line1Ref} className="block will-change-transform">
+						{"Transform your ideas".split(" ").map((word, i) => (
+							<span
+								key={i}
+								data-word
+								className="inline-block"
+								style={{ marginRight: "0.25em" }}
+							>
+								{word}
+							</span>
+						))}
+					</span>
+					<span ref={line2Ref} className="block will-change-transform">
+						{"into".split(" ").map((word, i) => (
+							<span
+								key={`b-${i}`}
+								data-word
+								className="inline-block"
+								style={{ marginRight: "0.25em" }}
+							>
+								{word}
+							</span>
+						))}
+						<span data-word className="inline-block italic">
+							sales
+						</span>
+					</span>
+				</h1>
+			</div>
+
+			<div className="relative z-[2] flex items-center justify-center gap-6 pb-24">
+				<span className="h-px w-16 bg-white/15" />
+				<span className="font-mono text-sm uppercase tracking-[0.3em] text-white/40">
+					Selected Work
+				</span>
+				<span className="h-px w-16 bg-white/15" />
+			</div>
+
+			<section
+				id="projects"
+				ref={sectionRef}
+				className="relative z-[2]"
+				style={{ height: `${200 + NUM * 40}vh` }}
+			>
+				{/* Gradient transitions */}
+				<div
+					aria-hidden
+					className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[30vh] bg-gradient-to-b from-neutral-950 to-transparent"
+				/>
+				<div
+					aria-hidden
+					className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[30vh] bg-gradient-to-t from-neutral-950 to-transparent"
+				/>
+
+				<div className="sticky top-0 h-screen overflow-hidden">
+				{/* Fullscreen background preview on hover */}
+				<CardBackgroundPreview />
+
+				{/* Section label */}
+				<div className="absolute right-8 top-20 z-20 hidden items-center gap-3 md:flex">
+					<span className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/25">
+						Projects
+					</span>
+					<span className="h-px w-6 bg-white/15" />
+				</div>
+
+				<CentralColumn textRef={columnTextRef} />
+
+				{/* Three.js 3D Carousel */}
+				<Carousel3D projects={projects} scrollRef={scrollRef} />
+
+				{/* UI Overlays */}
+				<ProjectIndicator nameRef={indicatorRef} />
+				<ProgressBar barRef={progressBarRef} labelRef={progressLabelRef} />
+			</div>
+		</section>
+		</div>
+	);
 }

@@ -10,7 +10,7 @@ import {
 import { Environment } from "@react-three/drei";
 import { Character, type CharacterHandle } from "./Character";
 import { PageCube, type PageCubeData } from "./PageCube";
-import { Basket } from "./Basket";
+import { Basket, gatedCubeIds } from "./Basket";
 import { Starfield } from "./Starfield";
 import { Decorations } from "./Decorations";
 import { AimLine, type AimState } from "./AimLine";
@@ -35,10 +35,9 @@ import * as THREE from "three";
  */
 
 const PAGE_CUBES: PageCubeData[] = [
-  { id: "projects", label: "Work", href: "/projects", color: "#6366f1", size: 2.0 },
-  { id: "contact", label: "Contact", href: "/contact", color: "#c8ff00", size: 1.6 },
+  { id: "projects", label: "Work", href: "/projects", color: "#ffdd00", size: 2.0 },
+  { id: "contact", label: "Contact", href: "/contact", color: "#ff6600", size: 1.6 },
   { id: "testimonials", label: "Reviews", href: "/reviews", color: "#ec4899", size: 1.3 },
-  { id: "map", label: "Map", href: "/map", color: "#22d3ee", size: 1.0 },
 ];
 
 /**
@@ -54,7 +53,7 @@ function generateSpawnPositions(count: number): [number, number, number][] {
   for (let i = 0; i < count; i++) {
     const x = centerX + (Math.random() - 0.5) * spread;
     // Small height stagger (0.6 units apart) so they land nearly together
-    const y = 12 + i * 0.6 + Math.random() * 0.4;
+    const y = 20 + i * 0.6 + Math.random() * 0.4;
     positions.push([x, y, 0]);
   }
   return positions;
@@ -90,10 +89,25 @@ function useMouseButton(): MutableRefObject<boolean> {
   return down;
 }
 
-function GameWorld() {
+function resetGameState() {
+  uiState.power = 0;
+  uiState.charging = false;
+  uiState.holding = false;
+  uiState.justThrew = false;
+  thrownCubeIds.clear();
+  gatedCubeIds.clear();
+}
+
+function GameWorld({ paused = false, onNavigate }: { paused?: boolean; onNavigate?: (href: string) => void }) {
   const keys = useKeyboard();
   const mouseDown = useMouseButton();
   const { camera, pointer } = useThree();
+
+  // Reset module-level state on mount (prevents stale data across navigations)
+  useEffect(() => {
+    resetGameState();
+    return resetGameState;
+  }, []);
 
   const characterRef = useRef<CharacterHandle>(null);
   const heldCubeRef = useRef<{ id: string; rb: RapierRigidBody } | null>(null);
@@ -131,10 +145,10 @@ function GameWorld() {
   const handleScore = useCallback((pageData: PageCubeData) => {
     setTimeout(() => {
       if (!pageData.href.startsWith("#")) {
-        window.location.href = pageData.href;
+        onNavigate?.(pageData.href);
       }
     }, 800);
-  }, []);
+  }, [onNavigate]);
 
   useFrame(() => {
     const dt = 1 / 60;
@@ -159,8 +173,12 @@ function GameWorld() {
         rb.setAngvel({ x: 0, y: 0, z: 0 }, true);
         uiState.holding = true;
       } else if (heldCubeRef.current && !isAiming.current) {
-        // DROP (only if not mid-aim — release click handles throw)
+        // DROP forward — nudge cube in facing direction so it doesn't float
+        const dir = char.getFacingDirection();
+        const rb = heldCubeRef.current.rb;
+        rb.setLinvel({ x: dir * 3, y: 1, z: 0 }, true);
         heldCubeRef.current = null;
+        uiState.holding = false;
         throwCooldown.current = 0.3;
       }
     }
@@ -282,7 +300,7 @@ function GameWorld() {
         {/* === AimLine (outside Physics — visual only) === */}
         <AimLine stateRef={aimState} />
 
-        <Physics gravity={[0, -GRAVITY, 0]} timeStep={1 / 60}>
+        <Physics gravity={[0, -GRAVITY, 0]} timeStep={1 / 60} paused={paused}>
           {/* Invisible ground — collider only, no mesh */}
           <CuboidCollider
             position={[0, -2.5, 0]}
@@ -294,7 +312,7 @@ function GameWorld() {
           {/* Walls — at screen edges */}
           <CuboidCollider position={[-19, 6, 0]} args={[0.5, 20, 5]} />
           <CuboidCollider position={[19, 6, 0]} args={[0.5, 20, 5]} />
-          <CuboidCollider position={[0, 22, 0]} args={[20, 0.5, 5]} />
+          <CuboidCollider position={[0, 28, 0]} args={[20, 0.5, 5]} />
           <CuboidCollider position={[0, 6, -3]} args={[20, 20, 0.5]} />
           <CuboidCollider position={[0, 6, 3]} args={[20, 20, 0.5]} />
 
@@ -332,7 +350,7 @@ function PowerBarOverlay() {
           const p = uiState.power;
           bar.style.width = `${p * 100}%`;
           bar.style.backgroundColor =
-            p < 0.4 ? "#c8ff00" : p < 0.75 ? "#ff9900" : "#ff3333";
+            p < 0.4 ? "#ffffff" : p < 0.75 ? "#ff9900" : "#ff3333";
         } else {
           container.style.display = "none";
         }
@@ -368,7 +386,7 @@ type TutorialStep = {
 
 const TUTORIAL_STEPS: TutorialStep[] = [
   { label: "A / D", action: "to move", trigger: "key", keys: ["KeyA", "KeyD", "ArrowLeft", "ArrowRight"] },
-  { label: "SPACE", action: "to jump", trigger: "key", keys: ["Space"] },
+  { label: "SPACE", action: "to jump", trigger: "key", keys: ["Space", "KeyW", "ArrowUp"] },
   { label: "E", action: "to pick up", trigger: "pickup" },
   { label: "CLICK & DRAG", action: "to aim & throw", trigger: "throw" },
 ];
@@ -483,7 +501,22 @@ function TutorialOverlay() {
   );
 }
 
-export function GameScene() {
+function ScoreHint() {
+  return (
+    <div className="absolute top-8 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+      <p
+        className="font-mono text-sm uppercase tracking-[0.35em] text-white/50"
+        style={{
+          textShadow: "0 0 30px rgba(255,255,255,0.15)",
+        }}
+      >
+        Score to navigate
+      </p>
+    </div>
+  );
+}
+
+export function GameScene({ paused = false, onNavigate }: { paused?: boolean; onNavigate?: (href: string) => void }) {
   return (
     <div className="w-screen h-screen bg-black relative animate-fade-in">
       <Canvas
@@ -495,10 +528,11 @@ export function GameScene() {
       >
         <color attach="background" args={["#0a0a12"]} />
         <Suspense fallback={null}>
-          <GameWorld />
+          <GameWorld paused={paused} onNavigate={onNavigate} />
         </Suspense>
       </Canvas>
 
+      <ScoreHint />
       <TutorialOverlay />
       <PowerBarOverlay />
     </div>
