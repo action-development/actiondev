@@ -135,9 +135,6 @@ function Confetti({ active }: { active: number }) {
   );
 }
 
-/** Track cube IDs that have already scored to prevent double-counting */
-export const gatedCubeIds = new Set<string>();
-
 export function Basket({ position, onScore }: BasketProps) {
   const rimRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.PointLight>(null);
