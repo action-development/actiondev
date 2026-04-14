@@ -132,6 +132,9 @@ function Confetti({ active }: { active: number }) {
   );
 }
 
+/** Track cube IDs that have already scored to prevent double-counting */
+export const gatedCubeIds = new Set<string>();
+
 export function Basket({ position, onScore }: BasketProps) {
   const rimRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.PointLight>(null);
@@ -157,9 +160,11 @@ export function Basket({ position, onScore }: BasketProps) {
     const userData = rigidBodyObject.userData as { pageData?: PageCubeData } | undefined;
     if (!userData?.pageData) return;
 
-    // Only count scores for cubes the player actively threw
+    // Only count scores for cubes the player actively threw, and prevent double-counting
     if (!thrownCubeIds.has(userData.pageData.id)) return;
+    if (gatedCubeIds.has(userData.pageData.id)) return;
     thrownCubeIds.delete(userData.pageData.id);
+    gatedCubeIds.add(userData.pageData.id);
 
     setConfettiBurst((c) => c + 1);
     onScore?.(userData.pageData);

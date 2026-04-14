@@ -9,15 +9,15 @@ export function ContentLayout({ children }: { children: React.ReactNode }) {
     <SmoothScroll>
       <div className="relative min-h-screen bg-background">
         <Header />
-        <main className="pt-24">{children}</main>
+        <main id="main" className="pt-20">{children}</main>
         <Footer />
-        {/* Film grain overlay — subtle texture connecting to the cosmic void */}
+        {/* Film grain overlay — lightweight static noise */}
         <div
-          className="pointer-events-none fixed inset-0 z-[100]"
+          className="pointer-events-none fixed inset-0 z-[100] opacity-[0.03]"
           aria-hidden="true"
           style={{
-            opacity: 0.03,
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            backgroundImage: `url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAElBMVEUAAAAAAAAAAAAAAAAAAAAAAADgKxmiAAAABnRSTlMFBQUFBQWoaCLuAAAASUlEQVQ4y2NggANGJQYoYHZiBANmBxCLwQnCYnYCsRicICxGJwgLBBidICwQgKpidAaxkACDk5OTE4QFVcvgBGIxO4O1MQAA7p8HJBI/vZAAAAAASUVORK5CYII=")`,
+            backgroundRepeat: "repeat",
           }}
         />
       </div>

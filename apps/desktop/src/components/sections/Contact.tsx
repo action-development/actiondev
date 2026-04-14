@@ -5,12 +5,12 @@ import { useGSAP } from "@gsap/react";
 import { gsap } from "@/lib/gsap-config";
 import dynamic from "next/dynamic";
 
-const FloatingCubeCanvas = dynamic(
-  () => import("@/components/canvas/FloatingCube").then((m) => m.FloatingCubeCanvas),
+const FloatingCubeLiteCanvas = dynamic(
+  () => import("@/components/canvas/FloatingCubeLite").then((m) => m.FloatingCubeLiteCanvas),
   { ssr: false }
 );
 
-import { CUBE_PATHS } from "@/components/canvas/FloatingCube";
+import { CUBE_PATHS } from "@/components/canvas/FloatingCubeLite";
 
 const AI_PROMPT = encodeURIComponent(
   "I want to understand what Action.dev is and what they do. They are a digital agency specializing in design and development, immersive web experiences with Three.js and React, brand identity, and growth services like SEO and CRO. Summarise their capabilities, notable work, and what makes them different: https://actiondev.es/"
@@ -46,51 +46,36 @@ const AI_ASSISTANTS = [
   { name: "Gemini", url: `https://www.google.com/search?q=${AI_PROMPT}&udm=50`, icon: GeminiIcon },
 ] as const;
 
+const inputClass =
+  "w-full rounded-xl border border-white/[0.06] bg-card px-5 py-4 text-sm text-foreground outline-none transition-all duration-300 placeholder:text-muted/60 focus:border-accent/40 focus:bg-card-hover focus:shadow-[0_0_0_1px_rgba(255,122,61,0.15)]";
+
 export function Contact() {
   const sectionRef = useRef<HTMLElement>(null);
-  // Progress always 0 — cube stays fixed, no scroll movement
   const cubeScrollRef = useRef({ progress: 0 });
 
   useGSAP(
     () => {
       const tl = gsap.timeline();
-      tl.from("[data-anim='label']", { y: 30, opacity: 0, duration: 0.6 })
-        .from(
-          "[data-anim='heading']",
-          { y: 80, opacity: 0, duration: 1 },
-          "-=0.3"
-        )
-        .from(
-          "[data-anim='rule']",
-          { scaleX: 0, transformOrigin: "left", duration: 0.8 },
-          "-=0.5"
-        )
-        .from(
-          "[data-anim='subtitle']",
-          { y: 20, opacity: 0, duration: 0.6 },
-          "-=0.4"
-        );
+      tl.from("[data-anim='heading']", { y: 60, opacity: 0, duration: 1, ease: "power3.out" })
+        .from("[data-anim='rule']", { scaleX: 0, transformOrigin: "left", duration: 0.8 }, "-=0.5")
+        .from("[data-anim='subtitle']", { y: 20, opacity: 0, duration: 0.6 }, "-=0.4");
 
-      const fields = gsap.utils.toArray(
-        "[data-anim='field']"
-      ) as HTMLElement[];
+      const fields = gsap.utils.toArray("[data-anim='field']") as HTMLElement[];
       fields.forEach((el, i) => {
         gsap.from(el, {
-          y: 40,
+          y: 30,
           opacity: 0,
           duration: 0.6,
-          delay: i * 0.08,
+          delay: i * 0.06,
           ease: "power3.out",
           scrollTrigger: { trigger: el, start: "top 92%" },
         });
       });
 
-      const infos = gsap.utils.toArray(
-        "[data-anim='info']"
-      ) as HTMLElement[];
+      const infos = gsap.utils.toArray("[data-anim='info']") as HTMLElement[];
       infos.forEach((el, i) => {
         gsap.from(el, {
-          y: 30,
+          y: 20,
           opacity: 0,
           duration: 0.6,
           delay: i * 0.1,
@@ -103,48 +88,46 @@ export function Contact() {
   );
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative overflow-hidden px-6 pb-32 pt-12"
-    >
-      <FloatingCubeCanvas scrollRef={cubeScrollRef} color="#ff6600" path={CUBE_PATHS.contact} position="absolute" />
+    <section ref={sectionRef} className="relative overflow-hidden px-6 pb-32 pt-16">
+      <FloatingCubeLiteCanvas scrollRef={cubeScrollRef} color="#ff6600" path={CUBE_PATHS.contact} position="absolute" />
+
       <div className="mx-auto max-w-7xl">
         {/* ── Title ── */}
-        <div className="mb-24">
+        <div className="mb-20">
           <h1
             data-anim="heading"
-            className="text-6xl font-bold tracking-tighter leading-[0.9] md:text-[7.5rem]"
+            className="text-5xl font-bold tracking-[-0.03em] leading-[1] md:text-[6.5rem]"
           >
             Let&apos;s build
             <br />
             something <span className="text-accent">great</span>
           </h1>
-          <div data-anim="rule" className="mt-8 h-px w-32 bg-accent" />
+          <div data-anim="rule" className="mt-8 h-px w-24 bg-accent/60" />
           <p
             data-anim="subtitle"
-            className="mt-6 max-w-md text-lg leading-relaxed text-muted"
+            className="mt-5 max-w-md text-base leading-relaxed text-muted"
           >
-            No commitment. We reply within 24h.
+            No commitment. We reply within 24 hours.
           </p>
         </div>
 
-        <div className="grid gap-16 md:grid-cols-5">
+        <div className="grid gap-16 lg:grid-cols-5">
           {/* ── Info Column ── */}
-          <div className="flex flex-col gap-10 md:col-span-2">
+          <div className="flex flex-col gap-10 lg:col-span-2">
             <div data-anim="info">
-              <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-accent">
+              <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
                 Email
               </p>
               <a
                 href="mailto:hello@action.dev"
-                className="text-xl font-medium transition-colors duration-300 hover:text-accent"
+                className="text-lg font-medium transition-colors duration-300 hover:text-accent"
               >
                 hello@action.dev
               </a>
             </div>
 
             <div data-anim="info">
-              <p className="mb-5 font-mono text-sm uppercase tracking-[0.2em] text-accent">
+              <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
                 Ask AI about us
               </p>
               <div className="flex gap-3">
@@ -154,9 +137,10 @@ export function Contact() {
                     href={ai.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-1 items-center justify-center gap-3 rounded-full border border-border px-4 py-4 text-base font-medium transition-all duration-300 hover:border-accent hover:text-accent hover:shadow-[0_0_20px_rgba(255,255,255,0.06)]"
+                    aria-label={`Ask ${ai.name} about Action`}
+                    className="flex flex-1 items-center justify-center gap-2.5 rounded-xl border border-white/[0.06] bg-card px-4 py-3.5 text-sm font-medium transition-all duration-300 hover:border-accent/20 hover:bg-card-hover hover:text-accent"
                   >
-                    <ai.icon className="h-5 w-5 shrink-0" />
+                    <ai.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                     {ai.name}
                   </a>
                 ))}
@@ -165,58 +149,46 @@ export function Contact() {
           </div>
 
           {/* ── Form ── */}
-          <form className="space-y-6 md:col-span-3">
-            <div data-anim="field" className="grid gap-6 md:grid-cols-2">
-              <input
-                type="text"
-                name="name"
-                placeholder="Name *"
-                required
-                className="rounded-xl border border-border bg-transparent px-5 py-4 text-sm outline-none transition-all duration-300 placeholder:text-muted/40 focus:border-accent focus:shadow-[0_0_0_1px_var(--accent)]"
-              />
-              <input
-                type="tel"
-                name="phone"
-                placeholder="Phone"
-                className="rounded-xl border border-border bg-transparent px-5 py-4 text-sm outline-none transition-all duration-300 placeholder:text-muted/40 focus:border-accent focus:shadow-[0_0_0_1px_var(--accent)]"
-              />
+          <form aria-label="Contact form" className="space-y-5 lg:col-span-3">
+            <div data-anim="field" className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label htmlFor="contact-name" className="sr-only">Name</label>
+                <input id="contact-name" type="text" name="name" placeholder="Name *" required autoComplete="name" className={inputClass} />
+              </div>
+              <div>
+                <label htmlFor="contact-phone" className="sr-only">Phone</label>
+                <input id="contact-phone" type="tel" name="phone" placeholder="Phone" autoComplete="tel" className={inputClass} />
+              </div>
             </div>
             <div data-anim="field">
-              <input
-                type="email"
-                name="email"
-                placeholder="Email *"
-                required
-                className="w-full rounded-xl border border-border bg-transparent px-5 py-4 text-sm outline-none transition-all duration-300 placeholder:text-muted/40 focus:border-accent focus:shadow-[0_0_0_1px_var(--accent)]"
-              />
+              <label htmlFor="contact-email" className="sr-only">Email</label>
+              <input id="contact-email" type="email" name="email" placeholder="Email *" required autoComplete="email" className={inputClass} />
             </div>
             <div data-anim="field">
-              <input
-                type="url"
-                name="website"
-                placeholder="Website URL (if you already have one)"
-                className="w-full rounded-xl border border-border bg-transparent px-5 py-4 text-sm outline-none transition-all duration-300 placeholder:text-muted/40 focus:border-accent focus:shadow-[0_0_0_1px_var(--accent)]"
-              />
+              <label htmlFor="contact-website" className="sr-only">Website URL</label>
+              <input id="contact-website" type="url" name="website" placeholder="Website URL (if you already have one)" autoComplete="url" className={inputClass} />
             </div>
             <div data-anim="field">
+              <label htmlFor="contact-description" className="sr-only">Project description</label>
               <textarea
+                id="contact-description"
                 name="description"
                 placeholder="Tell us about your project — goals, timeline, budget range..."
                 required
-                rows={8}
-                className="w-full resize-none rounded-xl border border-border bg-transparent px-5 py-4 text-sm leading-relaxed outline-none transition-all duration-300 placeholder:text-muted/40 focus:border-accent focus:shadow-[0_0_0_1px_var(--accent)]"
+                rows={7}
+                className={`${inputClass} resize-none leading-relaxed`}
               />
             </div>
             <div
               data-anim="field"
-              className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center"
+              className="flex flex-col items-start justify-between gap-4 pt-2 sm:flex-row sm:items-center"
             >
-              <p className="text-xs text-muted/40">
-                * Required
+              <p className="text-xs text-muted/50">
+                * Required fields
               </p>
               <button
                 type="submit"
-                className="rounded-full bg-accent px-8 py-4 text-sm font-semibold text-background transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.12)]"
+                className="group relative rounded-full bg-accent px-8 py-4 text-sm font-semibold text-background transition-all duration-300 hover:shadow-[0_0_32px_rgba(255,122,61,0.25)]"
               >
                 Send message
               </button>
@@ -224,9 +196,6 @@ export function Contact() {
           </form>
         </div>
       </div>
-
-      {/* Decorative — subtle glow orb */}
-      <div className="pointer-events-none absolute -left-32 top-1/2 -z-10 h-[600px] w-[600px] rounded-full bg-accent/[0.02] blur-[150px]" />
     </section>
   );
 }
