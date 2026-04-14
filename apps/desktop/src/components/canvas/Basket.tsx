@@ -11,6 +11,9 @@ import * as THREE from "three";
 import type { PageCubeData } from "./PageCube";
 import { thrownCubeIds } from "./GameScene";
 
+/** IDs of cubes that have already passed through the gate — prevents double-scoring */
+export const gatedCubeIds = new Set<string>();
+
 /**
  * Basket — Basketball hoop with backboard, rim, net, and pole.
  *

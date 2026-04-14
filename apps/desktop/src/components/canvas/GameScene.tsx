@@ -110,6 +110,7 @@ function GameWorld({ paused = false, onNavigate }: { paused?: boolean; onNavigat
   }, []);
 
   const characterRef = useRef<CharacterHandle>(null);
+  const [isHolding, setIsHolding] = useState(false);
   const heldCubeRef = useRef<{ id: string; rb: RapierRigidBody } | null>(null);
   const throwCooldown = useRef(0);
 
@@ -172,6 +173,7 @@ function GameWorld({ paused = false, onNavigate }: { paused?: boolean; onNavigat
         rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
         rb.setAngvel({ x: 0, y: 0, z: 0 }, true);
         uiState.holding = true;
+        setIsHolding(true);
       } else if (heldCubeRef.current && !isAiming.current) {
         // DROP forward — nudge cube in facing direction so it doesn't float
         const dir = char.getFacingDirection();
@@ -179,6 +181,7 @@ function GameWorld({ paused = false, onNavigate }: { paused?: boolean; onNavigat
         rb.setLinvel({ x: dir * 3, y: 1, z: 0 }, true);
         heldCubeRef.current = null;
         uiState.holding = false;
+        setIsHolding(false);
         throwCooldown.current = 0.3;
       }
     }
@@ -251,6 +254,7 @@ function GameWorld({ paused = false, onNavigate }: { paused?: boolean; onNavigat
       uiState.power = 0;
       uiState.charging = false;
       uiState.holding = false;
+      setIsHolding(false);
       uiState.justThrew = true;
       return;
     }
@@ -296,7 +300,6 @@ function GameWorld({ paused = false, onNavigate }: { paused?: boolean; onNavigat
 
       {/* Shift entire game down so ground sits in the lower quarter */}
       <group position={[0, -4, 0]}>
-        <Decorations />
         {/* === AimLine (outside Physics — visual only) === */}
         <AimLine stateRef={aimState} />
 
@@ -309,14 +312,12 @@ function GameWorld({ paused = false, onNavigate }: { paused?: boolean; onNavigat
             friction={0.8}
           />
 
-          {/* Walls — at screen edges */}
-          <CuboidCollider position={[-19, 6, 0]} args={[0.5, 20, 5]} />
-          <CuboidCollider position={[19, 6, 0]} args={[0.5, 20, 5]} />
+          {/* Walls — ceiling + front/back (no side walls — character wraps around) */}
           <CuboidCollider position={[0, 28, 0]} args={[20, 0.5, 5]} />
           <CuboidCollider position={[0, 6, -3]} args={[20, 20, 0.5]} />
           <CuboidCollider position={[0, 6, 3]} args={[20, 20, 0.5]} />
 
-          <Character ref={characterRef} position={[-11, 0, 0]} keys={keys} />
+          <Character ref={characterRef} position={[-11, 0, 0]} keys={keys} holding={isHolding} />
 
           {PAGE_CUBES.map((cube, i) => (
             <PageCube
@@ -386,7 +387,8 @@ type TutorialStep = {
 
 const TUTORIAL_STEPS: TutorialStep[] = [
   { label: "A / D", action: "to move", trigger: "key", keys: ["KeyA", "KeyD", "ArrowLeft", "ArrowRight"] },
-  { label: "SPACE", action: "to jump", trigger: "key", keys: ["Space", "KeyW", "ArrowUp"] },
+  { label: "W / S", action: "to rotate", trigger: "key", keys: ["KeyW", "KeyS", "ArrowUp", "ArrowDown"] },
+  { label: "SPACE", action: "to jump", trigger: "key", keys: ["Space"] },
   { label: "E", action: "to pick up", trigger: "pickup" },
   { label: "CLICK & DRAG", action: "to aim & throw", trigger: "throw" },
 ];
@@ -532,8 +534,6 @@ export function GameScene({ paused = false, onNavigate }: { paused?: boolean; on
         </Suspense>
       </Canvas>
 
-      <ScoreHint />
-      <TutorialOverlay />
       <PowerBarOverlay />
     </div>
   );
