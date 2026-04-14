@@ -11,28 +11,17 @@ import { testimonials, type Testimonial } from "@/data/testimonials";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const FloatingCubeCanvas = dynamic(
-	() => import("@/components/canvas/FloatingCube").then((m) => m.FloatingCubeCanvas),
+const FloatingCubeLiteCanvas = dynamic(
+	() => import("@/components/canvas/FloatingCubeLite").then((m) => m.FloatingCubeLiteCanvas),
 	{ ssr: false }
 );
 
-// Import path separately to avoid dynamic import issues
-import { CUBE_PATHS } from "@/components/canvas/FloatingCube";
-
-/**
- * Testimonials — Hero headline transitions into split layout on scroll.
- *
- * 1. Page opens with "Trusted by visionaries" centered fullscreen
- * 2. On scroll, headline moves to left column (sticky)
- * 3. Cards appear on the right — initially showing challenge + author only
- * 4. As each card scrolls into view, the result quote reveals smoothly
- */
+import { CUBE_PATHS } from "@/components/canvas/FloatingCubeLite";
 
 function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
 	const expandRef = useRef<HTMLDivElement>(null);
 	const collapsed = useRef(false);
 
-	// Collapse on first render — before GSAP runs, the element is full size in the DOM
 	useGSAP(() => {
 		const expand = expandRef.current;
 		if (!expand || collapsed.current) return;
@@ -40,74 +29,88 @@ function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
 		collapsed.current = true;
 	}, { scope: expandRef });
 
-	// Expand when triggered
 	useGSAP(() => {
 		const expand = expandRef.current;
-		if (!expand || !expanded) return;
+		if (!expand) return;
 
-		// Temporarily set auto to measure real height
-		gsap.set(expand, { height: "auto" });
-		const realHeight = expand.offsetHeight;
-		gsap.set(expand, { height: 0 });
+		if (expanded) {
+			gsap.set(expand, { height: "auto", overflow: "hidden" });
+			const realHeight = expand.offsetHeight;
+			gsap.set(expand, { height: 0 });
 
-		gsap.to(expand, {
-			height: realHeight,
-			opacity: 1,
-			duration: 0.9,
-			ease: "power2.out",
-			onComplete: () => {
-				gsap.set(expand, { height: "auto", overflow: "visible" });
-			},
-		});
+			gsap.to(expand, {
+				height: realHeight,
+				opacity: 1,
+				delay: 0.4,
+				duration: 1.1,
+				ease: "power3.out",
+				onComplete: () => {
+					gsap.set(expand, { height: "auto", overflow: "visible" });
+				},
+			});
+		} else if (collapsed.current) {
+			gsap.to(expand, {
+				height: 0,
+				opacity: 0,
+				duration: 0.5,
+				ease: "power2.in",
+				overwrite: true,
+				onComplete: () => {
+					gsap.set(expand, { overflow: "hidden" });
+				},
+			});
+		}
 	}, { dependencies: [expanded] });
 
 	return (
-		<div
-			className="group relative rounded-2xl border border-white/[0.06] bg-[#0e0e0e] px-10 py-9 transition-all duration-500 hover:-translate-y-1 hover:border-white/[0.12] hover:bg-[#141414] hover:shadow-[0_8px_40px_rgba(255,255,255,0.03)]"
+		<article
+			className="group relative overflow-hidden rounded-2xl border border-white/[0.04] bg-card px-8 py-8 transition-all duration-500 hover:border-white/[0.08] hover:bg-card-hover md:px-10 md:py-10"
 		>
-			{/* Hover inner glow — top edge */}
-			<div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/0 to-transparent transition-all duration-500 group-hover:via-white/[0.15]" />
+			{/* Top line — reveals on hover */}
+			<div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/0 to-transparent transition-all duration-700 group-hover:via-white/[0.08]" />
 
-			{/* Challenge + Author — always visible */}
-			<div className="flex items-start justify-between gap-6">
-				<div className="flex-1">
-					<p className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-white/25">
-						The challenge
+			{/* Author row */}
+			<div className="mb-6 flex items-center gap-4">
+				<Image
+					src={t.avatar}
+					alt={`Photo of ${t.name}`}
+					width={48}
+					height={48}
+					sizes="48px"
+					loading="lazy"
+					className="h-12 w-12 rounded-full object-cover ring-2 ring-white/[0.06]"
+				/>
+				<div>
+					<h3 className="text-[15px] font-semibold text-foreground">{t.name}</h3>
+					<p className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
+						{t.project}
 					</p>
-					<p className="max-w-2xl text-base leading-relaxed text-white/50 italic">
-						&ldquo;{t.idea}&rdquo;
-					</p>
-				</div>
-				<div className="flex shrink-0 items-center gap-3 pt-4">
-					<Image
-						src={t.avatar}
-						alt={t.name}
-						width={40}
-						height={40}
-						className="h-10 w-10 rounded-full object-cover ring-1 ring-white/10 transition-all duration-500 group-hover:ring-white/20"
-					/>
-					<div>
-						<p className="text-sm font-semibold text-foreground/80">{t.name}</p>
-						<p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
-							{t.project}
-						</p>
-					</div>
 				</div>
 			</div>
 
-			{/* Expandable result — grows downward on scroll */}
+			{/* Challenge */}
+			<div>
+				<p className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-white/40">
+					The challenge
+				</p>
+				<p className="max-w-2xl text-[15px] leading-[1.7] text-white/50">
+					&ldquo;{t.idea}&rdquo;
+				</p>
+			</div>
+
+			{/* Expandable result */}
 			<div ref={expandRef}>
-				<div className="mt-7 h-px w-full bg-white/[0.08]" />
-				<div className="pt-7">
-					<p className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-white/25">
+				<div className="mb-6 mt-6 h-px w-full bg-white/[0.05]" />
+				<div>
+					<p className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-white/40">
 						What they said
 					</p>
-					<p className="max-w-2xl text-xl font-medium leading-[1.5] tracking-tight text-foreground/90">
+					<p className="max-w-2xl text-lg font-medium leading-[1.6] tracking-tight text-foreground/90">
 						&ldquo;{t.quote}&rdquo;
 					</p>
 				</div>
 			</div>
-		</div>
+		</article>
 	);
 }
 
@@ -122,7 +125,6 @@ export function Testimonials() {
 	);
 	const cubeScrollRef = useRef({ progress: 0 });
 
-	// Cube scroll progress
 	useEffect(() => {
 		const section = sectionRef.current;
 		if (!section) return;
@@ -146,7 +148,6 @@ export function Testimonials() {
 		const headline = headlineRef.current;
 		if (!hero || !headline) return;
 
-		// Headline animation: center → left
 		const maxW = 1280;
 		const targetLeft = Math.max(24, (window.innerWidth - maxW) / 2);
 		const targetTop = 128;
@@ -168,16 +169,21 @@ export function Testimonials() {
 			},
 		});
 
-		// Single scroll listener — checks each card's real-time position
 		const checkCards = () => {
-			const threshold = window.innerHeight * 0.55;
+			const vh = window.innerHeight;
+			const expandAt = vh * 0.7;
+			const collapseAt = vh * 0.9;
 			let changed = false;
 
 			cardRefs.current.forEach((card, i) => {
-				if (!card || expandedSet.current.has(i)) return;
+				if (!card) return;
 				const rect = card.getBoundingClientRect();
-				if (rect.top < threshold) {
+
+				if (!expandedSet.current.has(i) && rect.top < expandAt) {
 					expandedSet.current.add(i);
+					changed = true;
+				} else if (expandedSet.current.has(i) && rect.top > collapseAt) {
+					expandedSet.current.delete(i);
 					changed = true;
 				}
 			});
@@ -199,12 +205,10 @@ export function Testimonials() {
 
 	return (
 		<div ref={sectionRef}>
-			<FloatingCubeCanvas scrollRef={cubeScrollRef} color="#ec4899" path={CUBE_PATHS.reviews} />
+			<FloatingCubeLiteCanvas scrollRef={cubeScrollRef} color="#ec4899" path={CUBE_PATHS.reviews} />
 
-			{/* ── Hero spacer ── */}
 			<div ref={heroRef} className="h-screen" />
 
-			{/* ── Headline: fixed, starts centered, animates to left ── */}
 			<h2
 				ref={headlineRef}
 				className="fixed left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 text-center text-6xl font-bold leading-[0.95] tracking-tighter will-change-transform md:text-8xl"
@@ -214,10 +218,9 @@ export function Testimonials() {
 				<span className="text-accent">visionaries</span>
 			</h2>
 
-			{/* ── Cards section ── */}
 			<div className="relative z-[2] px-6 pb-[50vh]">
 				<div className="mx-auto max-w-7xl md:pl-[40%]">
-					<div className="flex flex-col gap-16">
+					<div className="flex flex-col gap-8">
 						{testimonials.map((t, i) => (
 							<div
 								key={t.id}

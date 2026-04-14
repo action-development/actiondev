@@ -12,8 +12,8 @@ const Carousel3D = dynamic(
 	{ ssr: false }
 );
 
-const FloatingCubeCanvas = dynamic(
-	() => import("@/components/canvas/FloatingCube").then((m) => m.FloatingCubeCanvas),
+const FloatingCubeLiteCanvas = dynamic(
+	() => import("@/components/canvas/FloatingCubeLite").then((m) => m.FloatingCubeLiteCanvas),
 	{ ssr: false }
 );
 
@@ -22,9 +22,9 @@ gsap.registerPlugin(ScrollTrigger);
 // --- Constants ──────────────────────────────────────────────────────────────
 
 const NUM = projects.length;
-const ANGLE_STEP = 65;
+const ANGLE_STEP = 75;
 const TOTAL_ROTATION = (NUM - 1) * ANGLE_STEP;
-const Y_STEP = 270;
+const Y_STEP = 280;
 const TOTAL_Y = (NUM - 1) * Y_STEP;
 
 // --- Sub-components (DOM overlays) ──────────────────────────────────────────
@@ -154,29 +154,11 @@ export function Projects() {
 		return () => ctx.revert();
 	}, []);
 
-	// --- Page-wide scroll progress for floating cube ---
+	// --- All scroll animations (single context, fewer ScrollTrigger instances) ---
 	useEffect(() => {
 		const wrapper = wrapperRef.current;
-		if (!wrapper) return;
-
-		const ctx = gsap.context(() => {
-			ScrollTrigger.create({
-				trigger: wrapper,
-				start: "top top",
-				end: "bottom bottom",
-				onUpdate: (self) => {
-					cubeScrollRef.current.progress = self.progress;
-				},
-			});
-		});
-
-		return () => ctx.revert();
-	}, []);
-
-	// --- Carousel scroll animations ---
-	useEffect(() => {
 		const section = sectionRef.current;
-		if (!section) return;
+		if (!wrapper || !section) return;
 
 		const indicator = indicatorRef.current;
 		const bar = progressBarRef.current;
@@ -185,6 +167,17 @@ export function Projects() {
 		if (indicator) indicator.textContent = projects[0].title;
 
 		const ctx = gsap.context(() => {
+			// Page-wide progress for floating cube
+			ScrollTrigger.create({
+				trigger: wrapper,
+				start: "top top",
+				end: "bottom bottom",
+				onUpdate: (self) => {
+					cubeScrollRef.current.progress = self.progress;
+				},
+			});
+
+			// Carousel rotation + UI overlays (single trigger)
 			ScrollTrigger.create({
 				trigger: section,
 				start: "top top",
@@ -194,11 +187,9 @@ export function Projects() {
 					const progress = self.progress;
 					const rotation = progress * TOTAL_ROTATION;
 
-					// Update shared scroll state for Three.js
 					scrollRef.current.rotation = rotation;
 					scrollRef.current.y = progress * TOTAL_Y;
 
-					// Indicator — only on index change
 					const idx = Math.round(rotation / ANGLE_STEP) % NUM;
 					if (idx !== lastIndexRef.current) {
 						lastIndexRef.current = idx;
@@ -207,10 +198,8 @@ export function Projects() {
 						}
 					}
 
-					// Progress bar
 					if (bar) bar.style.transform = `scaleY(${progress})`;
 
-					// Progress label
 					const pct = Math.round(progress * 100);
 					if (pct !== lastPercentRef.current) {
 						lastPercentRef.current = pct;
@@ -240,7 +229,7 @@ export function Projects() {
 	return (
 		<div ref={wrapperRef}>
 			{/* Floating cube — scroll-driven, drifts behind all content */}
-			<FloatingCubeCanvas scrollRef={cubeScrollRef} />
+			<FloatingCubeLiteCanvas scrollRef={cubeScrollRef} />
 
 			{/* Hero headline — text reveals on load, splits on scroll */}
 			<div
@@ -290,17 +279,18 @@ export function Projects() {
 			<section
 				id="projects"
 				ref={sectionRef}
+				aria-label="Featured projects showcase"
 				className="relative z-[2]"
-				style={{ height: `${200 + NUM * 40}vh` }}
+				style={{ height: `${200 + NUM * 55}vh` }}
 			>
 				{/* Gradient transitions */}
 				<div
 					aria-hidden
-					className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[30vh] bg-gradient-to-b from-neutral-950 to-transparent"
+					className="pointer-events-none absolute inset-x-0 top-0 z-[0] h-[30vh] bg-gradient-to-b from-neutral-950 to-transparent"
 				/>
 				<div
 					aria-hidden
-					className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[30vh] bg-gradient-to-t from-neutral-950 to-transparent"
+					className="pointer-events-none absolute inset-x-0 bottom-0 z-[0] h-[30vh] bg-gradient-to-t from-neutral-950 to-transparent"
 				/>
 
 				<div className="sticky top-0 h-screen overflow-hidden">
@@ -309,7 +299,7 @@ export function Projects() {
 
 				{/* Section label */}
 				<div className="absolute right-8 top-20 z-20 hidden items-center gap-3 md:flex">
-					<span className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/25">
+					<span className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/50">
 						Projects
 					</span>
 					<span className="h-px w-6 bg-white/15" />
