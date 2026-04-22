@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { gsap } from "gsap";
+import { gsap } from "@/lib/gsap-config";
+import { EASING, DURATION } from "@/lib/animations";
 import { GameScene } from "@/components/canvas/GameScene";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
@@ -19,15 +20,11 @@ export function GameLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const isHome = pathname === "/";
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(
+    () => typeof window !== "undefined" && !sessionStorage.getItem(SESSION_KEY)
+  );
   const overlayRef = useRef<HTMLDivElement>(null);
   const transitioning = useRef(false);
-
-  useEffect(() => {
-    if (!sessionStorage.getItem(SESSION_KEY)) {
-      setLoading(true);
-    }
-  }, []);
 
   const handleComplete = useCallback(() => {
     sessionStorage.setItem(SESSION_KEY, "1");
@@ -45,10 +42,11 @@ export function GameLayout({ children }: { children: React.ReactNode }) {
 
     // Small delay so the new page has rendered behind the overlay
     const timer = setTimeout(() => {
+      gsap.killTweensOf(overlay);
       gsap.to(overlay, {
         opacity: 0,
-        duration: 0.7,
-        ease: "power2.out",
+        duration: DURATION.OVERLAY,
+        ease: EASING.ENTER,
         onComplete: () => {
           overlay.style.display = "none";
           overlay.style.opacity = "1";
@@ -70,10 +68,11 @@ export function GameLayout({ children }: { children: React.ReactNode }) {
       overlay.style.display = "block";
       overlay.style.clipPath = "circle(0% at 50% 50%)";
 
+      gsap.killTweensOf(overlay);
       gsap.to(overlay, {
         clipPath: "circle(100% at 50% 50%)",
-        duration: 0.6,
-        ease: "power2.in",
+        duration: DURATION.DEFAULT,
+        ease: EASING.EXIT,
         onComplete: () => {
           router.push(href);
         },

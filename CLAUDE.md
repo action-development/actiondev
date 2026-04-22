@@ -262,3 +262,19 @@ pnpm build         → exitoso
 ## [MCPS] MCPs
 
 **`context7`** — dudas sobre APIs del stack (Next.js, React, Three.js, GSAP, Tailwind, Lenis, R3F, Drei). Añadir `use context7` al prompt.
+
+---
+
+## [TOKEN-OPT] Optimizaciones de eficiencia (v2)
+
+### Skills — jerarquía de invocación
+- UI general: `frontend-design` cubre accesibilidad, composición y Tailwind. No invocar `web-design-guidelines`, `vercel-composition-patterns` ni `tailwind-css-patterns` a menos que el prompt sea específicamente una auditoría o refactor de props.
+- Dudas de API: `context7` primero. Solo WebSearch si context7 no tiene la respuesta.
+
+### MCPs — uso eficiente
+- Supabase: agrupar queries con `Promise.all([...])` cuando sean independientes. Nunca secuencial si no hay dependencia.
+- No usar `mcp__magic__*` para UI — usar skill `frontend-design`.
+- No usar `mcp__ide__getDiagnostics` por defecto — solo si hay un error concreto que diagnosticar.
+
+### Sesión nueva — lectura inicial máxima 3 archivos
+Al iniciar trabajo en un feature sin contexto previo: leer `next.config.js` + `package.json` + el archivo de entry point afectado. No más.

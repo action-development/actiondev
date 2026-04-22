@@ -1,23 +1,23 @@
 "use client";
 
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { gsap, ScrollTrigger } from "@/lib/gsap-config";
 import dynamic from "next/dynamic";
 import { type RefObject, useEffect, useRef } from "react";
 import { CardBackgroundPreview } from "@/components/effects/card-background-preview";
+import { AccentWord } from "@/components/ui/AccentWord";
 import { projects } from "@/data/projects";
 
 const Carousel3D = dynamic(
 	() => import("@/components/effects/carousel-3d").then((m) => m.Carousel3D),
-	{ ssr: false }
+	{
+		ssr: false,
+		loading: () => (
+			<div className="absolute inset-0 flex items-center justify-center">
+				<span className="font-mono text-xs text-foreground/20 animate-pulse">Loading projects…</span>
+			</div>
+		),
+	}
 );
-
-const FloatingCubeLiteCanvas = dynamic(
-	() => import("@/components/canvas/FloatingCubeLite").then((m) => m.FloatingCubeLiteCanvas),
-	{ ssr: false }
-);
-
-gsap.registerPlugin(ScrollTrigger);
 
 // --- Constants ──────────────────────────────────────────────────────────────
 
@@ -38,7 +38,7 @@ function CentralColumn({ textRef }: { textRef: RefObject<HTMLSpanElement | null>
 			>
 				<span
 					ref={textRef}
-					className="block font-mono font-bold leading-[0.75] tracking-[-0.05em] text-white/[0.12] will-change-transform"
+					className="block font-mono font-bold leading-[0.75] tracking-[-0.05em] text-foreground/[0.12] will-change-transform"
 					style={{
 						writingMode: "vertical-rl",
 						textOrientation: "mixed",
@@ -57,12 +57,12 @@ function CentralColumn({ textRef }: { textRef: RefObject<HTMLSpanElement | null>
 function ProjectIndicator({ nameRef }: { nameRef: RefObject<HTMLSpanElement | null> }) {
 	return (
 		<div className="absolute bottom-8 right-8 z-20 hidden items-center gap-4 md:flex">
-			<span className="font-mono text-xs text-white/30">&lt;&lt;</span>
+			<span className="font-mono text-xs text-foreground/30">&lt;&lt;</span>
 			<span
 				ref={nameRef}
-				className="min-w-[140px] text-center font-mono text-[11px] uppercase tracking-[0.2em] text-white/50"
+				className="min-w-[140px] text-center font-mono text-[11px] uppercase tracking-[0.2em] text-foreground/50"
 			/>
-			<span className="font-mono text-xs text-white/30">&gt;&gt;</span>
+			<span className="font-mono text-xs text-foreground/30">&gt;&gt;</span>
 		</div>
 	);
 }
@@ -76,14 +76,14 @@ function ProgressBar({
 }) {
 	return (
 		<div className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-center gap-1 md:flex">
-			<div className="h-32 w-px overflow-hidden rounded-full bg-white/10">
+			<div className="h-32 w-px overflow-hidden rounded-full bg-[var(--hairline-strong)]">
 				<div
 					ref={barRef}
-					className="h-full w-full origin-top rounded-full bg-white/40"
+					className="h-full w-full origin-top rounded-full bg-foreground/50"
 					style={{ transform: "scaleY(0)" }}
 				/>
 			</div>
-			<span ref={labelRef} className="mt-1 font-mono text-[9px] text-white/30">
+			<span ref={labelRef} className="mt-1 font-mono text-[9px] text-foreground/30">
 				0%
 			</span>
 		</div>
@@ -108,8 +108,6 @@ export function Projects() {
 
 	// Mutable scroll state shared with Three.js scenes (no re-renders)
 	const scrollRef = useRef({ rotation: 0, y: 0 });
-	// Page-wide scroll progress for the floating cube (0→1 over entire page)
-	const cubeScrollRef = useRef({ progress: 0 });
 
 	// --- Hero headline animations ---
 	useEffect(() => {
@@ -167,16 +165,6 @@ export function Projects() {
 		if (indicator) indicator.textContent = projects[0].title;
 
 		const ctx = gsap.context(() => {
-			// Page-wide progress for floating cube
-			ScrollTrigger.create({
-				trigger: wrapper,
-				start: "top top",
-				end: "bottom bottom",
-				onUpdate: (self) => {
-					cubeScrollRef.current.progress = self.progress;
-				},
-			});
-
 			// Carousel rotation + UI overlays (single trigger)
 			ScrollTrigger.create({
 				trigger: section,
@@ -228,16 +216,13 @@ export function Projects() {
 
 	return (
 		<div ref={wrapperRef}>
-			{/* Floating cube — scroll-driven, drifts behind all content */}
-			<FloatingCubeLiteCanvas scrollRef={cubeScrollRef} />
-
 			{/* Hero headline — text reveals on load, splits on scroll */}
 			<div
 				ref={heroRef}
-				className="relative z-[2] flex h-[80vh] flex-col items-center justify-center overflow-hidden px-6"
+				className="relative z-[2] flex h-[80vh] flex-col items-center justify-center overflow-hidden container-editorial"
 				style={{ perspective: "600px" }}
 			>
-				<h1 className="max-w-5xl text-center text-[clamp(2.8rem,7vw,6.5rem)] font-extrabold leading-[0.95] tracking-[-0.04em] text-white">
+				<h1 className="display-xl max-w-5xl text-center text-foreground">
 					<span ref={line1Ref} className="block will-change-transform">
 						{"Transform your ideas".split(" ").map((word, i) => (
 							<span
@@ -251,33 +236,23 @@ export function Projects() {
 						))}
 					</span>
 					<span ref={line2Ref} className="block will-change-transform">
-						{"into".split(" ").map((word, i) => (
-							<span
-								key={`b-${i}`}
-								data-word
-								className="inline-block"
-								style={{ marginRight: "0.25em" }}
-							>
-								{word}
-							</span>
-						))}
-						<span data-word className="inline-block italic">
-							sales
+						<span data-word className="inline-block" style={{ marginRight: "0.25em" }}>
+							into
+						</span>
+						<span data-word className="inline-block">
+							<AccentWord>sales</AccentWord>
 						</span>
 					</span>
 				</h1>
 			</div>
 
-			<div className="relative z-[2] flex items-center justify-center gap-6 pb-24">
-				<span className="h-px w-16 bg-white/15" />
-				<span className="font-mono text-sm uppercase tracking-[0.3em] text-white/40">
-					Selected Work
-				</span>
-				<span className="h-px w-16 bg-white/15" />
+			<div className="relative z-[2] flex items-center justify-center gap-6 pb-[calc(var(--section-py)/2)]">
+				<span className="h-px w-16 bg-[var(--hairline-strong)]" />
+				<span className="micro-label text-foreground/50">Selected Work</span>
+				<span className="h-px w-16 bg-[var(--hairline-strong)]" />
 			</div>
 
 			<section
-				id="projects"
 				ref={sectionRef}
 				aria-label="Featured projects showcase"
 				className="relative z-[2]"
@@ -299,10 +274,8 @@ export function Projects() {
 
 				{/* Section label */}
 				<div className="absolute right-8 top-20 z-20 hidden items-center gap-3 md:flex">
-					<span className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/50">
-						Projects
-					</span>
-					<span className="h-px w-6 bg-white/15" />
+					<span className="micro-label text-foreground/60">Projects</span>
+					<span className="h-px w-6 bg-[var(--hairline-strong)]" />
 				</div>
 
 				<CentralColumn textRef={columnTextRef} />

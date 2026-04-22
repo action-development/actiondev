@@ -1,15 +1,5 @@
-import { ContentLayout } from "@/components/layout/ContentLayout";
-import { Projects } from "@/components/sections/Projects";
-
-export const metadata = {
-  title: "Work — Action",
-  description: "Selected projects from our digital agency.",
-};
+import { redirect } from "next/navigation";
 
 export default function ProjectsPage() {
-  return (
-    <ContentLayout>
-      <Projects />
-    </ContentLayout>
-  );
+  redirect("/#projects");
 }

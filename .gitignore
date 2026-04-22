@@ -39,3 +39,8 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Playwright
+apps/desktop/e2e/test-results/
+apps/desktop/e2e/report/
+apps/desktop/e2e/snapshots/

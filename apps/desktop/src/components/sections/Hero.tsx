@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { AccentWord } from "@/components/ui/AccentWord";
 
 const VIDEOS = [
   "/video-hero/optimized-1.mp4",
@@ -11,9 +12,9 @@ const VIDEOS = [
 export function Hero() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
 
-  const handleVideoEnded = () => {
+  const handleVideoEnded = useCallback(() => {
     setCurrentVideoIndex((prev) => (prev + 1) % VIDEOS.length);
-  };
+  }, []);
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -40,17 +41,14 @@ export function Hero() {
       {/* Dark overlay for better text readability */}
       <div className="absolute inset-0 z-10 bg-black/40 pointer-events-none" />
 
-      <div className="relative z-20 max-w-5xl text-center">
-        <p className="mb-4 text-sm uppercase tracking-widest text-white/80 font-medium">
-          Digital Agency
-        </p>
-        <h1 className="text-5xl font-bold leading-[1.05] tracking-tight md:text-8xl text-white">
+      <div className="relative z-20 container-editorial text-center">
+        <p className="micro-label mb-8 text-foreground/70">Digital Agency</p>
+        <h1 className="display-xl text-foreground">
           We craft digital
           <br />
-          experiences that{" "}
-          <span className="text-accent text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">matter</span>
+          experiences that <AccentWord>matter</AccentWord>
         </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-white/80">
+        <p className="lede mx-auto mt-10 text-foreground/80">
           Strategy, design, and development for brands that refuse to blend in.
         </p>
       </div>

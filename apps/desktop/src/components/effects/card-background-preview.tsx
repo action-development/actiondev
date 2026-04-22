@@ -34,6 +34,7 @@ export function CardBackgroundPreview() {
 		if (!visible || !preview?.videoElement || !videoRef.current) return;
 
 		const src = preview.videoElement;
+		// Capture ref value so cleanup uses the same element
 		const bg = videoRef.current;
 
 		// Set same source and sync time
@@ -50,12 +51,18 @@ export function CardBackgroundPreview() {
 			}
 		}, 500);
 
-		return () => clearInterval(interval);
+		return () => {
+			clearInterval(interval);
+			if (videoRef.current) {
+				videoRef.current.pause();
+				videoRef.current.src = "";
+			}
+		};
 	}, [visible, preview]);
 
 	return (
 		<div
-			className="fixed inset-0 z-0 transition-opacity duration-300"
+			className="fixed inset-0 z-0 transition-opacity"
 			style={{ opacity: visible ? 0.4 : 0, pointerEvents: "none" }}
 			aria-hidden="true"
 		>

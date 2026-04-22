@@ -2,34 +2,53 @@
 
 import { useEffect, useRef } from "react";
 
-/**
- * useKeyboard — Tracks which keys are currently held down.
- *
- * Returns a stable ref to a Set<string> of active key codes.
- * Using a ref (not state) avoids re-renders on every keypress —
- * the physics loop reads from the ref directly in useFrame.
- *
- * Key codes tracked: ArrowLeft, ArrowRight, ArrowUp, KeyA, KeyD,
- * KeyW, Space, KeyE (pickup/throw).
- */
+/** Keys whose browser default (page scroll) conflicts with gameplay. */
+const GAME_KEYS = new Set([
+  "Space",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+]);
 
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
+
+/**
+ * Tracks held key codes in a ref (no re-renders).
+ * Clears state on blur / tab hide to prevent keys getting stuck after Alt+Tab.
+ * Calls preventDefault on gameplay keys (Space, Arrows) so Space doesn't scroll
+ * the page — unless focus is in a form field.
+ */
 export function useKeyboard() {
   const keys = useRef(new Set<string>());
 
   useEffect(() => {
     const handleDown = (e: KeyboardEvent) => {
+      if (GAME_KEYS.has(e.code) && !isTypingTarget(e.target)) e.preventDefault();
       keys.current.add(e.code);
     };
     const handleUp = (e: KeyboardEvent) => {
+      if (GAME_KEYS.has(e.code) && !isTypingTarget(e.target)) e.preventDefault();
       keys.current.delete(e.code);
     };
+    const clear        = () => { keys.current.clear(); };
+    const onVisibility = () => { if (document.hidden) clear(); };
 
     window.addEventListener("keydown", handleDown);
     window.addEventListener("keyup", handleUp);
+    window.addEventListener("blur", clear);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       window.removeEventListener("keydown", handleDown);
       window.removeEventListener("keyup", handleUp);
+      window.removeEventListener("blur", clear);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 

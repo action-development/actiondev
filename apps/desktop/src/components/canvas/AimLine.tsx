@@ -34,8 +34,39 @@ const DOT_COUNT = 14;
 /** Physics steps to simulate between each dot (~0.1s per dot) */
 const STEPS_PER_DOT = 6;
 
+const sharedDotGeo = new THREE.SphereGeometry(1, 6, 6);
+
 /** Rapier damping factor: v *= 1 / (1 + damping * dt) each step */
 const DAMP_FACTOR = 1 / (1 + CUBE_LINEAR_DAMPING * PHYSICS_DT);
+
+/**
+ * Pure Euler trajectory prediction — mirrors Rapier's integrator exactly.
+ * Exported for unit testing: verify dots match real physics without Three.js.
+ */
+export function computeTrajectory(
+  originX: number, originY: number,
+  vx: number, vy: number,
+  dotCount = DOT_COUNT,
+  stepsPerDot = STEPS_PER_DOT,
+): Array<{ x: number; y: number }> {
+  const points: Array<{ x: number; y: number }> = [];
+  let cx = originX, cy = originY, cvx = vx, cvy = vy;
+  for (let i = 0; i < dotCount; i++) {
+    if (i === 0) {
+      points.push({ x: cx, y: cy });
+    } else {
+      for (let step = 0; step < stepsPerDot; step++) {
+        cvy -= GRAVITY * PHYSICS_DT;
+        cvx *= DAMP_FACTOR;
+        cvy *= DAMP_FACTOR;
+        cx  += cvx * PHYSICS_DT;
+        cy  += cvy * PHYSICS_DT;
+      }
+      points.push({ x: cx, y: cy });
+    }
+  }
+  return points;
+}
 
 export function AimLine({ stateRef }: AimLineProps) {
   const groupRef = useRef<THREE.Group>(null);
@@ -51,31 +82,14 @@ export function AimLine({ stateRef }: AimLineProps) {
     }
     group.visible = true;
 
-    // Initial velocity = impulse / mass (mass ≈ 1)
-    let vx = s.dirX * s.force;
-    let vy = s.dirY * s.force;
-    let x = s.originX;
-    let y = s.originY;
+    const vx = s.dirX * s.force;
+    const vy = s.dirY * s.force;
+    const points = computeTrajectory(s.originX, s.originY, vx, vy);
 
     for (let i = 0; i < DOT_COUNT; i++) {
       const child = group.children[i] as THREE.Mesh;
       if (!child) continue;
-
-      if (i === 0) {
-        // First dot sits exactly at the cube origin
-        child.position.set(x, y, 0.1);
-      } else {
-        // Simulate STEPS_PER_DOT physics steps (matches Rapier's integrator)
-        for (let step = 0; step < STEPS_PER_DOT; step++) {
-          vy -= GRAVITY * PHYSICS_DT;
-          vx *= DAMP_FACTOR;
-          vy *= DAMP_FACTOR;
-          x += vx * PHYSICS_DT;
-          y += vy * PHYSICS_DT;
-        }
-        child.position.set(x, y, 0.1);
-      }
-
+      child.position.set(points[i].x, points[i].y, 0.1);
       const fade = 1 - i / DOT_COUNT;
       child.scale.setScalar(0.04 + s.power * 0.06 * fade);
       (child.material as THREE.MeshBasicMaterial).opacity = fade * 0.8;
@@ -84,15 +98,9 @@ export function AimLine({ stateRef }: AimLineProps) {
 
   return (
     <group ref={groupRef}>
-      {Array.from({ length: DOT_COUNT }).map((_, i) => (
-        <mesh key={i}>
-          <sphereGeometry args={[1, 6, 6]} />
-          <meshBasicMaterial
-            color="#c8ff00"
-            transparent
-            opacity={0.8}
-            toneMapped={false}
-          />
+      {Array.from({ length: DOT_COUNT }, (_, i) => (
+        <mesh key={i} geometry={sharedDotGeo}>
+          <meshBasicMaterial color="#c8ff00" transparent opacity={0.8} toneMapped={false} />
         </mesh>
       ))}
     </group>

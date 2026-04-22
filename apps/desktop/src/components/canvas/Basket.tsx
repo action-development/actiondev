@@ -14,23 +14,19 @@ import type { PageCubeData } from "./PageCube";
 /**
  * Basket — Basketball hoop with backboard, rim, net, and pole.
  *
- * Structure (side view):
- *
- *    ┌──────────┐  ← backboard (tall rectangle)
- *    │          │
- *    │          │
- *    └──────────┘
- *        ○────      ← rim (torus) extending forward from backboard
- *       /||||\
- *      / |||| \     ← net (cone wireframe hanging from rim)
- *       ════
- *        │          ← pole (cylinder going to ground)
- *        │
- *   ─────┴──────    ← ground
- *
- * Physics: rim colliders (two small cuboids at rim edges to bounce cubes),
- * backboard collider, and a sensor below the rim to detect scores.
+ * Board dimensions (single source of truth):
+ *   BOARD_H × BOARD_W × BOARD_D, center at [rimRadius, BOARD_CY, 0]
+ *   Bezel rails wrap outside those edges, depth BEZEL_D > BOARD_D → lip catches light.
  */
+
+// ─── Board constants ────────────────────────────────────────────────────────
+const BOARD_H  = 5.2;   // height
+const BOARD_W  = 5.8;   // width (Z axis)
+const BOARD_D  = 0.18;  // depth (X axis)
+const BOARD_CY = 2.4;   // center Y — bottom ≈ rim level, top clears well above
+const BEZEL_T  = 0.20;  // rail cross-section (Y / Z)
+const BEZEL_D  = 0.28;  // rail depth (X) — protrudes past board face, catches point-light
+// ────────────────────────────────────────────────────────────────────────────
 
 interface BasketProps {
   position: [number, number, number];
@@ -39,7 +35,10 @@ interface BasketProps {
   onScore?: (pageData: PageCubeData) => void;
 }
 
-/** Generate net vertices as a cone of lines from rim to bottom */
+// Ring t-values — shared by rings render and cross-strand generator
+const NET_RING_TS = [0.15, 0.32, 0.50, 0.68, 0.86] as const;
+
+/** Generate net strand lines as a cone from rim edge to bottom center */
 function generateNetLines(segments: number, rimRadius: number, depth: number) {
   const lines: { start: [number, number, number]; end: [number, number, number] }[] = [];
   for (let i = 0; i < segments; i++) {
@@ -48,37 +47,62 @@ function generateNetLines(segments: number, rimRadius: number, depth: number) {
     const topZ = Math.sin(angle) * rimRadius;
     const bottomX = Math.cos(angle) * rimRadius * 0.3;
     const bottomZ = Math.sin(angle) * rimRadius * 0.3;
-    lines.push({
-      start: [topX, 0, topZ],
-      end: [bottomX, -depth, bottomZ],
-    });
+    lines.push({ start: [topX, 0, topZ], end: [bottomX, -depth, bottomZ] });
   }
   return lines;
 }
 
-const CONFETTI_COUNT = 60;
+/**
+ * Generate horizontal cross-strands connecting adjacent radial strands at each ring level.
+ * Makes the net look woven (diamond mesh) rather than a wireframe cage.
+ */
+function generateCrossStrands(
+  segments: number,
+  rimRadius: number,
+  netDepth: number,
+  ringTs: readonly number[],
+) {
+  const crosses: { pos: [number, number, number]; len: number; rotY: number }[] = [];
+  for (const t of ringTs) {
+    // Radius at this level follows the same taper as the main strands
+    const r = rimRadius * (1 - 0.7 * t);
+    const y = -t * netDepth;
+    for (let i = 0; i < segments; i++) {
+      const a0 = (i / segments) * Math.PI * 2;
+      const a1 = ((i + 1) / segments) * Math.PI * 2;
+      const x0 = Math.cos(a0) * r, z0 = Math.sin(a0) * r;
+      const x1 = Math.cos(a1) * r, z1 = Math.sin(a1) * r;
+      const dx = x1 - x0, dz = z1 - z0;
+      crosses.push({
+        pos: [(x0 + x1) / 2, y, (z0 + z1) / 2],
+        len: Math.sqrt(dx * dx + dz * dz),
+        rotY: Math.atan2(dx, dz),
+      });
+    }
+  }
+  return crosses;
+}
+
+// ─── Confetti ────────────────────────────────────────────────────────────────
+const CONFETTI_COUNT  = 60;
 const CONFETTI_COLORS = ["#c8ff00", "#6366f1", "#ec4899", "#22d3ee", "#ffffff", "#ff6600"];
 
 interface ConfettiParticle {
   x: number; y: number; z: number;
   vx: number; vy: number; vz: number;
-  rotSpeed: number;
-  scale: number;
-  color: THREE.Color;
-  life: number;
+  rotSpeed: number; scale: number; color: THREE.Color; life: number;
 }
 
 function Confetti({ active }: { active: number }) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const meshRef   = useRef<THREE.InstancedMesh>(null);
   const particles = useRef<ConfettiParticle[]>([]);
-  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const dummy     = useMemo(() => new THREE.Object3D(), []);
   const prevActive = useRef(0);
 
   useFrame((_, delta) => {
     const mesh = meshRef.current;
     if (!mesh) return;
 
-    // Spawn new burst when active changes
     if (active !== prevActive.current) {
       prevActive.current = active;
       for (let i = 0; i < CONFETTI_COUNT; i++) {
@@ -97,21 +121,16 @@ function Confetti({ active }: { active: number }) {
       }
     }
 
-    // Update particles
     const alive = particles.current;
     for (let i = alive.length - 1; i >= 0; i--) {
       const p = alive[i];
       p.life -= delta;
       if (p.life <= 0) { alive.splice(i, 1); continue; }
       p.vy -= 9 * delta;
-      p.x += p.vx * delta;
-      p.y += p.vy * delta;
-      p.z += p.vz * delta;
-      p.vx *= 0.98;
-      p.vz *= 0.98;
+      p.x += p.vx * delta; p.y += p.vy * delta; p.z += p.vz * delta;
+      p.vx *= 0.98; p.vz *= 0.98;
     }
 
-    // Write to instanced mesh
     mesh.count = Math.min(alive.length, CONFETTI_COUNT * 3);
     for (let i = 0; i < mesh.count; i++) {
       const p = alive[i];
@@ -134,44 +153,96 @@ function Confetti({ active }: { active: number }) {
   );
 }
 
-
-/**
- * Logo printed on the backboard face.
- * The webp is already RGBA with transparent background — no canvas processing needed.
- * Black marks on transparent → renders as black-on-white backboard, like a real sponsor logo.
- */
+// ─── Brand mark ──────────────────────────────────────────────────────────────
+// Logo: RGBA webp, black marks on transparent. Canvas-inverted to white marks.
+// Material: emissiveMap makes it glow like an LED panel — no lighting dependency.
 function BrandMark({ rimRadius }: { rimRadius: number }) {
-  const tex = useTexture("/logos/logo.webp");
+  const logoTex = useTexture("/logos/logo.webp");
+
+  const whiteTex = useMemo(() => {
+    const img = logoTex.image as HTMLImageElement;
+    if (!img?.width) return logoTex;
+    const canvas = document.createElement("canvas");
+    canvas.width  = img.naturalWidth  || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = data.data;
+    for (let i = 0; i < d.length; i += 4) {
+      d[i] = d[i + 1] = d[i + 2] = 255; // keep alpha, force marks to white
+    }
+    ctx.putImageData(data, 0, 0);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.needsUpdate = true;
+    return tex;
+  }, [logoTex]);
+
+  // Logo occupies upper portion of board: center at BOARD_CY + 0.8, leaving room for aim square
+  const logoPosY = BOARD_CY + 0.8;
+  // Width fills most of the board (5.8) with margin; ratio 2.5:1 → height = W/2.5
+  const logoW = 4.8;
+  const logoH = logoW / 2.5;
+
   return (
-    // Plane faces -X (toward player). Local X → world Z (width), local Y → world Y.
-    // Logo is 1563×625 = 2.5:1 → plane 5.2 wide × 2.08 tall preserves ratio.
-    <mesh position={[rimRadius - 0.082, 2.1, 0]} rotation={[0, -Math.PI / 2, 0]}>
-      <planeGeometry args={[3.8, 1.52]} />
+    <mesh position={[rimRadius - BOARD_D / 2 - 0.01, logoPosY, 0]} rotation={[0, -Math.PI / 2, 0]}>
+      <planeGeometry args={[logoW, logoH]} />
       <meshStandardMaterial
-        map={tex}
+        map={whiteTex}
+        emissiveMap={whiteTex}
+        emissive="#ffffff"
+        emissiveIntensity={0.55}
         transparent
         alphaTest={0.01}
-        roughness={0.85}
+        toneMapped={false}
         metalness={0}
+        roughness={1}
       />
     </mesh>
   );
 }
 
+// ─── Main component ──────────────────────────────────────────────────────────
 export function Basket({ position, thrownIds, gatedIds, onScore }: BasketProps) {
   const rimMatRef = useRef<THREE.MeshStandardMaterial>(null!);
   const glowRef   = useRef<THREE.PointLight>(null);
   const [confettiBurst, setConfettiBurst] = useState(0);
 
   const rimRadius = 1.8;
-  const netDepth = 2.0;
-  const netLines = useMemo(() => generateNetLines(12, rimRadius, netDepth), []);
+  const netDepth  = 2.0;
+
+  const netLines    = useMemo(() => generateNetLines(16, rimRadius, netDepth), []);
+  const crossStrands = useMemo(() => generateCrossStrands(16, rimRadius, netDepth, NET_RING_TS), []);
+
+  // Shared material for all 4 bezel rails + arm — dark copper, catches rim's orange point-light
+  const bezelMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+    color:     new THREE.Color("#883300"),
+    metalness: 0.9,
+    roughness: 0.12,
+  }), []);
+
+  // NBA targeting rectangle — thin ring around the aim point just above the rim
+  // Real dimensions ≈ 59 × 45 cm; scaled to scene units (~0.032 per cm)
+  const aimSquareGeo = useMemo(() => {
+    const oW = 0.95, oH = 0.72;  // outer half-dims
+    const iW = 0.88, iH = 0.65;  // inner half-dims (line thickness ≈ 0.07)
+    const shape = new THREE.Shape();
+    shape.moveTo(-oW, -oH); shape.lineTo(oW, -oH);
+    shape.lineTo(oW,  oH);  shape.lineTo(-oW, oH);
+    shape.closePath();
+    const hole = new THREE.Path();
+    hole.moveTo(-iW, -iH); hole.lineTo(iW, -iH);
+    hole.lineTo(iW,  iH);  hole.lineTo(-iW, iH);
+    hole.closePath();
+    shape.holes.push(hole);
+    return new THREE.ShapeGeometry(shape);
+  }, []);
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     const pulse = Math.sin(t * 3);
     if (rimMatRef.current) rimMatRef.current.emissiveIntensity = 1.5 + 0.5 * pulse;
-    if (glowRef.current)   glowRef.current.intensity  = 20 + 8 * pulse;
+    if (glowRef.current)   glowRef.current.intensity = 20 + 8 * pulse;
   });
 
   const handleScore = useCallback((payload: IntersectionEnterPayload) => {
@@ -179,28 +250,30 @@ export function Basket({ position, thrownIds, gatedIds, onScore }: BasketProps) 
     if (!rigidBodyObject) return;
     const userData = rigidBodyObject.userData as { pageData?: PageCubeData } | undefined;
     if (!userData?.pageData) return;
-
-    // Only count scores for cubes the player actively threw, and prevent double-counting
     if (!thrownIds.current.has(userData.pageData.id)) return;
     if (gatedIds.current.has(userData.pageData.id)) return;
     thrownIds.current.delete(userData.pageData.id);
     gatedIds.current.add(userData.pageData.id);
-
     setConfettiBurst((c) => c + 1);
     onScore?.(userData.pageData);
   }, [onScore]);
 
+  // Derived bezel positions (all from constants)
+  const topRailY    = BOARD_CY + BOARD_H / 2 + BEZEL_T / 2;
+  const botRailY    = BOARD_CY - BOARD_H / 2 - BEZEL_T / 2;
+  const sideRailZ   = BOARD_W / 2 + BEZEL_T / 2;
+  const topBotWidth = BOARD_W + 2 * BEZEL_T;
+
   return (
     <RigidBody type="fixed" position={position} colliders={false}>
-      {/* === Physics colliders === */}
-      {/* Backboard */}
-      <CuboidCollider args={[0.12, 2.5, 1.6]} position={[rimRadius, 1.5, 0]} restitution={0.4} />
-      {/* Rim left edge */}
+      {/* === Physics colliders (updated to match new board size) === */}
+      <CuboidCollider
+        args={[0.12, BOARD_H / 2, BOARD_W / 2]}
+        position={[rimRadius, BOARD_CY, 0]}
+        restitution={0.4}
+      />
       <CuboidCollider args={[0.12, 0.12, 0.12]} position={[-rimRadius, 0, 0]} restitution={0.6} />
-      {/* Rim right edge (near backboard) */}
       <CuboidCollider args={[0.12, 0.12, 0.12]} position={[rimRadius - 0.3, 0, 0]} restitution={0.6} />
-
-      {/* Score sensor — area below the rim */}
       <CuboidCollider
         args={[1.2, 0.3, 1.2]}
         position={[0, -1.0, 0]}
@@ -209,34 +282,66 @@ export function Basket({ position, thrownIds, gatedIds, onScore }: BasketProps) 
       />
 
       <group>
-        {/* ========== POLE — vertical cylinder to ground ========== */}
-        {/* Offset +X so the pole sits behind the backboard face, not through it */}
+        {/* ========== POLE ========== */}
         <mesh position={[rimRadius + 0.1, -2, 0]} castShadow>
           <cylinderGeometry args={[0.12, 0.12, 7, 8]} />
           <meshStandardMaterial color="#333333" metalness={0.8} roughness={0.3} />
         </mesh>
 
-        {/* ========== BACKBOARD — centered so rim sits near the bottom edge ========== */}
-        {/* y=2.0 center, height=4.5 → spans y=-0.25 to y=4.25 (rim at y=0, just clears bottom) */}
-        <mesh position={[rimRadius, 2.0, 0]} castShadow>
-          <boxGeometry args={[0.15, 4.5, 4.2]} />
-          <meshStandardMaterial color="#f0f0f0" metalness={0.05} roughness={0.7} />
+        {/* ========== BACKBOARD BEZEL — 4 physical metal rails ========== */}
+        {/* Same copper-dark material as arm — makes the whole structure feel designed */}
+        <mesh material={bezelMaterial} position={[rimRadius, topRailY, 0]} castShadow>
+          <boxGeometry args={[BEZEL_D, BEZEL_T, topBotWidth]} />
+        </mesh>
+        <mesh material={bezelMaterial} position={[rimRadius, botRailY, 0]} castShadow>
+          <boxGeometry args={[BEZEL_D, BEZEL_T, topBotWidth]} />
+        </mesh>
+        <mesh material={bezelMaterial} position={[rimRadius, BOARD_CY,  sideRailZ]} castShadow>
+          <boxGeometry args={[BEZEL_D, BOARD_H, BEZEL_T]} />
+        </mesh>
+        <mesh material={bezelMaterial} position={[rimRadius, BOARD_CY, -sideRailZ]} castShadow>
+          <boxGeometry args={[BEZEL_D, BOARD_H, BEZEL_T]} />
         </mesh>
 
-        {/* ========== BRAND LOGO — printed on backboard face ========== */}
+        {/* ========== BACKBOARD ========== */}
+        <mesh position={[rimRadius, BOARD_CY, 0]} castShadow>
+          <boxGeometry args={[BOARD_D, BOARD_H, BOARD_W]} />
+          <meshStandardMaterial
+            color="#0d0d1a"
+            emissive="#0a0a14"
+            emissiveIntensity={0.4}
+            metalness={0.2}
+            roughness={0.8}
+          />
+        </mesh>
+
+        {/* ========== BRAND LOGO — LED-panel emissive ========== */}
         <Suspense fallback={null}>
           <BrandMark rimRadius={rimRadius} />
         </Suspense>
 
-        {/* ========== ARM — horizontal bar from backboard to rim ========== */}
-        <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[rimRadius * 2, 0.1, 0.1]} />
-          <meshStandardMaterial color="#ff6600" metalness={0.9} roughness={0.2} />
+        {/* ========== AIMING RECTANGLE — NBA targeting square above rim ========== */}
+        <mesh
+          geometry={aimSquareGeo}
+          position={[rimRadius - BOARD_D / 2 - 0.01, 0.55, 0]}
+          rotation={[0, -Math.PI / 2, 0]}
+        >
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.55} toneMapped={false} />
         </mesh>
 
-        {/* ========== RIM — orange torus ========== */}
+        {/* ========== ARM — rim bracket to backboard, bezel material ========== */}
+        <mesh material={bezelMaterial} position={[0, 0, 0]} castShadow>
+          <boxGeometry args={[rimRadius * 2, 0.18, 0.18]} />
+        </mesh>
+
+        {/* Mounting bracket — small block where arm meets the rim body */}
+        <mesh material={bezelMaterial} position={[rimRadius - 0.14, -0.06, 0]} castShadow>
+          <boxGeometry args={[0.28, 0.20, 0.32]} />
+        </mesh>
+
+        {/* ========== RIM ========== */}
         <mesh position={[0, 0, 0]} rotation={[Math.PI * 0.5, 0, 0]}>
-          <torusGeometry args={[rimRadius, 0.06, 8, 32]} />
+          <torusGeometry args={[rimRadius, 0.08, 16, 48]} />
           <meshStandardMaterial
             ref={rimMatRef}
             color="#ff6600"
@@ -248,51 +353,54 @@ export function Basket({ position, thrownIds, gatedIds, onScore }: BasketProps) 
           />
         </mesh>
 
-        {/* ========== NET — vertical lines hanging from rim ========== */}
+        {/* ========== NET — 16 strands + 5 horizontal rings ========== */}
+        {/* Net strands — warm off-white, slightly thicker for visibility */}
         {netLines.map((line, i) => {
-          const sx = line.start[0];
-          const sy = line.start[1];
-          const sz = line.start[2];
-          const ex = line.end[0];
-          const ey = line.end[1];
-          const ez = line.end[2];
-          const mx = (sx + ex) / 2;
-          const my = (sy + ey) / 2;
-          const mz = (sz + ez) / 2;
+          const [sx, sy, sz] = line.start;
+          const [ex, ey, ez] = line.end;
+          const mx = (sx + ex) / 2, my = (sy + ey) / 2, mz = (sz + ez) / 2;
           const len = Math.sqrt((ex - sx) ** 2 + (ey - sy) ** 2 + (ez - sz) ** 2);
-
           return (
             <mesh
               key={`net-${i}`}
               position={[mx, my, mz]}
               rotation={[
-                Math.atan2(
-                  Math.sqrt((ex - sx) ** 2 + (ez - sz) ** 2),
-                  ey - sy
-                ),
+                Math.atan2(Math.sqrt((ex - sx) ** 2 + (ez - sz) ** 2), ey - sy),
                 Math.atan2(ex - sx, ez - sz),
                 0,
               ]}
             >
-              <cylinderGeometry args={[0.008, 0.008, len, 3]} />
-              <meshBasicMaterial color="#ffffff" transparent opacity={0.5} />
+              <cylinderGeometry args={[0.009, 0.009, len, 4]} />
+              <meshBasicMaterial color="#e8e4d8" transparent opacity={0.50} />
             </mesh>
           );
         })}
 
-        {/* Net horizontal rings */}
-        {[0.25, 0.55, 0.85].map((t, i) => (
+        {/* Cross-strands — connect adjacent radial strands at each ring level (woven mesh look) */}
+        {crossStrands.map((cs, i) => (
+          <mesh
+            key={`cross-${i}`}
+            position={cs.pos}
+            rotation={[Math.PI / 2, cs.rotY, 0]}
+          >
+            <cylinderGeometry args={[0.007, 0.007, cs.len, 4]} />
+            <meshBasicMaterial color="#e8e4d8" transparent opacity={0.38} />
+          </mesh>
+        ))}
+
+        {/* 5 horizontal rings — warm tint matches strands */}
+        {NET_RING_TS.map((t, i) => (
           <mesh
             key={`net-ring-${i}`}
             position={[0, -t * netDepth, 0]}
             rotation={[Math.PI * 0.5, 0, 0]}
           >
-            <torusGeometry args={[rimRadius * (1 - t * 0.65), 0.012, 4, 16]} />
-            <meshBasicMaterial color="#ffffff" transparent opacity={0.35} />
+            <torusGeometry args={[rimRadius * (1 - t * 0.65), 0.012, 6, 24]} />
+            <meshBasicMaterial color="#e8e4d8" transparent opacity={0.35} />
           </mesh>
         ))}
 
-        {/* ========== GLOW ========== */}
+        {/* ========== GLOW — orange pulse from rim ========== */}
         <pointLight
           ref={glowRef}
           position={[0, 0, 0.5]}
@@ -301,6 +409,19 @@ export function Basket({ position, thrownIds, gatedIds, onScore }: BasketProps) 
           distance={6}
           decay={2}
         />
+
+        {/* ========== FILL LIGHT — illuminates board face toward player ========== */}
+        {/* The scene's directional light hits the back/top of the board, not the front face.
+            This fill light sits in front and slightly above centre, giving the logo
+            and aiming square consistent visibility without washing out the orange glow. */}
+        <pointLight
+          position={[-1, BOARD_CY + 1, 1.5]}
+          color="#f0f6ff"
+          intensity={3}
+          distance={9}
+          decay={2}
+        />
+
         {/* ========== CONFETTI ========== */}
         <Confetti active={confettiBurst} />
       </group>

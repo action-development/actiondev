@@ -32,11 +32,16 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background"
     >
-      <p className="font-mono text-sm uppercase tracking-[0.3em] text-white/40">
-        Loading
-      </p>
+      <div className="flex flex-col items-center gap-6">
+        {/* Wordmark on loading — matches header + footer so the brand lands before the site does */}
+        <div className="flex items-baseline gap-1 font-mono text-[12px] font-bold uppercase tracking-[0.22em] text-foreground/70">
+          <span>Action</span>
+          <span aria-hidden className="text-accent">●</span>
+        </div>
+        <p className="micro-label text-foreground/40">Loading</p>
+      </div>
     </div>
   );
 }

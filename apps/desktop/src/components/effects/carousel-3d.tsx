@@ -28,18 +28,6 @@ const FADE_START_DEG = 90;
 
 const SETTLE_FRAMES = 20;
 
-// ─── Shared geometries ────────────────────────────────────────────────────
-
-const sharedPlaneGeo = new THREE.PlaneGeometry(CARD_W, CARD_H);
-const sharedImgGeo = new THREE.PlaneGeometry(IMG_W, IMG_H);
-const sharedEdgesGeo = new THREE.EdgesGeometry(sharedPlaneGeo);
-
-const sharedHitAreaMat = new THREE.MeshBasicMaterial({
-	transparent: true,
-	opacity: 0,
-	side: THREE.FrontSide,
-});
-
 // ─── Pre-render text overlay to CanvasTexture (replaces troika Text) ─────
 
 function createOverlayTexture(category: string, title: string): THREE.CanvasTexture {
@@ -85,10 +73,18 @@ function Card3D({
 	project,
 	index,
 	scrollRef,
+	sharedPlaneGeo,
+	sharedImgGeo,
+	sharedEdgesGeo,
+	sharedHitAreaMat,
 }: {
 	project: Project;
 	index: number;
 	scrollRef: React.RefObject<ScrollState>;
+	sharedPlaneGeo: THREE.PlaneGeometry;
+	sharedImgGeo: THREE.PlaneGeometry;
+	sharedEdgesGeo: THREE.EdgesGeometry;
+	sharedHitAreaMat: THREE.MeshBasicMaterial;
 }) {
 	const groupRef = useRef<THREE.Group>(null);
 	const frontGroupRef = useRef<THREE.Group>(null);
@@ -102,55 +98,24 @@ function Card3D({
 	const hoverOpacity = useRef(0);
 
 	const imageMat = useMemo(
-		() =>
-			new THREE.MeshBasicMaterial({
-				transparent: true,
-				opacity: 0,
-				toneMapped: false,
-				side: THREE.FrontSide,
-			}),
+		() => new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, toneMapped: false, side: THREE.FrontSide }),
 		[]
 	);
 	const darkMat = useMemo(
-		() =>
-			new THREE.MeshBasicMaterial({
-				color: "#000000",
-				transparent: true,
-				opacity: 0.15,
-				side: THREE.FrontSide,
-			}),
+		() => new THREE.MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.15, side: THREE.FrontSide }),
 		[]
 	);
 	const cardBaseMat = useMemo(
-		() =>
-			new THREE.MeshBasicMaterial({
-				color: "#0e0e11",
-				side: THREE.DoubleSide,
-				transparent: true,
-				opacity: 1,
-			}),
+		() => new THREE.MeshBasicMaterial({ color: "#0e0e11", side: THREE.DoubleSide, transparent: true, opacity: 1 }),
 		[]
 	);
 	const borderMat = useMemo(
-		() =>
-			new THREE.LineBasicMaterial({
-				color: "#ff7a3d",
-				transparent: true,
-				opacity: 0.07,
-			}),
+		() => new THREE.LineBasicMaterial({ color: "#c8ff00", transparent: true, opacity: 0.07 }),
 		[]
 	);
-
-	// Overlay: pre-rendered text as a single CanvasTexture (no troika)
 	const overlayMat = useMemo(() => {
 		const tex = createOverlayTexture(project.category, project.title);
-		return new THREE.MeshBasicMaterial({
-			map: tex,
-			transparent: true,
-			opacity: 0,
-			side: THREE.FrontSide,
-			depthWrite: false,
-		});
+		return new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, side: THREE.FrontSide, depthWrite: false });
 	}, [project.category, project.title]);
 
 	const { invalidate } = useThree();
@@ -359,6 +324,23 @@ function CarouselScene({
 	const settleFrames = useRef(0);
 	const { camera, size, gl, invalidate } = useThree();
 
+	const sharedPlaneGeo = useMemo(() => new THREE.PlaneGeometry(CARD_W, CARD_H), []);
+	const sharedImgGeo = useMemo(() => new THREE.PlaneGeometry(IMG_W, IMG_H), []);
+	const sharedEdgesGeo = useMemo(() => new THREE.EdgesGeometry(sharedPlaneGeo), [sharedPlaneGeo]);
+	const sharedHitAreaMat = useMemo(
+		() => new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.FrontSide }),
+		[]
+	);
+
+	useEffect(() => {
+		return () => {
+			sharedPlaneGeo.dispose();
+			sharedImgGeo.dispose();
+			sharedEdgesGeo.dispose();
+			sharedHitAreaMat.dispose();
+		};
+	}, [sharedPlaneGeo, sharedImgGeo, sharedEdgesGeo, sharedHitAreaMat]);
+
 	useEffect(() => {
 		if (camera instanceof THREE.PerspectiveCamera) {
 			const fov = 2 * Math.atan(size.height / 2 / CAM_Z) * (180 / Math.PI);
@@ -395,7 +377,16 @@ function CarouselScene({
 	return (
 		<group ref={groupRef}>
 			{projects.map((project, i) => (
-				<Card3D key={project.id} project={project} index={i} scrollRef={scrollRef} />
+				<Card3D
+					key={project.id}
+					project={project}
+					index={i}
+					scrollRef={scrollRef}
+					sharedPlaneGeo={sharedPlaneGeo}
+					sharedImgGeo={sharedImgGeo}
+					sharedEdgesGeo={sharedEdgesGeo}
+					sharedHitAreaMat={sharedHitAreaMat}
+				/>
 			))}
 		</group>
 	);

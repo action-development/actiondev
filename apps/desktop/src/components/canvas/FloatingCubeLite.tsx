@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, type MutableRefObject, Suspense } from "react";
+import { useRef, useEffect, useMemo, type MutableRefObject, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -28,33 +28,46 @@ interface PathDef {
 	z: { amp: number; cycles: number; offset?: number };
 }
 
-const sharedGeo = new THREE.BoxGeometry(SIZE, SIZE, SIZE);
-const sharedEdgesGeo = new THREE.EdgesGeometry(sharedGeo);
-
 function Cube({ scrollRef, color, path }: { scrollRef: MutableRefObject<{ progress: number }>; color: string; path: PathDef }) {
 	const groupRef = useRef<THREE.Group>(null);
 
-	const mat = useRef(
-		new THREE.MeshStandardMaterial({
-			color,
-			emissive: color,
-			emissiveIntensity: 0.15,
-			metalness: 0.9,
-			roughness: 0.15,
-			transparent: true,
-			opacity: 0.55,
-			toneMapped: false,
-			side: THREE.FrontSide,
-		})
+	const geo = useMemo(() => new THREE.BoxGeometry(SIZE, SIZE, SIZE), []);
+	const edgesGeo = useMemo(() => new THREE.EdgesGeometry(geo), [geo]);
+
+	const mat = useMemo(
+		() =>
+			new THREE.MeshStandardMaterial({
+				color,
+				emissive: color,
+				emissiveIntensity: 0.15,
+				metalness: 0.9,
+				roughness: 0.15,
+				transparent: true,
+				opacity: 0.55,
+				toneMapped: false,
+				side: THREE.FrontSide,
+			}),
+		[color]
 	);
 
-	const wireMat = useRef(
-		new THREE.LineBasicMaterial({
-			color,
-			transparent: true,
-			opacity: 0.15,
-		})
+	const wireMat = useMemo(
+		() =>
+			new THREE.LineBasicMaterial({
+				color,
+				transparent: true,
+				opacity: 0.15,
+			}),
+		[color]
 	);
+
+	useEffect(() => {
+		return () => {
+			mat.dispose();
+			wireMat.dispose();
+			geo.dispose();
+			edgesGeo.dispose();
+		};
+	}, [mat, wireMat, geo, edgesGeo]);
 
 	useFrame((state) => {
 		const group = groupRef.current;
@@ -75,8 +88,8 @@ function Cube({ scrollRef, color, path }: { scrollRef: MutableRefObject<{ progre
 
 	return (
 		<group ref={groupRef}>
-			<mesh geometry={sharedGeo} material={mat.current} />
-			<lineSegments geometry={sharedEdgesGeo} material={wireMat.current} />
+			<mesh geometry={geo} material={mat} />
+			<lineSegments geometry={edgesGeo} material={wireMat} />
 		</group>
 	);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -67,17 +67,24 @@ export function Starfield() {
     []
   );
 
+  useEffect(() => {
+    const mesh = meshRef.current;
+    return () => {
+      if (!mesh) return;
+      mesh.geometry.dispose();
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach((m) => m.dispose());
+      } else {
+        mesh.material.dispose();
+      }
+    };
+  }, []);
+
   // Reusable objects for the animation loop (render-avoid-allocations)
   const tempMatrix = useMemo(() => new THREE.Matrix4(), []);
   const tempPosition = useMemo(() => new THREE.Vector3(), []);
   const tempQuaternion = useMemo(() => new THREE.Quaternion(), []);
   const tempScale = useMemo(() => new THREE.Vector3(), []);
-
-  // Set initial instance matrices
-  useMemo(() => {
-    // This runs once — sets up the initial transforms
-    // Actual mesh assignment happens in the ref callback below
-  }, [matrices]);
 
   useFrame((state) => {
     const mesh = meshRef.current;
