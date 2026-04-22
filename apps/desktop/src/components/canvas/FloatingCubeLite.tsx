@@ -16,7 +16,7 @@ import * as THREE from "three";
  * - No pointLight
  */
 
-const SIZE = 2.0;
+const SIZE = 1.5;
 const ROT_SPEED = { x: 0.25, y: 0.35, z: 0.12 };
 
 export type { CubePath } from "@/components/canvas/FloatingCube";
@@ -28,7 +28,13 @@ interface PathDef {
 	z: { amp: number; cycles: number; offset?: number };
 }
 
-function Cube({ scrollRef, color, path }: { scrollRef: MutableRefObject<{ progress: number }>; color: string; path: PathDef }) {
+interface CubeScrollState {
+	progress: number;
+	/** Additive Y offset in Three.js units. Negative = lower on screen. */
+	yOffset?: number;
+}
+
+function Cube({ scrollRef, color, path }: { scrollRef: MutableRefObject<CubeScrollState>; color: string; path: PathDef }) {
 	const groupRef = useRef<THREE.Group>(null);
 
 	const geo = useMemo(() => new THREE.BoxGeometry(SIZE, SIZE, SIZE), []);
@@ -39,13 +45,14 @@ function Cube({ scrollRef, color, path }: { scrollRef: MutableRefObject<{ progre
 			new THREE.MeshStandardMaterial({
 				color,
 				emissive: color,
-				emissiveIntensity: 0.15,
-				metalness: 0.9,
-				roughness: 0.15,
+				emissiveIntensity: 0.9,
+				metalness: 0.1,
+				roughness: 0.3,
 				transparent: true,
-				opacity: 0.55,
+				opacity: 0.04,
 				toneMapped: false,
 				side: THREE.FrontSide,
+				depthWrite: false,
 			}),
 		[color]
 	);
@@ -55,7 +62,8 @@ function Cube({ scrollRef, color, path }: { scrollRef: MutableRefObject<{ progre
 			new THREE.LineBasicMaterial({
 				color,
 				transparent: true,
-				opacity: 0.15,
+				opacity: 0.65,
+				toneMapped: false,
 			}),
 		[color]
 	);
@@ -78,7 +86,7 @@ function Cube({ scrollRef, color, path }: { scrollRef: MutableRefObject<{ progre
 		const tau = Math.PI * 2;
 
 		group.position.x = Math.sin(p * tau * path.x.cycles) * path.x.amp + (path.x.offset ?? 0);
-		group.position.y = Math.sin(p * tau * path.y.cycles) * path.y.amp + (path.y.offset ?? 0);
+		group.position.y = Math.sin(p * tau * path.y.cycles) * path.y.amp + (path.y.offset ?? 0) + (scrollRef.current.yOffset ?? 0);
 		group.position.z = Math.sin(p * tau * path.z.cycles) * path.z.amp + (path.z.offset ?? 0);
 
 		group.rotation.x = t * ROT_SPEED.x;
@@ -88,6 +96,8 @@ function Cube({ scrollRef, color, path }: { scrollRef: MutableRefObject<{ progre
 
 	return (
 		<group ref={groupRef}>
+			{/* Point light travels with cube — soft glow, faces nearly invisible so light is the effect */}
+			<pointLight color={color} intensity={1.2} distance={12} decay={2} />
 			<mesh geometry={geo} material={mat} />
 			<lineSegments geometry={edgesGeo} material={wireMat} />
 		</group>
@@ -114,7 +124,7 @@ function ScrollInvalidator() {
 }
 
 interface FloatingCubeLiteProps {
-	scrollRef: MutableRefObject<{ progress: number }>;
+	scrollRef: MutableRefObject<CubeScrollState>;
 	color?: string;
 	path?: PathDef;
 	position?: "fixed" | "absolute";
@@ -145,8 +155,8 @@ export function FloatingCubeLiteCanvas({
 					renderer.compile(scene, camera);
 				}}
 			>
-				<ambientLight intensity={0.3} />
-				<directionalLight position={[5, 8, 6]} intensity={0.5} />
+				<ambientLight intensity={0.08} />
+				<directionalLight position={[5, 8, 6]} intensity={0.2} />
 				<ScrollInvalidator />
 				<Suspense fallback={null}>
 					{path && <Cube scrollRef={scrollRef} color={color} path={path} />}
