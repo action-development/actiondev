@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useMemo, useState, useCallback } from "react";
+import React, { Suspense, useRef, useMemo, useState, useCallback } from "react";
 import { useFrame } from "@react-three/fiber";
+import { useTexture } from "@react-three/drei";
 import {
   RigidBody,
   CuboidCollider,
@@ -9,10 +10,6 @@ import {
 } from "@react-three/rapier";
 import * as THREE from "three";
 import type { PageCubeData } from "./PageCube";
-import { thrownCubeIds } from "./GameScene";
-
-/** IDs of cubes that have already passed through the gate — prevents double-scoring */
-export const gatedCubeIds = new Set<string>();
 
 /**
  * Basket — Basketball hoop with backboard, rim, net, and pole.
@@ -37,6 +34,8 @@ export const gatedCubeIds = new Set<string>();
 
 interface BasketProps {
   position: [number, number, number];
+  thrownIds: React.RefObject<Set<string>>;
+  gatedIds: React.RefObject<Set<string>>;
   onScore?: (pageData: PageCubeData) => void;
 }
 
@@ -135,9 +134,33 @@ function Confetti({ active }: { active: number }) {
   );
 }
 
-export function Basket({ position, onScore }: BasketProps) {
-  const rimRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.PointLight>(null);
+
+/**
+ * Logo printed on the backboard face.
+ * The webp is already RGBA with transparent background — no canvas processing needed.
+ * Black marks on transparent → renders as black-on-white backboard, like a real sponsor logo.
+ */
+function BrandMark({ rimRadius }: { rimRadius: number }) {
+  const tex = useTexture("/logos/logo.webp");
+  return (
+    // Plane faces -X (toward player). Local X → world Z (width), local Y → world Y.
+    // Logo is 1563×625 = 2.5:1 → plane 5.2 wide × 2.08 tall preserves ratio.
+    <mesh position={[rimRadius - 0.082, 2.1, 0]} rotation={[0, -Math.PI / 2, 0]}>
+      <planeGeometry args={[3.8, 1.52]} />
+      <meshStandardMaterial
+        map={tex}
+        transparent
+        alphaTest={0.01}
+        roughness={0.85}
+        metalness={0}
+      />
+    </mesh>
+  );
+}
+
+export function Basket({ position, thrownIds, gatedIds, onScore }: BasketProps) {
+  const rimMatRef = useRef<THREE.MeshStandardMaterial>(null!);
+  const glowRef   = useRef<THREE.PointLight>(null);
   const [confettiBurst, setConfettiBurst] = useState(0);
 
   const rimRadius = 1.8;
@@ -145,13 +168,10 @@ export function Basket({ position, onScore }: BasketProps) {
   const netLines = useMemo(() => generateNetLines(12, rimRadius, netDepth), []);
 
   useFrame((state) => {
-    if (rimRef.current) {
-      const mat = rimRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 1.5 + 0.5 * Math.sin(state.clock.elapsedTime * 3);
-    }
-    if (glowRef.current) {
-      glowRef.current.intensity = 20 + 8 * Math.sin(state.clock.elapsedTime * 3);
-    }
+    const t = state.clock.elapsedTime;
+    const pulse = Math.sin(t * 3);
+    if (rimMatRef.current) rimMatRef.current.emissiveIntensity = 1.5 + 0.5 * pulse;
+    if (glowRef.current)   glowRef.current.intensity  = 20 + 8 * pulse;
   });
 
   const handleScore = useCallback((payload: IntersectionEnterPayload) => {
@@ -161,10 +181,10 @@ export function Basket({ position, onScore }: BasketProps) {
     if (!userData?.pageData) return;
 
     // Only count scores for cubes the player actively threw, and prevent double-counting
-    if (!thrownCubeIds.has(userData.pageData.id)) return;
-    if (gatedCubeIds.has(userData.pageData.id)) return;
-    thrownCubeIds.delete(userData.pageData.id);
-    gatedCubeIds.add(userData.pageData.id);
+    if (!thrownIds.current.has(userData.pageData.id)) return;
+    if (gatedIds.current.has(userData.pageData.id)) return;
+    thrownIds.current.delete(userData.pageData.id);
+    gatedIds.current.add(userData.pageData.id);
 
     setConfettiBurst((c) => c + 1);
     onScore?.(userData.pageData);
@@ -190,26 +210,23 @@ export function Basket({ position, onScore }: BasketProps) {
 
       <group>
         {/* ========== POLE — vertical cylinder to ground ========== */}
-        <mesh position={[rimRadius, -2, 0]} castShadow>
+        {/* Offset +X so the pole sits behind the backboard face, not through it */}
+        <mesh position={[rimRadius + 0.1, -2, 0]} castShadow>
           <cylinderGeometry args={[0.12, 0.12, 7, 8]} />
           <meshStandardMaterial color="#333333" metalness={0.8} roughness={0.3} />
         </mesh>
 
-        {/* ========== BACKBOARD — white rectangle ========== */}
-        <mesh position={[rimRadius, 1.5, 0]} castShadow>
-          <boxGeometry args={[0.15, 5, 3.2]} />
-          <meshStandardMaterial color="#eeeeee" metalness={0.1} roughness={0.6} />
+        {/* ========== BACKBOARD — centered so rim sits near the bottom edge ========== */}
+        {/* y=2.0 center, height=4.5 → spans y=-0.25 to y=4.25 (rim at y=0, just clears bottom) */}
+        <mesh position={[rimRadius, 2.0, 0]} castShadow>
+          <boxGeometry args={[0.15, 4.5, 4.2]} />
+          <meshStandardMaterial color="#f0f0f0" metalness={0.05} roughness={0.7} />
         </mesh>
-        {/* Backboard inner rectangle (target square) */}
-        <mesh position={[rimRadius - 0.09, 1.7, 0]}>
-          <boxGeometry args={[0.02, 2.0, 1.8]} />
-          <meshStandardMaterial
-            color="#ff4444"
-            emissive="#ff4444"
-            emissiveIntensity={0.3}
-            toneMapped={false}
-          />
-        </mesh>
+
+        {/* ========== BRAND LOGO — printed on backboard face ========== */}
+        <Suspense fallback={null}>
+          <BrandMark rimRadius={rimRadius} />
+        </Suspense>
 
         {/* ========== ARM — horizontal bar from backboard to rim ========== */}
         <mesh position={[0, 0, 0]}>
@@ -218,9 +235,10 @@ export function Basket({ position, onScore }: BasketProps) {
         </mesh>
 
         {/* ========== RIM — orange torus ========== */}
-        <mesh ref={rimRef} position={[0, 0, 0]} rotation={[Math.PI * 0.5, 0, 0]}>
+        <mesh position={[0, 0, 0]} rotation={[Math.PI * 0.5, 0, 0]}>
           <torusGeometry args={[rimRadius, 0.06, 8, 32]} />
           <meshStandardMaterial
+            ref={rimMatRef}
             color="#ff6600"
             emissive="#ff6600"
             emissiveIntensity={1.5}

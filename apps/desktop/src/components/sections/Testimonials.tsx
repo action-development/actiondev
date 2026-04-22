@@ -1,22 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useRef, useState } from "react";
+import { gsap, ScrollTrigger } from "@/lib/gsap-config";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import { useGSAP } from "@gsap/react";
 
 import { testimonials, type Testimonial } from "@/data/testimonials";
+import { AccentWord } from "@/components/ui/AccentWord";
 
-gsap.registerPlugin(ScrollTrigger);
-
-const FloatingCubeLiteCanvas = dynamic(
-	() => import("@/components/canvas/FloatingCubeLite").then((m) => m.FloatingCubeLiteCanvas),
-	{ ssr: false }
-);
-
-import { CUBE_PATHS } from "@/components/canvas/FloatingCubeLite";
+// ─────────────────────────────────────────────────────────────────────────────
+// Editorial review — no container chrome, pure typography.
 
 function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
 	const expandRef = useRef<HTMLDivElement>(null);
@@ -41,8 +34,8 @@ function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
 			gsap.to(expand, {
 				height: realHeight,
 				opacity: 1,
-				delay: 0.4,
-				duration: 1.1,
+				delay: 0.3,
+				duration: 1.0,
 				ease: "power3.out",
 				onComplete: () => {
 					gsap.set(expand, { height: "auto", overflow: "visible" });
@@ -63,122 +56,151 @@ function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
 	}, { dependencies: [expanded] });
 
 	return (
-		<article
-			className="group relative overflow-hidden rounded-2xl border border-white/[0.04] bg-card px-8 py-8 transition-all duration-500 hover:border-white/[0.08] hover:bg-card-hover md:px-10 md:py-10"
-		>
-			{/* Top line — reveals on hover */}
-			<div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/0 to-transparent transition-all duration-700 group-hover:via-white/[0.08]" />
-
-			{/* Author row */}
-			<div className="mb-6 flex items-center gap-4">
+		<article>
+			<header className="mb-10 flex items-center gap-4">
 				<Image
 					src={t.avatar}
-					alt={`Photo of ${t.name}`}
-					width={48}
-					height={48}
-					sizes="48px"
+					alt={`Portrait of ${t.name}`}
+					width={40}
+					height={40}
+					sizes="40px"
 					loading="lazy"
-					className="h-12 w-12 rounded-full object-cover ring-2 ring-white/[0.06]"
+					className="h-10 w-10 rounded-full object-cover"
 				/>
-				<div>
-					<h3 className="text-[15px] font-semibold text-foreground">{t.name}</h3>
-					<p className="font-mono text-[11px] uppercase tracking-[0.15em] text-muted">
-						{t.project}
-					</p>
+				<div className="flex items-baseline gap-3">
+					<span className="font-display text-[15px] font-medium tracking-[-0.01em] text-foreground">{t.name}</span>
+					<span className="text-muted" aria-hidden>·</span>
+					<span className="micro-label">{t.project}</span>
 				</div>
-			</div>
+			</header>
 
-			{/* Challenge */}
-			<div>
-				<p className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-white/40">
-					The challenge
-				</p>
-				<p className="max-w-2xl text-[15px] leading-[1.7] text-white/50">
-					&ldquo;{t.idea}&rdquo;
-				</p>
-			</div>
+			<p className="font-display text-[19px] font-normal leading-[1.5] tracking-[-0.02em] max-w-[52ch] text-foreground/65">
+				&ldquo;{t.idea}&rdquo;
+			</p>
 
-			{/* Expandable result */}
 			<div ref={expandRef}>
-				<div className="mb-6 mt-6 h-px w-full bg-white/[0.05]" />
-				<div>
-					<p className="mb-2 font-mono text-[10px] uppercase tracking-[0.25em] text-white/40">
-						What they said
-					</p>
-					<p className="max-w-2xl text-lg font-medium leading-[1.6] tracking-tight text-foreground/90">
-						&ldquo;{t.quote}&rdquo;
-					</p>
-				</div>
+				<p className="font-display mt-10 max-w-[38ch] text-[clamp(1.25rem,1.9vw,1.65rem)] font-normal leading-[1.45] tracking-[-0.025em] text-foreground/90">
+					&ldquo;{t.quote}&rdquo;
+				</p>
 			</div>
 		</article>
 	);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
+const HEADLINE_MAX_W = 1280;
+const HEADLINE_TARGET_TOP = 128;
+const HEADLINE_TARGET_SCALE = 0.62;
+
 export function Testimonials() {
 	const sectionRef = useRef<HTMLDivElement>(null);
-	const heroRef = useRef<HTMLDivElement>(null);
+	const heroRef    = useRef<HTMLDivElement>(null);
 	const headlineRef = useRef<HTMLHeadingElement>(null);
-	const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+	const cardRefs   = useRef<(HTMLDivElement | null)[]>([]);
 	const expandedSet = useRef(new Set<number>());
 	const [expandedState, setExpandedState] = useState<boolean[]>(
 		() => testimonials.map(() => false)
 	);
-	const cubeScrollRef = useRef({ progress: 0 });
-
-	useEffect(() => {
-		const section = sectionRef.current;
-		if (!section) return;
-
-		const ctx = gsap.context(() => {
-			ScrollTrigger.create({
-				trigger: section,
-				start: "top top",
-				end: "bottom bottom",
-				onUpdate: (self) => {
-					cubeScrollRef.current.progress = self.progress;
-				},
-			});
-		});
-
-		return () => ctx.revert();
-	}, []);
 
 	useGSAP(() => {
-		const hero = heroRef.current;
+		const hero     = heroRef.current;
 		const headline = headlineRef.current;
-		if (!hero || !headline) return;
+		const section  = sectionRef.current;
+		if (!hero || !headline || !section) return;
 
-		const maxW = 1280;
-		const targetLeft = Math.max(24, (window.innerWidth - maxW) / 2);
-		const targetTop = 128;
-		const targetScale = 0.65;
-
-		gsap.to(headline, {
-			left: targetLeft,
-			top: targetTop,
-			xPercent: 0,
-			yPercent: 0,
-			scale: targetScale,
+		// ── Initial state ───────────────────────────────────────────────────
+		// autoAlpha:0 hides via opacity+visibility so there's no flash before
+		// the scroll animation takes over. transformOrigin top-left keeps the
+		// scale pivot at the element's natural corner (final resting position).
+		gsap.set(headline, {
+			autoAlpha: 0,
 			transformOrigin: "top left",
-			ease: "none",
+			left: "50%",
+			top: "50%",
+			xPercent: -50,
+			yPercent: -50,
+			scale: 1,
+		});
+
+		// ── Main timeline: single ScrollTrigger on heroRef ──────────────────
+		// Using one timeline + one ScrollTrigger avoids the cached-start-value
+		// bug that appears when multiple ScrollTriggers target the same element.
+		//
+		// Scroll range: hero top enters at 80% of viewport → hero bottom exits top.
+		// That gives ~180vh of scroll to run the full animation.
+		//
+		// Timeline layout (proportional durations, scrub normalises to scroll):
+		//   0.0 – 0.25  fade in (opacity 0 → 1), position stays centered
+		//   0.25 – 1.0  move from center to corner + scale down
+		const tl = gsap.timeline({
 			scrollTrigger: {
 				trigger: hero,
-				start: "top top",
+				start: "top 30%",
 				end: "bottom top",
-				scrub: 0.5,
+				scrub: 0.6,
+				invalidateOnRefresh: true,
 			},
 		});
 
+		// Phase 1: fade in — element stays centered while becoming visible
+		tl.fromTo(
+			headline,
+			{ autoAlpha: 0 },
+			{ autoAlpha: 1, duration: 0.25, ease: "power2.out" }
+		);
+
+		// Phase 2: move from center to corner (starts right after phase 1)
+		tl.fromTo(
+			headline,
+			{
+				left: "50%",
+				top: "50%",
+				xPercent: -50,
+				yPercent: -50,
+				scale: 1,
+			},
+			{
+				left: () => Math.max(24, (window.innerWidth - HEADLINE_MAX_W) / 2),
+				top: HEADLINE_TARGET_TOP,
+				xPercent: 0,
+				yPercent: 0,
+				scale: HEADLINE_TARGET_SCALE,
+				ease: "none",
+				duration: 0.75,
+			}
+		);
+
+		// ── Fade out when section scrolls away ──────────────────────────────
+		// immediateRender: false is required — without it, fromTo immediately
+		// applies { autoAlpha: 1 } when created, overriding the autoAlpha: 0
+		// set by the main timeline and making the headline visible on all sections.
+		gsap.fromTo(
+			headline,
+			{ autoAlpha: 1 },
+			{
+				autoAlpha: 0,
+				immediateRender: false,
+				ease: "power2.in",
+				scrollTrigger: {
+					trigger: section,
+					start: "bottom 40%",
+					end: "bottom top",
+					scrub: 0.4,
+				},
+			}
+		);
+
+		// ── Card expand / collapse on scroll ────────────────────────────────
 		const checkCards = () => {
-			const vh = window.innerHeight;
+			const vh       = window.innerHeight;
 			const expandAt = vh * 0.7;
-			const collapseAt = vh * 0.9;
+			const collapseAt = vh * 0.75;
 			let changed = false;
 
 			cardRefs.current.forEach((card, i) => {
 				if (!card) return;
 				const rect = card.getBoundingClientRect();
-
 				if (!expandedSet.current.has(i) && rect.top < expandAt) {
 					expandedSet.current.add(i);
 					changed = true;
@@ -189,14 +211,12 @@ export function Testimonials() {
 			});
 
 			if (changed) {
-				setExpandedState(
-					testimonials.map((_, i) => expandedSet.current.has(i))
-				);
+				setExpandedState(testimonials.map((_, i) => expandedSet.current.has(i)));
 			}
 		};
 
 		ScrollTrigger.create({
-			trigger: sectionRef.current,
+			trigger: section,
 			start: "top bottom",
 			end: "bottom top",
 			onUpdate: checkCards,
@@ -205,28 +225,34 @@ export function Testimonials() {
 
 	return (
 		<div ref={sectionRef}>
-			<FloatingCubeLiteCanvas scrollRef={cubeScrollRef} color="#ec4899" path={CUBE_PATHS.reviews} />
-
+			{/* 100vh scroll space drives the headline animation */}
 			<div ref={heroRef} className="h-screen" />
 
+			{/*
+				GSAP owns position + opacity entirely.
+				No Tailwind translate-* or visibility classes here.
+			*/}
 			<h2
 				ref={headlineRef}
-				className="fixed left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 text-center text-6xl font-bold leading-[0.95] tracking-tighter will-change-transform md:text-8xl"
+				className="display-xl fixed z-20"
+				style={{ visibility: "hidden" }}
 			>
 				Trusted by
 				<br />
-				<span className="text-accent">visionaries</span>
+				<AccentWord>visionaries</AccentWord>
 			</h2>
 
-			<div className="relative z-[2] px-6 pb-[50vh]">
-				<div className="mx-auto max-w-7xl md:pl-[40%]">
-					<div className="flex flex-col gap-8">
+			<div className="relative z-[2] container-editorial pb-[50vh]">
+				<div className="md:pl-[50%]">
+					<div className="space-y-24 md:space-y-28">
 						{testimonials.map((t, i) => (
-							<div
-								key={t.id}
-								ref={(el) => { cardRefs.current[i] = el; }}
-							>
-								<ReviewCard t={t} expanded={expandedState[i]} />
+							<div key={t.id} className="relative">
+								{i > 0 && (
+									<div className="absolute inset-x-0 -top-12 md:-top-14 h-px bg-[var(--hairline)]" />
+								)}
+								<div ref={(el) => { cardRefs.current[i] = el; }}>
+									<ReviewCard t={t} expanded={expandedState[i]} />
+								</div>
 							</div>
 						))}
 					</div>

@@ -10,7 +10,16 @@ import {
 } from "@react-three/rapier";
 import { Text, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
-import { CUBE_LINEAR_DAMPING, CUBE_ANGULAR_DAMPING } from "./constants";
+import {
+  CUBE_LINEAR_DAMPING,
+  CUBE_ANGULAR_DAMPING,
+  CUBE_RESTITUTION,
+  WRAP_X,
+} from "./constants";
+
+const FADE_IN_DURATION = 0.6;
+/** Per-index spawn delay so cubes appear staggered. */
+const FADE_STAGGER = 0.12;
 
 /**
  * PageCube — Premium physics-driven gem representing a navigable page.
@@ -31,6 +40,8 @@ export interface PageCubeData {
 interface PageCubeProps {
   data: PageCubeData;
   position: [number, number, number];
+  /** 0-based index used to stagger the fade-in animation across cubes. */
+  spawnIndex?: number;
   onNearby?: (id: string, rb: RapierRigidBody) => void;
   onNearbyExit?: (id: string) => void;
 }
@@ -47,17 +58,25 @@ function labelFontSize(label: string, cubeSize: number): number {
   return Math.min(Math.max(idealSize, 0.1), cubeSize * 0.19);
 }
 
-export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubeProps) {
+export function PageCube({ data, position, spawnIndex = 0, onNearby, onNearbyExit }: PageCubeProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.PointLight>(null);
+  const materialRef = useRef<THREE.MeshPhysicalMaterial>(null);
+  const outlineMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
   const [hovered, setHovered] = useState(false);
 
   // Jelly spring
   const jelly = useRef({ deformation: 0, velocity: 0, active: false });
   const prevLinVel = useRef(new THREE.Vector3());
+  // Fade-in on mount — tracks when the cube first appears so we can stagger it
+  const spawnTimeRef = useRef<number | null>(null);
 
-  const floatPhase = useMemo(() => Math.random() * Math.PI * 2, []);
+  const floatPhase = useMemo(() => {
+    let h = 0;
+    for (let i = 0; i < data.id.length; i++) h = (h * 31 + data.id.charCodeAt(i)) & 0xffffffff;
+    return ((h >>> 0) / 0xffffffff) * Math.PI * 2;
+  }, [data.id]);
   const s = data.size;
   const half = s / 2;
   const fontSize = useMemo(() => labelFontSize(data.label, s), [data.label, s]);
@@ -77,16 +96,27 @@ export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubePro
     const mesh = meshRef.current;
     if (!rb || !mesh) return;
 
-    // Lock Z to 0
-    const pos = rb.translation();
-    if (Math.abs(pos.z) > 0.1) {
-      rb.setTranslation({ x: pos.x, y: pos.y, z: 0 }, true);
+    // --- Fade-in (stagger per spawnIndex) ---
+    if (spawnTimeRef.current === null) spawnTimeRef.current = state.clock.elapsedTime;
+    const elapsed = state.clock.elapsedTime - spawnTimeRef.current - spawnIndex * FADE_STAGGER;
+    const fade = Math.min(Math.max(elapsed / FADE_IN_DURATION, 0), 1);
+    if (materialRef.current) materialRef.current.opacity = fade;
+    if (outlineMaterialRef.current) {
+      outlineMaterialRef.current.opacity = fade * (hovered ? 0.25 : 0.1);
     }
 
-    // --- Inner glow pulse ---
+    // Horizontal wrap (WRAP_X shared with Character via constants). Z is locked via enabledTranslations.
+    const pos = rb.translation();
+    if (pos.x > WRAP_X) {
+      rb.setTranslation({ x: -WRAP_X, y: pos.y, z: 0 }, true);
+    } else if (pos.x < -WRAP_X) {
+      rb.setTranslation({ x: WRAP_X, y: pos.y, z: 0 }, true);
+    }
+
+    // --- Inner glow pulse (fades in with the material) ---
     if (glowRef.current) {
       const pulse = 0.7 + 0.3 * Math.sin(state.clock.elapsedTime * 2 + floatPhase);
-      glowRef.current.intensity = (hovered ? 12 : 6) * pulse;
+      glowRef.current.intensity = (hovered ? 12 : 6) * pulse * fade;
     }
 
     // --- Jelly effect ---
@@ -131,12 +161,13 @@ export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubePro
     <RigidBody
       ref={rigidBodyRef}
       position={position}
-      restitution={0.9}
-      friction={0.15}
-      mass={0.3}
+      restitution={CUBE_RESTITUTION}
+      friction={0.4}
+      mass={0.08}
       linearDamping={CUBE_LINEAR_DAMPING}
       angularDamping={CUBE_ANGULAR_DAMPING}
       colliders={false}
+      enabledTranslations={[true, true, false]}
       name={`cube-${data.id}`}
       userData={{ pageData: data }}
     >
@@ -174,6 +205,7 @@ export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubePro
         >
           <RoundedBox args={[s, s, s]} radius={s * 0.13} smoothness={4}>
             <meshPhysicalMaterial
+              ref={materialRef}
               color={data.color}
               transmission={0.92}
               thickness={s}
@@ -189,7 +221,7 @@ export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubePro
               emissive={data.color}
               emissiveIntensity={hovered ? 0.4 : 0.08}
               transparent
-              opacity={1}
+              opacity={0}
               toneMapped={false}
               side={THREE.FrontSide}
             />
@@ -200,10 +232,11 @@ export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubePro
         <mesh>
           <RoundedBox args={[s + 0.02, s + 0.02, s + 0.02]} radius={s * 0.13} smoothness={4}>
             <meshBasicMaterial
+              ref={outlineMaterialRef}
               color={data.color}
               wireframe
               transparent
-              opacity={hovered ? 0.25 : 0.1}
+              opacity={0}
               toneMapped={false}
             />
           </RoundedBox>
@@ -218,14 +251,10 @@ export function PageCube({ data, position, onNearby, onNearbyExit }: PageCubePro
           decay={2}
         />
 
-        {/* === Labels on all 6 faces === */}
+        {/* === Labels on front and back — side faces are rarely visible and cost 4 extra SDF textures === */}
         {([
           { pos: [0, 0, half + 0.03] as const, rot: [0, 0, 0] as const },
           { pos: [0, 0, -(half + 0.03)] as const, rot: [0, Math.PI, 0] as const },
-          { pos: [half + 0.03, 0, 0] as const, rot: [0, Math.PI / 2, 0] as const },
-          { pos: [-(half + 0.03), 0, 0] as const, rot: [0, -Math.PI / 2, 0] as const },
-          { pos: [0, half + 0.03, 0] as const, rot: [-Math.PI / 2, 0, 0] as const },
-          { pos: [0, -(half + 0.03), 0] as const, rot: [Math.PI / 2, 0, 0] as const },
         ]).map((face, i) => (
           <Text
             key={i}
