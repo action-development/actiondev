@@ -306,6 +306,7 @@ Antes de refactorizar cualquiera de estos archivos, leer esta sección. La compl
 | `canvas/GameWorld.tsx` | `useFrame` :129 | 116 | Coordinador del game loop: aim line, throw, hold, basket scoring — creado entero en `db810f2`. Complejo pero reciente y sin bugs conocidos. | No extraer sub-hooks sin un test de integración previo. |
 | `canvas/PageCube.tsx` | `useFrame` :94 | 71 | State machine: idle → held → thrown → scored → gated. La complejidad es la máquina de estados, no código redundante. | Aceptable tal cual. |
 | `ui/LoadingScreen.tsx` | `tick` :80 | 156 | Phase machine rAF: loading → stall → sprint → fading. Reescrito deliberadamente así para evitar bugs de reconciliación React + GSAP. Versiones más simples fallaron. | No simplificar. La complejidad es el diseño. |
+| `canvas/Starfield.tsx` | `useFrame` | — | 1200 estrellas con InstancedMesh. Usa `Matrix4.set()` directo (sin decompose/compose) y actualiza cada 2 frames. No usar Vector3/decompose en el loop. | No volver a decompose/compose — fue reemplazado específicamente por rendimiento. |
 | `seo/StructuredData.tsx` | `buildSchema` :30 | 132 | Switch con JSON-LD schemas por tipo (`projects`, `reviews`). Alta ciclomática por los objetos anidados, no por lógica real. | Aceptable. No dividir en archivos separados. |
 
 **Regla general:** si fallow marca algo como CRITICAL pero el archivo lleva >3 commits sin bugs, la complejidad es dominio, no deuda. Verificar historial con `git log -- <archivo>` antes de proponer refactor.
