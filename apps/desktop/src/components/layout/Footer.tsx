@@ -1,10 +1,7 @@
-import Link from "next/link";
+"use client";
 
-/**
- * Editorial colophon — one horizontal line of typographic metadata.
- * No grid, no columns, no chrome. The year, location, availability dot
- * and social links sit on the same baseline as the wordmark.
- */
+import Link from "next/link";
+import { useT } from "@/lib/i18n";
 
 const SOCIALS = [
   { label: "Twitter", href: "#" },
@@ -14,6 +11,7 @@ const SOCIALS = [
 ];
 
 export function Footer() {
+  const t = useT();
   const year = new Date().getFullYear();
 
   return (
@@ -43,7 +41,7 @@ export function Footer() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-70 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
             </span>
-            <span>Available for &apos;26</span>
+            <span>{t.footer.available}</span>
           </span>
 
           {/* Socials — pushed to the end of the line on wide viewports */}

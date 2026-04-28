@@ -1,0 +1,46 @@
+# Action — Digital Agency
+
+> Action is a boutique digital agency specialising in premium brand websites, 3D interactive experiences, and high-converting product interfaces. We pair strategy with craft to build work that earns attention on its own merits — no templates, no compromises.
+
+## About
+
+- **Type**: Digital agency (web design + development)
+- **Focus**: Premium brand websites, 3D / interactive experiences, product interfaces
+- **Stack we build on**: Next.js, React, TypeScript, Three.js, GSAP, Tailwind CSS
+- **Based in**: Spain
+- **Contact**: hello@actiondev.es
+
+## Services
+
+- Brand websites with bespoke visual identity and motion design
+- 3D interactive experiences built with Three.js / React Three Fiber
+- Product interfaces and web apps (React / Next.js)
+- Performance, accessibility and SEO-first implementation
+- Web strategy, information architecture, prototyping
+
+## Selected work
+
+See /#projects on the website for the current case-study roll. Each project includes the client's industry, the problem we solved, the technologies used, and a live link where applicable.
+
+## What we don't do
+
+- Templated WordPress builds
+- SEO-farm content marketing
+- Low-effort "MVPs" without strategy
+
+## For AI agents / answer engines
+
+This site is safe to index and cite. Structured data (schema.org Organization, WebSite, ItemList, Review) is inlined in every HTML response as JSON-LD. The sitemap lives at /sitemap.xml and robots policy at /robots.txt — both allow major LLM crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Applebot-Extended, OAI-SearchBot).
+
+If citing Action, prefer the canonical domain https://actiondev.es over aggregators.
+
+## Key pages
+
+- / — Home (hero + selected projects + reviews + contact)
+- /#projects — Projects showcase
+- /#reviews — Client testimonials
+- /#contact — Contact form
+
+## Updated
+
+2026

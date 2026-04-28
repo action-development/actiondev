@@ -1,0 +1,73 @@
+import type { Translations } from "./types";
+
+export const en: Translations = {
+  nav: {
+    home: "Home",
+    work: "Work",
+    reviews: "Reviews",
+    contact: "Contact",
+    cta: "Let's talk",
+  },
+  hero: {
+    label: "Digital Agency",
+    headline1: "We craft digital",
+    headline2: "experiences that",
+    accent: "matter",
+    sub: "Strategy, design, and development for brands that refuse to blend in.",
+  },
+  projects: {
+    transform: "Transform your ideas",
+    into: "into",
+    accent: "sales",
+    selectedWork: "Selected Work",
+    loading: "Loading projects…",
+    sectionLabel: "Projects",
+    columnLabel: "PROJECTS",
+  },
+  testimonials: {
+    trusted: "Trusted by",
+    visionaries: "visionaries",
+  },
+  contact: {
+    headline1: "Let's build",
+    headline2: "something",
+    accent: "great",
+    subtitle: "No commitment. We reply within 24 hours.",
+    emailLabel: "Email",
+    askAI: "Ask AI about us",
+    nameLabel: "Name *",
+    namePlaceholder: "Your full name",
+    phoneLabel: "Phone",
+    phonePlaceholder: "+34 …",
+    emailFieldLabel: "Email *",
+    emailPlaceholder: "you@company.com",
+    websiteLabel: "Current site",
+    websitePlaceholder: "https://…",
+    projectLabel: "Project",
+    projectPlaceholder: "What are you building, and what does 'done' look like?",
+    required: "* Required",
+    submit: "Send message",
+    formAriaLabel: "Contact form",
+  },
+  footer: {
+    available: "Available for '26",
+  },
+  scroll: {
+    hero: "Hero",
+    work: "Work",
+    reviews: "Reviews",
+    contact: "Contact",
+    goTo: "Go to",
+    ariaLabel: "Section progress",
+  },
+  tutorial: {
+    move: "to move",
+    rotate: "to rotate",
+    jump: "to jump",
+    pickup: "to pick up",
+    throw: "to aim & throw",
+  },
+  loading: {
+    ariaLabel: "Loading percentage",
+  },
+};

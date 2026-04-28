@@ -42,12 +42,8 @@ function Cube({ scrollRef, color, path }: { scrollRef: MutableRefObject<CubeScro
 
 	const mat = useMemo(
 		() =>
-			new THREE.MeshStandardMaterial({
+			new THREE.MeshBasicMaterial({
 				color,
-				emissive: color,
-				emissiveIntensity: 0.9,
-				metalness: 0.1,
-				roughness: 0.3,
 				transparent: true,
 				opacity: 0.04,
 				toneMapped: false,
@@ -96,8 +92,6 @@ function Cube({ scrollRef, color, path }: { scrollRef: MutableRefObject<CubeScro
 
 	return (
 		<group ref={groupRef}>
-			{/* Point light travels with cube — soft glow, faces nearly invisible so light is the effect */}
-			<pointLight color={color} intensity={1.2} distance={12} decay={2} />
 			<mesh geometry={geo} material={mat} />
 			<lineSegments geometry={edgesGeo} material={wireMat} />
 		</group>
@@ -155,8 +149,6 @@ export function FloatingCubeLiteCanvas({
 					renderer.compile(scene, camera);
 				}}
 			>
-				<ambientLight intensity={0.08} />
-				<directionalLight position={[5, 8, 6]} intensity={0.2} />
 				<ScrollInvalidator />
 				<Suspense fallback={null}>
 					{path && <Cube scrollRef={scrollRef} color={color} path={path} />}

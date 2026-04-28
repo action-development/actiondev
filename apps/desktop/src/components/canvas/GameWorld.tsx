@@ -13,6 +13,7 @@ import { Starfield } from "./Starfield";
 import { AimLine, type AimState } from "./AimLine";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import { useMouseButton } from "@/hooks/use-mouse-button";
+import { useMousePosition } from "@/hooks/use-mouse-position";
 import type { GameState } from "@/hooks/use-game-state";
 import {
   GRAVITY,
@@ -48,7 +49,7 @@ export function computeCubeSpawnPositions(
 ): [number, number, number][] {
   return cubes.map((_, i) => {
     const x = SPAWN_X_CENTER + (Math.random() - 0.5) * SPAWN_X_SPREAD * 2;
-    const y = 14 + i * 4 + Math.random() * 1.5;
+    const y = 7 + i * 4 + Math.random() * 1.5;
     return [x, y, 0];
   });
 }
@@ -66,20 +67,35 @@ const _aimPlane    = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 
 interface GameWorldProps {
   paused?: boolean;
+  physicsActive?: boolean;
   onNavigate?: (href: string) => void;
   gameState: GameState;
+  onReady?: () => void;
 }
 
-export function GameWorld({ paused = false, onNavigate, gameState }: GameWorldProps) {
+export function GameWorld({ paused = false, physicsActive = false, onNavigate, gameState, onReady }: GameWorldProps) {
   const keys      = useKeyboard();
   const mouseDown = useMouseButton();
-  const { camera, pointer } = useThree();
+  const mousePos  = useMousePosition();
+  const { camera, gl, scene } = useThree();
 
   // Reset state on mount — prevents stale data across navigations
   useEffect(() => {
     gameState.reset();
     return () => gameState.reset();
   }, [gameState]);
+
+  // Pre-compile all GLSL shaders while the loading screen is still visible.
+  // gl.compile() blocks the GPU synchronously — paying that cost now means
+  // the first active frame (when loading hides) renders without any stutter.
+  // Fires once after mount, by which time all meshes are in the scene.
+  useEffect(() => {
+    gl.compile(scene, camera);
+    onReady?.();
+    // gl / scene / camera are stable R3F refs — safe to omit from deps.
+    // onReady is stable (useCallback in parent). Running once is intentional.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const characterRef  = useRef<CharacterHandle>(null);
   const [isHolding, setIsHolding] = useState(false);
@@ -169,7 +185,7 @@ export function GameWorld({ paused = false, onNavigate, gameState }: GameWorldPr
     wasDown.current    = btnDown;
 
     // --- Mouse → world plane intersection (everything lives in world space now) ---
-    _raycaster.setFromCamera(pointer, camera);
+    _raycaster.setFromCamera(mousePos.current, camera);
     _raycaster.ray.intersectPlane(_aimPlane, _aimWorldPos);
 
     const mouseX = _aimWorldPos.x;
@@ -266,7 +282,7 @@ export function GameWorld({ paused = false, onNavigate, gameState }: GameWorldPr
 
       <AimLine stateRef={aimState} />
 
-      <Physics gravity={[0, -GRAVITY, 0]} timeStep={1 / 60} paused={paused}>
+      <Physics gravity={[0, -GRAVITY, 0]} timeStep={1 / 60} paused={!physicsActive || paused}>
         {/* Floor, ceiling, front/back walls — world-space */}
         <CuboidCollider position={[0, -6.5, 0]} args={[20, 0.5, 5]} restitution={0.2} friction={0.8} />
         <CuboidCollider position={[0, 24, 0]}   args={[20, 0.5, 5]} />

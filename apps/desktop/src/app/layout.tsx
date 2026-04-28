@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { geistSans, geistMono, syne } from "@/lib/fonts";
 import { BRAND, SITE_URL, SOCIAL, OG_IMAGE } from "@/lib/seo";
 import { StructuredData } from "@/components/seo/StructuredData";
+import { LocaleProvider } from "@/lib/i18n";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -90,9 +91,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-black">
-        <StructuredData kind="organization" />
-        <StructuredData kind="website" />
-        {children}
+        <LocaleProvider>
+          <StructuredData kind="organization" />
+          <StructuredData kind="website" />
+          {children}
+        </LocaleProvider>
       </body>
     </html>
   );

@@ -31,7 +31,7 @@ const SETTLE_FRAMES = 20;
 // ─── Pre-render text overlay to CanvasTexture (replaces troika Text) ─────
 
 function createOverlayTexture(category: string, title: string): THREE.CanvasTexture {
-	const dpr = 1;
+	const dpr = Math.min(window.devicePixelRatio, 2);
 	const w = IMG_W * dpr;
 	const h = IMG_H * dpr;
 	const canvas = document.createElement("canvas");
@@ -71,6 +71,7 @@ export interface ScrollState {
 
 function Card3D({
 	project,
+	categoryLabel,
 	index,
 	scrollRef,
 	sharedPlaneGeo,
@@ -79,6 +80,7 @@ function Card3D({
 	sharedHitAreaMat,
 }: {
 	project: Project;
+	categoryLabel: string;
 	index: number;
 	scrollRef: React.RefObject<ScrollState>;
 	sharedPlaneGeo: THREE.PlaneGeometry;
@@ -114,9 +116,9 @@ function Card3D({
 		[]
 	);
 	const overlayMat = useMemo(() => {
-		const tex = createOverlayTexture(project.category, project.title);
+		const tex = createOverlayTexture(categoryLabel, project.title);
 		return new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, side: THREE.FrontSide, depthWrite: false });
-	}, [project.category, project.title]);
+	}, [categoryLabel, project.title]);
 
 	const { invalidate } = useThree();
 	const textureLoaded = useRef(false);
@@ -314,9 +316,11 @@ function Card3D({
 function CarouselScene({
 	projects,
 	scrollRef,
+	locale,
 }: {
 	projects: Project[];
 	scrollRef: React.RefObject<ScrollState>;
+	locale: string;
 }) {
 	const groupRef = useRef<THREE.Group>(null);
 	const lastRotation = useRef(0);
@@ -376,18 +380,24 @@ function CarouselScene({
 
 	return (
 		<group ref={groupRef}>
-			{projects.map((project, i) => (
-				<Card3D
-					key={project.id}
-					project={project}
-					index={i}
-					scrollRef={scrollRef}
-					sharedPlaneGeo={sharedPlaneGeo}
-					sharedImgGeo={sharedImgGeo}
-					sharedEdgesGeo={sharedEdgesGeo}
-					sharedHitAreaMat={sharedHitAreaMat}
-				/>
-			))}
+			{projects.map((project, i) => {
+				const categoryLabel = locale === "es"
+					? (project.categoryEs ?? project.category)
+					: project.category;
+				return (
+					<Card3D
+						key={project.id}
+						project={project}
+						categoryLabel={categoryLabel}
+						index={i}
+						scrollRef={scrollRef}
+						sharedPlaneGeo={sharedPlaneGeo}
+						sharedImgGeo={sharedImgGeo}
+						sharedEdgesGeo={sharedEdgesGeo}
+						sharedHitAreaMat={sharedHitAreaMat}
+					/>
+				);
+			})}
 		</group>
 	);
 }
@@ -420,9 +430,11 @@ const POINTER_EVENTS_DEBOUNCE_MS = 150;
 export function Carousel3D({
 	projects,
 	scrollRef,
+	locale = "en",
 }: {
 	projects: Project[];
 	scrollRef: React.RefObject<ScrollState>;
+	locale?: string;
 }) {
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -475,7 +487,7 @@ export function Carousel3D({
 			>
 				<ScrollInvalidator />
 				<Suspense fallback={null}>
-					<CarouselScene projects={projects} scrollRef={scrollRef} />
+					<CarouselScene projects={projects} scrollRef={scrollRef} locale={locale} />
 				</Suspense>
 			</Canvas>
 		</div>

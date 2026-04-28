@@ -5,6 +5,7 @@ import { useGSAP } from "@gsap/react";
 import { gsap } from "@/lib/gsap-config";
 import { AI_ASSISTANTS } from "@/data/ai-assistants";
 import { AccentWord } from "@/components/ui/AccentWord";
+import { useLocale, useT } from "@/lib/i18n";
 
 /**
  * Editorial contact form — no boxes, no cards. Each input is a baseline rule
@@ -17,38 +18,46 @@ const fieldClass =
   "w-full border-0 border-b border-[var(--hairline-strong)] bg-transparent py-3 text-lg text-foreground placeholder:text-muted/50 outline-none transition-colors duration-[var(--duration)] [transition-timing-function:var(--ease)] focus:border-accent";
 
 export function Contact() {
+  const t = useT();
+  const { locale } = useLocale();
   const sectionRef = useRef<HTMLElement>(null);
 
   useGSAP(
     () => {
-      const tl = gsap.timeline();
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top 75%",
+          once: true,
+        },
+      });
       tl.from("[data-anim='heading']", { y: 60, opacity: 0, duration: 1, ease: "power3.out" })
         .from("[data-anim='rule']", { scaleX: 0, transformOrigin: "left", duration: 0.8 }, "-=0.5")
         .from("[data-anim='subtitle']", { y: 20, opacity: 0, duration: 0.6 }, "-=0.4");
 
       const fields = gsap.utils.toArray("[data-anim='field']") as HTMLElement[];
-      fields.forEach((el, i) => {
-        gsap.from(el, {
+      if (fields.length) {
+        gsap.from(fields, {
           y: 30,
           opacity: 0,
           duration: 0.6,
-          delay: i * 0.06,
+          stagger: 0.08,
           ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top 92%" },
+          scrollTrigger: { trigger: sectionRef.current, start: "top 55%", once: true },
         });
-      });
+      }
 
       const infos = gsap.utils.toArray("[data-anim='info']") as HTMLElement[];
-      infos.forEach((el, i) => {
-        gsap.from(el, {
+      if (infos.length) {
+        gsap.from(infos, {
           y: 20,
           opacity: 0,
           duration: 0.6,
-          delay: i * 0.1,
+          stagger: 0.12,
           ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top 90%" },
+          scrollTrigger: { trigger: sectionRef.current, start: "top 55%", once: true },
         });
-      });
+      }
     },
     { scope: sectionRef }
   );
@@ -59,16 +68,16 @@ export function Contact() {
         {/* ── Title ── */}
         <div className="mb-24 max-w-[18ch]">
           <h1 data-anim="heading" className="display-xl">
-            Let&apos;s build
+            {t.contact.headline1}
             <br />
-            something <AccentWord>great</AccentWord>
+            {t.contact.headline2} <AccentWord>{t.contact.accent}</AccentWord>
           </h1>
           <div
             data-anim="rule"
             className="mt-10 h-px w-16 bg-accent/70"
           />
           <p data-anim="subtitle" className="lede mt-8">
-            No commitment. We reply within 24 hours.
+            {t.contact.subtitle}
           </p>
         </div>
 
@@ -76,7 +85,7 @@ export function Contact() {
           {/* ── Info column ── */}
           <aside className="flex flex-col gap-14 lg:col-span-4">
             <div data-anim="info">
-              <p className={fieldLabelClass}>Email</p>
+              <p className={fieldLabelClass}>{t.contact.emailLabel}</p>
               <a
                 href="mailto:hello@actiondev.es"
                 className="text-xl font-medium transition-colors duration-[var(--duration)] [transition-timing-function:var(--ease)] hover:text-accent"
@@ -86,7 +95,7 @@ export function Contact() {
             </div>
 
             <div data-anim="info">
-              <p className={fieldLabelClass}>Ask AI about us</p>
+              <p className={fieldLabelClass}>{t.contact.askAI}</p>
               <ul className="flex flex-col gap-1" role="list">
                 {AI_ASSISTANTS.map((ai) => (
                   <li key={ai.name}>
@@ -94,7 +103,7 @@ export function Contact() {
                       href={ai.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={`Ask ${ai.name} about Action`}
+                      aria-label={locale === "es" ? `Pregunta a ${ai.name} sobre Action` : `Ask ${ai.name} about Action`}
                       className="group flex items-center gap-3 py-2 text-[15px] font-medium text-foreground/80 transition-colors duration-[var(--duration)] [transition-timing-function:var(--ease)] hover:text-accent"
                     >
                       <ai.icon className="h-4 w-4 shrink-0 opacity-70 transition-opacity group-hover:opacity-100" aria-hidden="true" />
@@ -113,34 +122,34 @@ export function Contact() {
           </aside>
 
           {/* ── Form ── */}
-          <form aria-label="Contact form" className="flex flex-col gap-10 lg:col-span-8">
+          <form aria-label={t.contact.formAriaLabel} className="flex flex-col gap-10 lg:col-span-8">
             <div data-anim="field" className="grid gap-10 md:grid-cols-2">
               <div>
-                <label htmlFor="contact-name" className={fieldLabelClass}>Name *</label>
-                <input id="contact-name" type="text" name="name" placeholder="Your full name" required autoComplete="name" className={fieldClass} />
+                <label htmlFor="contact-name" className={fieldLabelClass}>{t.contact.nameLabel}</label>
+                <input id="contact-name" type="text" name="name" placeholder={t.contact.namePlaceholder} required autoComplete="name" className={fieldClass} />
               </div>
               <div>
-                <label htmlFor="contact-phone" className={fieldLabelClass}>Phone</label>
-                <input id="contact-phone" type="tel" name="phone" placeholder="+34 …" autoComplete="tel" className={fieldClass} />
+                <label htmlFor="contact-phone" className={fieldLabelClass}>{t.contact.phoneLabel}</label>
+                <input id="contact-phone" type="tel" name="phone" placeholder={t.contact.phonePlaceholder} autoComplete="tel" className={fieldClass} />
               </div>
             </div>
 
             <div data-anim="field">
-              <label htmlFor="contact-email" className={fieldLabelClass}>Email *</label>
-              <input id="contact-email" type="email" name="email" placeholder="you@company.com" required autoComplete="email" className={fieldClass} />
+              <label htmlFor="contact-email" className={fieldLabelClass}>{t.contact.emailFieldLabel}</label>
+              <input id="contact-email" type="email" name="email" placeholder={t.contact.emailPlaceholder} required autoComplete="email" className={fieldClass} />
             </div>
 
             <div data-anim="field">
-              <label htmlFor="contact-website" className={fieldLabelClass}>Current site</label>
-              <input id="contact-website" type="url" name="website" placeholder="https://…" autoComplete="url" className={fieldClass} />
+              <label htmlFor="contact-website" className={fieldLabelClass}>{t.contact.websiteLabel}</label>
+              <input id="contact-website" type="url" name="website" placeholder={t.contact.websitePlaceholder} autoComplete="url" className={fieldClass} />
             </div>
 
             <div data-anim="field">
-              <label htmlFor="contact-description" className={fieldLabelClass}>Project</label>
+              <label htmlFor="contact-description" className={fieldLabelClass}>{t.contact.projectLabel}</label>
               <textarea
                 id="contact-description"
                 name="description"
-                placeholder="What are you building, and what does 'done' look like?"
+                placeholder={t.contact.projectPlaceholder}
                 required
                 rows={6}
                 className={`${fieldClass} resize-none leading-relaxed`}
@@ -151,13 +160,13 @@ export function Contact() {
               data-anim="field"
               className="flex flex-col items-start justify-between gap-6 pt-2 sm:flex-row sm:items-center"
             >
-              <p className="text-xs text-muted">* Required</p>
+              <p className="text-xs text-muted">{t.contact.required}</p>
               <button
                 type="submit"
                 className="group inline-flex items-center gap-3 font-mono text-[12px] uppercase tracking-[0.22em] text-foreground"
               >
                 <span className="relative py-2">
-                  Send message
+                  {t.contact.submit}
                   <span
                     aria-hidden
                     className="pointer-events-none absolute bottom-1 left-0 right-0 h-px origin-left scale-x-100 bg-accent transition-transform duration-[var(--duration)] [transition-timing-function:var(--ease)] group-hover:scale-x-0"

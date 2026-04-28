@@ -4,10 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navigation } from "@/data/navigation";
 import { useActiveSection } from "@/hooks/use-active-section";
+import { useLocale, useT } from "@/lib/i18n";
 
 export function Header() {
   const pathname = usePathname();
   const activeSection = useActiveSection(pathname === "/");
+  const { locale, setLocale } = useLocale();
+  const t = useT();
 
   function isActive(href: string): boolean {
     if (pathname !== "/") return pathname === href;
@@ -15,6 +18,13 @@ export function Header() {
     const id = href.replace("/#", "");
     return activeSection === id;
   }
+
+  const navLabels: Record<string, string> = {
+    Home: t.nav.home,
+    Work: t.nav.work,
+    Reviews: t.nav.reviews,
+    Contact: t.nav.contact,
+  };
 
   return (
     <header
@@ -50,6 +60,7 @@ export function Header() {
         <ul role="list" className="hidden md:flex items-center ml-auto gap-10">
           {navigation.slice(1).map((item) => {
             const active = isActive(item.href);
+            const label = navLabels[item.label] ?? item.label;
             return (
               <li key={item.href}>
                 <Link
@@ -62,7 +73,7 @@ export function Header() {
                       active ? "text-foreground" : "text-muted group-hover:text-foreground"
                     }`}
                   >
-                    {item.label}
+                    {label}
                   </span>
                   {/* Hairline — scales from left; stays at full width when active */}
                   <span
@@ -77,6 +88,22 @@ export function Header() {
           })}
         </ul>
 
+        {/* Language toggle — EN | ES */}
+        <button
+          type="button"
+          onClick={() => setLocale(locale === "en" ? "es" : "en")}
+          aria-label={locale === "en" ? "Cambiar a español" : "Switch to English"}
+          className="hidden md:flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.22em]"
+        >
+          <span className={locale === "en" ? "text-foreground" : "text-muted hover:text-foreground transition-colors"}>
+            EN
+          </span>
+          <span className="text-muted/30 select-none">|</span>
+          <span className={locale === "es" ? "text-foreground" : "text-muted hover:text-foreground transition-colors"}>
+            ES
+          </span>
+        </button>
+
         {/* CTA — typographic, not a button */}
         <Link
           href="/#contact"
@@ -88,7 +115,7 @@ export function Header() {
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
           </span>
           <span className="relative py-2">
-            Let&apos;s talk
+            {t.nav.cta}
             <span
               aria-hidden
               className="pointer-events-none absolute bottom-1 left-0 right-0 h-px origin-left scale-x-0 bg-foreground transition-transform duration-[var(--duration-slow)] group-hover:scale-x-100"

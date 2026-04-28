@@ -25,24 +25,51 @@ const SESSION_KEY = "action-loaded";
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [gamePaused, setGamePaused] = useState(false);
+  const [physicsActive, setPhysicsActive] = useState(false);
+  const [loadingReady, setLoadingReady] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const transitioning = useRef(false);
   const homeRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    if (sessionStorage.getItem(SESSION_KEY)) {
-      // Run-once hydration reconciliation — the initial render must match the server
-      // (loading=true), then we fast-path out on return visits.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLoading(false);
-    }
+  // Fired once when GameWorld mounts + shaders are compiled.
+  // LoadingScreen manages its own minimum display time internally.
+  const gameReadyRef  = useRef(false);
+  const revealStarted = useRef(false);
+
+  const tryReveal = useCallback(() => {
+    if (!gameReadyRef.current || revealStarted.current) return;
+    revealStarted.current = true;
+    // Physics starts now — cubes fall while LoadingScreen counts to 100% and fades (~750ms).
+    setPhysicsActive(true);
+    setLoadingReady(true);
   }, []);
 
-  const handleComplete = useCallback(() => {
+  // Called by GameWorld after Rapier mounts + gl.compile() finishes
+  const handleGameReady = useCallback(() => {
+    gameReadyRef.current = true;
+    tryReveal();
+  }, [tryReveal]);
+
+  // Called by LoadingScreen after its own fade-out completes
+  const handleLoadingComplete = useCallback(() => {
     sessionStorage.setItem(SESSION_KEY, "1");
     setLoading(false);
-    // GameScene just fully rendered — recalculate all ScrollTrigger positions
     requestAnimationFrame(() => requestAnimationFrame(() => ScrollTrigger.refresh()));
+  }, []);
+
+  useEffect(() => {
+    if (sessionStorage.getItem(SESSION_KEY)) {
+      // Return visit — game already cached. Signal physics + loadingReady so the
+      // LoadingScreen plays its animation and completes naturally on its own.
+      // We don't skip loading entirely (setLoading(false)) because that would
+      // unmount the screen in ~500ms during hydration, before any animation runs.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPhysicsActive(true);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLoadingReady(true);
+      gameReadyRef.current = true;
+      revealStarted.current = true;
+    }
   }, []);
 
   // Pause physics when game section leaves viewport
@@ -125,8 +152,8 @@ export default function HomePage() {
       <ScrollIndicator />
 
       <section ref={homeRef} id="home" className="relative overflow-hidden min-h-screen">
-        {loading && <LoadingScreen onComplete={handleComplete} />}
-        <GameScene paused={loading || gamePaused} onNavigate={handleNavigate} />
+        {loading && <LoadingScreen ready={loadingReady} onComplete={handleLoadingComplete} />}
+        <GameScene paused={loading || gamePaused} physicsActive={physicsActive} onNavigate={handleNavigate} onReady={handleGameReady} />
       </section>
 
       <main>

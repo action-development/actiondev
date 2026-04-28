@@ -92,7 +92,7 @@ export function GameLayout({ children }: { children: React.ReactNode }) {
           visibility: isHome ? "visible" : "hidden",
         }}
       >
-        {loading && <LoadingScreen onComplete={handleComplete} />}
+        {loading && <LoadingScreen ready onComplete={handleComplete} />}
         <GameScene paused={loading || !isHome} onNavigate={handleNavigate} />
       </div>
 

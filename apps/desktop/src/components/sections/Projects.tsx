@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { CardBackgroundPreview } from "@/components/effects/card-background-preview";
 import { AccentWord } from "@/components/ui/AccentWord";
 import { projects } from "@/data/projects";
+import { useLocale, useT } from "@/lib/i18n";
 
 const DECORATION_PATH = {
 	x: { amp: 6, cycles: 1.3 },
@@ -18,17 +19,21 @@ const DECORATION_PATH = {
 const VIEWPORT_HALF = 5;
 // DESCENT is how far the cube drops (in units) between the headline and the sticky section.
 const DESCENT = 2.5;
+// Orbit fraction pre-seeded during the descent → sticky bridge (so orbit starts visibly earlier).
+const PRE_ORBIT = 0.06;
+
+function CarouselLoading() {
+	const t = useT();
+	return (
+		<div className="absolute inset-0 flex items-center justify-center">
+			<span className="font-mono text-xs text-foreground/20 animate-pulse">{t.projects.loading}</span>
+		</div>
+	);
+}
 
 const Carousel3D = dynamic(
 	() => import("@/components/effects/carousel-3d").then((m) => m.Carousel3D),
-	{
-		ssr: false,
-		loading: () => (
-			<div className="absolute inset-0 flex items-center justify-center">
-				<span className="font-mono text-xs text-foreground/20 animate-pulse">Loading projects…</span>
-			</div>
-		),
-	}
+	{ ssr: false, loading: () => <CarouselLoading /> }
 );
 
 const FloatingCubeLiteCanvas = dynamic(
@@ -46,7 +51,7 @@ const TOTAL_Y = (NUM - 1) * Y_STEP;
 
 // --- Sub-components ─────────────────────────────────────────────────────────
 
-function CentralColumn({ textRef }: { textRef: RefObject<HTMLSpanElement | null> }) {
+function CentralColumn({ textRef, label }: { textRef: RefObject<HTMLSpanElement | null>; label: string }) {
 	return (
 		<div className="pointer-events-none absolute inset-0 flex select-none items-center justify-center overflow-hidden">
 			<div className="relative flex h-screen items-start justify-center" style={{ perspective: "800px" }}>
@@ -61,7 +66,7 @@ function CentralColumn({ textRef }: { textRef: RefObject<HTMLSpanElement | null>
 						transformStyle: "preserve-3d",
 					}}
 				>
-					PROJECTS
+					{label}
 				</span>
 			</div>
 		</div>
@@ -92,6 +97,8 @@ function ProgressBar({ barRef, labelRef }: { barRef: RefObject<HTMLDivElement | 
 // --- Projects ────────────────────────────────────────────────────────────────
 
 export function Projects() {
+	const t = useT();
+	const { locale } = useLocale();
 	const wrapperRef       = useRef<HTMLDivElement>(null);
 	const sectionRef       = useRef<HTMLElement>(null);
 	const heroRef          = useRef<HTMLDivElement>(null);
@@ -169,15 +176,22 @@ export function Projects() {
 			tl.to(line1Ref.current, { xPercent: -120, opacity: 0, ease: "power2.in" }, 0);
 			tl.to(line2Ref.current, { xPercent: 120, opacity: 0, ease: "power2.in" }, 0);
 
-			// Cube descends as the hero scrolls away (text already gone by "40% top").
-			// yOffset goes from 0 → -DESCENT (negative Y = lower on screen in Three.js).
+			// Cube descends as the hero scrolls away, bridging the gap to the sticky section.
+			// endTrigger covers the "Selected Work" divider so no trigger-less gap exists.
+			// yOffset follows a parabola (0 → -DESCENT → 0): the cube arcs down and rises
+			// back to center exactly when the sticky section starts — no correction needed there.
+			// PRE_ORBIT pre-seeds the Lissajous orbit so the cube is already moving laterally
+			// before the sticky carousel kicks in.
 			ScrollTrigger.create({
 				trigger: hero,
+				endTrigger: sectionRef.current!,
 				start: "40% top",
-				end: "bottom top",
+				end: "top top",
 				scrub: 1,
 				onUpdate: (self) => {
-					cubeRef.current.yOffset = -self.progress * DESCENT;
+					const p = self.progress;
+					cubeRef.current.yOffset  = -(4 * p * (1 - p)) * DESCENT;
+					cubeRef.current.progress = p * PRE_ORBIT;
 				},
 			});
 		}, hero);
@@ -209,9 +223,21 @@ export function Projects() {
 					scrollRef.current.rotation = rotation;
 					scrollRef.current.y        = progress * TOTAL_Y;
 
-					// Advance orbit; smoothly cancel descent offset over the first 5% of sticky
-					cubeRef.current.progress = progress;
-					cubeRef.current.yOffset  = -DESCENT * Math.max(0, 1 - progress * 20);
+					// Orbit continues from PRE_ORBIT (seeded during descent) — no vertical correction
+					// needed since the descent trigger already returns yOffset to 0 at this point.
+					cubeRef.current.progress = PRE_ORBIT + progress * (1 - PRE_ORBIT);
+					cubeRef.current.yOffset  = 0;
+
+					// Fade cube out from 75 % → 95 % of sticky scroll so it's fully hidden
+					// well before the Testimonials section appears. Driven here (not a separate
+					// ScrollTrigger) so the percentage is relative to carousel progress, not to
+					// the section's pixel height (which varies with NUM).
+					const cubeWrapper = cubeWrapperRef.current;
+					if (cubeWrapper) {
+						cubeWrapper.style.opacity = String(
+							Math.max(0, 1 - Math.max(0, (progress - 0.75) / 0.2))
+						);
+					}
 
 					const idx = Math.round(rotation / ANGLE_STEP) % NUM;
 					if (idx !== lastIndexRef.current) {
@@ -226,19 +252,6 @@ export function Projects() {
 						lastPercentRef.current = pct;
 						if (label) label.textContent = `${pct}%`;
 					}
-				},
-			});
-
-			// Fade cube out as the entire projects area exits the viewport
-			gsap.to(cubeWrapperRef.current, {
-				opacity: 0,
-				immediateRender: false,
-				ease: "power2.in",
-				scrollTrigger: {
-					trigger: section,
-					start: "bottom 70%",
-					end: "bottom top",
-					scrub: 0.5,
 				},
 			});
 
@@ -258,6 +271,7 @@ export function Projects() {
 
 		return () => ctx.revert();
 	}, []);
+
 
 	// -------------------------------------------------------------------------
 
@@ -293,22 +307,22 @@ export function Projects() {
 				>
 					<h1 className="display-xl max-w-5xl text-center text-foreground">
 						<span ref={line1Ref} className="block will-change-transform">
-							{"Transform your ideas".split(" ").map((word, i) => (
+							{t.projects.transform.split(" ").map((word, i) => (
 								<span key={i} data-word className="inline-block" style={{ marginRight: "0.25em" }}>
 									{word}
 								</span>
 							))}
 						</span>
 						<span ref={line2Ref} className="block will-change-transform">
-							<span data-word className="inline-block" style={{ marginRight: "0.25em" }}>into</span>
-							<span data-word className="inline-block"><AccentWord>sales</AccentWord></span>
+							<span data-word className="inline-block" style={{ marginRight: "0.25em" }}>{t.projects.into}</span>
+							<span data-word className="inline-block"><AccentWord>{t.projects.accent}</AccentWord></span>
 						</span>
 					</h1>
 				</div>
 
 				<div className="relative z-[2] flex items-center justify-center gap-6 pb-[calc(var(--section-py)/2)]">
 					<span className="h-px w-16 bg-[var(--hairline-strong)]" />
-					<span className="micro-label text-foreground/50">Selected Work</span>
+					<span className="micro-label text-foreground/50">{t.projects.selectedWork}</span>
 					<span className="h-px w-16 bg-[var(--hairline-strong)]" />
 				</div>
 
@@ -325,12 +339,12 @@ export function Projects() {
 						<CardBackgroundPreview />
 
 						<div className="absolute right-8 top-20 z-20 hidden items-center gap-3 md:flex">
-							<span className="micro-label text-foreground/60">Projects</span>
+							<span className="micro-label text-foreground/60">{t.projects.sectionLabel}</span>
 							<span className="h-px w-6 bg-[var(--hairline-strong)]" />
 						</div>
 
-						<CentralColumn textRef={columnTextRef} />
-						<Carousel3D projects={projects} scrollRef={scrollRef} />
+						<CentralColumn textRef={columnTextRef} label={t.projects.columnLabel} />
+						<Carousel3D projects={projects} scrollRef={scrollRef} locale={locale} />
 						<ProjectIndicator nameRef={indicatorRef} />
 						<ProgressBar barRef={progressBarRef} labelRef={progressLabelRef} />
 					</div>

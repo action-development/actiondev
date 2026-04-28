@@ -7,11 +7,15 @@ import { useGSAP } from "@gsap/react";
 
 import { testimonials, type Testimonial } from "@/data/testimonials";
 import { AccentWord } from "@/components/ui/AccentWord";
+import { useLocale, useT } from "@/lib/i18n";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Editorial review — no container chrome, pure typography.
 
 function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
+	const { locale } = useLocale();
+	const idea  = locale === "es" ? (t.ideaEs  ?? t.idea)  : t.idea;
+	const quote = locale === "es" ? (t.quoteEs ?? t.quote) : t.quote;
 	const expandRef = useRef<HTMLDivElement>(null);
 	const collapsed = useRef(false);
 
@@ -75,12 +79,12 @@ function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
 			</header>
 
 			<p className="font-display text-[19px] font-normal leading-[1.5] tracking-[-0.02em] max-w-[52ch] text-foreground/65">
-				&ldquo;{t.idea}&rdquo;
+				&ldquo;{idea}&rdquo;
 			</p>
 
 			<div ref={expandRef}>
 				<p className="font-display mt-10 max-w-[38ch] text-[clamp(1.25rem,1.9vw,1.65rem)] font-normal leading-[1.45] tracking-[-0.025em] text-foreground/90">
-					&ldquo;{t.quote}&rdquo;
+					&ldquo;{quote}&rdquo;
 				</p>
 			</div>
 		</article>
@@ -94,6 +98,7 @@ const HEADLINE_TARGET_TOP = 128;
 const HEADLINE_TARGET_SCALE = 0.62;
 
 export function Testimonials() {
+	const tStr = useT();
 	const sectionRef = useRef<HTMLDivElement>(null);
 	const heroRef    = useRef<HTMLDivElement>(null);
 	const headlineRef = useRef<HTMLHeadingElement>(null);
@@ -237,9 +242,9 @@ export function Testimonials() {
 				className="display-xl fixed z-20"
 				style={{ visibility: "hidden" }}
 			>
-				Trusted by
+				{tStr.testimonials.trusted}
 				<br />
-				<AccentWord>visionaries</AccentWord>
+				<AccentWord>{tStr.testimonials.visionaries}</AccentWord>
 			</h2>
 
 			<div className="relative z-[2] container-editorial pb-[50vh]">

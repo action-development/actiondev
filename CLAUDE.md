@@ -18,13 +18,21 @@
 | Revisar UI existente, auditar accesibilidad, contraste | skill `web-design-guidelines` |
 | Refactorizar componentes, props booleanas acumuladas | skill `vercel-composition-patterns` |
 | Optimizar rendimiento React/Next.js | skill `vercel-react-best-practices` |
-| Animaciones GSAP | skill `gsap-core`, `gsap-scrolltrigger`, `gsap-react` |
+| Animaciones GSAP (core, tweens, easing) | skill `gsap-core` |
+| Animaciones GSAP (scroll-linked, pins) | skill `gsap-scrolltrigger` |
+| Animaciones GSAP en React (useGSAP, context) | skill `gsap-react` |
+| Secuencias GSAP complejas | skill `gsap-timeline` |
+| Plugins GSAP (ScrollSmoother, Flip, Draggable) | skill `gsap-plugins` |
+| Optimización rendimiento GSAP | skill `gsap-performance` |
 | Smooth scroll, Lenis | skill `implement_lenis_scroll` |
 | Tailwind styling | skill `tailwind-css-patterns` |
-| Escenas 3D, WebGL, shaders | skill `threejs-fundamentals`, `threejs-shaders`, `threejs-animation` |
-| Three.js performance, geometrías, materiales | skill `three-best-practices` |
+| Escenas 3D, setup, cámaras, jerarquía | skill `threejs-fundamentals` |
+| Shaders GLSL, ShaderMaterial, efectos custom | skill `threejs-shaders` |
+| Animaciones 3D, keyframes, morph targets | skill `threejs-animation` |
+| Geometrías, BufferGeometry, instancing | skill `threejs-geometry` |
+| Materiales PBR, propiedades, texturas | skill `threejs-materials` |
 | Interacción 3D, raycasting, controles | skill `threejs-interaction` |
-| Texturas, UV, environment maps | skill `threejs-textures` |
+| R3F best practices, Poimandres ecosystem | skill `r3f-best-practices` |
 | Dudas sobre APIs del stack | MCP `context7` |
 
 ---
@@ -80,7 +88,7 @@
 ---
 
 ## [COMPONENTES] Convenciones de componentes
-
+per
 - Named exports siempre (`export function Component`)
 - `"use client"` solo en componentes que usen hooks, GSAP, Lenis, Three.js o Canvas
 - Secciones de la home → `src/components/sections/`

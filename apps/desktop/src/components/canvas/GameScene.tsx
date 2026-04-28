@@ -13,10 +13,12 @@ import { ScoreHint } from "./overlays/ScoreHint";
 
 interface GameSceneProps {
   paused?: boolean;
+  physicsActive?: boolean;
   onNavigate?: (href: string) => void;
+  onReady?: () => void;
 }
 
-export function GameScene({ paused = false, onNavigate }: GameSceneProps) {
+export function GameScene({ paused = false, physicsActive = false, onNavigate, onReady }: GameSceneProps) {
   const gameState = useGameState();
 
   // Incremented to force a full Canvas remount after WebGL context loss.
@@ -49,7 +51,7 @@ export function GameScene({ paused = false, onNavigate }: GameSceneProps) {
     <div className="w-screen h-screen bg-black relative animate-fade-in">
       <Canvas
         key={canvasKey}
-        shadows
+        shadows="percentage"
         camera={{ position: [0, -3, 28], fov: 40 }}
         gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
         dpr={[1, 1.5]}
@@ -58,7 +60,7 @@ export function GameScene({ paused = false, onNavigate }: GameSceneProps) {
       >
         <color attach="background" args={["#0a0a12"]} />
         <Suspense fallback={null}>
-          <GameWorld paused={paused} onNavigate={onNavigate} gameState={gameState} />
+          <GameWorld paused={paused} physicsActive={physicsActive} onNavigate={onNavigate} gameState={gameState} onReady={onReady} />
           <Preload all />
         </Suspense>
       </Canvas>

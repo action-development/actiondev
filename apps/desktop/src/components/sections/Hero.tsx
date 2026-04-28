@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AccentWord } from "@/components/ui/AccentWord";
+import { useT } from "@/lib/i18n";
 
 const VIDEOS = [
   "/video-hero/optimized-1.mp4",
@@ -10,6 +11,7 @@ const VIDEOS = [
 ];
 
 export function Hero() {
+  const t = useT();
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
 
   const handleVideoEnded = useCallback(() => {
@@ -20,7 +22,7 @@ export function Hero() {
 
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.playbackRate = 1.5; // Ajustá este valor si lo querés más rápido o lento
+      videoRef.current.playbackRate = 1.5;
     }
   }, [currentVideoIndex]);
 
@@ -37,19 +39,19 @@ export function Hero() {
         playsInline
         onEnded={handleVideoEnded}
       />
-      
+
       {/* Dark overlay for better text readability */}
       <div className="absolute inset-0 z-10 bg-black/40 pointer-events-none" />
 
       <div className="relative z-20 container-editorial text-center">
-        <p className="micro-label mb-8 text-foreground/70">Digital Agency</p>
+        <p className="micro-label mb-8 text-foreground/70">{t.hero.label}</p>
         <h1 className="display-xl text-foreground">
-          We craft digital
+          {t.hero.headline1}
           <br />
-          experiences that <AccentWord>matter</AccentWord>
+          {t.hero.headline2} <AccentWord>{t.hero.accent}</AccentWord>
         </h1>
         <p className="lede mx-auto mt-10 text-foreground/80">
-          Strategy, design, and development for brands that refuse to blend in.
+          {t.hero.sub}
         </p>
       </div>
     </section>

@@ -1,0 +1,73 @@
+import type { Translations } from "./types";
+
+export const es: Translations = {
+  nav: {
+    home: "Inicio",
+    work: "Trabajo",
+    reviews: "Reseñas",
+    contact: "Contacto",
+    cta: "Hablemos",
+  },
+  hero: {
+    label: "Agencia Digital",
+    headline1: "Creamos experiencias",
+    headline2: "digitales que",
+    accent: "importan",
+    sub: "Estrategia, diseño y desarrollo para marcas que se niegan a pasar desapercibidas.",
+  },
+  projects: {
+    transform: "Transforma tus ideas",
+    into: "en",
+    accent: "ventas",
+    selectedWork: "Trabajo seleccionado",
+    loading: "Cargando proyectos…",
+    sectionLabel: "Proyectos",
+    columnLabel: "PROYECTOS",
+  },
+  testimonials: {
+    trusted: "La confianza de",
+    visionaries: "visionarios",
+  },
+  contact: {
+    headline1: "Construyamos",
+    headline2: "algo",
+    accent: "grande",
+    subtitle: "Sin compromiso. Respondemos en menos de 24 horas.",
+    emailLabel: "Email",
+    askAI: "Pregunta a la IA sobre nosotros",
+    nameLabel: "Nombre *",
+    namePlaceholder: "Tu nombre completo",
+    phoneLabel: "Teléfono",
+    phonePlaceholder: "+34 …",
+    emailFieldLabel: "Email *",
+    emailPlaceholder: "tu@empresa.com",
+    websiteLabel: "Web actual",
+    websitePlaceholder: "https://…",
+    projectLabel: "Proyecto",
+    projectPlaceholder: "¿Qué estás construyendo y cómo es el resultado final?",
+    required: "* Obligatorio",
+    submit: "Enviar mensaje",
+    formAriaLabel: "Formulario de contacto",
+  },
+  footer: {
+    available: "Disponible para el '26",
+  },
+  scroll: {
+    hero: "Inicio",
+    work: "Trabajo",
+    reviews: "Reseñas",
+    contact: "Contacto",
+    goTo: "Ir a",
+    ariaLabel: "Progreso de sección",
+  },
+  tutorial: {
+    move: "para mover",
+    rotate: "para rotar",
+    jump: "para saltar",
+    pickup: "para coger",
+    throw: "para apuntar y lanzar",
+  },
+  loading: {
+    ariaLabel: "Porcentaje de carga",
+  },
+};
