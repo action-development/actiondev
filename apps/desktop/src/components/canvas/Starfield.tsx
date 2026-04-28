@@ -21,51 +21,35 @@ import * as THREE from "three";
 const STAR_COUNT = 1200;
 const SHELL_RADIUS = 80;
 
-/** Pre-computed random positions + phase offsets for twinkle animation */
+/** Pre-computed star data. Positions stored flat for fast indexed access in useFrame. */
 function generateStarData(count: number) {
-  const matrices: THREE.Matrix4[] = [];
-  const phases: number[] = [];
-  const baseScales: number[] = [];
-
-  const position = new THREE.Vector3();
-  const quaternion = new THREE.Quaternion();
-  const scale = new THREE.Vector3();
-  const matrix = new THREE.Matrix4();
+  const positions = new Float32Array(count * 3);
+  const phases = new Float32Array(count);
+  const baseScales = new Float32Array(count);
 
   for (let i = 0; i < count; i++) {
-    // Distribute on sphere shell using fibonacci sphere algorithm
-    // for even distribution (no polar clustering)
     const phi = Math.acos(1 - (2 * (i + 0.5)) / count);
     const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-
-    // Add noise to radius so stars aren't on a perfect shell
     const r = SHELL_RADIUS + (Math.random() - 0.5) * 30;
 
-    position.set(
-      r * Math.sin(phi) * Math.cos(theta),
-      r * Math.sin(phi) * Math.sin(theta),
-      r * Math.cos(phi)
-    );
+    positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
+    positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+    positions[i * 3 + 2] = r * Math.cos(phi);
 
-    const s = 0.02 + Math.random() * 0.08;
-    scale.set(s, s, s);
-    baseScales.push(s);
-
-    matrix.compose(position, quaternion, scale);
-    matrices.push(matrix.clone());
-
-    phases.push(Math.random() * Math.PI * 2);
+    baseScales[i] = 0.02 + Math.random() * 0.08;
+    phases[i]     = Math.random() * Math.PI * 2;
   }
 
-  return { matrices, phases, baseScales };
+  return { positions, phases, baseScales };
 }
 
 export function Starfield() {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  const { matrices, phases, baseScales } = useMemo(
+  const { positions, phases, baseScales } = useMemo(
     () => generateStarData(STAR_COUNT),
     []
   );
+  const frameRef = useRef(0);
 
   useEffect(() => {
     const mesh = meshRef.current;
@@ -80,28 +64,30 @@ export function Starfield() {
     };
   }, []);
 
-  // Reusable objects for the animation loop (render-avoid-allocations)
-  const tempMatrix = useMemo(() => new THREE.Matrix4(), []);
-  const tempPosition = useMemo(() => new THREE.Vector3(), []);
-  const tempQuaternion = useMemo(() => new THREE.Quaternion(), []);
-  const tempScale = useMemo(() => new THREE.Vector3(), []);
+  // Single reusable matrix — no decompose/compose needed for scale+translate (no rotation).
+  const m = useMemo(() => new THREE.Matrix4(), []);
 
   useFrame((state) => {
     const mesh = meshRef.current;
     if (!mesh) return;
 
-    const time = state.clock.elapsedTime;
+    // Twinkle is slow — updating every other frame is imperceptible and halves CPU cost.
+    if (++frameRef.current % 2 !== 0) return;
+
+    const t = state.clock.elapsedTime;
 
     for (let i = 0; i < STAR_COUNT; i++) {
-      // Twinkle: oscillate scale with per-star phase offset
-      const twinkle = 0.6 + 0.4 * Math.sin(time * 1.5 + phases[i]);
-      const s = baseScales[i] * twinkle;
-
-      matrices[i].decompose(tempPosition, tempQuaternion, tempScale);
-      tempScale.set(s, s, s);
-      tempMatrix.compose(tempPosition, tempQuaternion, tempScale);
-
-      mesh.setMatrixAt(i, tempMatrix);
+      const s = baseScales[i] * (0.6 + 0.4 * Math.sin(t * 1.5 + phases[i]));
+      const x = positions[i * 3];
+      const y = positions[i * 3 + 1];
+      const z = positions[i * 3 + 2];
+      // Scale + translate matrix, no rotation. Row-major: set(n11..n44)
+      // [s 0 0 x]
+      // [0 s 0 y]
+      // [0 0 s z]
+      // [0 0 0 1]
+      m.set(s,0,0,x, 0,s,0,y, 0,0,s,z, 0,0,0,1);
+      mesh.setMatrixAt(i, m);
     }
 
     mesh.instanceMatrix.needsUpdate = true;
@@ -113,9 +99,12 @@ export function Starfield() {
       args={[undefined, undefined, STAR_COUNT]}
       frustumCulled={false}
       onUpdate={(mesh) => {
-        // Set initial matrices when the mesh first mounts
+        const mat = new THREE.Matrix4();
         for (let i = 0; i < STAR_COUNT; i++) {
-          mesh.setMatrixAt(i, matrices[i]);
+          const s = baseScales[i];
+          const x = positions[i * 3], y = positions[i * 3 + 1], z = positions[i * 3 + 2];
+          mat.set(s,0,0,x, 0,s,0,y, 0,0,s,z, 0,0,0,1);
+          mesh.setMatrixAt(i, mat);
         }
         mesh.instanceMatrix.needsUpdate = true;
       }}

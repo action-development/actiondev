@@ -189,6 +189,8 @@ function Card3D({
 
 		if (abs > HARD_CULL_DEG) {
 			groupRef.current.visible = false;
+			// Pause video decode while card is off-screen
+			if (videoRef.current && !videoRef.current.paused) videoRef.current.pause();
 			return;
 		}
 
@@ -199,8 +201,12 @@ function Card3D({
 		groupRef.current.visible = fade > 0.01;
 		if (fade <= 0.01) return;
 
-		// Lazy load texture on first visibility
-		if (!textureLoaded.current) loadTexture();
+		// Lazy load texture on first visibility, resume if previously paused
+		if (!textureLoaded.current) {
+			loadTexture();
+		} else if (videoRef.current && videoRef.current.paused) {
+			videoRef.current.play().catch(() => {});
+		}
 
 		cardBaseMat.opacity = fade;
 		borderMat.opacity = 0.07 * fade;

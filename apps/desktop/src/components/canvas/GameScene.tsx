@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Preload } from "@react-three/drei";
 import type { WebGLRenderer } from "three";
 import { useGameState } from "@/hooks/use-game-state";
 import { GameWorld } from "./GameWorld";
@@ -51,7 +50,7 @@ export function GameScene({ paused = false, physicsActive = false, onNavigate, o
     <div className="w-screen h-screen bg-black relative animate-fade-in">
       <Canvas
         key={canvasKey}
-        shadows="percentage"
+        shadows="soft"
         camera={{ position: [0, -3, 28], fov: 40 }}
         gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
         dpr={[1, 1.5]}
@@ -61,7 +60,6 @@ export function GameScene({ paused = false, physicsActive = false, onNavigate, o
         <color attach="background" args={["#0a0a12"]} />
         <Suspense fallback={null}>
           <GameWorld paused={paused} physicsActive={physicsActive} onNavigate={onNavigate} gameState={gameState} onReady={onReady} />
-          <Preload all />
         </Suspense>
       </Canvas>
 
