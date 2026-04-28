@@ -10,6 +10,12 @@
 
 **Después de cada cambio:** actualizar `CLAUDE.md` (convención/stack/página nueva), `sitemap.ts` (página nueva/eliminada).
 
+**Herramientas de calidad — usar proactivamente (disponibles en Bash):**
+- `fallow dead-code` — detectar archivos/exports muertos antes y después de refactors
+- `fallow dupes` — detectar duplicación antes de añadir código similar
+- `fallow health` — score global; útil tras cambios grandes
+- `pnpm --filter @actiondev/desktop screenshot` — captura visual con dev server corriendo (`pnpm --filter @actiondev/desktop dev`); guarda en `/tmp/screenshot.png`; leer con Read tool para verificar UI visualmente
+
 **Skills y MCPs — usar sin que te lo pidan:**
 
 | Contexto detectado | Invocar |
