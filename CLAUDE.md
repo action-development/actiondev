@@ -292,3 +292,20 @@ pnpm build         → exitoso
 
 ### Sesión nueva — lectura inicial máxima 3 archivos
 Al iniciar trabajo en un feature sin contexto previo: leer `next.config.js` + `package.json` + el archivo de entry point afectado. No más.
+
+---
+
+## [COMPLEJIDAD] Archivos complejos — contexto intencional
+
+Antes de refactorizar cualquiera de estos archivos, leer esta sección. La complejidad es deliberada salvo que se indique lo contrario.
+
+| Archivo | Función compleja | CRAP | Por qué existe así | Qué NO hacer |
+|---|---|---|---|---|
+| `canvas/Character.tsx` | `useFrame` :156 | 524 | Loop de física de personaje: movimiento, salto, eye tracking, animación, wrap-around, cubo sostenido — todo en un único `useFrame` para evitar sincronización de estado entre múltiples loops. Creció iterativamente desde `36bc2e2`. | No dividir en múltiples `useFrame`. Coste de sync > coste de longitud. |
+| `effects/carousel-3d.tsx` | `Card3D` :72, `loadTexture` :128 | 600 | Pipeline de textura video→canvas→Three.js con fallback a imagen. La complejidad de `loadTexture` es la gestión de estados async (carga, error, video ready). Reescribirlo rompería la reproducción de vídeo en las cards. | No tocar el pipeline de texturas sin testear visualmente cada card con su vídeo. |
+| `canvas/GameWorld.tsx` | `useFrame` :129 | 116 | Coordinador del game loop: aim line, throw, hold, basket scoring — creado entero en `db810f2`. Complejo pero reciente y sin bugs conocidos. | No extraer sub-hooks sin un test de integración previo. |
+| `canvas/PageCube.tsx` | `useFrame` :94 | 71 | State machine: idle → held → thrown → scored → gated. La complejidad es la máquina de estados, no código redundante. | Aceptable tal cual. |
+| `ui/LoadingScreen.tsx` | `tick` :80 | 156 | Phase machine rAF: loading → stall → sprint → fading. Reescrito deliberadamente así para evitar bugs de reconciliación React + GSAP. Versiones más simples fallaron. | No simplificar. La complejidad es el diseño. |
+| `seo/StructuredData.tsx` | `buildSchema` :30 | 132 | Switch con JSON-LD schemas por tipo (`projects`, `reviews`). Alta ciclomática por los objetos anidados, no por lógica real. | Aceptable. No dividir en archivos separados. |
+
+**Regla general:** si fallow marca algo como CRITICAL pero el archivo lleva >3 commits sin bugs, la complejidad es dominio, no deuda. Verificar historial con `git log -- <archivo>` antes de proponer refactor.
