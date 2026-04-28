@@ -2,14 +2,18 @@ import { describe, it, expect, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useGameState } from "@/hooks/use-game-state";
 
+function expectClearedState(result: { current: ReturnType<typeof useGameState> }) {
+  expect(result.current.thrownIds.current.size).toBe(0);
+  expect(result.current.gatedIds.current.size).toBe(0);
+  expect(result.current.powerRef.current).toBe(0);
+  expect(result.current.chargingRef.current).toBe(false);
+  expect(result.current.holdingRef.current).toBe(false);
+}
+
 describe("useGameState", () => {
   it("initialises with empty sets and zero power", () => {
     const { result } = renderHook(() => useGameState());
-    expect(result.current.thrownIds.current.size).toBe(0);
-    expect(result.current.gatedIds.current.size).toBe(0);
-    expect(result.current.powerRef.current).toBe(0);
-    expect(result.current.chargingRef.current).toBe(false);
-    expect(result.current.holdingRef.current).toBe(false);
+    expectClearedState(result);
   });
 
   it("reset clears thrownIds, gatedIds and power state", () => {
@@ -21,11 +25,7 @@ describe("useGameState", () => {
       result.current.setHolding(true);
       result.current.reset();
     });
-    expect(result.current.thrownIds.current.size).toBe(0);
-    expect(result.current.gatedIds.current.size).toBe(0);
-    expect(result.current.powerRef.current).toBe(0);
-    expect(result.current.chargingRef.current).toBe(false);
-    expect(result.current.holdingRef.current).toBe(false);
+    expectClearedState(result);
   });
 
   it("setPower updates refs and fires onPowerUpdate subscriber", () => {

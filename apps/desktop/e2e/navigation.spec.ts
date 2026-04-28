@@ -1,9 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { waitForPage } from "./helpers";
-
-test.beforeEach(async ({ page }) => {
-	await page.addInitScript(() => sessionStorage.setItem("action-loaded", "1"));
-});
 
 test("logo links to home", async ({ page }) => {
 	await page.goto("/");

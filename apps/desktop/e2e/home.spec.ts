@@ -1,10 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { waitForPage, canvasMasks } from "./helpers";
-
-test.beforeEach(async ({ page }) => {
-	// Skip loading screen — simulates returning visitor (sessionStorage already set)
-	await page.addInitScript(() => sessionStorage.setItem("action-loaded", "1"));
-});
 
 test("hero section renders canvas and key text", async ({ page }) => {
 	await page.goto("/");

@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useEffect, useMemo, type MutableRefObject, Suspense } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { ScrollInvalidator, onCanvasCreated } from "@/lib/r3f-utils";
 
 /**
  * FloatingCubeLite — Lightweight version for content pages (not home).
@@ -95,25 +96,6 @@ function Cube({ scrollRef, color, path }: { scrollRef: MutableRefObject<CubeScro
 	);
 }
 
-function ScrollInvalidator() {
-	const { invalidate } = useThree();
-	useEffect(() => {
-		invalidate();
-		let pending = false;
-		const handler = () => {
-			if (pending) return;
-			pending = true;
-			requestAnimationFrame(() => {
-				invalidate();
-				pending = false;
-			});
-		};
-		window.addEventListener("scroll", handler, { passive: true });
-		return () => window.removeEventListener("scroll", handler);
-	}, [invalidate]);
-	return null;
-}
-
 interface FloatingCubeLiteProps {
 	scrollRef: MutableRefObject<CubeScrollState>;
 	color?: string;
@@ -140,11 +122,7 @@ export function FloatingCubeLiteCanvas({
 				flat
 				dpr={1}
 				style={{ width: "100%", height: "100%", background: "transparent" }}
-				onCreated={({ gl: renderer, scene, camera }) => {
-					renderer.setClearColor(0x000000, 0);
-					scene.background = null;
-					renderer.compile(scene, camera);
-				}}
+				onCreated={onCanvasCreated}
 			>
 				<ScrollInvalidator />
 				<Suspense fallback={null}>

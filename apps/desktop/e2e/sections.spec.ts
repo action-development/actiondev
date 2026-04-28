@@ -1,8 +1,7 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./fixtures";
 import { waitForPage } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-	await page.addInitScript(() => sessionStorage.setItem("action-loaded", "1"));
 	await page.goto("/");
 	await waitForPage(page);
 });

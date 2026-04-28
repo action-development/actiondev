@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useCenteredBlackModel, applyCoinFlip } from "@/lib/model-utils";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -45,53 +46,24 @@ function ScrollGlobe({ progress }: { progress: number }) {
   const timeRef = useRef(0);
   const { viewport } = useThree();
 
-  const centeredScene = useMemo(() => {
-    const clone = scene.clone();
-    const box = new THREE.Box3().setFromObject(clone);
-    const center = box.getCenter(new THREE.Vector3());
-    clone.position.sub(center);
-    clone.traverse((node) => {
-      if ((node as THREE.Mesh).isMesh) {
-        (node as THREE.Mesh).material = new THREE.MeshBasicMaterial({
-          color: 0x000000,
-        });
-      }
-    });
-    return clone;
-  }, [scene]);
+  const centeredScene = useCenteredBlackModel(scene);
 
   const topY = viewport.height / 2 - 0.35;
   const centerY = -0.2;
   const smallScale = 0.045;
   const bigScale = (viewport.width * 0.35) / MODEL_NATIVE_WIDTH;
 
-  const FLIP_DURATION = 0.5;
-  const PAUSE_DURATION = 1.8;
-  const CYCLE = FLIP_DURATION + PAUSE_DURATION;
-
   useFrame((_, delta) => {
     if (!groupRef.current) return;
     const g = groupRef.current;
     const p = progress;
-
-    // Auto coin flip in idle phases
-    const doFlip = () => {
-      timeRef.current += delta;
-      const cycleTime = timeRef.current % CYCLE;
-      if (cycleTime < FLIP_DURATION) {
-        const t = cycleTime / FLIP_DURATION;
-        const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-        const base = Math.floor(timeRef.current / CYCLE) * Math.PI;
-        g.rotation.y = base + eased * Math.PI;
-      }
-    };
 
     if (p < PHASE.INTRO_END) {
       g.position.set(0, topY, 0);
       g.scale.setScalar(smallScale);
       g.rotation.x = 0;
       g.rotation.z = 0;
-      doFlip();
+      applyCoinFlip(g, timeRef, delta);
     } else if (p < PHASE.FLY_END) {
       const t = smoothstep(PHASE.INTRO_END, PHASE.FLY_END, p);
       g.position.set(0, lerp(topY, centerY, t), 0);
@@ -118,7 +90,7 @@ function ScrollGlobe({ progress }: { progress: number }) {
       g.scale.setScalar(smallScale);
       g.rotation.x = 0;
       g.rotation.z = 0;
-      doFlip();
+      applyCoinFlip(g, timeRef, delta);
     }
   });
 

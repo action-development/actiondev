@@ -4,6 +4,7 @@ import { useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { useCenteredBlackModel } from "@/lib/model-utils";
 
 const GLB_PATH = "/3d/action-globe.glb";
 
@@ -40,21 +41,7 @@ function AnimatedGlobe({
   const progressRef = useRef(0);
   const completedRef = useRef(false);
 
-  // Clone scene, center geometry, and force pure black material
-  const centeredScene = useMemo(() => {
-    const clone = scene.clone();
-    const box = new THREE.Box3().setFromObject(clone);
-    const center = box.getCenter(new THREE.Vector3());
-    clone.position.sub(center);
-    clone.traverse((node) => {
-      if ((node as THREE.Mesh).isMesh) {
-        (node as THREE.Mesh).material = new THREE.MeshBasicMaterial({
-          color: 0x000000,
-        });
-      }
-    });
-    return clone;
-  }, [scene]);
+  const centeredScene = useCenteredBlackModel(scene);
 
   // Get the model's native width to calculate proper scale
   const modelWidth = useMemo(() => {

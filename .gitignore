@@ -45,3 +45,5 @@ apps/desktop/e2e/test-results/
 apps/desktop/e2e/report/
 apps/desktop/e2e/snapshots/
 .fallow/
+*.mp4
+public/projets_videos/

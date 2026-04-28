@@ -2,6 +2,7 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
+import { ScrollInvalidator, onCanvasCreated } from "@/lib/r3f-utils";
 import * as THREE from "three";
 import type { Project } from "@/data/projects";
 
@@ -402,27 +403,6 @@ function CarouselScene({
 	);
 }
 
-// ─── Scroll bridge — rAF-gated to avoid redundant invalidations ──────────
-
-function ScrollInvalidator() {
-	const { invalidate } = useThree();
-	useEffect(() => {
-		invalidate();
-		let pending = false;
-		const handler = () => {
-			if (pending) return;
-			pending = true;
-			requestAnimationFrame(() => {
-				invalidate();
-				pending = false;
-			});
-		};
-		window.addEventListener("scroll", handler, { passive: true });
-		return () => window.removeEventListener("scroll", handler);
-	}, [invalidate]);
-	return null;
-}
-
 // ─── Export ─────────────────────────────────────────────────────────────────
 
 const POINTER_EVENTS_DEBOUNCE_MS = 150;
@@ -479,11 +459,7 @@ export function Carousel3D({
 				flat
 				dpr={1}
 				style={{ background: "transparent" }}
-				onCreated={({ gl: renderer, scene, camera }) => {
-					renderer.setClearColor(0x000000, 0);
-					scene.background = null;
-					renderer.compile(scene, camera);
-				}}
+				onCreated={onCanvasCreated}
 			>
 				<ScrollInvalidator />
 				<Suspense fallback={null}>
