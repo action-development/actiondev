@@ -19,9 +19,6 @@ import * as THREE from "three";
 const SIZE = 1.5;
 const ROT_SPEED = { x: 0.25, y: 0.35, z: 0.12 };
 
-export type { CubePath } from "@/components/canvas/FloatingCube";
-export { CUBE_PATHS } from "@/components/canvas/FloatingCube";
-
 interface PathDef {
 	x: { amp: number; cycles: number; offset?: number };
 	y: { amp: number; cycles: number; offset?: number };

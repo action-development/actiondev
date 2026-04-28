@@ -44,3 +44,4 @@ next-env.d.ts
 apps/desktop/e2e/test-results/
 apps/desktop/e2e/report/
 apps/desktop/e2e/snapshots/
+.fallow/

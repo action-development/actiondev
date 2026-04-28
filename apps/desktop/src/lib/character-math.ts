@@ -38,9 +38,9 @@ export function computeWrapX(
   return null;
 }
 
-export type AnimState = "idle" | "walk" | "jump" | "fall" | "wave";
+type AnimState = "idle" | "walk" | "jump" | "fall" | "wave";
 
-export interface AnimInput {
+interface AnimInput {
   isGrounded: boolean;
   moveX: number;
   vy: number;

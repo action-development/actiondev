@@ -62,7 +62,7 @@ function createOverlayTexture(category: string, title: string): THREE.CanvasText
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-export interface ScrollState {
+interface ScrollState {
 	rotation: number;
 	y: number;
 }

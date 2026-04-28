@@ -42,7 +42,7 @@ export const HOLD_MARGIN = 0.5;
 export const WRAP_X = 18.5;
 
 /** Y position of the floor collider top surface (after removing the old -4 group offset). */
-export const GROUND_Y = -6;
+const GROUND_Y = -6;
 
 /** Character horizontal movement speed (world units / second). */
 export const MOVE_SPEED = 6;
