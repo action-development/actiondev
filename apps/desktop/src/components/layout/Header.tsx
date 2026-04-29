@@ -31,29 +31,28 @@ export function Header() {
       className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
       role="banner"
     >
-      {/* Atmospheric fade behind the bar — contrast without drawing a container. */}
+      {/* Taller atmospheric fade — canvas content starts immediately below the bar */}
       <div
         aria-hidden
-        className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background via-background/70 to-transparent"
+        className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background via-background/60 to-transparent"
       />
 
       <nav
         aria-label="Main navigation"
-        className="relative container-editorial flex items-center gap-10 py-6 pointer-events-auto"
+        className="relative container-editorial flex items-center gap-10 py-5 pointer-events-auto border-b border-border/20 backdrop-blur-sm"
       >
-        {/* Wordmark */}
+        {/* Brand mark — logo lockup only (contains globe + "action development." text) */}
         <Link
           href="/"
           aria-label="Action — Home"
-          className="group flex items-baseline gap-1 font-mono text-[13px] font-bold uppercase tracking-[0.22em] text-foreground"
+          className="group"
         >
-          <span>Action</span>
-          <span
-            aria-hidden
-            className="translate-y-[1px] text-accent transition-transform duration-[var(--duration-slow)] group-hover:rotate-90"
-          >
-            ●
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/logo.webp"
+            alt="Action Development"
+            className="h-[32px] w-auto invert opacity-70 transition-opacity duration-[var(--duration)] group-hover:opacity-100"
+          />
         </Link>
 
         {/* Nav items */}
@@ -88,19 +87,19 @@ export function Header() {
           })}
         </ul>
 
-        {/* Language toggle — EN | ES */}
+        {/* Language toggle — ES first (primary market), EN second */}
         <button
           type="button"
           onClick={() => setLocale(locale === "en" ? "es" : "en")}
-          aria-label={locale === "en" ? "Cambiar a español" : "Switch to English"}
-          className="hidden md:flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.22em]"
+          aria-label={locale === "es" ? "Switch to English" : "Cambiar a español"}
+          className="hidden md:flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.22em]"
         >
-          <span className={locale === "en" ? "text-foreground" : "text-muted hover:text-foreground transition-colors"}>
-            EN
-          </span>
-          <span className="text-muted/30 select-none">|</span>
           <span className={locale === "es" ? "text-foreground" : "text-muted hover:text-foreground transition-colors"}>
             ES
+          </span>
+          <span className="text-border select-none">|</span>
+          <span className={locale === "en" ? "text-foreground" : "text-muted hover:text-foreground transition-colors"}>
+            EN
           </span>
         </button>
 

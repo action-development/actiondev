@@ -305,7 +305,7 @@ export function Projects() {
 					className="relative z-[2] flex h-[80vh] flex-col items-center justify-center overflow-hidden container-editorial"
 					style={{ perspective: "600px" }}
 				>
-					<h1 className="display-xl max-w-5xl text-center text-foreground">
+					<h2 className="display-xl max-w-5xl text-center text-foreground">
 						<span ref={line1Ref} className="block will-change-transform">
 							{t.projects.transform.split(" ").map((word, i) => (
 								<span key={i} data-word className="inline-block" style={{ marginRight: "0.25em" }}>
@@ -317,7 +317,7 @@ export function Projects() {
 							<span data-word className="inline-block" style={{ marginRight: "0.25em" }}>{t.projects.into}</span>
 							<span data-word className="inline-block"><AccentWord>{t.projects.accent}</AccentWord></span>
 						</span>
-					</h1>
+					</h2>
 				</div>
 
 				<div className="relative z-[2] flex items-center justify-center gap-6 pb-[calc(var(--section-py)/2)]">

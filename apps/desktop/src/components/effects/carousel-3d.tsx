@@ -2,9 +2,24 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { ScrollInvalidator, onCanvasCreated } from "@/lib/r3f-utils";
 import * as THREE from "three";
 import type { Project } from "@/data/projects";
+
+/**
+ * Frame-rate independent exponential lerp.
+ * `rate` units are 1/seconds. Returns the alpha you'd multiply (target - current) by.
+ * Equivalence with fixed factor: factor@60fps `f` ↔ rate ≈ `-60 * ln(1 - f)`.
+ */
+function expLerp(rate: number, dt: number): number {
+  return 1 - Math.exp(-rate * dt);
+}
+
+/** Rate constants — chosen so that at 60fps they reproduce the original feel. */
+const IMG_FADE_RATE = 6.32;       // ↔ 0.1/frame@60fps
+const HOVER_IN_RATE = 7.67;       // ↔ 0.12/frame@60fps
+const HOVER_OUT_RATE = 41.59;     // ↔ 0.5/frame@60fps
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -57,6 +72,9 @@ function createOverlayTexture(category: string, title: string): THREE.CanvasText
 	const texture = new THREE.CanvasTexture(canvas);
 	texture.minFilter = THREE.LinearFilter;
 	texture.magFilter = THREE.LinearFilter;
+	// CanvasTexture default `generateMipmaps=true` would build a mip pyramid that minFilter=Linear
+	// never samples — pure VRAM waste (~33% overhead per texture).
+	texture.generateMipmaps = false;
 	texture.colorSpace = THREE.SRGBColorSpace;
 	return texture;
 }
@@ -122,6 +140,7 @@ function Card3D({
 	}, [categoryLabel, project.title]);
 
 	const { invalidate } = useThree();
+	const router = useRouter();
 	const textureLoaded = useRef(false);
 	const cancelledRef = useRef(false);
 
@@ -134,6 +153,10 @@ function Card3D({
 			if (cancelledRef.current) return;
 			t.minFilter = THREE.LinearFilter;
 			t.magFilter = THREE.LinearFilter;
+			// VideoTexture has generateMipmaps=false by default (no-op here, defensive).
+			// CanvasTexture (from ImageBitmapLoader) and stock Texture both default to true,
+			// generating an unused mip pyramid → VRAM waste with minFilter=Linear.
+			t.generateMipmaps = false;
 			t.colorSpace = THREE.SRGBColorSpace;
 			textureRef.current = t;
 			imageMat.map = t;
@@ -181,8 +204,11 @@ function Card3D({
 		};
 	}, [imageMat, darkMat, cardBaseMat, borderMat, overlayMat]);
 
-	useFrame(() => {
+	useFrame((_, delta) => {
 		if (!groupRef.current || !scrollRef.current) return;
+		// Clamp dt — frameloop="demand" can produce huge gaps after idle pauses,
+		// which would teleport lerps to target if used raw.
+		const dt = Math.min(delta, 1 / 30);
 		const { rotation } = scrollRef.current;
 		const cardAngle = index * ANGLE_STEP - rotation;
 		const abs = Math.abs(cardAngle);
@@ -224,7 +250,7 @@ function Card3D({
 			(revealedRef.current ? absFacing < HIDE_THRESHOLD : absFacing < REVEAL_THRESHOLD);
 		revealedRef.current = shouldReveal;
 		const imgTarget = shouldReveal ? 1 : 0;
-		imgOpacity.current += (imgTarget - imgOpacity.current) * 0.1;
+		imgOpacity.current += (imgTarget - imgOpacity.current) * expLerp(IMG_FADE_RATE, dt);
 
 		imageMat.opacity = imgOpacity.current * fade;
 		if (imageRef.current) {
@@ -238,7 +264,8 @@ function Card3D({
 		// Hover overlay
 		if (imgOpacity.current > 0.5) {
 			const hoverTarget = hoveredRef.current ? 1 : 0;
-			hoverOpacity.current += (hoverTarget - hoverOpacity.current) * (hoverTarget > 0 ? 0.12 : 0.5);
+			const hoverRate = hoverTarget > 0 ? HOVER_IN_RATE : HOVER_OUT_RATE;
+			hoverOpacity.current += (hoverTarget - hoverOpacity.current) * expLerp(hoverRate, dt);
 
 			overlayMat.opacity = hoverOpacity.current * fade;
 			if (overlayRef.current) {
@@ -290,7 +317,9 @@ function Card3D({
 					position={[0, 0, 4]}
 					material={sharedHitAreaMat}
 					onClick={() => {
-						window.location.href = `/projects/${project.slug}`;
+						// router.push: client-side nav preserva bundle, smooth scroll y el propio carrusel.
+						// window.location.href hacía full reload (~800ms TTI extra).
+						router.push(`/projects/${project.slug}`);
 					}}
 					onPointerEnter={() => {
 						hoveredRef.current = true;

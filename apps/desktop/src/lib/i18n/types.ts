@@ -70,4 +70,7 @@ export interface Translations {
   loading: {
     ariaLabel: string;
   };
+  game: {
+    scoreHint: string;
+  };
 }

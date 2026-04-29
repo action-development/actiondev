@@ -9,7 +9,7 @@ import { testimonials } from "@/data/testimonials";
  * Server component — runs at build time on static routes. Zero client JS.
  */
 
-type SchemaKind = "organization" | "website" | "projects" | "reviews";
+type SchemaKind = "organization" | "website" | "projects" | "reviews" | "services";
 
 interface StructuredDataProps {
   kind: SchemaKind;
@@ -51,6 +51,8 @@ function buildSchema(kind: SchemaKind): object | null {
         address: {
           "@type": "PostalAddress",
           addressCountry: BRAND.country,
+          addressLocality: BRAND.city,
+          addressRegion: BRAND.region,
         },
         ...(sameAs.length > 0 && { sameAs }),
       };
@@ -89,6 +91,37 @@ function buildSchema(kind: SchemaKind): object | null {
             creator: { "@id": absoluteUrl("#organization") },
           },
         })),
+      };
+
+    case "services":
+      return {
+        "@context": "https://schema.org",
+        "@type": "ProfessionalService",
+        "@id": absoluteUrl("#services"),
+        name: BRAND.legalName,
+        url: absoluteUrl("/"),
+        description: BRAND.longDescription,
+        areaServed: {
+          "@type": "Country",
+          name: BRAND.country,
+        },
+        hasOfferCatalog: {
+          "@type": "OfferCatalog",
+          name: `${BRAND.name} Services`,
+          itemListElement: BRAND.services.map((service, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            item: {
+              "@type": "Offer",
+              itemOffered: {
+                "@type": "Service",
+                name: service,
+                provider: { "@id": absoluteUrl("#organization") },
+              },
+            },
+          })),
+        },
+        provider: { "@id": absoluteUrl("#organization") },
       };
 
     case "reviews": {

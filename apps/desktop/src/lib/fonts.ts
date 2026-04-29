@@ -3,11 +3,13 @@ import { Geist, Geist_Mono, Syne } from "next/font/google";
 export const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 // Display / heading font — geometric, editorial. Kept to 500 and 700 so the
@@ -16,4 +18,5 @@ export const syne = Syne({
   variable: "--font-syne",
   subsets: ["latin"],
   weight: ["500", "700"],
+  display: "swap",
 });

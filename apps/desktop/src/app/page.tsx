@@ -59,16 +59,14 @@ export default function HomePage() {
 
   useEffect(() => {
     if (sessionStorage.getItem(SESSION_KEY)) {
-      // Return visit — game already cached. Signal physics + loadingReady so the
-      // LoadingScreen plays its animation and completes naturally on its own.
-      // We don't skip loading entirely (setLoading(false)) because that would
-      // unmount the screen in ~500ms during hydration, before any animation runs.
+      // Return visit — chunk is cached, so game will mount fast. Pre-arm physics
+      // so it starts the instant GameWorld mounts. loadingReady is NOT set here —
+      // handleGameReady → tryReveal sets it once GameWorld actually signals ready,
+      // preventing a black-screen gap when the loading screen ends before the canvas
+      // has rendered its first frame.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhysicsActive(true);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLoadingReady(true);
       gameReadyRef.current = true;
-      revealStarted.current = true;
     }
   }, []);
 
@@ -153,10 +151,10 @@ export default function HomePage() {
 
       <section ref={homeRef} id="home" className="relative overflow-hidden min-h-screen">
         {loading && <LoadingScreen ready={loadingReady} onComplete={handleLoadingComplete} />}
-        <GameScene paused={loading || gamePaused} physicsActive={physicsActive} onNavigate={handleNavigate} onReady={handleGameReady} />
+        <GameScene paused={loading || gamePaused} physicsPaused={gamePaused} renderPaused={gamePaused} physicsActive={physicsActive} onNavigate={handleNavigate} onReady={handleGameReady} />
       </section>
 
-      <main>
+      <main id="main-content">
         <div id="projects">
           <Projects />
         </div>

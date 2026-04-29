@@ -18,12 +18,12 @@ interface LocaleContextValue {
 }
 
 const LocaleContext = createContext<LocaleContextValue>({
-  locale: "en",
+  locale: "es",
   setLocale: () => {},
 });
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+  const [locale, setLocaleState] = useState<Locale>("es");
 
   // Hydrate from localStorage after mount (SSR safe)
   useEffect(() => {

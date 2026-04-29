@@ -55,14 +55,8 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
-    apple: "/apple-touch-icon.png",
-  },
-  manifest: "/manifest.webmanifest",
+  // icons and manifest are handled automatically by Next.js App Router
+  // via src/app/favicon.ico, src/app/icon.svg, and src/app/manifest.ts
   formatDetection: {
     email: false,
     address: false,
@@ -91,9 +85,16 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-black">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[9999] focus:rounded focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-mono focus:text-background focus:outline-none"
+        >
+          Skip to content
+        </a>
         <LocaleProvider>
           <StructuredData kind="organization" />
           <StructuredData kind="website" />
+          <StructuredData kind="services" />
           {children}
         </LocaleProvider>
       </body>

@@ -2,22 +2,19 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/seo";
 import { projects } from "@/data/projects";
 
-const STATIC_ROUTES = ["", "#projects", "#reviews", "#contact"];
+// Hash anchors (#projects, #contact …) are not indexable pages — omit them.
+// Add real routes here as the site grows (e.g. "/servicios", "/blog").
+const STATIC_ROUTES = [""];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
-  const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
-    url: `${SITE_URL}/${path}`.replace(/\/+$/, path.startsWith("#") ? "" : "/"),
+  const deduped: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
+    url: `${SITE_URL}/${path}`.replace(/\/$/, "") || SITE_URL,
     lastModified: now,
     changeFrequency: "monthly",
-    priority: path === "" ? 1 : 0.7,
+    priority: 1,
   }));
-
-  // Anchor URLs are ignored by most crawlers; keep homepage entries clean.
-  const deduped = Array.from(
-    new Map(staticEntries.map((e) => [e.url.split("#")[0], e])).values()
-  );
 
   const projectEntries: MetadataRoute.Sitemap = projects
     .filter((p) => p.url && p.url.startsWith("http"))

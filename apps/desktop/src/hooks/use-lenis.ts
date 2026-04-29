@@ -8,9 +8,13 @@ export function useLenis() {
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const lenis = new Lenis({
-      lerp: 0.1,
-      smoothWheel: true,
+      // Disable smooth interpolation for users who prefer reduced motion.
+      // lerp: 1 makes Lenis a pass-through (instant scroll, no animation).
+      lerp: prefersReduced ? 1 : 0.1,
+      smoothWheel: !prefersReduced,
     });
 
     lenisRef.current = lenis;

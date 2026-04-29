@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap-config";
 import Image from "next/image";
 import { useGSAP } from "@gsap/react";
@@ -196,37 +196,38 @@ export function Testimonials() {
 			}
 		);
 
-		// ── Card expand / collapse on scroll ────────────────────────────────
-		const checkCards = () => {
-			const vh       = window.innerHeight;
-			const expandAt = vh * 0.7;
-			const collapseAt = vh * 0.75;
-			let changed = false;
-
-			cardRefs.current.forEach((card, i) => {
-				if (!card) return;
-				const rect = card.getBoundingClientRect();
-				if (!expandedSet.current.has(i) && rect.top < expandAt) {
-					expandedSet.current.add(i);
-					changed = true;
-				} else if (expandedSet.current.has(i) && rect.top > collapseAt) {
-					expandedSet.current.delete(i);
-					changed = true;
-				}
-			});
-
-			if (changed) {
-				setExpandedState(testimonials.map((_, i) => expandedSet.current.has(i)));
-			}
-		};
-
-		ScrollTrigger.create({
-			trigger: section,
-			start: "top bottom",
-			end: "bottom top",
-			onUpdate: checkCards,
-		});
 	}, { scope: sectionRef });
+
+	// Card expand / collapse — IntersectionObserver instead of getBoundingClientRect
+	// on every scroll frame. IO runs natively (off-tick), fires only on real
+	// intersection changes, and never triggers React re-renders mid-scroll.
+	// rootMargin "-30% 0px -25% 0px" → effective zone: 30%–75% of viewport.
+	// A card entering from below (top < 75%) expands; exiting back above (top > 75%)
+	// or scrolled past the top (bottom < 30%) collapses — matching the old thresholds.
+	useEffect(() => {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				let changed = false;
+				entries.forEach((entry) => {
+					const index = cardRefs.current.findIndex((el) => el === entry.target);
+					if (index === -1) return;
+					const wasExpanded = expandedSet.current.has(index);
+					if (entry.isIntersecting !== wasExpanded) {
+						if (entry.isIntersecting) expandedSet.current.add(index);
+						else expandedSet.current.delete(index);
+						changed = true;
+					}
+				});
+				if (changed) {
+					setExpandedState(testimonials.map((_, i) => expandedSet.current.has(i)));
+				}
+			},
+			{ rootMargin: "-30% 0px -25% 0px", threshold: 0 },
+		);
+
+		cardRefs.current.forEach((card) => { if (card) observer.observe(card); });
+		return () => observer.disconnect();
+	}, []);
 
 	return (
 		<div ref={sectionRef}>

@@ -12,12 +12,14 @@ import { ScoreHint } from "./overlays/ScoreHint";
 
 interface GameSceneProps {
   paused?: boolean;
+  physicsPaused?: boolean;
   physicsActive?: boolean;
+  renderPaused?: boolean;
   onNavigate?: (href: string) => void;
   onReady?: () => void;
 }
 
-export function GameScene({ paused = false, physicsActive = false, onNavigate, onReady }: GameSceneProps) {
+export function GameScene({ paused = false, physicsPaused = false, physicsActive = false, renderPaused = false, onNavigate, onReady }: GameSceneProps) {
   const gameState = useGameState();
 
   // Incremented to force a full Canvas remount after WebGL context loss.
@@ -47,19 +49,24 @@ export function GameScene({ paused = false, physicsActive = false, onNavigate, o
   }, []);
 
   return (
-    <div className="w-screen h-screen bg-black relative animate-fade-in">
+    <div
+      className="w-screen h-screen bg-black relative animate-fade-in"
+      role="img"
+      aria-label="Interactive 3D game — navigate the site by throwing cubes into the basket"
+    >
       <Canvas
         key={canvasKey}
         shadows="soft"
         camera={{ position: [0, -3, 28], fov: 40 }}
-        gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
+        gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}
         dpr={[1, 1.5]}
+        frameloop={renderPaused ? "never" : "always"}
         style={{ width: "100vw", height: "100vh" }}
         onCreated={handleCreated}
       >
         <color attach="background" args={["#0a0a12"]} />
         <Suspense fallback={null}>
-          <GameWorld paused={paused} physicsActive={physicsActive} onNavigate={onNavigate} gameState={gameState} onReady={onReady} />
+          <GameWorld paused={paused} physicsPaused={physicsPaused} physicsActive={physicsActive} onNavigate={onNavigate} gameState={gameState} onReady={onReady} />
         </Suspense>
       </Canvas>
 

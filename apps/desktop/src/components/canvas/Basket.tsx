@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useRef, useMemo, useState, useCallback } from "react";
+import React, { Suspense, useEffect, useRef, useMemo, useState, useCallback } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@react-three/rapier";
 import * as THREE from "three";
 import type { PageCubeData } from "./PageCube";
+import { scratchObj3D } from "./_pools";
 
 /**
  * Basket — Basketball hoop with backboard, rim, net, and pole.
@@ -202,6 +203,77 @@ function BrandMark({ rimRadius }: { rimRadius: number }) {
   );
 }
 
+// ─── Net instanced ───────────────────────────────────────────────────────────
+/**
+ * 16 strands radiales + 80 cross-strands se renderizaban antes como 96 meshes
+ * independientes con 96 BufferGeometries (cada `len` único impedía sharing) → 96 draw calls.
+ *
+ * InstancedMesh: 1 cylinderGeometry unitaria (length=1) por mesh, escalada en Y por
+ * instancia. Matrices subidas UNA vez en useEffect (la red no se mueve) con
+ * StaticDrawUsage para que la GPU las marque inmutables. 0 coste por frame, 2 draw calls.
+ */
+function NetInstanced({
+  radial,
+  cross,
+}: {
+  radial: { start: [number, number, number]; end: [number, number, number] }[];
+  cross: { pos: [number, number, number]; len: number; rotY: number }[];
+}) {
+  const radialRef = useRef<THREE.InstancedMesh>(null);
+  const crossRef = useRef<THREE.InstancedMesh>(null);
+
+  useEffect(() => {
+    const r = radialRef.current;
+    if (!r) return;
+    for (let i = 0; i < radial.length; i++) {
+      const { start, end } = radial[i];
+      const sx = start[0], sy = start[1], sz = start[2];
+      const ex = end[0],   ey = end[1],   ez = end[2];
+      const dx = ex - sx, dy = ey - sy, dz = ez - sz;
+      const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      scratchObj3D.position.set((sx + ex) * 0.5, (sy + ey) * 0.5, (sz + ez) * 0.5);
+      scratchObj3D.rotation.set(
+        Math.atan2(Math.sqrt(dx * dx + dz * dz), dy),
+        Math.atan2(dx, dz),
+        0
+      );
+      scratchObj3D.scale.set(1, len, 1);
+      scratchObj3D.updateMatrix();
+      r.setMatrixAt(i, scratchObj3D.matrix);
+    }
+    r.instanceMatrix.needsUpdate = true;
+    r.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  }, [radial]);
+
+  useEffect(() => {
+    const c = crossRef.current;
+    if (!c) return;
+    for (let i = 0; i < cross.length; i++) {
+      const { pos, len, rotY } = cross[i];
+      scratchObj3D.position.set(pos[0], pos[1], pos[2]);
+      scratchObj3D.rotation.set(Math.PI / 2, rotY, 0);
+      scratchObj3D.scale.set(1, len, 1);
+      scratchObj3D.updateMatrix();
+      c.setMatrixAt(i, scratchObj3D.matrix);
+    }
+    c.instanceMatrix.needsUpdate = true;
+    c.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  }, [cross]);
+
+  return (
+    <>
+      <instancedMesh ref={radialRef} args={[undefined, undefined, radial.length]} frustumCulled={false}>
+        <cylinderGeometry args={[0.009, 0.009, 1, 4]} />
+        <meshBasicMaterial color="#e8e4d8" transparent opacity={0.5} />
+      </instancedMesh>
+      <instancedMesh ref={crossRef} args={[undefined, undefined, cross.length]} frustumCulled={false}>
+        <cylinderGeometry args={[0.007, 0.007, 1, 4]} />
+        <meshBasicMaterial color="#e8e4d8" transparent opacity={0.38} />
+      </instancedMesh>
+    </>
+  );
+}
+
 // ─── Main component ──────────────────────────────────────────────────────────
 export function Basket({ position, thrownIds, gatedIds, onScore }: BasketProps) {
   const rimMatRef = useRef<THREE.MeshStandardMaterial>(null!);
@@ -353,40 +425,8 @@ export function Basket({ position, thrownIds, gatedIds, onScore }: BasketProps) 
           />
         </mesh>
 
-        {/* ========== NET — 16 strands + 5 horizontal rings ========== */}
-        {/* Net strands — warm off-white, slightly thicker for visibility */}
-        {netLines.map((line, i) => {
-          const [sx, sy, sz] = line.start;
-          const [ex, ey, ez] = line.end;
-          const mx = (sx + ex) / 2, my = (sy + ey) / 2, mz = (sz + ez) / 2;
-          const len = Math.sqrt((ex - sx) ** 2 + (ey - sy) ** 2 + (ez - sz) ** 2);
-          return (
-            <mesh
-              key={`net-${i}`}
-              position={[mx, my, mz]}
-              rotation={[
-                Math.atan2(Math.sqrt((ex - sx) ** 2 + (ez - sz) ** 2), ey - sy),
-                Math.atan2(ex - sx, ez - sz),
-                0,
-              ]}
-            >
-              <cylinderGeometry args={[0.009, 0.009, len, 4]} />
-              <meshBasicMaterial color="#e8e4d8" transparent opacity={0.50} />
-            </mesh>
-          );
-        })}
-
-        {/* Cross-strands — connect adjacent radial strands at each ring level (woven mesh look) */}
-        {crossStrands.map((cs, i) => (
-          <mesh
-            key={`cross-${i}`}
-            position={cs.pos}
-            rotation={[Math.PI / 2, cs.rotY, 0]}
-          >
-            <cylinderGeometry args={[0.007, 0.007, cs.len, 4]} />
-            <meshBasicMaterial color="#e8e4d8" transparent opacity={0.38} />
-          </mesh>
-        ))}
+        {/* ========== NET — radial + cross strands instanciados (96 → 2 draw calls) ========== */}
+        <NetInstanced radial={netLines} cross={crossStrands} />
 
         {/* 5 horizontal rings — warm tint matches strands */}
         {NET_RING_TS.map((t, i) => (

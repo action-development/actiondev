@@ -16,6 +16,7 @@ import {
   CUBE_RESTITUTION,
   WRAP_X,
 } from "./constants";
+import { scratchRapierVec } from "./_pools";
 
 const FADE_IN_DURATION = 0.6;
 /** Per-index spawn delay so cubes appear staggered. */
@@ -68,9 +69,12 @@ export function PageCube({ data, position, spawnIndex = 0, onNearby, onNearbyExi
 
   // Jelly spring
   const jelly = useRef({ deformation: 0, velocity: 0, active: false });
-  const prevLinVel = useRef(new THREE.Vector3());
+  // Plain object — Rapier devuelve {x,y,z}, no necesitamos las 200+ funciones de Vector3.
+  const prevLinVel = useRef({ x: 0, y: 0, z: 0 });
   // Fade-in on mount — tracks when the cube first appears so we can stagger it
   const spawnTimeRef = useRef<number | null>(null);
+  // Gate: una vez fade=1 dejamos de reescribir el material principal cada frame.
+  const fadeCompleteRef = useRef(false);
 
   const floatPhase = useMemo(() => {
     let h = 0;
@@ -96,47 +100,72 @@ export function PageCube({ data, position, spawnIndex = 0, onNearby, onNearbyExi
     const mesh = meshRef.current;
     if (!rb || !mesh) return;
 
-    // --- Fade-in (stagger per spawnIndex) ---
-    if (spawnTimeRef.current === null) spawnTimeRef.current = state.clock.elapsedTime;
-    const elapsed = state.clock.elapsedTime - spawnTimeRef.current - spawnIndex * FADE_STAGGER;
-    const fade = Math.min(Math.max(elapsed / FADE_IN_DURATION, 0), 1);
-    if (materialRef.current) materialRef.current.opacity = fade;
-    if (outlineMaterialRef.current) {
-      outlineMaterialRef.current.opacity = fade * (hovered ? 0.25 : 0.1);
+    // Cap delta to prevent explicit Euler instability in the jelly spring.
+    // With JELLY_STIFFNESS=200, the stability threshold is dt < 2/sqrt(200) ≈ 141ms.
+    // Heavy frames at load time (React unmounting LoadingScreen, ScrollTrigger.refresh)
+    // can exceed that threshold, causing the spring to diverge and scale to blow up.
+    // 1/30 ≈ 33ms gives a 4× safety margin below the instability threshold.
+    const dt = Math.min(delta, 1 / 30);
+    const t = state.clock.elapsedTime;
+
+    // --- Fade-in con gate post-completion ---
+    // Pre-fade: escribimos opacity en ambos materiales. Post-fade: solo el outline
+    // reacciona a hover (con threshold para evitar writes inútiles).
+    if (!fadeCompleteRef.current) {
+      if (spawnTimeRef.current === null) spawnTimeRef.current = t;
+      const elapsed = t - spawnTimeRef.current - spawnIndex * FADE_STAGGER;
+      const fade = elapsed >= FADE_IN_DURATION ? 1 : Math.max(elapsed / FADE_IN_DURATION, 0);
+      if (materialRef.current) materialRef.current.opacity = fade;
+      if (outlineMaterialRef.current) {
+        outlineMaterialRef.current.opacity = fade * (hovered ? 0.25 : 0.1);
+      }
+      if (fade >= 1) fadeCompleteRef.current = true;
+    } else if (outlineMaterialRef.current) {
+      const target = hovered ? 0.25 : 0.1;
+      if (Math.abs(outlineMaterialRef.current.opacity - target) > 0.001) {
+        outlineMaterialRef.current.opacity = target;
+      }
     }
 
     // Horizontal wrap (WRAP_X shared with Character via constants). Z is locked via enabledTranslations.
     const pos = rb.translation();
     if (pos.x > WRAP_X) {
-      rb.setTranslation({ x: -WRAP_X, y: pos.y, z: 0 }, true);
+      scratchRapierVec.x = -WRAP_X; scratchRapierVec.y = pos.y; scratchRapierVec.z = 0;
+      rb.setTranslation(scratchRapierVec, true);
     } else if (pos.x < -WRAP_X) {
-      rb.setTranslation({ x: WRAP_X, y: pos.y, z: 0 }, true);
+      scratchRapierVec.x = WRAP_X; scratchRapierVec.y = pos.y; scratchRapierVec.z = 0;
+      rb.setTranslation(scratchRapierVec, true);
     }
 
-    // --- Inner glow pulse (fades in with the material) ---
+    // --- Inner glow pulse ---
     if (glowRef.current) {
-      const pulse = 0.7 + 0.3 * Math.sin(state.clock.elapsedTime * 2 + floatPhase);
-      glowRef.current.intensity = (hovered ? 12 : 6) * pulse * fade;
+      const pulse = 0.7 + 0.3 * Math.sin(t * 2 + floatPhase);
+      glowRef.current.intensity = (hovered ? 12 : 6) * pulse;
     }
 
-    // --- Jelly effect ---
+    // --- Jelly (zero-alloc) ---
+    // Sustituye new Vector3(...).distanceTo(prev) por escalares puros.
+    // 3 restas + 1 dot + 1 sqrt vs 1 alloc + métodos. Mismo resultado, 0 GC pressure.
     const linVel = rb.linvel();
-    const currentVel = new THREE.Vector3(linVel.x, linVel.y, linVel.z);
-    const velDelta = currentVel.distanceTo(prevLinVel.current);
+    const dvx = linVel.x - prevLinVel.current.x;
+    const dvy = linVel.y - prevLinVel.current.y;
+    const dvz = linVel.z - prevLinVel.current.z;
+    const velDelta = Math.sqrt(dvx * dvx + dvy * dvy + dvz * dvz);
 
     if (velDelta > IMPACT_THRESHOLD) {
       jelly.current.velocity = -Math.min(velDelta * 0.12, 1.2);
       jelly.current.active = true;
     }
-
-    prevLinVel.current.copy(currentVel);
+    prevLinVel.current.x = linVel.x;
+    prevLinVel.current.y = linVel.y;
+    prevLinVel.current.z = linVel.z;
 
     const j = jelly.current;
     if (j.active) {
       const springForce = -JELLY_STIFFNESS * j.deformation;
       const dampForce = -JELLY_DAMPING * j.velocity;
-      j.velocity += (springForce + dampForce) * delta;
-      j.deformation += j.velocity * delta;
+      j.velocity += (springForce + dampForce) * dt;
+      j.deformation += j.velocity * dt;
 
       const squash = 1 + j.deformation;
       const stretch = 1 / Math.sqrt(Math.max(squash, 0.4));
@@ -150,10 +179,10 @@ export function PageCube({ data, position, spawnIndex = 0, onNearby, onNearbyExi
       }
     }
 
-    // Idle float
-    const speed = Math.sqrt(linVel.x ** 2 + linVel.y ** 2);
-    if (speed < 0.5) {
-      mesh.position.y = Math.sin(state.clock.elapsedTime * 1.5 + floatPhase) * 0.03;
+    // Idle float — comparamos cuadrados (evita sqrt + slow path de hypot/Math.pow).
+    const speedSq = linVel.x * linVel.x + linVel.y * linVel.y;
+    if (speedSq < 0.25) {
+      mesh.position.y = Math.sin(t * 1.5 + floatPhase) * 0.03;
     }
   });
 

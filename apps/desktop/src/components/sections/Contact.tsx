@@ -67,11 +67,11 @@ export function Contact() {
       <div className="container-editorial">
         {/* ── Title ── */}
         <div className="mb-24 max-w-[18ch]">
-          <h1 data-anim="heading" className="display-xl">
+          <h2 data-anim="heading" className="display-xl">
             {t.contact.headline1}
             <br />
             {t.contact.headline2} <AccentWord>{t.contact.accent}</AccentWord>
-          </h1>
+          </h2>
           <div
             data-anim="rule"
             className="mt-10 h-px w-16 bg-accent/70"

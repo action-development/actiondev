@@ -29,10 +29,19 @@ export const BRAND = {
     "award-winning web design",
   ],
   foundingYear: 2020,
-  locale: "en_US",
-  language: "en",
+  locale: "es_ES",
+  language: "es",
   country: "ES",
+  city: "Vigo",
+  region: "Galicia",
   contactEmail: "hello@actiondev.es",
+  services: [
+    "Brand Websites",
+    "3D Interactive Experiences",
+    "Product Interfaces",
+    "Strategy & Design",
+    "Creative Development",
+  ],
 } as const;
 
 interface SocialHandles {
@@ -51,7 +60,7 @@ export const SOCIAL: SocialHandles = {
 };
 
 export const OG_IMAGE = {
-  url: `${SITE_URL}/og-image.jpg`,
+  url: `${SITE_URL}/api/og`,
   width: 1200,
   height: 630,
   alt: `${BRAND.name} — ${BRAND.tagline}`,

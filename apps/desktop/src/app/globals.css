@@ -18,7 +18,7 @@
   --background: #080808;
   --foreground: #ededed;
   --accent:     #c8ff00;
-  --muted:      #666666;
+  --muted:      #767676;
   --border:     #1c1c1c;
   --card:       #0f0f0f;
   --card-hover: #141414;
@@ -227,4 +227,28 @@ html.lenis body { height: auto; }
 }
 .animate-fade-in {
   animation: fade-in 0.8s ease-out 0.3s both;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  REDUCED MOTION — WCAG 2.1 SC 2.2.2 / 2.3.3                   */
+/*                                                                 */
+/*  Collapses CSS animations and transitions for users who have   */
+/*  requested reduced motion in their OS settings.                */
+/*  JS-driven animations (GSAP, Lenis) are controlled via the     */
+/*  useLenis hook reading this same media query.                  */
+/* ─────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable film-grain animation (body::before uses background-size fixed repeat) */
+  body::before {
+    display: none;
+  }
 }

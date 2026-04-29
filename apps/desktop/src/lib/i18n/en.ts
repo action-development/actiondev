@@ -70,4 +70,7 @@ export const en: Translations = {
   loading: {
     ariaLabel: "Loading percentage",
   },
+  game: {
+    scoreHint: "Score or scroll to navigate",
+  },
 };
