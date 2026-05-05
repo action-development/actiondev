@@ -62,7 +62,6 @@ export const en: Translations = {
   },
   tutorial: {
     move: "to move",
-    rotate: "to rotate",
     jump: "to jump",
     pickup: "to pick up",
     throw: "to aim & throw",

@@ -10,9 +10,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test e2e/smoke.spec.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:update": "playwright test --update-snapshots",
-    "screenshot": "npx tsx scripts/screenshot.ts"
+    "screenshot": "npx tsx scripts/screenshot.ts",
+    "analyze": "ANALYZE=true next build",
+    "perf:lh": "npx lighthouse http://localhost:3001 --output=json --output-path=./e2e/lighthouse-report.json --chrome-flags='--headless' --only-categories=performance,accessibility,best-practices,seo && npx lighthouse http://localhost:3001 --output=html --output-path=./e2e/lighthouse-report.html --chrome-flags='--headless'",
+    "assets:optimize": "bash scripts/optimize-assets.sh",
+    "assets:check": "bash scripts/optimize-assets.sh 2>&1 | grep -E '(⚠|✓|──)'"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -27,6 +32,9 @@
     "three": "^0.183.2"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "^4.3.0",
+    "@gltf-transform/extensions": "^4.3.0",
+    "@next/bundle-analyzer": "^16.2.4",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",

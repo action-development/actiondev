@@ -62,7 +62,6 @@ export const es: Translations = {
   },
   tutorial: {
     move: "para mover",
-    rotate: "para rotar",
     jump: "para saltar",
     pickup: "para coger",
     throw: "para apuntar y lanzar",

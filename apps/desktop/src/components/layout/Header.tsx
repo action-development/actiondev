@@ -1,16 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { navigation } from "@/data/navigation";
 import { useActiveSection } from "@/hooks/use-active-section";
 import { useLocale, useT } from "@/lib/i18n";
+import { getLenis } from "@/hooks/use-lenis";
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const activeSection = useActiveSection(pathname === "/");
   const { locale, setLocale } = useLocale();
   const t = useT();
+  function handleLogoClick(e: React.MouseEvent) {
+    if (pathname === "/") {
+      e.preventDefault();
+      getLenis()?.scrollTo(0, { duration: 1.2 });
+    } else {
+      router.push("/");
+    }
+  }
 
   function isActive(href: string): boolean {
     if (pathname !== "/") return pathname === href;
@@ -46,12 +56,13 @@ export function Header() {
           href="/"
           aria-label="Action — Home"
           className="group"
+          onClick={handleLogoClick}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logos/logo.webp"
             alt="Action Development"
-            className="h-[32px] w-auto invert opacity-70 transition-opacity duration-[var(--duration)] group-hover:opacity-100"
+            className="h-[52px] w-auto invert opacity-70 transition-opacity duration-[var(--duration)] group-hover:opacity-100"
           />
         </Link>
 

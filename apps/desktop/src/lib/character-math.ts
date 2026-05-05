@@ -38,6 +38,75 @@ export function computeWrapX(
   return null;
 }
 
+// ─── Jump decision (coyote time + input buffering) ────────────────────────────
+
+export interface JumpDecisionInput {
+  grounded: boolean;
+  coyoteTimer: number;       // seconds remaining (≥0)
+  jumpBufferTimer: number;   // seconds remaining (≥0)
+  jumpCooldown: number;      // seconds remaining (≥0)
+  velY: number;              // current vertical velocity
+}
+
+export interface JumpDecisionOutput {
+  shouldJump: boolean;
+  newCoyoteTimer: number;
+  newJumpBufferTimer: number;
+  newJumpCooldown: number;
+}
+
+/**
+ * Compute jump decision for this frame, advancing all timers.
+ *
+ * Coyote time: allows jumping up to `coyoteTime` seconds after walking off a ledge.
+ * Jump buffer: queues a jump pressed up to `jumpBufferTime` seconds before landing
+ *              so it fires on the next grounded frame.
+ *
+ * @param input             Current physics + timer state
+ * @param jumpJustPressed   True only on the frame Space transitions down→up
+ * @param wasGrounded       Grounded state from the PREVIOUS frame (before this frame's check)
+ * @param dt                Frame delta in seconds
+ * @param coyoteTime        Grace window in seconds (use COYOTE_TIME constant)
+ * @param jumpBufferTime    Buffer window in seconds (use JUMP_BUFFER_TIME constant)
+ */
+export function computeJumpDecision(
+  input: JumpDecisionInput,
+  jumpJustPressed: boolean,
+  wasGrounded: boolean,
+  dt: number,
+  coyoteTime: number,
+  jumpBufferTime: number,
+): JumpDecisionOutput {
+  let { coyoteTimer, jumpBufferTimer, jumpCooldown } = input;
+  const { grounded, velY } = input;
+
+  // Decay timers first so they read 0 on the exact expiry frame
+  coyoteTimer     = Math.max(0, coyoteTimer     - dt);
+  jumpBufferTimer = Math.max(0, jumpBufferTimer - dt);
+
+  // Reset coyote window on the frame we leave the ground
+  if (wasGrounded && !grounded) coyoteTimer = coyoteTime;
+
+  // Buffer incoming jump press so it can fire on landing
+  if (jumpJustPressed) jumpBufferTimer = jumpBufferTime;
+
+  // canJump: on ground OR within coyote window (but NOT while still moving upward from a previous jump)
+  const canJump = (grounded || (coyoteTimer > 0 && velY <= 0.2)) && jumpCooldown <= 0;
+
+  // Fire: buffered (or current-frame) press meets canJump condition
+  const shouldJump = canJump && jumpBufferTimer > 0;
+
+  if (shouldJump) {
+    coyoteTimer     = 0;
+    jumpBufferTimer = 0;
+    jumpCooldown    = 0.4;
+  }
+
+  return { shouldJump, newCoyoteTimer: coyoteTimer, newJumpBufferTimer: jumpBufferTimer, newJumpCooldown: jumpCooldown };
+}
+
+// ─── Animation state ──────────────────────────────────────────────────────────
+
 type AnimState = "idle" | "walk" | "jump" | "fall" | "wave";
 
 interface AnimInput {

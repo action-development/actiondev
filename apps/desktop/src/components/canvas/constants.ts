@@ -64,3 +64,9 @@ export const HELD_LERP_SPEED = 18;
 
 /** Raycast margin below capsule bottom to consider grounded. */
 export const GROUND_RAY_MARGIN = 0.15;
+
+/** Seconds after leaving the ground during which a jump is still allowed (coyote time). */
+export const COYOTE_TIME = 0.15;
+
+/** Seconds a jump input is buffered before landing so it still triggers on touch-down. */
+export const JUMP_BUFFER_TIME = 0.12;

@@ -36,6 +36,11 @@ const STEPS_PER_DOT = 6;
 
 const sharedDotGeo = new THREE.SphereGeometry(1, 6, 6);
 
+// Color gradient: near = lime accent, far = white — allocated once, never in useFrame
+const _colNear    = new THREE.Color("#c8ff00");
+const _colFar     = new THREE.Color("#ffffff");
+const _colScratch = new THREE.Color();
+
 /** Rapier damping factor: v *= 1 / (1 + damping * dt) each step */
 const DAMP_FACTOR = 1 / (1 + CUBE_LINEAR_DAMPING * PHYSICS_DT);
 
@@ -71,7 +76,7 @@ export function computeTrajectory(
 export function AimLine({ stateRef }: AimLineProps) {
   const groupRef = useRef<THREE.Group>(null);
 
-  useFrame(() => {
+  useFrame((state) => {
     const group = groupRef.current;
     const s = stateRef.current;
     if (!group || !s) return;
@@ -82,6 +87,7 @@ export function AimLine({ stateRef }: AimLineProps) {
     }
     group.visible = true;
 
+    const t  = state.clock.elapsedTime;
     const vx = s.dirX * s.force;
     const vy = s.dirY * s.force;
     const points = computeTrajectory(s.originX, s.originY, vx, vy);
@@ -90,9 +96,14 @@ export function AimLine({ stateRef }: AimLineProps) {
       const child = group.children[i] as THREE.Mesh;
       if (!child) continue;
       child.position.set(points[i].x, points[i].y, 0.1);
-      const fade = 1 - i / DOT_COUNT;
-      child.scale.setScalar(0.04 + s.power * 0.06 * fade);
-      (child.material as THREE.MeshBasicMaterial).opacity = fade * 0.8;
+      const fade  = 1 - i / DOT_COUNT;
+      const pulse = 1 + 0.2 * Math.sin(t * 5 + i * 0.3);
+      child.scale.setScalar((0.04 + s.power * 0.06 * fade) * pulse);
+      const mat = child.material as THREE.MeshBasicMaterial;
+      mat.opacity = fade * 0.8;
+      // Gradient lime → white as dots move further from origin
+      _colScratch.lerpColors(_colNear, _colFar, i / (DOT_COUNT - 1));
+      mat.color.copy(_colScratch);
     }
   });
 

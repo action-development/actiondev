@@ -6,6 +6,7 @@ import { Physics, RigidBody, CuboidCollider, type RapierRigidBody } from "@react
 import { scratchRapierVec } from "./_pools";
 import { Environment } from "@react-three/drei";
 import * as THREE from "three";
+import { LandingDust, type LandingDustHandle } from "./LandingDust";
 
 import { Character, type CharacterHandle } from "./Character";
 import { PageCube, type PageCubeData } from "./PageCube";
@@ -98,7 +99,8 @@ export function GameWorld({ paused = false, physicsPaused = false, physicsActive
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const characterRef  = useRef<CharacterHandle>(null);
+  const characterRef    = useRef<CharacterHandle>(null);
+  const landingDustRef  = useRef<LandingDustHandle>(null);
   const [isHolding, setIsHolding] = useState(false);
   const heldCubeRef   = useRef<{ id: string; rb: RapierRigidBody } | null>(null);
   const throwCooldown = useRef(0);
@@ -123,12 +125,29 @@ export function GameWorld({ paused = false, physicsPaused = false, physicsActive
     if (nearbyCubeRef.current?.id === id) nearbyCubeRef.current = null;
   }, []);
 
+  const handleLand = useCallback((pos: THREE.Vector3) => {
+    // pos is a scratch vec from Character — extract scalars immediately, don't hold the reference
+    landingDustRef.current?.trigger(pos.x, pos.y);
+  }, []);
+
   const handleScore = useCallback((pageData: PageCubeData) => {
     setTimeout(() => { onNavigate?.(pageData.href); }, 800);
   }, [onNavigate]);
 
   useFrame((_, delta) => {
     if (paused) {
+      // Release any held cube before suspending game logic.
+      // Without this, if the mouse button is released while paused the "justReleased"
+      // event is lost (wasDown resets to false), leaving the cube stuck kinematic
+      // and floating at the last hold position indefinitely on resume.
+      if (heldCubeRef.current) {
+        heldCubeRef.current.rb.setBodyType(RB_TYPE_DYNAMIC, true);
+        scratchRapierVec.x = 0; scratchRapierVec.y = 0; scratchRapierVec.z = 0;
+        heldCubeRef.current.rb.setLinvel(scratchRapierVec, true);
+        heldCubeRef.current = null;
+        gameState.setHolding(false);
+        setIsHolding(false);
+      }
       // Reset transient input state so nothing fires on resume
       wasDown.current = false;
       eWasDown.current = false;
@@ -163,6 +182,14 @@ export function GameWorld({ paused = false, physicsPaused = false, physicsActive
         scratchRapierVec.x = 0; scratchRapierVec.y = 0; scratchRapierVec.z = 0;
         rb.setLinvel(scratchRapierVec, true);
         rb.setAngvel(scratchRapierVec, true);
+        // Teleport to hold position — setTranslation is a warp (no sweep), so Rapier
+        // generates no contact impulse against the character capsule. Without this,
+        // setNextKinematicTranslation in the same frame sweeps the cube through the
+        // character body and flings it backward.
+        scratchRapierVec.x = charPos.x;
+        scratchRapierVec.y = charPos.y + char.getModelHeight() + LARGEST_CUBE_HALF + HOLD_MARGIN;
+        scratchRapierVec.z = 0;
+        rb.setTranslation(scratchRapierVec, true);
         heldCubeRef.current = nearbyCubeRef.current;
         gameState.setHolding(true);
         setIsHolding(true);
@@ -290,6 +317,7 @@ export function GameWorld({ paused = false, physicsPaused = false, physicsActive
       <Starfield />
 
       <AimLine stateRef={aimState} />
+      <LandingDust ref={landingDustRef} />
 
       <Physics gravity={[0, -GRAVITY, 0]} timeStep={1 / 60} interpolate paused={!physicsActive || physicsPaused}>
         {/*
@@ -305,7 +333,7 @@ export function GameWorld({ paused = false, physicsPaused = false, physicsActive
           <CuboidCollider position={[0, 2, 3]}    args={[20, 20, 0.5]} />
         </RigidBody>
 
-        <Character ref={characterRef} position={[-11, -4, 0]} keys={keys} holding={isHolding} />
+        <Character ref={characterRef} position={[-11, -4, 0]} keys={keys} holding={isHolding} onLand={handleLand} />
 
         {PAGE_CUBES.map((cube, i) => (
           <PageCube

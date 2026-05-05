@@ -26,7 +26,6 @@ export function TutorialOverlay({ gameState }: TutorialOverlayProps) {
   // Steps derived from translations so they react to locale changes
   const TUTORIAL_STEPS: TutorialStep[] = [
     { label: "A / D",        action: t.tutorial.move,    trigger: "key",    keys: ["KeyA", "KeyD", "ArrowLeft", "ArrowRight"] },
-    { label: "W / S",        action: t.tutorial.rotate,  trigger: "key",    keys: ["KeyW", "KeyS", "ArrowUp",   "ArrowDown"]  },
     { label: "SPACE",        action: t.tutorial.jump,    trigger: "key",    keys: ["Space"] },
     { label: "E",            action: t.tutorial.pickup,  trigger: "pickup" },
     { label: "CLICK & DRAG", action: t.tutorial.throw,   trigger: "throw"  },

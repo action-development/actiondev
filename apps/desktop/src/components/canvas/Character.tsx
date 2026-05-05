@@ -14,9 +14,12 @@ import {
   JUMP_IMPULSE,
   MOVE_ACCEL,
   AIR_CONTROL,
+  COYOTE_TIME,
+  JUMP_BUFFER_TIME,
 } from "./constants";
+import { scratchVec3A } from "./_pools";
 import { useGroundCheck } from "@/hooks/use-ground-check";
-import { computeNextVelocity, computeWrapX } from "@/lib/character-math";
+import { computeNextVelocity, computeWrapX, computeJumpDecision } from "@/lib/character-math";
 
 /* ------------------------------------------------------------------ */
 /* Lime Spirit — glass-body character that glows from within.         */
@@ -57,13 +60,21 @@ const IDLE_ROT_FREQ = 0.35;
 const IDLE_ROT_AMP = 0.08;
 const WALK_BOB_AMP = 0.07;
 const WALK_BOB_FREQ = 8;
-const LANDING_SQUASH_MS = 140;
+const LANDING_SQUASH_MS = 180;
 const WAVE_TILT = 0.22;
 const WAVE_FREQ = 4;
 const SCALE_LERP = 14;
 const JUMP_SCALE = { x: 0.86, y: 1.2,  z: 0.86 };
 const FALL_SCALE = { x: 0.92, y: 1.1,  z: 0.92 };
-const LAND_SCALE = { x: 1.22, y: 0.78, z: 1.22 };
+const LAND_SCALE = { x: 1.38, y: 0.62, z: 1.38 };
+
+/* Landing wobble spring */
+const WOBBLE_STIFFNESS = 180;
+const WOBBLE_DAMPING   = 9;
+const WOBBLE_IMPULSE   = 0.28;  // radians/s initial kick — tune visually
+
+/* Movement lean */
+const LEAN_FACTOR = 0.025;  // vel.x=6 → 0.15 rad max lean
 
 /* Blink */
 const BLINK_DURATION = 0.12;
@@ -81,6 +92,8 @@ interface CharacterProps {
   position: [number, number, number];
   keys: React.RefObject<Set<string>>;
   holding?: boolean;
+  /** Called on landing frame with character world position (scratch vec — extract scalars immediately). */
+  onLand?: (pos: THREE.Vector3) => void;
 }
 
 function expLerp(rate: number, dt: number): number {
@@ -97,7 +110,7 @@ interface TrailSlot {
 }
 
 export const Character = forwardRef<CharacterHandle, CharacterProps>(
-  function Character({ position, keys, holding = false }, ref) {
+  function Character({ position, keys, holding = false, onLand }, ref) {
     const rigidBodyRef = useRef<RapierRigidBody>(null);
     const modelRef = useRef<THREE.Group>(null!);
     const bodyRef = useRef<THREE.Group>(null!);
@@ -113,10 +126,13 @@ export const Character = forwardRef<CharacterHandle, CharacterProps>(
 
     const facingDir = useRef(1);
     const targetRotY = useRef(Math.PI / 2);
-    const jumpCooldown = useRef(0);
-    const jumpWasPressed = useRef(false);
+    const jumpCooldown    = useRef(0);
+    const jumpWasPressed  = useRef(false);
+    const coyoteTimer     = useRef(0);
+    const jumpBufferTimer = useRef(0);
     const wasGrounded = useRef(true);
     const landingEndTime = useRef(0);
+    const landWobble = useRef({ deformation: 0, velocity: 0, active: false });
     const eyeOffsetX = useRef(0);
     const eyeOffsetY = useRef(0);
     const nextBlinkTime = useRef(randomBlinkInterval());
@@ -191,15 +207,39 @@ export const Character = forwardRef<CharacterHandle, CharacterProps>(
       const wrappedX = computeWrapX(pos.x, WRAP_X);
       if (wrappedX !== null) rb.setTranslation({ x: wrappedX, y: pos.y, z: 0 }, true);
 
-      const jumpPressed = activeKeys.has("Space");
+      const jumpPressed     = activeKeys.has("Space") || activeKeys.has("ArrowUp") || activeKeys.has("KeyW");
       const jumpJustPressed = jumpPressed && !jumpWasPressed.current;
       jumpWasPressed.current = jumpPressed;
-      if (jumpJustPressed && grounded && jumpCooldown.current <= 0) {
-        rb.applyImpulse({ x: 0, y: JUMP_IMPULSE, z: 0 }, true);
-        jumpCooldown.current = 0.4;
-      }
 
-      if (grounded && !wasGrounded.current) landingEndTime.current = t + LANDING_SQUASH_MS / 1000;
+      // wasGrounded.current is still the PREVIOUS frame value here (updated below after this block)
+      const jumpResult = computeJumpDecision(
+        {
+          grounded,
+          coyoteTimer:     coyoteTimer.current,
+          jumpBufferTimer: jumpBufferTimer.current,
+          jumpCooldown:    jumpCooldown.current,
+          velY:            vel.y,
+        },
+        jumpJustPressed,
+        wasGrounded.current,
+        dt,
+        COYOTE_TIME,
+        JUMP_BUFFER_TIME,
+      );
+      coyoteTimer.current     = jumpResult.newCoyoteTimer;
+      jumpBufferTimer.current = jumpResult.newJumpBufferTimer;
+      jumpCooldown.current    = jumpResult.newJumpCooldown;
+      if (jumpResult.shouldJump) rb.applyImpulse({ x: 0, y: JUMP_IMPULSE, z: 0 }, true);
+
+      if (grounded && !wasGrounded.current) {
+        landingEndTime.current = t + LANDING_SQUASH_MS / 1000;
+        // Wobble spring: kick in the facing direction so the character rocks on impact
+        landWobble.current.velocity    = WOBBLE_IMPULSE * facingDir.current;
+        landWobble.current.deformation = 0;
+        landWobble.current.active      = true;
+        // Notify sibling components (e.g. LandingDust). scratchVec3A is a scratch — callee must extract scalars immediately.
+        if (onLand) onLand(scratchVec3A.set(pos.x, pos.y, pos.z));
+      }
       wasGrounded.current = grounded;
 
       /* -------------------- Visual: facing (root rotation) ------------------ */
@@ -235,9 +275,21 @@ export const Character = forwardRef<CharacterHandle, CharacterProps>(
       const bobFreq = speed > 0.5 ? WALK_BOB_FREQ : IDLE_BOB_FREQ;
       inlay.position.y = Math.sin(t * bobFreq) * bobAmp;
 
-      /* ---------------------------- Wave tilt ------------------------------- */
+      /* -------------------- Landing wobble spring update -------------------- */
+      const w = landWobble.current;
+      if (w.active) {
+        w.velocity    += (-WOBBLE_STIFFNESS * w.deformation - WOBBLE_DAMPING * w.velocity) * dt;
+        w.deformation += w.velocity * dt;
+        if (Math.abs(w.deformation) < 0.001 && Math.abs(w.velocity) < 0.001) {
+          w.deformation = 0; w.velocity = 0; w.active = false;
+        }
+      }
+
+      /* -------- Wave tilt + movement lean + landing wobble (combined) ------- */
       const facingCamera = activeKeys.has("ArrowDown") || activeKeys.has("KeyS");
-      const tgtTilt = holding || facingCamera ? Math.sin(t * WAVE_FREQ) * WAVE_TILT : 0;
+      const waveTiltComp = holding || facingCamera ? Math.sin(t * WAVE_FREQ) * WAVE_TILT : 0;
+      const leanFromVel  = -vel.x * LEAN_FACTOR;  // vel.x > 0 → neg z = lean forward when moving right
+      const tgtTilt      = waveTiltComp + leanFromVel + w.deformation;
       body.rotation.z += (tgtTilt - body.rotation.z) * sLerp;
 
       /* -------------------------- Core glow pulse --------------------------- */

@@ -62,7 +62,6 @@ export interface Translations {
   };
   tutorial: {
     move: string;
-    rotate: string;
     jump: string;
     pickup: string;
     throw: string;

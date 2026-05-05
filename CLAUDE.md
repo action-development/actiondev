@@ -16,6 +16,23 @@
 - `fallow health` — score global; útil tras cambios grandes
 - `pnpm --filter @actiondev/desktop screenshot` — captura visual con dev server corriendo (`pnpm --filter @actiondev/desktop dev`); guarda en `/tmp/screenshot.png`; leer con Read tool para verificar UI visualmente
 
+**Testing UI — usar tras cambios de componentes o páginas:**
+- `pnpm --filter @actiondev/desktop test:e2e` — smoke tests + regresión visual (requiere dev server corriendo)
+- `pnpm --filter @actiondev/desktop test:e2e:update` — actualizar snapshots tras cambios visuales intencionales
+- Tests en `apps/desktop/e2e/`: `smoke.spec.ts` (funcionalidad crítica) + `visual.spec.ts` (regresión visual)
+- Al añadir una sección o componente nuevo → añadir test en `smoke.spec.ts`
+
+**Performance — usar antes de deploy o tras cambios de bundle:**
+- `pnpm --filter @actiondev/desktop analyze` — bundle analyzer visual (abre en browser); usar cuando se añadan dependencias nuevas o el bundle parezca crecer
+- `pnpm --filter @actiondev/desktop perf:lh` — Lighthouse report completo (requiere dev server); genera `e2e/lighthouse-report.html`
+- Targets mínimos: Performance ≥85, Accessibility ≥90, Best Practices ≥90, SEO ≥90
+
+**Assets — verificar antes de cada deploy:**
+- `pnpm --filter @actiondev/desktop assets:check` — lista assets con warnings si superan umbrales (vídeos >3MB, imágenes >200KB)
+- `pnpm --filter @actiondev/desktop assets:optimize` — comprime GLBs con Draco + detecta assets pesados
+- GLBs en `public/3d_models/` → optimizar con Draco antes de añadir nuevos modelos
+- Vídeos en `public/projects_video/` → máximo 3MB por archivo; `musa-pot.webm` (6.5MB) necesita recomprimir
+
 **Skills y MCPs — usar sin que te lo pidan:**
 
 | Contexto detectado | Invocar |
@@ -285,6 +302,16 @@ pnpm build         → exitoso
 - UI general: `frontend-design` cubre accesibilidad, composición y Tailwind. No invocar `web-design-guidelines`, `vercel-composition-patterns` ni `tailwind-css-patterns` a menos que el prompt sea específicamente una auditoría o refactor de props.
 - Dudas de API: `context7` primero. Solo WebSearch si context7 no tiene la respuesta.
 
+### Skills (Auto-load)
+
+| Context | Skill |
+|---------|-------|
+| GSAP animations, timelines, ScrollTrigger | `gsap`, `gsap-scrolltrigger`, `gsap-timeline` |
+| GSAP + React (`useGSAP`, context) | `gsap-react` |
+| GSAP performance, will-change, GPU | `gsap-performance` |
+| GSAP plugins (SplitText, Draggable…) | `gsap-plugins` |
+| Three.js / R3F scenes, materials, hooks | `r3f-best-practices` |
+
 ### MCPs — uso eficiente
 - Supabase: agrupar queries con `Promise.all([...])` cuando sean independientes. Nunca secuencial si no hay dependencia.
 - No usar `mcp__magic__*` para UI — usar skill `frontend-design`.
@@ -310,3 +337,19 @@ Antes de refactorizar cualquiera de estos archivos, leer esta sección. La compl
 | `seo/StructuredData.tsx` | `buildSchema` :30 | 132 | Switch con JSON-LD schemas por tipo (`projects`, `reviews`). Alta ciclomática por los objetos anidados, no por lógica real. | Aceptable. No dividir en archivos separados. |
 
 **Regla general:** si fallow marca algo como CRITICAL pero el archivo lleva >3 commits sin bugs, la complejidad es dominio, no deuda. Verificar historial con `git log -- <archivo>` antes de proponer refactor.
+
+---
+
+## Criterio de DONE
+
+No marcar ninguna tarea como finalizada sin haber ejecutado `pnpm test:e2e` desde `apps/desktop/`. Si los tests no pasan (incluido visual regression), la tarea no está done.
+
+Para actualizar snapshots tras cambios visuales intencionales: `pnpm test:e2e:update`.
+
+## Errores prohibidos
+
+- **No unit testear parámetros internos de GSAP** (valores de `fromTo`, callbacks de ScrollTrigger) — esos se testean con visual regression en e2e, no con mocks en Vitest
+- **No poner clases Tailwind de transform/posición en elementos que GSAP anima** — GSAP debe ser el único dueño del transform matrix (ver ERR-001 en `.agent/wiki/error_library.md`)
+- **No olvidar `visibility:hidden` en elementos que GSAP posiciona desde estado inicial diferente** — evita flash antes de init (ver ERR-002)
+- **No shallow rendering** en ningún test — Testing Library monta componentes completos
+- **No declarar "done"** sin ejecutar los tests
