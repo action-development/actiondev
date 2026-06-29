@@ -16,7 +16,7 @@ test.describe("Visual regression", () => {
 
   test("home — projects section", async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     await page.evaluate(() => {
       document.getElementById("projects")?.scrollIntoView({ behavior: "instant" });
     });
@@ -26,7 +26,7 @@ test.describe("Visual regression", () => {
 
   test("home — contact section", async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     await page.evaluate(() => {
       document.getElementById("contact")?.scrollIntoView({ behavior: "instant" });
     });

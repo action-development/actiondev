@@ -15,7 +15,7 @@ test("nav link 'Let's talk' scrolls to contact", async ({ page }) => {
 	await page.goto("/");
 	await waitForPage(page);
 
-	const ctaLink = page.getByRole("link", { name: /let's talk/i });
+	const ctaLink = page.getByRole("link", { name: /(let's talk|hablemos)/i });
 	await expect(ctaLink).toBeVisible();
 	await ctaLink.click();
 

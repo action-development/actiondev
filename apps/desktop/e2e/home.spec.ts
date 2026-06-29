@@ -9,7 +9,7 @@ test("hero section renders canvas and key text", async ({ page }) => {
 	await expect(page.locator("canvas").first()).toBeVisible();
 
 	// Texto DOM del hero (instrucciones del juego — fuera del canvas)
-	await expect(page.getByText(/score to scroll/i)).toBeVisible();
+	await expect(page.getByText(/(score or scroll|encesta o scrollea)/i)).toBeVisible();
 
 	// Screenshot con canvas enmascarado (render WebGL no-determinista)
 	await expect(page).toHaveScreenshot("hero.png", {
@@ -38,7 +38,7 @@ test("header is visible and has navigation links", async ({ page }) => {
 	await expect(page.getByRole("link", { name: /action/i }).first()).toBeVisible();
 
 	// CTA "Let's talk"
-	await expect(page.getByRole("link", { name: /let's talk/i })).toBeVisible();
+	await expect(page.getByRole("link", { name: /(let's talk|hablemos)/i })).toBeVisible();
 
 	await expect(header).toHaveScreenshot("header.png");
 });

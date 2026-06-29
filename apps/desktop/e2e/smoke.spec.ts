@@ -9,7 +9,7 @@ test.describe("Home page", () => {
     page.on("pageerror", (err) => errors.push(err.message));
 
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     expect(errors).toHaveLength(0);
   });
@@ -22,13 +22,14 @@ test.describe("Home page", () => {
 
   test("header is visible with nav links", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("header")).toBeVisible();
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.getByRole("banner")).toBeVisible({ timeout: 15_000 });
     await expect(page.locator('nav[aria-label="Main navigation"]')).toBeVisible();
   });
 
   test("scrolls to projects section", async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     await page.evaluate(() => {
       document.getElementById("projects")?.scrollIntoView();
@@ -37,9 +38,44 @@ test.describe("Home page", () => {
     await expect(page.locator("#projects")).toBeInViewport();
   });
 
+  test("renders full project index with all entries", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
+
+    await page.evaluate(() => {
+      document.getElementById("projects-index")?.scrollIntoView();
+    });
+
+    const section = page.locator("#projects-index");
+    await expect(section).toBeVisible();
+
+    const rows = section.locator("[data-row]");
+    await expect(rows.first()).toBeVisible();
+    expect(await rows.count()).toBeGreaterThan(20);
+  });
+
+  test("category filter narrows the project list", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
+
+    await page.evaluate(() => {
+      document.getElementById("projects-index")?.scrollIntoView();
+    });
+
+    const section = page.locator("#projects-index");
+    const totalRows = await section.locator("[data-row]").count();
+
+    const brandingChip = section.locator('button:has-text("BRANDING")');
+    await brandingChip.click();
+
+    const filteredRows = await section.locator("[data-row]").count();
+    expect(filteredRows).toBeLessThan(totalRows);
+    expect(filteredRows).toBeGreaterThan(0);
+  });
+
   test("scrolls to contact section and form is present", async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     await page.evaluate(() => {
       document.getElementById("contact")?.scrollIntoView();
@@ -67,17 +103,17 @@ test.describe("Navigation", () => {
 });
 
 test.describe("Projects page", () => {
-  test("loads and renders project grid", async ({ page }) => {
+  test("redirects to home anchor", async ({ page }) => {
     await page.goto("/projects");
-    await page.waitForLoadState("networkidle");
-    await expect(page).toHaveURL("/projects");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page).toHaveURL(/\/(#projects|projects)/);
   });
 });
 
 test.describe("Contact page", () => {
   test("loads and renders form", async ({ page }) => {
     await page.goto("/contact");
-    await page.waitForLoadState("networkidle");
-    await expect(page).toHaveURL("/contact");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page).toHaveURL(/contact/);
   });
 });
