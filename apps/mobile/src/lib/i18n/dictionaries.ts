@@ -48,6 +48,10 @@ export const dictionaries = {
       label: "Selected work",
       title: "All the work.",
     },
+    notFound: {
+      subtitle: "The page you're looking for doesn't exist — or never did.",
+      cta: "Back to home",
+    },
     endPanel: {
       title1: "Want to know",
       title2: "what we do?",
@@ -191,6 +195,10 @@ export const dictionaries = {
     work: {
       label: "Trabajo seleccionado",
       title: "Todo el trabajo.",
+    },
+    notFound: {
+      subtitle: "La página que buscas no existe — o nunca existió.",
+      cta: "Volver al inicio",
     },
     endPanel: {
       title1: "¿Quieres saber",

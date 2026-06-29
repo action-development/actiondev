@@ -90,4 +90,8 @@ export interface Translations {
   game: {
     scoreHint: string;
   };
+  notFound: {
+    subtitle: string;
+    cta: string;
+  };
 }

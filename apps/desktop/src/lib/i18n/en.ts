@@ -90,4 +90,8 @@ export const en: Translations = {
   game: {
     scoreHint: "Score or scroll to navigate",
   },
+  notFound: {
+    subtitle: "The page you're looking for doesn't exist — or never did.",
+    cta: "Back to home",
+  },
 };
