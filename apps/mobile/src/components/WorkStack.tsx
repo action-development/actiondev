@@ -5,26 +5,26 @@ import { projects, type Project } from "@actiondev/shared";
 import { useI18n } from "@/lib/i18n/context";
 
 const MOBILE_ORDER: string[] = [
-  "musa",
+  "fase",
   "patricia-avendano",
+  "licentia",
+  "autoescuela-gti",
+  "paris-de-noia",
+  "cliche",
+  "musa",
   "samoa",
   "almudena-muhle",
   "fang-tours",
   "pbb-porrino",
   "koopey",
-  "cliche",
-  "fase",
   "nabi",
-  "licentia",
   "true-trading-landing",
   "canelita",
   "cachadas",
   "fisioterapia-noia",
-  "autoescuela-gti",
   "cerveceria-equs",
   "roots",
   "ertuned",
-  "paris-de-noia",
   "kairos-futures",
   "true-trading-app",
 ];
@@ -72,16 +72,18 @@ function Current({ project, index, local, isLast, throwY, useEs }: CurrentProps)
       }}
       className="flex flex-col gap-4"
     >
-      <div className="grid grid-cols-[36px_1fr_auto] items-baseline gap-3 border-b border-black/15 pb-3">
-        <span className="font-mono text-[11px] tracking-wider text-black/40">
-          {String(index + 1).padStart(2, "0")}
-        </span>
-        <span className="text-[26px] font-bold leading-none tracking-tight text-black">
+      <div className="flex flex-col gap-2 border-b border-black/15 pb-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="font-mono text-[11px] tracking-wider text-black/40">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-black/45">
+            {useEs ? (project.categoryEs ?? project.category) : project.category}
+          </span>
+        </div>
+        <h3 className="whitespace-nowrap text-[18px] font-bold leading-none tracking-tight text-black">
           {project.title}
-        </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-black/45">
-          {useEs ? (project.categoryEs ?? project.category) : project.category}
-        </span>
+        </h3>
       </div>
 
       <div
