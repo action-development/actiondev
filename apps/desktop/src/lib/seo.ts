@@ -34,7 +34,8 @@ export const BRAND = {
   country: "ES",
   city: "Vigo",
   region: "Galicia",
-  contactEmail: "hello@actiondev.es",
+  contactEmail: "hi@actiondev.es",
+  whatsappE164: "34614027410",
   services: [
     "Brand Websites",
     "3D Interactive Experiences",
@@ -51,11 +52,10 @@ interface SocialHandles {
   github: string;
 }
 
-// Fill these with real handles when available. Empty strings are omitted from metadata.
 export const SOCIAL: SocialHandles = {
-  twitter: "", // e.g. "@actiondev"
-  instagram: "",
-  linkedin: "",
+  twitter: "",
+  instagram: "action.dev",
+  linkedin: "action-development",
   github: "",
 };
 

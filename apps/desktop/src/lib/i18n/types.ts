@@ -47,10 +47,28 @@ export interface Translations {
     projectPlaceholder: string;
     required: string;
     submit: string;
+    submitOpening: string;
+    submitSuccess: string;
+    submitSuccessHint: string;
+    submitError: string;
     formAriaLabel: string;
+    honeypotLabel: string;
+    whatsappIntro: string;
+    whatsappFallbackName: string;
   };
   footer: {
     available: string;
+    tagline: string;
+    workWithUs: string;
+    workCTA: string;
+    sitemapTitle: string;
+    socialTitle: string;
+    legalTitle: string;
+    legalPrivacy: string;
+    legalTerms: string;
+    legalCookies: string;
+    madeIn: string;
+    rights: string;
   };
   scroll: {
     hero: string;
