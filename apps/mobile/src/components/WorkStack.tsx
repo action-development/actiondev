@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { projects, type Project } from "@actiondev/shared";
 import { useI18n } from "@/lib/i18n/context";
 
@@ -8,11 +8,17 @@ const STACK_PROJECTS: Project[] = projects.filter(
   (p) => !p.image.endsWith("placeholder.webp")
 );
 const STEPS = STACK_PROJECTS.length;
-const SECTION_VH = STEPS * 60 + 100;
 const VISIBLE_LIST_ROWS = 7;
+const TRANSITION_MS = 420;
+const WHEEL_THRESHOLD = 8;
+const TOUCH_THRESHOLD = 30;
 
 function clamp01(v: number) {
   return Math.max(0, Math.min(1, v));
+}
+
+function easeInOutQuad(t: number) {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 }
 
 interface CurrentProps {
@@ -24,15 +30,11 @@ interface CurrentProps {
   useEs: boolean;
 }
 
-const LEAVE_START = 0.78;
-
 function Current({ project, index, local, isLast, throwY, useEs }: CurrentProps) {
-  const leaveTRaw = isLast ? 0 : clamp01((local - LEAVE_START) / (1 - LEAVE_START));
-  const leaveT = leaveTRaw * leaveTRaw;
-
+  const leaveT = isLast ? 0 : local;
   const ty = leaveT * throwY;
-  const rowOpacity = 1 - clamp01((leaveTRaw - 0.92) / 0.08);
-  const photoOpacity = 1 - clamp01(leaveTRaw * 1.5);
+  const rowOpacity = 1 - clamp01((leaveT - 0.88) / 0.12);
+  const photoOpacity = 1 - clamp01(leaveT * 1.6);
 
   return (
     <div
@@ -120,60 +122,149 @@ export default function WorkStack() {
   const sectionRef = useRef<HTMLElement>(null);
   const slotRef = useRef<HTMLLIElement>(null);
   const focusRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
+
+  const [step, setStep] = useState(0);
+  const [local, setLocal] = useState(0);
   const [throwY, setThrowY] = useState(-200);
 
-  useEffect(() => {
-    const container = document.querySelector(".snap-y") as HTMLElement | null;
-    const section = sectionRef.current;
-    if (!container || !section) return;
-
-    const onScroll = () => {
-      const sRect = section.getBoundingClientRect();
-      const cRect = container.getBoundingClientRect();
-      const scrolled = cRect.top - sRect.top;
-      const scrollable = section.clientHeight - container.clientHeight;
-      if (scrolled <= 0 || scrollable <= 0) {
-        setProgress(0);
-        return;
-      }
-      setProgress(clamp01(scrolled / scrollable));
-    };
-
-    container.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => container.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const slot = progress * STEPS;
-  const currentIndex = Math.min(Math.floor(slot), STEPS - 1);
-  const local = clamp01(slot - currentIndex);
-
-  const current = STACK_PROJECTS[currentIndex];
-  const past = STACK_PROJECTS.slice(0, currentIndex);
+  const stepRef = useRef(0);
+  const animatingRef = useRef(false);
 
   useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
+
+  useLayoutEffect(() => {
     if (!slotRef.current || !focusRef.current) return;
     const sRect = slotRef.current.getBoundingClientRect();
     const fRect = focusRef.current.getBoundingClientRect();
     setThrowY(sRect.top - fRect.top);
-  }, [currentIndex, past.length]);
+  }, [step]);
+
+  const runAnim = (from: number, to: number, onDone?: () => void) => {
+    animatingRef.current = true;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / TRANSITION_MS, 1);
+      const eased = easeInOutQuad(t);
+      setLocal(from + (to - from) * eased);
+      if (t < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        animatingRef.current = false;
+        onDone?.();
+      }
+    };
+    requestAnimationFrame(tick);
+  };
+
+  const goForward = () => {
+    if (animatingRef.current) return;
+    if (stepRef.current >= STEPS - 1) return;
+    runAnim(0, 1, () => {
+      setStep((s) => s + 1);
+      setLocal(0);
+    });
+  };
+
+  const goBackward = () => {
+    if (animatingRef.current) return;
+    if (stepRef.current <= 0) return;
+    animatingRef.current = true;
+    setStep((s) => s - 1);
+    setLocal(1);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        animatingRef.current = false;
+        runAnim(1, 0);
+      });
+    });
+  };
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    const container = document.querySelector(".snap-y") as HTMLElement | null;
+    if (!section || !container) return;
+
+    let touchStartY = 0;
+    let touchDelta = 0;
+
+    const isPinned = () => {
+      const sRect = section.getBoundingClientRect();
+      const cRect = container.getBoundingClientRect();
+      return Math.abs(sRect.top - cRect.top) < 50;
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (!isPinned()) return;
+      if (Math.abs(e.deltaY) < WHEEL_THRESHOLD) return;
+      const sign = Math.sign(e.deltaY);
+      if (animatingRef.current) {
+        e.preventDefault();
+        return;
+      }
+      const canStep =
+        (sign > 0 && stepRef.current < STEPS - 1) ||
+        (sign < 0 && stepRef.current > 0);
+      if (!canStep) return;
+      e.preventDefault();
+      if (sign > 0) goForward();
+      else goBackward();
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+      touchDelta = 0;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isPinned()) return;
+      const currentY = e.touches[0].clientY;
+      touchDelta = touchStartY - currentY;
+      if (Math.abs(touchDelta) < 5) return;
+      const sign = Math.sign(touchDelta);
+      const canStep =
+        (sign > 0 && stepRef.current < STEPS - 1) ||
+        (sign < 0 && stepRef.current > 0);
+      if (canStep) e.preventDefault();
+    };
+
+    const onTouchEnd = () => {
+      if (!isPinned()) return;
+      if (animatingRef.current) return;
+      if (Math.abs(touchDelta) < TOUCH_THRESHOLD) return;
+      const sign = Math.sign(touchDelta);
+      if (sign > 0) goForward();
+      else goBackward();
+    };
+
+    section.addEventListener("wheel", onWheel, { passive: false });
+    section.addEventListener("touchstart", onTouchStart, { passive: true });
+    section.addEventListener("touchmove", onTouchMove, { passive: false });
+    section.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      section.removeEventListener("wheel", onWheel);
+      section.removeEventListener("touchstart", onTouchStart);
+      section.removeEventListener("touchmove", onTouchMove);
+      section.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
+
+  const current = STACK_PROJECTS[step];
+  const past = STACK_PROJECTS.slice(0, step);
+  const isLast = step === STEPS - 1;
 
   return (
-    <section
-      ref={sectionRef}
-      id="work"
-      className="snap-start"
-      style={{ height: `${SECTION_VH}vh` }}
-    >
-      <div className="sticky top-0 flex h-dvh flex-col overflow-hidden bg-white text-black">
+    <section ref={sectionRef} id="work" className="h-dvh snap-start">
+      <div className="flex h-full flex-col overflow-hidden bg-white text-black">
         <header className="pl-14 pr-6 pt-12 pb-3">
           <div className="flex items-baseline justify-between">
             <h2 className="text-[24px] font-bold leading-[1.05] tracking-tight">
               {t.work.title}
             </h2>
             <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-black/40">
-              {String(currentIndex + 1).padStart(2, "0")} / {STEPS}
+              {String(step + 1).padStart(2, "0")} / {STEPS}
             </span>
           </div>
         </header>
@@ -188,9 +279,9 @@ export default function WorkStack() {
         >
           <Current
             project={current}
-            index={currentIndex}
+            index={step}
             local={local}
-            isLast={currentIndex === STEPS - 1}
+            isLast={isLast}
             throwY={throwY}
             useEs={useEs}
           />
