@@ -138,11 +138,20 @@ export function Testimonials() {
 			gsap.set(badge, { autoAlpha: 0, y: 24 });
 		}
 
+		// Single scrub timeline that owns the fixed elements end-to-end:
+		// 0.00–0.15  fade in headline
+		// 0.15–0.60  move headline center → top-left + scale down
+		// 0.20–0.35  fade in badge
+		// 0.85–1.00  fade out both (so they vanish before Contact appears)
+		//
+		// One timeline avoids the multi-scrub conflict where each tween's
+		// "from" overrides the others' "to" outside their own ranges.
 		const tl = gsap.timeline({
 			scrollTrigger: {
 				trigger: hero,
 				start: "top 30%",
-				end: "bottom top",
+				endTrigger: section,
+				end: "bottom 55%",
 				scrub: 0.6,
 				invalidateOnRefresh: true,
 			},
@@ -151,18 +160,13 @@ export function Testimonials() {
 		tl.fromTo(
 			headline,
 			{ autoAlpha: 0 },
-			{ autoAlpha: 1, duration: 0.25, ease: "power2.out" }
+			{ autoAlpha: 1, duration: 0.15, ease: "power2.out" },
+			0
 		);
 
 		tl.fromTo(
 			headline,
-			{
-				left: "50%",
-				top: "50%",
-				xPercent: -50,
-				yPercent: -50,
-				scale: 1,
-			},
+			{ left: "50%", top: "50%", xPercent: -50, yPercent: -50, scale: 1 },
 			{
 				left: () => Math.max(24, (window.innerWidth - HEADLINE_MAX_W) / 2),
 				top: HEADLINE_TARGET_TOP,
@@ -170,51 +174,26 @@ export function Testimonials() {
 				yPercent: 0,
 				scale: HEADLINE_TARGET_SCALE,
 				ease: "none",
-				duration: 0.75,
-			}
+				duration: 0.45,
+			},
+			0.15
 		);
 
 		if (badge) {
-			tl.to(
+			tl.fromTo(
 				badge,
-				{ autoAlpha: 1, y: 0, duration: 0.25, ease: "power2.out" },
-				">-0.05"
+				{ autoAlpha: 0, y: 24 },
+				{ autoAlpha: 1, y: 0, duration: 0.15, ease: "power2.out" },
+				0.2
 			);
 		}
 
-		gsap.fromTo(
-			headline,
-			{ autoAlpha: 1 },
-			{
-				autoAlpha: 0,
-				immediateRender: false,
-				ease: "power2.in",
-				scrollTrigger: {
-					trigger: section,
-					start: "bottom 40%",
-					end: "bottom top",
-					scrub: 0.4,
-				},
-			}
+		const fadeTargets = [headline, badge].filter(Boolean) as HTMLElement[];
+		tl.to(
+			fadeTargets,
+			{ autoAlpha: 0, duration: 0.15, ease: "power2.in" },
+			0.85
 		);
-
-		if (badge) {
-			gsap.fromTo(
-				badge,
-				{ autoAlpha: 1 },
-				{
-					autoAlpha: 0,
-					immediateRender: false,
-					ease: "power2.in",
-					scrollTrigger: {
-						trigger: section,
-						start: "bottom 40%",
-						end: "bottom top",
-						scrub: 0.4,
-					},
-				}
-			);
-		}
 
 	}, { scope: sectionRef });
 
