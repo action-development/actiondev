@@ -46,7 +46,7 @@ export const dictionaries = {
     },
     work: {
       label: "Selected work",
-      title: "Some the work.",
+      title: "Some of the work.",
     },
     notFound: {
       subtitle: "The page you're looking for doesn't exist — or never did.",
