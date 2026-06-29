@@ -14,6 +14,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@actiondev/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@gsap/react':
         specifier: ^2.1.2
         version: 2.1.2(gsap@3.14.2)(react@19.2.4)
@@ -102,6 +105,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@actiondev/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@react-three/drei':
         specifier: ^10.7.7
         version: 10.7.7(@react-three/fiber@9.5.0(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(three@0.183.2))(@types/react@19.0.0)(@types/three@0.183.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(three@0.183.2)

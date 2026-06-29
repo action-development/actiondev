@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useI18n } from "@/lib/i18n/context";
 
 const Logo3DEasterEgg = dynamic(
   () => import("@/components/Logo3DEasterEgg"),
@@ -13,8 +14,8 @@ const LogoHeader3D = dynamic(
   { ssr: false }
 );
 
-const WorkFeed = dynamic(
-  () => import("@/components/WorkFeed"),
+const WorkStack = dynamic(
+  () => import("@/components/WorkStack"),
   { ssr: false }
 );
 
@@ -57,91 +58,6 @@ const IDLE_EFFECTS: FxType[] = [
   { class: "fx-glitch", mode: "word" },
   { class: "fx-flipX", mode: "letter" },
   { class: "fx-jello", mode: "word" },
-];
-
-const WORDS = [
-  "Click",
-  "Hey",
-  "there",
-  "What's",
-  "up",
-  "We're",
-  "Action",
-  "Development",
-  "well",
-  "Action",
-  "Dev",
-  "for",
-  "the",
-  "friends",
-  ";)",
-  "We",
-  "build",
-  "apps",
-  "webs",
-  "and",
-  "cool",
-  "digital",
-  "stuff",
-  "from",
-  "Vigo",
-  "so",
-  "you're",
-  "basically",
-  "on",
-  "a",
-  "website",
-  "full",
-  "of",
-  "clean",
-  "code",
-  "and",
-  "mass",
-  "caffeine",
-  "No",
-  "seriously",
-  "welcome",
-  "Ok",
-  "looks",
-  "like",
-  "you're",
-  "just",
-  "clicking",
-  "around",
-  "We",
-  "like",
-  "you",
-  "already",
-  "Let's",
-  "make",
-  "a",
-  "deal",
-  "get",
-  "to",
-  "the",
-  "end",
-  "and",
-  "we'll",
-  "buy",
-  "you",
-  "a",
-  "BEER",
-  "Lorem",
-  "ipsum",
-  "dolor",
-  "sit",
-  "amet",
-  "Nah",
-  "we're",
-  "not",
-  "those",
-  "devs",
-  "The",
-  "beer's",
-  "waiting",
-  "in",
-  "the",
-  "cart",
 ];
 
 function playKaching() {
@@ -217,6 +133,8 @@ function WordDisplay({
 }
 
 export default function Home() {
+  const { t } = useI18n();
+  const WORDS = t.words;
   const [wordIndex, setWordIndex] = useState(0);
   const [cartCount, setCartCount] = useState(0);
   const [cartItems, setCartItems] = useState<string[]>([]);
@@ -228,7 +146,6 @@ export default function Home() {
   const [idle, setIdle] = useState(false);
   const [logoAnimating, setLogoAnimating] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
-  const [workFeedOpen, setWorkFeedOpen] = useState(false);
   const [aboutProgress, setAboutProgress] = useState(0);
   const aboutSectionRef = useRef<HTMLElement>(null);
   const logoContainerRef = useRef<HTMLDivElement>(null);
@@ -251,17 +168,6 @@ export default function Home() {
       return () => clearTimeout(timer);
     }
   }, [isFinished]);
-
-  // Sync safe areas / theme-color with work feed state
-  useEffect(() => {
-    const meta = document.getElementById("theme-color-meta");
-    if (meta) meta.setAttribute("content", workFeedOpen ? "#000000" : "#ffffff");
-    document.body.style.background = workFeedOpen ? "#000000" : "#ffffff";
-    return () => {
-      if (meta) meta.setAttribute("content", "#ffffff");
-      document.body.style.background = "#ffffff";
-    };
-  }, [workFeedOpen]);
 
   // Track about scroll progress
   useEffect(() => {
@@ -359,10 +265,11 @@ export default function Home() {
     }
 
     setWordIndex((i) => i + 1);
-  }, [wordIndex, isFinished]);
+  }, [wordIndex, isFinished, WORDS]);
 
   const handleScreenTap = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
+      if (activeSection !== "home") return;
       const target = e.target as HTMLElement;
       if (
         target.closest("nav") ||
@@ -373,7 +280,7 @@ export default function Home() {
         return;
       handleClick();
     },
-    [handleClick]
+    [handleClick, activeSection]
   );
 
   // Group cart items: { word, count }
@@ -440,16 +347,24 @@ export default function Home() {
         </header>
 
         {/* Toasts */}
-        <div className="absolute top-14 right-5 left-5 z-50 flex max-h-[40dvh] flex-col-reverse items-end overflow-hidden">
-          {[...toasts].reverse().map((t) => (
+        <div
+          className="pointer-events-none absolute top-14 right-5 left-5 z-50 flex max-h-[34dvh] flex-col-reverse items-end overflow-hidden"
+          style={{
+            maskImage:
+              "linear-gradient(to bottom, black 0, black 65%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, black 0, black 65%, transparent 100%)",
+          }}
+        >
+          {[...toasts].reverse().map((toast) => (
             <div
-              key={t.id}
-              className={`toast-wrapper ${t.exiting ? "toast-collapse" : ""}`}
+              key={toast.id}
+              className={`toast-wrapper ${toast.exiting ? "toast-collapse" : ""}`}
             >
               <div
-                className={`toast-pill ${t.exiting ? "toast-fade-out" : "toast-fade-in"}`}
+                className={`toast-pill ${toast.exiting ? "toast-fade-out" : "toast-fade-in"}`}
               >
-                &ldquo;{t.word}&rdquo; successfully added to cart
+                {t.cart.toastAdded(toast.word)}
               </div>
             </div>
           ))}
@@ -463,13 +378,13 @@ export default function Home() {
                 className="text-5xl font-bold text-black transition-opacity hover:opacity-60"
                 onClick={() => scrollTo("work")}
               >
-                Works
+                {t.home.cta.works}
               </button>
               <button
                 className="text-5xl font-bold text-black/40 transition-opacity hover:opacity-60"
                 onClick={() => scrollTo("about")}
               >
-                About
+                {t.home.cta.about}
               </button>
             </div>
           ) : (
@@ -484,23 +399,7 @@ export default function Home() {
       </section>
 
       {/* ===== WORK SECTION ===== */}
-      <section id="work" className="relative flex h-dvh snap-start flex-col items-center justify-center overflow-hidden">
-        {/* Finger tap image — background layer with animation */}
-        <img
-          src="/recursos/dedo-clic.webp"
-          alt=""
-          className={`pointer-events-none absolute left-[62%] top-[53%] -translate-x-1/3 -translate-y-1/3 transition-opacity duration-700 ${activeSection === "work" ? "animate-work-tap opacity-100" : "opacity-0"}`}
-          style={{ transitionDelay: activeSection === "work" ? "1s" : "0s", width: "35%" }}
-        />
-
-        <button
-          onClick={(e) => { e.stopPropagation(); setWorkFeedOpen(true); }}
-          className="group relative z-10 flex flex-col items-center gap-3"
-        >
-          <h1 className="text-6xl font-bold text-black transition-transform duration-300 group-active:scale-95">Work</h1>
-          <span className="animate-pulse text-sm font-medium tracking-wider text-black/30 uppercase">Tap to explore</span>
-        </button>
-      </section>
+      <WorkStack />
 
       {/* ===== ABOUT SECTION ===== */}
       <section ref={aboutSectionRef} id="about" className="snap-start" style={{ height: "600vh" }}>
@@ -514,9 +413,9 @@ export default function Home() {
       {/* Side nav — vertical, bottom-left, fixed over sections */}
       <nav className="absolute bottom-28 left-8 z-50 flex origin-bottom-left -rotate-90 items-baseline gap-4">
         {[
-          { id: "about", label: "About" },
-          { id: "work", label: "Work" },
-          { id: "home", label: "Home" },
+          { id: "about", label: t.nav.about },
+          { id: "work", label: t.nav.work },
+          { id: "home", label: t.nav.home },
         ].map(({ id, label }) => (
           <button
             key={id}
@@ -531,19 +430,6 @@ export default function Home() {
           </button>
         ))}
       </nav>
-
-      {/* Work feed overlay */}
-      <div
-        className={`fixed inset-0 z-[150] bg-black transition-all duration-500 ${
-          workFeedOpen
-            ? "pointer-events-auto opacity-100"
-            : "pointer-events-none opacity-0"
-        }`}
-      >
-        {workFeedOpen && (
-          <WorkFeed onBack={() => setWorkFeedOpen(false)} />
-        )}
-      </div>
 
       {/* 3D Logo Easter Egg */}
       <Logo3DEasterEgg
@@ -577,7 +463,7 @@ export default function Home() {
           {/* Header — black block */}
           <div className="flex items-center justify-between bg-black px-6 py-5">
             <h2 className="text-base font-bold tracking-wide text-white uppercase">
-              &ldquo;Cart&rdquo;
+              &ldquo;{t.cart.title}&rdquo;
             </h2>
             <button
               onClick={() => setCartOpen(false)}
@@ -600,7 +486,7 @@ export default function Home() {
           {/* Items list */}
           <div className="flex-1 overflow-y-auto bg-white px-6 pt-5 pb-4">
             {(isFinished
-              ? [{ word: "BEER", count: 1 }]
+              ? [{ word: t.cart.beer, count: 1 }]
               : groupedItems
             ).map((item, i) => (
               <div
@@ -621,14 +507,19 @@ export default function Home() {
           <div className="bg-white px-6 pb-4">
             <div className="border-t border-black pt-4">
               <div className="flex items-center justify-between">
-                <span className="text-base font-bold text-black">Total</span>
+                <span className="text-base font-bold text-black">{t.cart.total}</span>
                 <span className="text-base font-bold text-black">
                   {isFinished ? 1 : cartCount}
                 </span>
               </div>
-              <button className="mt-4 w-full border border-black py-3 text-center text-sm font-bold tracking-wider text-black uppercase transition-colors active:bg-black active:text-white">
-                &ldquo;Check me out!&rdquo;
-              </button>
+              <a
+                href={`https://wa.me/34614027410?text=${encodeURIComponent(t.cart.whatsappMessage)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 block w-full border border-black py-3 text-center text-sm font-bold tracking-wider text-black uppercase transition-colors active:bg-black active:text-white"
+              >
+                &ldquo;{t.cart.checkout}&rdquo;
+              </a>
             </div>
           </div>
 
