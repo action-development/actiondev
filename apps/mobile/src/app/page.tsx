@@ -317,7 +317,14 @@ export default function Home() {
           playsInline
           aria-hidden
           className="pointer-events-none absolute top-0 left-1/2 w-[55%] max-w-[260px] -translate-x-1/2"
-          style={{ mixBlendMode: "multiply", filter: "brightness(1.05) contrast(1.04)" }}
+          style={{
+            mixBlendMode: "multiply",
+            filter: "brightness(1.22) contrast(1.2) saturate(0.9)",
+            maskImage:
+              "radial-gradient(ellipse 78% 92% at 50% 48%, black 55%, transparent 100%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 78% 92% at 50% 48%, black 55%, transparent 100%)",
+          }}
         />
 
         {/* Header */}
