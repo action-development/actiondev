@@ -24,14 +24,15 @@ interface CurrentProps {
   useEs: boolean;
 }
 
+const LEAVE_START = 0.78;
+
 function Current({ project, index, local, isLast, throwY, useEs }: CurrentProps) {
-  const enterT = clamp01(local / 0.25);
-  const leaveTRaw = isLast ? 0 : clamp01((local - 0.65) / 0.35);
+  const leaveTRaw = isLast ? 0 : clamp01((local - LEAVE_START) / (1 - LEAVE_START));
   const leaveT = leaveTRaw * leaveTRaw;
 
-  const ty = (1 - enterT) * 180 + leaveT * throwY;
-  const rowOpacity = enterT * (1 - clamp01((leaveTRaw - 0.92) / 0.08));
-  const photoOpacity = enterT * (1 - clamp01(leaveTRaw * 2));
+  const ty = leaveT * throwY;
+  const rowOpacity = 1 - clamp01((leaveTRaw - 0.92) / 0.08);
+  const photoOpacity = 1 - clamp01(leaveTRaw * 1.5);
 
   return (
     <div
@@ -167,13 +168,7 @@ export default function WorkStack() {
     >
       <div className="sticky top-0 flex h-dvh flex-col overflow-hidden bg-white text-black">
         <header className="pl-14 pr-6 pt-12 pb-3">
-          <div className="flex items-center gap-3">
-            <span className="h-px w-8 bg-black/30" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-black/50">
-              {t.work.label}
-            </span>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
+          <div className="flex items-baseline justify-between">
             <h2 className="text-[24px] font-bold leading-[1.05] tracking-tight">
               {t.work.title}
             </h2>
