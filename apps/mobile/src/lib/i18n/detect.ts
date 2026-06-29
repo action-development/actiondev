@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import type { Locale } from "./dictionaries";
 
 const SPANISH_LANG_PREFIXES = ["es", "gl", "ca", "eu"];
@@ -26,6 +25,5 @@ export function pickLocaleFromHeader(acceptLanguage: string | null): Locale {
 }
 
 export async function detectLocale(): Promise<Locale> {
-  const headersList = await headers();
-  return pickLocaleFromHeader(headersList.get("accept-language"));
+  return "en";
 }
