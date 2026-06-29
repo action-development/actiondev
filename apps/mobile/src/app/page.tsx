@@ -307,9 +307,21 @@ export default function Home() {
       >
 
       {/* ===== HOME SECTION ===== */}
-      <section id="home" className="relative flex h-dvh snap-start flex-col">
+      <section id="home" className="relative flex h-dvh snap-start flex-col overflow-hidden">
+        {/* Mascot video — multiply-blended onto the white background */}
+        <video
+          src="/mascot.webm"
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          style={{ mixBlendMode: "multiply", filter: "brightness(1.05) contrast(1.04)" }}
+        />
+
         {/* Header */}
-        <header className="flex items-start justify-between p-5">
+        <header className="relative flex items-start justify-between p-5">
           <div ref={logoContainerRef} data-logo>
             <LogoHeader3D
               visible={!logoAnimating}
@@ -371,7 +383,7 @@ export default function Home() {
         </div>
 
         {/* Main word / end state */}
-        <main ref={mainRef} className="flex flex-1 items-center justify-center px-8">
+        <main ref={mainRef} className="relative flex flex-1 items-center justify-center px-8">
           {isFinished ? (
             <div className="flex flex-col items-center gap-6">
               <button
