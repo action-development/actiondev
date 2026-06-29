@@ -55,7 +55,7 @@ export const projects: Project[] = [
   {
     id: "fase",
     slug: "fase",
-    title: "Fase",
+    title: "Fase Service Partner",
     description: TBD_DESC_EN,
     descriptionEs: TBD_DESC_ES,
     category: "Website",
@@ -69,7 +69,7 @@ export const projects: Project[] = [
   {
     id: "samoa",
     slug: "samoa",
-    title: "Samoa",
+    title: "Samoa Café",
     description:
       "Full brand identity from scratch: naming, logo, menu design, website with reservations, and social launch strategy.",
     descriptionEs:
@@ -87,7 +87,7 @@ export const projects: Project[] = [
   {
     id: "musa",
     slug: "musa",
-    title: "Musa",
+    title: "Musa | Night Club",
     description:
       "Sensory restaurant website with integrated booking, interactive menu, and local SEO. Online reservations up 40%.",
     descriptionEs:
@@ -105,7 +105,7 @@ export const projects: Project[] = [
   {
     id: "patricia-avendano",
     slug: "patricia-avendano",
-    title: "Patricia Avendaño",
+    title: "Patricia Avendaño | Diseñadora",
     description:
       "Bilingual fashion designer website with interactive lookbook, fullscreen runway videos, and press section.",
     descriptionEs:
@@ -123,7 +123,7 @@ export const projects: Project[] = [
   {
     id: "cliche",
     slug: "cliche",
-    title: "CLICHÉ",
+    title: "C L I C H É",
     description: TBD_DESC_EN,
     descriptionEs: TBD_DESC_ES,
     category: "Website",
@@ -165,7 +165,7 @@ export const projects: Project[] = [
   {
     id: "pbb-porrino",
     slug: "pbb-porrino",
-    title: "Porriño Baloncesto Base",
+    title: "PBB",
     description:
       "Full digital presence for a local business: website, booking system, and local SEO strategy driving consistent organic traffic.",
     descriptionEs:
@@ -183,7 +183,7 @@ export const projects: Project[] = [
   {
     id: "canelita",
     slug: "canelita",
-    title: "Canelita Tienda de Ropa",
+    title: "Canelita",
     description: TBD_DESC_EN,
     descriptionEs: TBD_DESC_ES,
     category: "E-commerce",
@@ -225,7 +225,7 @@ export const projects: Project[] = [
   {
     id: "nabi",
     slug: "nabi",
-    title: "Nabi",
+    title: "Nabi Cosmética",
     description: TBD_DESC_EN,
     descriptionEs: TBD_DESC_ES,
     category: "E-commerce",
@@ -239,7 +239,7 @@ export const projects: Project[] = [
   {
     id: "licentia",
     slug: "licentia",
-    title: "Licentia",
+    title: "Licentia Marketplace",
     description: TBD_DESC_EN,
     descriptionEs: TBD_DESC_ES,
     category: "Website",
@@ -267,7 +267,7 @@ export const projects: Project[] = [
   {
     id: "fisioterapia-noia",
     slug: "fisioterapia-noia",
-    title: "Fisioterapia Noia",
+    title: "Fisionorte",
     description: TBD_DESC_EN,
     descriptionEs: TBD_DESC_ES,
     category: "Website",
@@ -309,7 +309,7 @@ export const projects: Project[] = [
   {
     id: "true-trading-landing",
     slug: "true-trading-landing",
-    title: "True Trading Landing",
+    title: "TT Landing",
     description: TBD_DESC_EN,
     descriptionEs: TBD_DESC_ES,
     category: "Landing Page",

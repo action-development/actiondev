@@ -4,9 +4,36 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { projects, type Project } from "@actiondev/shared";
 import { useI18n } from "@/lib/i18n/context";
 
-const STACK_PROJECTS: Project[] = projects.filter(
-  (p) => !p.image.endsWith("placeholder.webp")
-);
+const MOBILE_ORDER: string[] = [
+  "musa",
+  "patricia-avendano",
+  "samoa",
+  "almudena-muhle",
+  "fang-tours",
+  "pbb-porrino",
+  "koopey",
+  "cliche",
+  "fase",
+  "nabi",
+  "licentia",
+  "true-trading-landing",
+  "canelita",
+  "cachadas",
+  "fisioterapia-noia",
+  "autoescuela-gti",
+  "cerveceria-equs",
+  "roots",
+  "ertuned",
+  "paris-de-noia",
+  "kairos-futures",
+  "true-trading-app",
+];
+
+const STACK_PROJECTS: Project[] = MOBILE_ORDER
+  .map((id) => projects.find((p) => p.id === id))
+  .filter(
+    (p): p is Project => !!p && !p.image.endsWith("placeholder.webp")
+  );
 const STEPS = STACK_PROJECTS.length;
 const VISIBLE_LIST_ROWS = 7;
 const TRANSITION_MS = 420;
