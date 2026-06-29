@@ -308,7 +308,7 @@ export default function Home() {
 
       {/* ===== HOME SECTION ===== */}
       <section id="home" className="relative flex h-dvh snap-start flex-col overflow-hidden">
-        {/* Mascot video — multiply-blended onto the white background */}
+        {/* Mascot video — hangs from the top, multiply-blended onto the white background */}
         <video
           src="/mascot.webm"
           autoPlay
@@ -316,7 +316,7 @@ export default function Home() {
           loop
           playsInline
           aria-hidden
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          className="pointer-events-none absolute top-0 left-1/2 w-[55%] max-w-[260px] -translate-x-1/2"
           style={{ mixBlendMode: "multiply", filter: "brightness(1.05) contrast(1.04)" }}
         />
 
