@@ -316,7 +316,7 @@ export default function Home() {
           loop
           playsInline
           aria-hidden
-          className="pointer-events-none absolute top-0 left-1/2 w-[55%] max-w-[260px] -translate-x-1/2"
+          className="pointer-events-none absolute top-0 left-1/2 w-[75%] max-w-[340px] -translate-x-1/2"
           style={{
             mixBlendMode: "multiply",
             filter: "brightness(1.22) contrast(1.2) saturate(0.9)",
