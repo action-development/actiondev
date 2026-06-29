@@ -90,7 +90,7 @@
 |-----|------|-------------|------------|
 | `@actiondev/desktop` | `apps/desktop` | Web desktop-only (este CLAUDE.md) | 3001 |
 | `@actiondev/mobile` | `apps/mobile` | Web mobile (Next.js 15) | 3000 |
-| `shared` | `packages/shared` | Código compartido (pendiente) | — |
+| `@actiondev/shared` | `packages/shared` | Data compartida (proyectos) entre desktop y mobile | — |
 
 **Tono:** Premium, minimalista, dark-mode first, tipografía bold, animaciones fluidas, experiencias 3D inmersivas.
 

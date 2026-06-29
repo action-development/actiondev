@@ -6,7 +6,7 @@ import { type RefObject, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CardBackgroundPreview } from "@/components/effects/card-background-preview";
 import { AccentWord } from "@/components/ui/AccentWord";
-import { projects } from "@/data/projects";
+import { featuredProjects as projects } from "@/data/projects";
 import { useLocale, useT } from "@/lib/i18n";
 
 const DECORATION_PATH = {

@@ -11,6 +11,7 @@ import { Footer } from "@/components/layout/Footer";
 import { ScrollIndicator } from "@/components/layout/ScrollIndicator";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { Projects } from "@/components/sections/Projects";
+import { ProjectsIndex } from "@/components/sections/ProjectsIndex";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { Contact } from "@/components/sections/Contact";
 import { StructuredData } from "@/components/seo/StructuredData";
@@ -157,6 +158,7 @@ export default function HomePage() {
       <main id="main-content">
         <div id="projects">
           <Projects />
+          <ProjectsIndex />
         </div>
         <div id="reviews">
           <Testimonials />

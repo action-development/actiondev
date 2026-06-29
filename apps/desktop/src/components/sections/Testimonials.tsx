@@ -9,68 +9,47 @@ import { testimonials, type Testimonial } from "@/data/testimonials";
 import { AccentWord } from "@/components/ui/AccentWord";
 import { useLocale, useT } from "@/lib/i18n";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Editorial review — no container chrome, pure typography.
+// TODO: replace with the exact Google Business profile URL (g.page/r/…) when available.
+const GOOGLE_REVIEWS_URL = "https://www.google.com/maps/search/?api=1&query=Action+Development+Vigo";
 
-function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
+function getInitials(name: string): string {
+	const parts = name.trim().split(/\s+/);
+	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+	return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function AvatarBadge({ name, src }: { name: string; src?: string }) {
+	if (src) {
+		return (
+			<Image
+				src={src}
+				alt={`Portrait of ${name}`}
+				width={40}
+				height={40}
+				sizes="40px"
+				loading="lazy"
+				className="h-10 w-10 rounded-full object-cover"
+			/>
+		);
+	}
+	return (
+		<span
+			aria-hidden="true"
+			className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--hairline-strong)] bg-card font-mono text-[11px] font-medium tracking-[0.05em] text-foreground/70"
+		>
+			{getInitials(name)}
+		</span>
+	);
+}
+
+function ReviewCard({ t }: { t: Testimonial }) {
 	const { locale } = useLocale();
-	const idea  = locale === "es" ? (t.ideaEs  ?? t.idea)  : t.idea;
 	const quote = locale === "es" ? (t.quoteEs ?? t.quote) : t.quote;
-	const expandRef = useRef<HTMLDivElement>(null);
-	const collapsed = useRef(false);
-
-	useGSAP(() => {
-		const expand = expandRef.current;
-		if (!expand || collapsed.current) return;
-		gsap.set(expand, { height: 0, overflow: "hidden", opacity: 0 });
-		collapsed.current = true;
-	}, { scope: expandRef });
-
-	useGSAP(() => {
-		const expand = expandRef.current;
-		if (!expand) return;
-
-		if (expanded) {
-			gsap.set(expand, { height: "auto", overflow: "hidden" });
-			const realHeight = expand.offsetHeight;
-			gsap.set(expand, { height: 0 });
-
-			gsap.to(expand, {
-				height: realHeight,
-				opacity: 1,
-				delay: 0.3,
-				duration: 1.0,
-				ease: "power3.out",
-				onComplete: () => {
-					gsap.set(expand, { height: "auto", overflow: "visible" });
-				},
-			});
-		} else if (collapsed.current) {
-			gsap.to(expand, {
-				height: 0,
-				opacity: 0,
-				duration: 0.5,
-				ease: "power2.in",
-				overwrite: true,
-				onComplete: () => {
-					gsap.set(expand, { overflow: "hidden" });
-				},
-			});
-		}
-	}, { dependencies: [expanded] });
 
 	return (
 		<article>
-			<header className="mb-10 flex items-center gap-4">
-				<Image
-					src={t.avatar}
-					alt={`Portrait of ${t.name}`}
-					width={40}
-					height={40}
-					sizes="40px"
-					loading="lazy"
-					className="h-10 w-10 rounded-full object-cover"
-				/>
+			<header className="mb-8 flex items-center gap-4">
+				<AvatarBadge name={t.name} src={t.avatar} />
 				<div className="flex items-baseline gap-3">
 					<span className="font-display text-[15px] font-medium tracking-[-0.01em] text-foreground">{t.name}</span>
 					<span className="text-muted" aria-hidden>·</span>
@@ -78,16 +57,49 @@ function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
 				</div>
 			</header>
 
-			<p className="font-display text-[19px] font-normal leading-[1.5] tracking-[-0.02em] max-w-[52ch] text-foreground/65">
-				&ldquo;{idea}&rdquo;
+			<p className="font-display max-w-[42ch] text-[clamp(1.25rem,1.9vw,1.65rem)] font-normal leading-[1.45] tracking-[-0.025em] text-foreground/90">
+				&ldquo;{quote}&rdquo;
 			</p>
-
-			<div ref={expandRef}>
-				<p className="font-display mt-10 max-w-[38ch] text-[clamp(1.25rem,1.9vw,1.65rem)] font-normal leading-[1.45] tracking-[-0.025em] text-foreground/90">
-					&ldquo;{quote}&rdquo;
-				</p>
-			</div>
 		</article>
+	);
+}
+
+interface GoogleReviewsBadgeProps {
+	label: string;
+	rating: string;
+	year: string;
+	cta: string;
+}
+
+function GoogleReviewsBadge({ label, rating, year, cta }: GoogleReviewsBadgeProps) {
+	return (
+		<a
+			href={GOOGLE_REVIEWS_URL}
+			target="_blank"
+			rel="noopener noreferrer"
+			className="group relative inline-flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--hairline-strong)] bg-transparent px-7 py-5 backdrop-blur-sm transition-colors duration-500 hover:border-accent"
+			aria-label={`${cta} — ${label}`}
+		>
+			<div className="flex items-center justify-between gap-8">
+				<span className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground/55 transition-colors duration-500 group-hover:text-accent">
+					{label}
+				</span>
+				<span className="font-display text-[15px] font-medium leading-none tracking-tight text-foreground/80 transition-colors duration-500 group-hover:text-accent">
+					{year}
+				</span>
+			</div>
+			<div className="h-px w-full bg-[var(--hairline)]" />
+			<div className="flex items-center justify-between gap-8">
+				<span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-foreground/70">
+					<span aria-hidden className="text-accent">★★★★★</span>
+					<span>{rating}</span>
+				</span>
+				<span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-foreground/80 transition-all duration-500 group-hover:translate-x-1 group-hover:text-accent">
+					{cta}
+					<span aria-hidden>↗</span>
+				</span>
+			</div>
+		</a>
 	);
 }
 
@@ -99,25 +111,19 @@ const HEADLINE_TARGET_SCALE = 0.62;
 
 export function Testimonials() {
 	const tStr = useT();
+	const { locale } = useLocale();
 	const sectionRef = useRef<HTMLDivElement>(null);
 	const heroRef    = useRef<HTMLDivElement>(null);
 	const headlineRef = useRef<HTMLHeadingElement>(null);
-	const cardRefs   = useRef<(HTMLDivElement | null)[]>([]);
-	const expandedSet = useRef(new Set<number>());
-	const [expandedState, setExpandedState] = useState<boolean[]>(
-		() => testimonials.map(() => false)
-	);
+	const badgeRef = useRef<HTMLDivElement>(null);
 
 	useGSAP(() => {
 		const hero     = heroRef.current;
 		const headline = headlineRef.current;
 		const section  = sectionRef.current;
+		const badge    = badgeRef.current;
 		if (!hero || !headline || !section) return;
 
-		// ── Initial state ───────────────────────────────────────────────────
-		// autoAlpha:0 hides via opacity+visibility so there's no flash before
-		// the scroll animation takes over. transformOrigin top-left keeps the
-		// scale pivot at the element's natural corner (final resting position).
 		gsap.set(headline, {
 			autoAlpha: 0,
 			transformOrigin: "top left",
@@ -128,16 +134,10 @@ export function Testimonials() {
 			scale: 1,
 		});
 
-		// ── Main timeline: single ScrollTrigger on heroRef ──────────────────
-		// Using one timeline + one ScrollTrigger avoids the cached-start-value
-		// bug that appears when multiple ScrollTriggers target the same element.
-		//
-		// Scroll range: hero top enters at 80% of viewport → hero bottom exits top.
-		// That gives ~180vh of scroll to run the full animation.
-		//
-		// Timeline layout (proportional durations, scrub normalises to scroll):
-		//   0.0 – 0.25  fade in (opacity 0 → 1), position stays centered
-		//   0.25 – 1.0  move from center to corner + scale down
+		if (badge) {
+			gsap.set(badge, { autoAlpha: 0, y: 24 });
+		}
+
 		const tl = gsap.timeline({
 			scrollTrigger: {
 				trigger: hero,
@@ -148,14 +148,12 @@ export function Testimonials() {
 			},
 		});
 
-		// Phase 1: fade in — element stays centered while becoming visible
 		tl.fromTo(
 			headline,
 			{ autoAlpha: 0 },
 			{ autoAlpha: 1, duration: 0.25, ease: "power2.out" }
 		);
 
-		// Phase 2: move from center to corner (starts right after phase 1)
 		tl.fromTo(
 			headline,
 			{
@@ -176,10 +174,14 @@ export function Testimonials() {
 			}
 		);
 
-		// ── Fade out when section scrolls away ──────────────────────────────
-		// immediateRender: false is required — without it, fromTo immediately
-		// applies { autoAlpha: 1 } when created, overriding the autoAlpha: 0
-		// set by the main timeline and making the headline visible on all sections.
+		if (badge) {
+			tl.to(
+				badge,
+				{ autoAlpha: 1, y: 0, duration: 0.25, ease: "power2.out" },
+				">-0.05"
+			);
+		}
+
 		gsap.fromTo(
 			headline,
 			{ autoAlpha: 1 },
@@ -196,48 +198,35 @@ export function Testimonials() {
 			}
 		);
 
+		if (badge) {
+			gsap.fromTo(
+				badge,
+				{ autoAlpha: 1 },
+				{
+					autoAlpha: 0,
+					immediateRender: false,
+					ease: "power2.in",
+					scrollTrigger: {
+						trigger: section,
+						start: "bottom 40%",
+						end: "bottom top",
+						scrub: 0.4,
+					},
+				}
+			);
+		}
+
 	}, { scope: sectionRef });
 
-	// Card expand / collapse — IntersectionObserver instead of getBoundingClientRect
-	// on every scroll frame. IO runs natively (off-tick), fires only on real
-	// intersection changes, and never triggers React re-renders mid-scroll.
-	// rootMargin "-30% 0px -25% 0px" → effective zone: 30%–75% of viewport.
-	// A card entering from below (top < 75%) expands; exiting back above (top > 75%)
-	// or scrolled past the top (bottom < 30%) collapses — matching the old thresholds.
-	useEffect(() => {
-		const observer = new IntersectionObserver(
-			(entries) => {
-				let changed = false;
-				entries.forEach((entry) => {
-					const index = cardRefs.current.findIndex((el) => el === entry.target);
-					if (index === -1) return;
-					const wasExpanded = expandedSet.current.has(index);
-					if (entry.isIntersecting !== wasExpanded) {
-						if (entry.isIntersecting) expandedSet.current.add(index);
-						else expandedSet.current.delete(index);
-						changed = true;
-					}
-				});
-				if (changed) {
-					setExpandedState(testimonials.map((_, i) => expandedSet.current.has(i)));
-				}
-			},
-			{ rootMargin: "-30% 0px -25% 0px", threshold: 0 },
-		);
-
-		cardRefs.current.forEach((card) => { if (card) observer.observe(card); });
-		return () => observer.disconnect();
-	}, []);
+	const badgeLabel = locale === "es" ? "Google Reviews" : "Google Reviews";
+	const badgeYear = "2026";
+	const badgeRating = locale === "es" ? "20+ Reseñas" : "20+ Reviews";
+	const badgeCta = locale === "es" ? "Leer en Google" : "Read on Google";
 
 	return (
 		<div ref={sectionRef}>
-			{/* 100vh scroll space drives the headline animation */}
 			<div ref={heroRef} className="h-screen" />
 
-			{/*
-				GSAP owns position + opacity entirely.
-				No Tailwind translate-* or visibility classes here.
-			*/}
 			<h2
 				ref={headlineRef}
 				className="display-xl fixed z-20"
@@ -248,6 +237,24 @@ export function Testimonials() {
 				<AccentWord>{tStr.testimonials.visionaries}</AccentWord>
 			</h2>
 
+			<div
+				ref={badgeRef}
+				className="pointer-events-auto fixed z-20"
+				style={{
+					left: "max(24px, calc((100vw - 1280px) / 2))",
+					top: "calc(128px + (clamp(2.75rem, 8vw, 7rem) * 0.62 * 2.2))",
+					visibility: "hidden",
+				}}
+				aria-hidden={false}
+			>
+				<GoogleReviewsBadge
+					label={badgeLabel}
+					rating={badgeRating}
+					year={badgeYear}
+					cta={badgeCta}
+				/>
+			</div>
+
 			<div className="relative z-[2] container-editorial pb-[50vh]">
 				<div className="md:pl-[50%]">
 					<div className="space-y-24 md:space-y-28">
@@ -256,9 +263,7 @@ export function Testimonials() {
 								{i > 0 && (
 									<div className="absolute inset-x-0 -top-12 md:-top-14 h-px bg-[var(--hairline)]" />
 								)}
-								<div ref={(el) => { cardRefs.current[i] = el; }}>
-									<ReviewCard t={t} expanded={expandedState[i]} />
-								</div>
+								<ReviewCard t={t} />
 							</div>
 						))}
 					</div>
