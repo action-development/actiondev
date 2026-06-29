@@ -307,28 +307,9 @@ export default function Home() {
       >
 
       {/* ===== HOME SECTION ===== */}
-      <section id="home" className="relative flex h-dvh snap-start flex-col overflow-hidden">
-        {/* Mascot video — hangs from the top, multiply-blended onto the white background */}
-        <video
-          src="/mascot.webm"
-          autoPlay
-          muted
-          loop
-          playsInline
-          aria-hidden
-          className="pointer-events-none absolute top-0 left-1/2 w-[75%] max-w-[340px] -translate-x-1/2"
-          style={{
-            mixBlendMode: "multiply",
-            filter: "brightness(1.22) contrast(1.2) saturate(0.9)",
-            maskImage:
-              "radial-gradient(ellipse 78% 92% at 50% 48%, black 55%, transparent 100%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 78% 92% at 50% 48%, black 55%, transparent 100%)",
-          }}
-        />
-
+      <section id="home" className="relative flex h-dvh snap-start flex-col">
         {/* Header */}
-        <header className="relative flex items-start justify-between p-5">
+        <header className="flex items-start justify-between p-5">
           <div ref={logoContainerRef} data-logo>
             <LogoHeader3D
               visible={!logoAnimating}
@@ -390,7 +371,7 @@ export default function Home() {
         </div>
 
         {/* Main word / end state */}
-        <main ref={mainRef} className="relative flex flex-1 items-center justify-center px-8">
+        <main ref={mainRef} className="flex flex-1 items-center justify-center px-8">
           {isFinished ? (
             <div className="flex flex-col items-center gap-6">
               <button
