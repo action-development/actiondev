@@ -1,7 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#080808"/>
-  <text x="16" y="16" dominant-baseline="central" text-anchor="middle"
-    font-family="system-ui,-apple-system,sans-serif" font-size="19" font-weight="700" fill="#c8ff00">
-    A
-  </text>
+  <rect width="32" height="32" rx="6" fill="#0a0a0a"/>
+  <g fill="none" stroke="#c8ff00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 19 5 A 11 11 0 0 0 19 27"/>
+    <line x1="7.5" y1="16" x2="19" y2="16"/>
+    <line x1="11" y1="9" x2="19" y2="9"/>
+    <line x1="11" y1="23" x2="19" y2="23"/>
+    <path d="M 19 5 Q 11 16 19 27"/>
+  </g>
 </svg>
