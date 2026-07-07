@@ -52,13 +52,12 @@ interface CurrentProps {
   project: Project;
   index: number;
   local: number;
-  isLast: boolean;
   throwY: number;
   useEs: boolean;
 }
 
-function Current({ project, index, local, isLast, throwY, useEs }: CurrentProps) {
-  const leaveT = isLast ? 0 : local;
+function Current({ project, index, local, throwY, useEs }: CurrentProps) {
+  const leaveT = local;
   const ty = leaveT * throwY;
   const rowOpacity = 1 - clamp01((leaveT - 0.88) / 0.12);
   const photoOpacity = 1 - clamp01(leaveT * 1.6);
@@ -187,27 +186,30 @@ export default function WorkStack() {
     requestAnimationFrame(tick);
   };
 
+  const settleIn = () => {
+    animatingRef.current = true;
+    setLocal(1);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        runAnim(1, 0);
+      });
+    });
+  };
+
   const goForward = () => {
     if (animatingRef.current) return;
     if (stepRef.current >= STEPS - 1) return;
     runAnim(0, 1, () => {
       setStep((s) => s + 1);
-      setLocal(0);
+      settleIn();
     });
   };
 
   const goBackward = () => {
     if (animatingRef.current) return;
     if (stepRef.current <= 0) return;
-    animatingRef.current = true;
     setStep((s) => s - 1);
-    setLocal(1);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        animatingRef.current = false;
-        runAnim(1, 0);
-      });
-    });
+    settleIn();
   };
 
   useEffect(() => {
@@ -217,6 +219,7 @@ export default function WorkStack() {
 
     let touchStartY = 0;
     let touchDelta = 0;
+    let touchPeakDelta = 0;
 
     const isPinned = () => {
       const sRect = section.getBoundingClientRect();
@@ -244,25 +247,45 @@ export default function WorkStack() {
     const onTouchStart = (e: TouchEvent) => {
       touchStartY = e.touches[0].clientY;
       touchDelta = 0;
+      touchPeakDelta = 0;
     };
 
     const onTouchMove = (e: TouchEvent) => {
       if (!isPinned()) return;
       const currentY = e.touches[0].clientY;
       touchDelta = touchStartY - currentY;
+      if (Math.abs(touchDelta) > Math.abs(touchPeakDelta)) {
+        touchPeakDelta = touchDelta;
+      }
+
+      const atTopEdge = stepRef.current <= 0;
+      const atBottomEdge = stepRef.current >= STEPS - 1;
+
+      // Mid-stack: either direction is captured regardless of sign, so
+      // preventDefault on the very first touchmove — Android Chrome commits
+      // to native scroll for the whole gesture if the first move isn't
+      // cancelled, and later preventDefault() calls are ignored (unlike iOS).
+      if (!atTopEdge && !atBottomEdge) {
+        e.preventDefault();
+        return;
+      }
+
       if (Math.abs(touchDelta) < 5) return;
       const sign = Math.sign(touchDelta);
       const canStep =
-        (sign > 0 && stepRef.current < STEPS - 1) ||
-        (sign < 0 && stepRef.current > 0);
+        (sign > 0 && !atBottomEdge) || (sign < 0 && !atTopEdge);
       if (canStep) e.preventDefault();
     };
 
     const onTouchEnd = () => {
       if (!isPinned()) return;
       if (animatingRef.current) return;
-      if (Math.abs(touchDelta) < TOUCH_THRESHOLD) return;
-      const sign = Math.sign(touchDelta);
+      // Decide direction from the gesture's peak displacement, not the last
+      // touchmove sample — Android's touch coalescing/prediction can correct
+      // a fast flick's final sample back past the start point right before
+      // touchend, which would otherwise flip the sign of a clean forward swipe.
+      if (Math.abs(touchPeakDelta) < TOUCH_THRESHOLD) return;
+      const sign = Math.sign(touchPeakDelta);
       if (sign > 0) goForward();
       else goBackward();
     };
@@ -282,10 +305,9 @@ export default function WorkStack() {
 
   const current = STACK_PROJECTS[step];
   const past = STACK_PROJECTS.slice(0, step);
-  const isLast = step === STEPS - 1;
 
   return (
-    <section ref={sectionRef} id="work" className="h-dvh snap-start">
+    <section ref={sectionRef} id="work" className="h-dvh snap-start snap-always">
       <div className="flex h-full flex-col overflow-hidden bg-white text-black">
         <header className="pl-14 pr-6 pt-12 pb-3">
           <div className="flex items-baseline justify-between">
@@ -310,7 +332,6 @@ export default function WorkStack() {
             project={current}
             index={step}
             local={local}
-            isLast={isLast}
             throwY={throwY}
             useEs={useEs}
           />
