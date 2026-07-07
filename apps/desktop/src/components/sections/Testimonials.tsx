@@ -42,9 +42,54 @@ function AvatarBadge({ name, src }: { name: string; src?: string }) {
 	);
 }
 
-function ReviewCard({ t }: { t: Testimonial }) {
+function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
 	const { locale } = useLocale();
 	const quote = locale === "es" ? (t.quoteEs ?? t.quote) : t.quote;
+	const expandRef = useRef<HTMLDivElement>(null);
+	const collapsed = useRef(false);
+
+	// Collapse to height 0 once on mount so the quote grows in when its card
+	// enters the focus zone. Guarded by `collapsed` so re-renders don't re-hide.
+	useGSAP(() => {
+		const expand = expandRef.current;
+		if (!expand || collapsed.current) return;
+		gsap.set(expand, { height: 0, overflow: "hidden", opacity: 0 });
+		collapsed.current = true;
+	}, { scope: expandRef });
+
+	// Grow / shrink driven by the parent IntersectionObserver.
+	useGSAP(() => {
+		const expand = expandRef.current;
+		if (!expand) return;
+
+		if (expanded) {
+			gsap.set(expand, { height: "auto", overflow: "hidden" });
+			const realHeight = expand.offsetHeight;
+			gsap.set(expand, { height: 0 });
+
+			gsap.to(expand, {
+				height: realHeight,
+				opacity: 1,
+				delay: 0.3,
+				duration: 1.0,
+				ease: "power3.out",
+				onComplete: () => {
+					gsap.set(expand, { height: "auto", overflow: "visible" });
+				},
+			});
+		} else if (collapsed.current) {
+			gsap.to(expand, {
+				height: 0,
+				opacity: 0,
+				duration: 0.5,
+				ease: "power2.in",
+				overwrite: true,
+				onComplete: () => {
+					gsap.set(expand, { overflow: "hidden" });
+				},
+			});
+		}
+	}, { dependencies: [expanded] });
 
 	return (
 		<article>
@@ -57,9 +102,11 @@ function ReviewCard({ t }: { t: Testimonial }) {
 				</div>
 			</header>
 
-			<p className="font-display max-w-[42ch] text-[clamp(1.25rem,1.9vw,1.65rem)] font-normal leading-[1.45] tracking-[-0.025em] text-foreground/90">
-				&ldquo;{quote}&rdquo;
-			</p>
+			<div ref={expandRef}>
+				<p className="font-display max-w-[42ch] text-[clamp(1.25rem,1.9vw,1.65rem)] font-normal leading-[1.45] tracking-[-0.025em] text-foreground/90">
+					&ldquo;{quote}&rdquo;
+				</p>
+			</div>
 		</article>
 	);
 }
@@ -116,6 +163,11 @@ export function Testimonials() {
 	const heroRef    = useRef<HTMLDivElement>(null);
 	const headlineRef = useRef<HTMLHeadingElement>(null);
 	const badgeRef = useRef<HTMLDivElement>(null);
+	const cardRefs   = useRef<(HTMLDivElement | null)[]>([]);
+	const expandedSet = useRef(new Set<number>());
+	const [expandedState, setExpandedState] = useState<boolean[]>(
+		() => testimonials.map(() => false)
+	);
 
 	useGSAP(() => {
 		const hero     = heroRef.current;
@@ -197,6 +249,34 @@ export function Testimonials() {
 
 	}, { scope: sectionRef });
 
+	// Card grow / shrink — IntersectionObserver (off-tick, no per-frame layout
+	// reads). rootMargin "-30% 0px -25% 0px" → active zone 30%–75% of viewport.
+	// A card entering the zone expands its quote; leaving it collapses.
+	useEffect(() => {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				let changed = false;
+				entries.forEach((entry) => {
+					const index = cardRefs.current.findIndex((el) => el === entry.target);
+					if (index === -1) return;
+					const wasExpanded = expandedSet.current.has(index);
+					if (entry.isIntersecting !== wasExpanded) {
+						if (entry.isIntersecting) expandedSet.current.add(index);
+						else expandedSet.current.delete(index);
+						changed = true;
+					}
+				});
+				if (changed) {
+					setExpandedState(testimonials.map((_, i) => expandedSet.current.has(i)));
+				}
+			},
+			{ rootMargin: "-30% 0px -25% 0px", threshold: 0 },
+		);
+
+		cardRefs.current.forEach((card) => { if (card) observer.observe(card); });
+		return () => observer.disconnect();
+	}, []);
+
 	const badgeLabel = locale === "es" ? "Google Reviews" : "Google Reviews";
 	const badgeYear = "2026";
 	const badgeRating = locale === "es" ? "20+ Reseñas" : "20+ Reviews";
@@ -242,7 +322,9 @@ export function Testimonials() {
 								{i > 0 && (
 									<div className="absolute inset-x-0 -top-12 md:-top-14 h-px bg-[var(--hairline)]" />
 								)}
-								<ReviewCard t={t} />
+								<div ref={(el) => { cardRefs.current[i] = el; }}>
+									<ReviewCard t={t} expanded={expandedState[i]} />
+								</div>
 							</div>
 						))}
 					</div>
