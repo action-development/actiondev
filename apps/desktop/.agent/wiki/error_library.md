@@ -36,4 +36,11 @@ Registro de bugs visuales que escaparon a los tests unitarios. Cada entrada docu
 **Fix aplicado:** Al entrar en el bloque `if (paused)` en `GameWorld.useFrame`, si `heldCubeRef.current` es non-null, se libera el cubo inmediatamente (`setBodyType(DYNAMIC)`, `setLinvel(0)`, `heldCubeRef=null`). La física (también pausada en ese momento) congela el cubo en su posición actual; al reanudar, cae al suelo normalmente.
 **Regla:** Cualquier estado de input o de cuerpo kinematic derivado de input de usuario debe limpiarse en el bloque `if (paused)`, no solo al resumir. Un evento de "release" del ratón puede ocurrir fuera del frame loop y nunca detectarse al resumir.
 
+## ERR-005: Footer (y toda la página bajo el hero) no recibe clicks
+
+**Síntoma:** Ningún link/botón del footer respondía al click, aunque se veían y hacían hover normal.
+**Causa raíz:** `FloatingCubeLite` renderiza un `<Canvas>` R3F decorativo (`aria-hidden`) en un wrapper `fixed inset-0 z-[1]` que cubre todo el viewport. El wrapper tenía `pointer-events-none` (intención correcta), pero R3F fuerza `pointer-events: auto` sobre su propio contenedor de canvas, anulando el `none` heredado. El canvas a pantalla completa interceptaba `elementFromPoint` sobre el footer → se comía todos los clicks.
+**Fix aplicado:** Añadir `pointerEvents: "none"` al `style` del propio `<Canvas>` (no basta con el wrapper). El estilo inline gana sobre el default de R3F; el canvas hereda `none` y deja pasar los clicks.
+**Regla:** Un `<Canvas>` R3F decorativo/full-screen debe llevar `pointerEvents: "none"` en su propio `style`, no solo `pointer-events-none` en un div padre — R3F re-habilita pointer-events en el contenedor del canvas. Diagnóstico: `document.elementsFromPoint(x,y)` sobre el elemento "muerto" revela qué canvas está encima.
+
 <!-- Añadir nuevas entradas con formato: ERR-NNN: título, síntoma, causa, fix, regla -->

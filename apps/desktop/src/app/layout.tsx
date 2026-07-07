@@ -55,8 +55,9 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  // icons and manifest are handled automatically by Next.js App Router
-  // via src/app/favicon.ico, src/app/icon.svg, and src/app/manifest.ts
+  icons: {
+    icon: [{ url: "/logos/action_globe.webp", type: "image/webp" }],
+  },
   formatDetection: {
     email: false,
     address: false,

@@ -121,7 +121,9 @@ export function FloatingCubeLiteCanvas({
 				frameloop="demand"
 				flat
 				dpr={1}
-				style={{ width: "100%", height: "100%", background: "transparent" }}
+				// R3F forces pointer-events:auto on the canvas, defeating the wrapper's
+				// pointer-events-none — this decorative cube must never eat clicks (e.g. footer).
+				style={{ width: "100%", height: "100%", background: "transparent", pointerEvents: "none" }}
 				onCreated={onCanvasCreated}
 			>
 				<ScrollInvalidator />

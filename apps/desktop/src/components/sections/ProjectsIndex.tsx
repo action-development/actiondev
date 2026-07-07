@@ -74,10 +74,9 @@ interface ProjectRowProps {
 	index: number;
 	locale: "en" | "es";
 	onHover: (project: Project | null) => void;
-	viewLabel: string;
 }
 
-function ProjectRow({ project, index, locale, onHover, viewLabel }: ProjectRowProps) {
+function ProjectRow({ project, index, locale, onHover }: ProjectRowProps) {
 	const [hovered, setHovered] = useState(false);
 	const isPlaceholder = project.url === "#";
 	const category = locale === "es" ? project.categoryEs ?? project.category : project.category;
@@ -92,7 +91,7 @@ function ProjectRow({ project, index, locale, onHover, viewLabel }: ProjectRowPr
 			{...linkProps}
 			data-row
 			className={[
-				"group relative grid grid-cols-[64px_1fr_auto] items-center gap-x-6 border-b border-[var(--hairline)] py-7 transition-colors duration-300 md:grid-cols-[80px_1fr_140px_80px_48px] md:py-9",
+				"group relative flex items-baseline gap-4 border-b border-[var(--hairline)] py-4 transition-colors duration-300 md:py-[1.15rem]",
 				isPlaceholder ? "cursor-default" : "cursor-pointer",
 			].join(" ")}
 			onMouseEnter={() => {
@@ -105,29 +104,18 @@ function ProjectRow({ project, index, locale, onHover, viewLabel }: ProjectRowPr
 			}}
 			aria-label={`${project.title} — ${category}`}
 		>
-			<span className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground/35">
+			<span className="w-6 shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] tabular-nums text-foreground/30">
 				{String(index + 1).padStart(2, "0")}
 			</span>
 
 			<ScrambleTitle
 				text={project.title}
 				active={hovered}
-				className="font-display font-bold tracking-[-0.025em] text-foreground text-[clamp(1.5rem,3vw,2.75rem)] leading-[1.05]"
+				className="min-w-0 flex-1 truncate font-display font-bold tracking-[-0.02em] text-foreground text-[clamp(1.05rem,1.5vw,1.4rem)] leading-tight transition-colors duration-300 group-hover:text-accent"
 			/>
 
-			<span className="hidden font-mono text-[11px] uppercase tracking-[0.18em] text-foreground/45 md:inline">
+			<span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/40 transition-colors duration-300 group-hover:text-foreground/70 sm:inline">
 				{category}
-			</span>
-
-			<span className="hidden font-mono text-[11px] uppercase tracking-[0.18em] text-foreground/45 md:inline">
-				{project.year}
-			</span>
-
-			<span
-				aria-hidden
-				className="flex items-center justify-end font-mono text-[11px] uppercase tracking-[0.18em] text-foreground/35 transition-all duration-300 group-hover:text-accent group-hover:translate-x-1 md:justify-center"
-			>
-				{isPlaceholder ? "—" : viewLabel}
 			</span>
 
 			<span
@@ -214,7 +202,6 @@ export function ProjectsIndex() {
 		{ scope: sectionRef, dependencies: [visibleProjects.length] }
 	);
 
-	const viewLabel = locale === "es" ? "VER" : "VIEW";
 	const indexLabel = locale === "es" ? "ÍNDICE" : "INDEX";
 	const allWorkLabel = locale === "es" ? "Todo el trabajo." : "Every project.";
 	const countLabel = locale === "es"
@@ -266,7 +253,7 @@ export function ProjectsIndex() {
 						})}
 					</div>
 
-					<div className="border-t border-[var(--hairline)]">
+					<div className="grid grid-cols-1 gap-x-14 border-t border-[var(--hairline)] md:grid-cols-2">
 						{visibleProjects.map((project, i) => (
 							<ProjectRow
 								key={project.id}
@@ -274,7 +261,6 @@ export function ProjectsIndex() {
 								index={i}
 								locale={locale}
 								onHover={setHovered}
-								viewLabel={viewLabel}
 							/>
 						))}
 					</div>

@@ -70,8 +70,7 @@ function ReviewCard({ t, expanded }: { t: Testimonial; expanded: boolean }) {
 			gsap.to(expand, {
 				height: realHeight,
 				opacity: 1,
-				delay: 0.3,
-				duration: 1.0,
+				duration: 0.7,
 				ease: "power3.out",
 				onComplete: () => {
 					gsap.set(expand, { height: "auto", overflow: "visible" });
@@ -199,8 +198,13 @@ export function Testimonials() {
 		// Single scrub timeline that owns the fixed elements end-to-end:
 		// 0.00–0.15  fade in headline
 		// 0.15–0.45  move headline center → top-left + scale down (snappy)
-		// 0.46–0.58  fade in badge + review grid, once the headline has vacated
+		// 0.46        fade in badge, once the headline has vacated
 		// 0.85–1.00  fade out headline + badge (before Contact appears)
+		//
+		// The review grid's reveal is NOT tied to this progress-based timeline —
+		// it's a separate ScrollTrigger keyed to the first card's own scroll
+		// position (see below), so it appears exactly when that card reaches
+		// the vertical middle of the screen, regardless of headline timing.
 		//
 		// One timeline avoids the multi-scrub conflict where each tween's
 		// "from" overrides the others' "to" outside their own ranges.
@@ -246,17 +250,6 @@ export function Testimonials() {
 			);
 		}
 
-		// Reveal the review grid right after the headline settles top-left,
-		// so its big centered glyphs never overlap the cards mid-move.
-		if (grid) {
-			tl.fromTo(
-				grid,
-				{ autoAlpha: 0, y: 32 },
-				{ autoAlpha: 1, y: 0, duration: 0.12, ease: "power2.out" },
-				0.46
-			);
-		}
-
 		const fadeTargets = [headline, badge].filter(Boolean) as HTMLElement[];
 		tl.to(
 			fadeTargets,
@@ -264,10 +257,22 @@ export function Testimonials() {
 			0.85
 		);
 
+		// Reveal the review grid as the first card enters the lower part of
+		// the screen — independent of the headline's own timing.
+		const firstCard = cardRefs.current[0];
+		if (grid && firstCard) {
+			ScrollTrigger.create({
+				trigger: firstCard,
+				start: "top 80%",
+				onEnter: () => gsap.to(grid, { autoAlpha: 1, y: 0, duration: 0.3, ease: "power2.out" }),
+				onLeaveBack: () => gsap.to(grid, { autoAlpha: 0, y: 32, duration: 0.2, ease: "power2.in" }),
+			});
+		}
+
 	}, { scope: sectionRef });
 
 	// Card grow / shrink — IntersectionObserver (off-tick, no per-frame layout
-	// reads). rootMargin "-30% 0px -25% 0px" → active zone 30%–75% of viewport.
+	// reads). rootMargin "-12% 0px -25% 0px" → active zone 12%–75% of viewport.
 	// A card entering the zone expands its quote; leaving it collapses.
 	useEffect(() => {
 		const observer = new IntersectionObserver(
@@ -287,7 +292,7 @@ export function Testimonials() {
 					setExpandedState(testimonials.map((_, i) => expandedSet.current.has(i)));
 				}
 			},
-			{ rootMargin: "-30% 0px -25% 0px", threshold: 0 },
+			{ rootMargin: "-12% 0px -25% 0px", threshold: 0 },
 		);
 
 		cardRefs.current.forEach((card) => { if (card) observer.observe(card); });
