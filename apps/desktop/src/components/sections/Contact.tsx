@@ -107,7 +107,11 @@ export function Contact() {
           {/* ── Left column: heading + meta ── */}
           <aside className="flex flex-col gap-12 lg:col-span-5 lg:sticky lg:top-32">
             <div>
-              <h2 data-anim="heading" className="display-l max-w-[14ch]">
+              <h2
+                data-anim="heading"
+                className="display-l max-w-[12ch]"
+                style={{ fontSize: "clamp(2.5rem, 4.2vw, 3.25rem)" }}
+              >
                 {t.contact.headline1}
                 <br />
                 {t.contact.headline2} <AccentWord>{t.contact.accent}</AccentWord>
