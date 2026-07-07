@@ -163,6 +163,7 @@ export function Testimonials() {
 	const heroRef    = useRef<HTMLDivElement>(null);
 	const headlineRef = useRef<HTMLHeadingElement>(null);
 	const badgeRef = useRef<HTMLDivElement>(null);
+	const gridRef = useRef<HTMLDivElement>(null);
 	const cardRefs   = useRef<(HTMLDivElement | null)[]>([]);
 	const expandedSet = useRef(new Set<number>());
 	const [expandedState, setExpandedState] = useState<boolean[]>(
@@ -174,6 +175,7 @@ export function Testimonials() {
 		const headline = headlineRef.current;
 		const section  = sectionRef.current;
 		const badge    = badgeRef.current;
+		const grid     = gridRef.current;
 		if (!hero || !headline || !section) return;
 
 		gsap.set(headline, {
@@ -190,11 +192,15 @@ export function Testimonials() {
 			gsap.set(badge, { autoAlpha: 0, y: 24 });
 		}
 
+		if (grid) {
+			gsap.set(grid, { autoAlpha: 0, y: 32 });
+		}
+
 		// Single scrub timeline that owns the fixed elements end-to-end:
 		// 0.00–0.15  fade in headline
-		// 0.15–0.60  move headline center → top-left + scale down
-		// 0.20–0.35  fade in badge
-		// 0.85–1.00  fade out both (so they vanish before Contact appears)
+		// 0.15–0.45  move headline center → top-left + scale down (snappy)
+		// 0.46–0.58  fade in badge + review grid, once the headline has vacated
+		// 0.85–1.00  fade out headline + badge (before Contact appears)
 		//
 		// One timeline avoids the multi-scrub conflict where each tween's
 		// "from" overrides the others' "to" outside their own ranges.
@@ -226,7 +232,7 @@ export function Testimonials() {
 				yPercent: 0,
 				scale: HEADLINE_TARGET_SCALE,
 				ease: "none",
-				duration: 0.45,
+				duration: 0.30,
 			},
 			0.15
 		);
@@ -236,7 +242,18 @@ export function Testimonials() {
 				badge,
 				{ autoAlpha: 0, y: 24 },
 				{ autoAlpha: 1, y: 0, duration: 0.15, ease: "power2.out" },
-				0.2
+				0.46
+			);
+		}
+
+		// Reveal the review grid right after the headline settles top-left,
+		// so its big centered glyphs never overlap the cards mid-move.
+		if (grid) {
+			tl.fromTo(
+				grid,
+				{ autoAlpha: 0, y: 32 },
+				{ autoAlpha: 1, y: 0, duration: 0.12, ease: "power2.out" },
+				0.46
 			);
 		}
 
@@ -314,7 +331,11 @@ export function Testimonials() {
 				/>
 			</div>
 
-			<div className="relative z-[2] container-editorial pb-[50vh]">
+			<div
+				ref={gridRef}
+				className="relative z-[2] container-editorial pb-[50vh]"
+				style={{ visibility: "hidden" }}
+			>
 				<div className="md:pl-[50%]">
 					<div className="space-y-24 md:space-y-28">
 						{testimonials.map((t, i) => (
