@@ -1,9 +1,15 @@
+import { headers } from "next/headers";
 import type { Locale } from "./dictionaries";
 
 const SPANISH_LANG_PREFIXES = ["es", "gl", "ca", "eu"];
 
+/**
+ * Español por defecto: el público objetivo (y Googlebot, que no envía
+ * Accept-Language) debe recibir contenido en español. Solo servimos inglés
+ * cuando el navegador lo pide explícitamente por delante del español.
+ */
 export function pickLocaleFromHeader(acceptLanguage: string | null): Locale {
-  if (!acceptLanguage) return "en";
+  if (!acceptLanguage) return "es";
 
   const candidates = acceptLanguage
     .split(",")
@@ -21,9 +27,10 @@ export function pickLocaleFromHeader(acceptLanguage: string | null): Locale {
     if (primary === "en") return "en";
   }
 
-  return "en";
+  return "es";
 }
 
 export async function detectLocale(): Promise<Locale> {
-  return "en";
+  const headerList = await headers();
+  return pickLocaleFromHeader(headerList.get("accept-language"));
 }

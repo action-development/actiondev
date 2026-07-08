@@ -1,19 +1,34 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/seo";
 import { projects } from "@/data/projects";
+import { landings } from "@/data/landings";
 
 // Hash anchors (#projects, #contact …) are not indexable pages — omit them.
-// Add real routes here as the site grows (e.g. "/servicios", "/blog").
-const STATIC_ROUTES = [""];
+const CORE_LANDING = "desarrollo-de-aplicaciones-vigo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
-  const deduped: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
-    url: `${SITE_URL}/${path}`.replace(/\/$/, "") || SITE_URL,
+  const home: MetadataRoute.Sitemap = [
+    {
+      url: SITE_URL,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 1,
+    },
+    {
+      url: `${SITE_URL}/servicios`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+  ];
+
+  const landingEntries: MetadataRoute.Sitemap = landings.map((l) => ({
+    url: `${SITE_URL}/${l.slug}`,
     lastModified: now,
     changeFrequency: "monthly",
-    priority: 1,
+    priority: l.slug === CORE_LANDING ? 0.9 : 0.8,
   }));
 
   const projectEntries: MetadataRoute.Sitemap = projects
@@ -25,5 +40,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     }));
 
-  return [...deduped, ...projectEntries];
+  return [...home, ...landingEntries, ...projectEntries];
 }

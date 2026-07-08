@@ -8,6 +8,11 @@ export function middleware(request: NextRequest) {
   const { device } = userAgent(request);
   if (device.type !== "mobile") return NextResponse.next();
 
+  // La zona mobile solo implementa la home. El resto de rutas (landings SEO,
+  // redirects /contact|/projects|/reviews) deben servirse desde desktop —
+  // reescribirlas producía 404 para usuarios y para Googlebot smartphone.
+  if (request.nextUrl.pathname !== "/") return NextResponse.next();
+
   const target = new URL(
     request.nextUrl.pathname + request.nextUrl.search,
     MOBILE_ZONE_URL,

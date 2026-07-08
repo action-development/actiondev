@@ -13,10 +13,10 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: BRAND.language,
     orientation: "portrait-primary",
     icons: [
-      // Replace these with real 192×192 and 512×512 PNGs when available.
-      // Using existing assets for now so the manifest doesn't trigger 404s.
-      { src: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+      // Replace with real 192×192 and 512×512 PNGs when available.
+      // /favicon.ico does not exist in public — referencing it caused a 404.
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+      { src: "/logos/action_globe.webp", sizes: "192x192", type: "image/webp" },
     ],
   };
 }

@@ -5,9 +5,9 @@ export const LOCALES: Locale[] = ["es", "en"];
 export const dictionaries = {
   en: {
     metadata: {
-      title: "Action Dev — Digital Studio",
+      title: "Action — App & Web Development in Vigo",
       description:
-        "Multi-platform app and web development studio in Vigo. One project a month, no shortcuts.",
+        "App and web development studio in Vigo, Spain. Native iOS & Android apps, custom websites and 3D experiences for businesses across Galicia. 5.0 on Google.",
     },
     nav: {
       home: "Home",
@@ -152,9 +152,9 @@ export const dictionaries = {
   },
   es: {
     metadata: {
-      title: "Action Dev — Estudio Digital",
+      title: "Action — Desarrollo de Aplicaciones y Webs en Vigo",
       description:
-        "Estudio de desarrollo multiplataforma de apps y webs en Vigo. Un proyecto al mes, sin atajos.",
+        "Agencia de desarrollo de aplicaciones y páginas web en Vigo. Apps iOS y Android, webs a medida y experiencias 3D para empresas de Pontevedra y toda Galicia. ★ 5,0 en Google.",
     },
     nav: {
       home: "Inicio",

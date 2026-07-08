@@ -198,10 +198,20 @@ src/
 | Ruta | Página | Contenido |
 |------|--------|-----------|
 | `/` | Home | Hero → Projects → Testimonials → Map |
-| `/projects` | Projects | Grid de proyectos completo |
-| `/contact` | Contact | Formulario de contacto |
+| `/projects` | Projects | Redirect a `/#projects` |
+| `/contact` | Contact | Redirect a `/#contact` |
+| `/reviews` | Reviews | Redirect a `/#reviews` |
+| `/servicios` | Hub SEO | Índice de landings locales (server, sin GSAP) |
+| `/desarrollo-de-aplicaciones-vigo` | Landing SEO | Keyword núcleo — máxima prioridad |
+| `/desarrollo-web-vigo` | Landing SEO | Data en `src/data/landings.ts` |
+| `/diseno-web-vigo` | Landing SEO | ídem |
+| `/desarrollo-de-aplicaciones-pontevedra` | Landing SEO | ídem |
+| `/desarrollo-web-pontevedra` | Landing SEO | ídem |
+| `/desarrollo-de-aplicaciones-galicia` | Landing SEO | ídem |
 
 Navegación: anchor links para secciones de home (`#projects`, `#testimonials`, `#map`), rutas completas para pages independientes.
+
+**Landings SEO** (`src/app/[landing]/page.tsx` + `src/data/landings.ts`): NO se enlazan desde la navegación principal (decisión del cliente — no tocar el diseño original). Se descubren vía `sitemap.xml`, `/servicios`, `llms.txt` y enlazado entre ellas. Son server components estáticos, responsive, sin GSAP/Lenis. El middleware solo reescribe `/` a la zona mobile; el resto de rutas se sirven desde desktop en todos los dispositivos.
 
 Componente nav: `Header.tsx` con nav fija + CTA "Let's talk".
 
@@ -209,10 +219,14 @@ Componente nav: `Header.tsx` con nav fija + CTA "Let's talk".
 
 ## [SEO] Metadata
 
-- Título: `"Action — Digital Agency"` (home), `"[Page] — Action"` (subpages)
-- Descripción por página en `metadata` export
-- Lang: `en`
-- Pendiente: Open Graph images, sitemap.ts, robots.ts, canonical domain
+- **Idioma indexable: español** (decisión de negocio — el mercado objetivo es Vigo/Galicia). `lang="es"`, metadata en ES en ambas apps. EN disponible vía toggle client-side (desktop) o Accept-Language (mobile).
+- Título: `"Action — Desarrollo de Aplicaciones y Webs en Vigo"` (home), `"[Page] — Action"` (subpages)
+- Dominio canónico: `https://actiondev.es`
+- Fuente de verdad SEO: `apps/desktop/src/lib/seo.ts`. **NAP compartido** (dirección C/ Colón 20, teléfono, geo): `packages/shared/src/seo.ts` (`BUSINESS`) — debe coincidir SIEMPRE con la ficha de Google Business Profile.
+- Infraestructura: `sitemap.ts`, `robots.ts` (whitelist crawlers LLM), `manifest.ts`, `public/llms.txt` (AEO), OG image dinámica en `/api/og`.
+- Structured data: `components/seo/StructuredData.tsx` (desktop) y `components/StructuredData.tsx` (mobile) — Organization + ProfessionalService con NAP/geo idénticos y mismos `@id`. Las landings añaden Service + FAQPage + BreadcrumbList.
+- **Mobile-first indexing**: Google indexa la zona mobile para `/`. Cualquier cambio SEO en desktop debe replicarse en mobile (metadata + JSON-LD).
+- Pendiente: favicon.ico real + PNGs 192/512 para manifest.
 
 ---
 

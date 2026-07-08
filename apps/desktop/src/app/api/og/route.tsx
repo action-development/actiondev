@@ -82,12 +82,9 @@ export function GET() {
               flexDirection: "column",
             }}
           >
-            <span>We craft digital</span>
-            <span>
-              experiences{" "}
-              <span style={{ color: "#c8ff00" }}>that</span>
-            </span>
-            <span style={{ color: "#c8ff00" }}>matter.</span>
+            <span>Desarrollo de</span>
+            <span>aplicaciones y webs</span>
+            <span style={{ color: "#c8ff00" }}>en Vigo.</span>
           </div>
         </div>
 

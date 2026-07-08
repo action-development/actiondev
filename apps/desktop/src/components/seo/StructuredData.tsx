@@ -1,4 +1,4 @@
-import { BRAND, SITE_URL, SOCIAL, absoluteUrl } from "@/lib/seo";
+import { BRAND, BUSINESS, SITE_URL, SOCIAL, absoluteUrl } from "@/lib/seo";
 import { projects } from "@/data/projects";
 import { testimonials } from "@/data/testimonials";
 
@@ -42,17 +42,21 @@ function buildSchema(kind: SchemaKind): object | null {
         "@type": "Organization",
         "@id": absoluteUrl("#organization"),
         name: BRAND.name,
+        alternateName: BUSINESS.alternateName,
         legalName: BRAND.legalName,
         url: SITE_URL,
-        logo: absoluteUrl("/logo.png"),
+        logo: absoluteUrl("/logos/logo.webp"),
         description: BRAND.longDescription,
         foundingDate: String(BRAND.foundingYear),
         email: BRAND.contactEmail,
+        telephone: BUSINESS.phoneE164,
         address: {
           "@type": "PostalAddress",
-          addressCountry: BRAND.country,
-          addressLocality: BRAND.city,
-          addressRegion: BRAND.region,
+          streetAddress: BUSINESS.address.street,
+          postalCode: BUSINESS.address.postalCode,
+          addressLocality: BUSINESS.address.locality,
+          addressRegion: BUSINESS.address.region,
+          addressCountry: BUSINESS.address.country,
         },
         ...(sameAs.length > 0 && { sameAs }),
       };
@@ -101,10 +105,32 @@ function buildSchema(kind: SchemaKind): object | null {
         name: BRAND.legalName,
         url: absoluteUrl("/"),
         description: BRAND.longDescription,
-        areaServed: {
-          "@type": "Country",
-          name: BRAND.country,
+        image: absoluteUrl("/logos/logo.webp"),
+        telephone: BUSINESS.phoneE164,
+        email: BUSINESS.email,
+        priceRange: "€€",
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: BUSINESS.address.street,
+          postalCode: BUSINESS.address.postalCode,
+          addressLocality: BUSINESS.address.locality,
+          addressRegion: BUSINESS.address.region,
+          addressCountry: BUSINESS.address.country,
         },
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: BUSINESS.geo.latitude,
+          longitude: BUSINESS.geo.longitude,
+        },
+        hasMap: BUSINESS.mapsUrl,
+        areaServed: [
+          { "@type": "City", name: "Vigo" },
+          { "@type": "City", name: "Pontevedra" },
+          { "@type": "City", name: "A Coruña" },
+          { "@type": "City", name: "Santiago de Compostela" },
+          { "@type": "AdministrativeArea", name: "Galicia" },
+          { "@type": "Country", name: "ES" },
+        ],
         hasOfferCatalog: {
           "@type": "OfferCatalog",
           name: `${BRAND.name} Services`,
@@ -136,7 +162,7 @@ function buildSchema(kind: SchemaKind): object | null {
           ratingValue: "5",
           reviewCount,
           bestRating: "5",
-          worstRating: "5",
+          worstRating: "1",
         },
         review: testimonials.map((t) => ({
           "@type": "Review",

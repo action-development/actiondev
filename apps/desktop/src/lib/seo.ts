@@ -4,44 +4,53 @@
  * Change the brand / domain here and the rest of the app follows:
  * metadata, OpenGraph, Twitter, JSON-LD structured data, sitemap, robots, manifest.
  *
- * If the canonical domain is not actiondev.es, update SITE_URL only.
+ * NAP data (Name, Address, Phone) lives in @actiondev/shared so desktop and
+ * mobile emit identical local-SEO signals. Keep it in sync with Google
+ * Business Profile.
  */
 
-export const SITE_URL = "https://actiondev.es";
+import { BUSINESS } from "@actiondev/shared";
+
+export { BUSINESS };
+
+export const SITE_URL = BUSINESS.domain;
 
 export const BRAND = {
-  name: "Action",
-  legalName: "Action Digital Agency",
-  tagline: "Digital Agency",
+  name: BUSINESS.name,
+  legalName: BUSINESS.legalName,
+  tagline: "Desarrollo de Aplicaciones y Webs en Vigo",
   shortDescription:
-    "We craft digital experiences that matter. Strategy, design, and development for brands that refuse to blend in.",
+    "Agencia de desarrollo de aplicaciones y páginas web en Vigo. Apps iOS y Android, webs a medida y experiencias 3D para empresas de Pontevedra y toda Galicia. ★ 5,0 en Google.",
   longDescription:
-    "Action is a boutique digital agency specialising in premium brand websites, 3D interactive experiences, and high-converting product interfaces. We pair strategy with craft to build work that earns attention on its own merits — no templates, no compromises.",
+    "Action es una agencia de desarrollo digital con sede en Vigo (Rúa Colón, 20) especializada en desarrollo de aplicaciones móviles iOS y Android, desarrollo web a medida, diseño web premium y experiencias 3D interactivas. Trabajamos con empresas de Vigo, Pontevedra y toda Galicia — del concepto a la publicación en App Store y Google Play, con el mismo equipo senior en todas las fases.",
   keywords: [
-    "digital agency",
-    "web design",
-    "web development",
-    "3D web experiences",
-    "brand websites",
-    "interactive design",
-    "Next.js agency",
-    "Three.js",
-    "award-winning web design",
+    "desarrollo de aplicaciones Vigo",
+    "desarrollo de apps Vigo",
+    "desarrollo de aplicaciones móviles Vigo",
+    "empresa desarrollo aplicaciones Vigo",
+    "desarrollo web Vigo",
+    "diseño web Vigo",
+    "diseño de páginas web Vigo",
+    "desarrollo de aplicaciones Pontevedra",
+    "desarrollo web Pontevedra",
+    "desarrollo de aplicaciones Galicia",
+    "agencia desarrollo web Galicia",
   ],
-  foundingYear: 2020,
+  foundingYear: BUSINESS.foundingYear,
   locale: "es_ES",
   language: "es",
-  country: "ES",
-  city: "Vigo",
-  region: "Galicia",
-  contactEmail: "hi@actiondev.es",
+  country: BUSINESS.address.country,
+  city: BUSINESS.address.locality,
+  region: BUSINESS.address.region,
+  contactEmail: BUSINESS.email,
   whatsappE164: "34614027410",
   services: [
-    "Brand Websites",
-    "3D Interactive Experiences",
-    "Product Interfaces",
-    "Strategy & Design",
-    "Creative Development",
+    "Desarrollo de aplicaciones móviles (iOS y Android)",
+    "Desarrollo web a medida",
+    "Diseño web premium",
+    "Experiencias 3D interactivas",
+    "Interfaces de producto y SaaS",
+    "Estrategia y diseño",
   ],
 } as const;
 
