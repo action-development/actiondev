@@ -1,0 +1,470 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  PABLO — BRAND TOKENS                                           */
+/*                                                                 */
+/*  Al revés que actiondev.es: esta versión es LIGHT-first.        */
+/*  Prioridad de diseño: MOBILE. Cada token de escala se define    */
+/*  para móvil y crece con clamp() hasta desktop, nunca al revés.  */
+/* ─────────────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: "Bootzy";
+  src: url("/fonts/BootzyTM.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  /* Bootzy NO tiene estos glifos: A1 ¡ · AB « · BB » · BF ¿ · 2026 …
+     Los excluimos del range para que el navegador caiga al siguiente
+     tipo de la pila (system-ui) solo en esos caracteres. Sin esto,
+     "¿Hablamos?" renderiza un .notdef vacío. */
+  unicode-range: U+0000-00A0, U+00A2-00AA, U+00AC-00BA, U+00BC-00BE,
+                 U+00C0-2025, U+2027-FFFF;
+}
+
+:root {
+  /* Color — light-first */
+  /* `--paper` es el crema INMUTABLE. `--background` sí lo reescriben los
+     paneles de sección, así que no sirve para nombrar "el color de la
+     sección de al lado": dentro de un panel morado, `var(--background)`
+     ya vale morado. Las bandas de transición leen de `--paper`. */
+  --paper:      #e9e7e3;
+  --background: var(--paper);
+  --foreground: #0b0b0b;
+  --muted:      #6b6862;
+  --border:     #cfccc6;
+  /* Azul tomado del elemento 3D central (#68b8d8, tono 197°).
+     Ese azul CRUDO da 1.80:1 sobre el crema — ilegible como texto. Se
+     conserva el tono y se baja la luz al 34% hasta cruzar el 4.5:1 de
+     WCAG AA. Medido, no estimado. */
+  --accent:      #246d8a;   /* texto y marcas — 4.69:1 sobre el crema */
+  --accent-soft: #68b8d8;   /* el azul literal del blob — NUNCA para texto */
+  --accent-2:    #0b5fbe;
+
+  /* ── Paleta noventera del hero ──────────────────────────────────
+     El fondo es un dither saturado (magentas, rojos, cianes). El
+     morado profundo es el único que separa de TODOS ellos: 4.26:1
+     contra el rojo en el peor caso, 13:1 contra el amarillo. Medido,
+     no elegido a ojo. Sobre él, el amarillo ácido da 14.78:1. */
+  --grape: #2b0b52;
+  --acid:  #eaff00;
+  --cyan:  #00e9ff;
+
+  /* Tinta de los titulares. Es lo que cose las secciones claras con el
+     hero: en crema los display van en MORADO (13.36:1), no en negro, así
+     que la paleta del hero sigue mandando aunque el fondo cambie. Cada
+     panel lo reescribe y el titular se adapta solo. */
+  --display-ink: var(--grape);
+
+  /* Rejilla. UN solo valor manda el tamaño del cuadro en toda la
+     página: fondos, transiciones y chips lo leen de aquí. Cambiarlo
+     reescala el motivo entero sin tocar un componente. */
+  --cell: clamp(28px, 7vw, 52px);
+
+  /* Curva escalonada. Es la decisión estética central de esta pasada:
+     si el motivo es la cuadrícula, el movimiento no puede ser continuo.
+     `steps()` hace que todo avance a saltos, como el propio píxel. */
+  --ease-step: steps(7, end);
+
+  /* Motion — una curva, dos duraciones */
+  --ease:          cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 180ms;
+  --duration:      320ms;
+
+  /* Ritmo espacial — móvil primero */
+  --gutter: clamp(1rem, 4vw, 3rem);
+
+  /* Safe areas. Solo devuelven algo distinto de 0px con
+     viewport-fit=cover declarado en el viewport (ver layout.tsx). */
+  --safe-top: env(safe-area-inset-top, 0px);
+
+  /* Origen del marco: de aquí cuelgan las marcas de encuadre
+     superiores. Baja con la muesca para no quedar bajo la barra.
+     ABAJO NO se aplica inset a propósito: el diseño sangra hasta el
+     borde real, sin banda reservada. */
+  --frame-top: calc(var(--safe-top) + var(--gutter));
+
+  /* El contenido arranca por debajo de la marca (0.75rem de alto)
+     más aire. Sin esto el nombre se pinta encima de la cruz. */
+  --content-top: calc(var(--frame-top) + 1.75rem);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted:      var(--muted);
+  --color-border:     var(--border);
+  --color-accent:      var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-2:   var(--accent-2);
+
+  /* Bootzy en TODO: titulares y cuerpo. system-ui solo entra por el
+     unicode-range, para los 5 glifos que la fuente no trae (¿ ¡ « » …).
+     Se usa system-ui a propósito y no otra webfont: descargar una familia
+     entera para cinco signos de puntuación no se sostiene, y menos con
+     móvil como prioridad. */
+  --font-body:    "Bootzy", system-ui, sans-serif;
+  /* TODO: sustituir por PP Neue Montreal cuando haya licencia.
+     Único punto de cambio de la tipografía de titulares. */
+  --font-display: var(--font-display-stand-in), system-ui, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  /* El crema pinta también bajo la barra de estado: con
+     viewport-fit=cover el lienzo llega al borde físico. */
+  background: var(--background);
+  min-height: 100svh;
+  color: var(--foreground);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+/* ── Bootzy como tipografía de texto ──────────────────────────────
+   Caja MIXTA a propósito: el carácter de esta fuente vive en las
+   minúsculas, y en versales se pierde.
+
+   Bootzy es una display de UN SOLO PESO con el tracking muy cerrado:
+   por debajo de ~15px las letras se tocan y el texto se empasta
+   (medido en specimen). Compensaciones, ninguna decorativa:
+     1. tamaño mayor     → nunca por debajo de 0.95rem
+     2. tracking abierto → separa los pares que se pegan
+     3. interlineado alto→ las minúsculas traen descendentes
+   No bajar ninguno de estos valores sin mirar una captura después.
+
+   NO lleva bold: la fuente no tiene un segundo peso. El bold sintético
+   del navegador deforma las curvas, así que se deja el trazo tal cual
+   hasta que haya un peso real o se decida engordarlo con text-stroke. */
+.body-type {
+  font-family: var(--font-body);
+  letter-spacing: 0.022em;
+  word-spacing: 0.04em;
+  line-height: 1.45;
+}
+
+/* Grano: feTurbulence en data-URI. Cero peticiones de red, ~400 bytes,
+   y escala a cualquier viewport sin pixelarse. */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.42;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+}
+
+/* Titulares. Tracking negativo y line-height corto: a escala display la
+   grotesca pide cerrarse. Valores calcados del ritmo de la referencia. */
+.display {
+  color: var(--display-ink);
+  font-family: var(--font-display);
+  font-weight: 900;
+  line-height: 0.84;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+/* ── Legibilidad sobre el fondo a sangre ──────────────────────────
+   Todo va ACOTADO a `.hero-90s`. La regla `.display` es compartida con
+   Capabilities, Tools y Work: teñirla globalmente les
+   cambiaría el color a secciones que no participan de este fondo.
+
+   Nada de blanco y negro: el resalte es morado profundo con
+   tipografía en amarillo ácido y cian, que pega con el magenta del
+   fondo en vez de apagarlo. */
+.text-panel {
+  /* `display: inline` — NO `inline-block`.
+     Con inline-block pisaba el `display:none` de las utilidades
+     `hidden` de Tailwind (se pintaban a la vez el bloque de móvil y
+     el de desktop) y dentro de un flex column se estiraba a todo el
+     ancho. En `inline` + `box-decoration-break: clone` el fondo
+     abraza cada línea. */
+  display: inline;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0.12em 0.34em;
+}
+
+.hero-90s .text-panel {
+  background: var(--grape);
+  color: var(--acid);
+  box-shadow: -0.34em 0 0 var(--grape), 0.34em 0 0 var(--grape);
+}
+
+/* Las etiquetas secundarias en cian, para jerarquizar sin recurrir
+   al gris (que sobre morado se apagaría). */
+.hero-90s .text-panel.text-muted {
+  color: var(--cyan);
+}
+
+/* Los titulares NO llevan panel: taparían media pantalla. Se separan
+   con un contorno morado alrededor de la letra amarilla.
+
+   `paint-order: stroke fill` es lo que hace viable un trazo TAN gordo:
+   dibuja el contorno primero y el relleno ENCIMA, así que la mitad
+   interior del trazo queda tapada y la letra no adelgaza. Sin esta
+   línea, a 0.26em los contraformas de la O y la B se cerrarían y el
+   titular sería una mancha.
+
+   0.26em (antes 0.14em) es una decisión estética, no un ajuste: a este
+   grosor el contorno deja de ser un borde y pasa a ser masa, las
+   letras vecinas se tocan por el trazo y el conjunto se lee como un
+   rótulo serigrafiado de los noventa. Es el efecto buscado.
+
+   Va acotado a `.hero-90s .display` a propósito: la misma clase la usan
+   Capacidades, Efectos y Work, y ahí NO debe haber contorno. */
+.hero-90s .display {
+  color: var(--acid);
+  paint-order: stroke fill;
+  -webkit-text-stroke: 0.26em var(--grape);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Pantalla de carga en cuadrados ───────────────────────────────
+   El telón se deshace de abajo arriba. Cada celda se apaga sola con
+   su propio animation-delay: sin timers en JS por celda, que con 300
+   celdas sería un disparate. */
+.pixel-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.pixel-loader.is-dissolving {
+  pointer-events: none;
+}
+
+.pixel-loader-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+}
+
+.pixel-loader-solid {
+  position: absolute;
+  inset: 0;
+  background: #050505;
+}
+
+.pixel-loader-cell {
+  background: #050505;
+  visibility: visible;
+}
+
+/* La celda no se funde: se apaga de golpe. El borde duro del cuadrado
+   ES el efecto.
+
+   Se hace con `transition` de duración 0s y un `transition-delay` propio
+   por celda, NO con @keyframes. `visibility` es una propiedad discreta:
+   con duración 0 y retardo, conmuta exacta y limpiamente en su instante.
+   La versión con animation resultó no aplicarse (medido: 126/126 celdas
+   seguían visibles durante todo el ciclo) — no repetirla. */
+.pixel-loader-cell {
+  transition: visibility 0s linear var(--cell-delay, 0ms);
+}
+
+.is-dissolving .pixel-loader-cell {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pixel-loader-cell {
+    transition-delay: 0ms !important;
+  }
+}
+
+/* ── Paneles de sección ───────────────────────────────────────────
+   Cada panel REDEFINE los tokens base en su propio ámbito. Como
+   `@theme inline` mapea `--color-foreground: var(--foreground)`, todas
+   las utilidades de Tailwind que ya están escritas en los componentes
+   (`text-muted`, `border-border`, `bg-background`) cambian solas dentro
+   del panel. Una clase y la sección entera se invierte — sin tocar una
+   sola clase de color en el JSX.
+
+   El panel NO pinta fondo: solo redefine tokens. Así la banda de
+   transición puede vivir dentro de la misma sección sobre fondo
+   transparente, y el relleno se aplica con `bg-background` justo en el
+   bloque que toca. Si la clase pintara el fondo, la banda quedaría del
+   color nuevo antes de empezar el barrido.
+
+   Los valores no son estéticos a ojo: sobre morado, el lila #c7b6e2 da
+   8.82:1 y el ácido 14.78:1; sobre cian, el #12566c da 5.48:1 y el
+   morado 11.08:1. Todos por encima del 4.5:1 de AA. */
+.panel-grape {
+  --background: var(--grape);
+  --foreground: var(--acid);
+  --muted:      #c7b6e2;
+  --border:     #59349a;
+  --accent:     var(--cyan);
+  --display-ink: var(--acid);
+  color: var(--acid);
+}
+
+.panel-acid {
+  --background: var(--acid);
+  --foreground: var(--grape);
+  /* Sobre el ácido casi todo se apaga: es el color más claro de la
+     paleta (luminancia 0.93). El apagado NO puede ser un gris —daría
+     3:1— sino una oliva oscura que conserva el tono del fondo. Medido:
+     5.62:1, por encima del 4.5:1 de AA. El morado del texto principal
+     da 14.78:1. */
+  --muted:      #5a6b00;
+  --border:     #b9c900;
+  --accent:     var(--grape);
+  --display-ink: var(--grape);
+  color: var(--grape);
+}
+
+/* ── Retícula de fondo ────────────────────────────────────────────
+   Dos gradientes repetidos de 1px, no una imagen: pesa cero y se
+   reescala con `--cell`. La máscara la desvanece hacia los bordes
+   para que la rejilla no corte en seco contra el filo de la sección. */
+.pixel-grid-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(to right, currentColor 0 1px, transparent 1px var(--cell)),
+    repeating-linear-gradient(to bottom, currentColor 0 1px, transparent 1px var(--cell));
+  opacity: 0.11;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 35%, transparent 78%);
+          mask-image: radial-gradient(ellipse at center, #000 35%, transparent 78%);
+}
+
+/* ── Transición de cuadrícula entre secciones ─────────────────────
+   Misma técnica que el telón de carga, y por la misma razón: `visibility`
+   es una propiedad DISCRETA, así que con `transition` de duración 0 y un
+   `transition-delay` propio por celda cada cuadro conmuta seco en su
+   instante exacto. El borde duro ES el efecto; con opacidad se vería un
+   degradado y se perdería el píxel.
+
+   Cero timers en JS: el navegador programa los ~120 retardos de golpe. */
+.pixel-wipe {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  /* SIN `width: 100%`. Con ancho explícito, un porcentaje se resuelve
+     contra el bloque contenedor y los márgenes negativos ya no lo
+     ensanchan: la banda del hero se quedaba en 358px dentro de un
+     viewport de 390 y dejaba una franja sin cubrir a la derecha
+     (medido). En `width: auto`, el bloque absorbe los negativos y
+     sangra hasta el borde. */
+}
+
+.pixel-wipe-cell {
+  visibility: hidden;
+  transition: visibility 0s linear var(--cell-delay, 0ms);
+}
+
+.pixel-wipe.is-in .pixel-wipe-cell {
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pixel-wipe-cell {
+    visibility: visible;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* ── Texto en monoespaciada ───────────────────────────────────────
+   La retícula pequeña de la referencia es mono en versales con el
+   tracking muy abierto. Se usa la PILA DEL SISTEMA a propósito: bajar
+   otra webfont entera para las etiquetas y los pies de foto no se
+   sostiene con móvil como prioridad, y el mismo razonamiento ya se
+   aplicó arriba con los cinco glifos que le faltan a Bootzy.
+
+   `text-wrap: balance` no se usa aquí: en versales y con tracking
+   abierto, los párrafos son largos y balance solo cuadra bien en
+   titulares de dos o tres líneas. */
+.mono-type {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+}
+
+/* ── Entrada al hacer scroll ──────────────────────────────────────
+   El estado inicial vive en CSS y no en el componente: si dependiera de
+   JavaScript, el bloque se pintaría visible y saltaría a opacidad 0 en
+   el primer efecto — un parpadeo garantizado en la primera pintura. */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 1.25rem, 0);
+  /* Escalonado, no continuo: el bloque sube a saltos de celda para
+     hablar el mismo idioma que las transiciones de cuadrícula. La
+     opacidad va aparte y algo más rápida — si también saltara en 7
+     tramos se vería parpadear. */
+  transition: opacity 520ms var(--ease), transform 640ms var(--ease-step);
+}
+
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Con movimiento reducido no se acelera el fundido: se elimina. Un
+   fundido de 0.01ms sigue siendo un cambio brusco en pantalla. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── Panel de deformación tipográfica ─────────────────────────────
+   Aberración cromática con dos sombras desplazadas, rojo a un lado y
+   cian al otro. Es lo que hace el ojo con una lente barata, y por eso
+   lee como "vídeo" y no como "texto con sombra".
+
+   Las filas se solapan (`margin-top` negativo) a propósito: el efecto
+   nace de que las palabras se pisen, no de una lista ordenada. */
+.warp-row {
+  text-shadow: -0.03em 0 0 rgba(255, 0, 60, 0.85), 0.03em 0 0 rgba(0, 220, 255, 0.85);
+  transform-origin: center;
+}
+
+.warp-row + .warp-row {
+  margin-top: -0.18em;
+}
+
+/* ── Caja de selección ────────────────────────────────────────────
+   Cuadraditos negros en las cuatro esquinas, como los tiradores de un
+   objeto seleccionado en una herramienta de diseño. Es el guiño de la
+   referencia al software con el que se hizo la pieza. */
+.select-box {
+  position: relative;
+}
+
+.select-box::before,
+.select-box::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 7px;
+  /* Un solo pseudoelemento por borde: dos cuadrados pintados con un
+     gradiente doble, uno a cada extremo. Cuatro pseudoelementos harían
+     falta si se dibujaran por separado, y no quedan tantos. */
+  background:
+    linear-gradient(var(--foreground), var(--foreground)) left center / 7px 7px no-repeat,
+    linear-gradient(var(--foreground), var(--foreground)) right center / 7px 7px no-repeat;
+}
+
+.select-box::before { top: -4px; }
+.select-box::after  { bottom: -4px; }
