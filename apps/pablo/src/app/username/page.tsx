@@ -42,7 +42,7 @@ export default function UsernamePage() {
       style={{
         // El body va en Bootzy (display de la landing); aquí queremos una
         // sans neutra con todos los pesos (Inter solo carga el 900).
-        fontFamily: "system-ui, -apple-system, 'egoe UI' Roboto, sans-serif",
+        fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
         paddingTop: "max(28px, env(safe-area-inset-top))",
         paddingBottom: "max(24px, env(safe-area-inset-bottom))",
       }}
