@@ -40,6 +40,9 @@ export default function UsernamePage() {
     <main
       className="fixed inset-0 z-[45] flex flex-col items-center justify-between bg-black px-6 text-center text-white"
       style={{
+        // El body va en Bootzy (display de la landing); aquí queremos una
+        // sans neutra con todos los pesos (Inter solo carga el 900).
+        fontFamily: "system-ui, -apple-system, 'egoe UI' Roboto, sans-serif",
         paddingTop: "max(28px, env(safe-area-inset-top))",
         paddingBottom: "max(24px, env(safe-area-inset-bottom))",
       }}
