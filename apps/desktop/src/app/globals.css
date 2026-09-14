@@ -9,8 +9,8 @@
 /*   • Radius: 4px atomic. md=8, lg=16, pill=∞. Nothing else.      */
 /*   • Shadow: none. Dark UI uses hairlines (rgba white ≤0.08).    */
 /*   • Motion: one curve, two durations. No bespoke easings.       */
-/*   • Type:   Syne display (700) / Geist body (400/500) / Geist   */
-/*     Mono labels (500). No other fonts, no extra weights.        */
+/*   • Type:   Poppins everywhere — display (700) / body (400/500) /   */
+/*     Poppins labels (500). No other fonts.        */
 /* ─────────────────────────────────────────────────────────────── */
 
 :root {
@@ -97,10 +97,10 @@ body {
   background: var(--background);
   color:      var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  font-weight: 400;
   font-size:   17px;
   line-height: 1.55;
   letter-spacing: -0.005em;
-  font-feature-settings: "ss01", "cv11"; /* Geist stylistic sets — subtle premium polish */
 }
 
 .display-xl {
@@ -121,7 +121,7 @@ body {
 
 .display-m {
   font-family: var(--font-display), sans-serif;
-  font-weight: 700;
+  font-weight: 600;
   font-size:   clamp(1.5rem, 3vw, 2.5rem);
   line-height: 1.08;
   letter-spacing: -0.025em;
@@ -129,7 +129,7 @@ body {
 
 .lede {
   font-family: var(--font-sans), sans-serif;
-  font-weight: 400;
+  font-weight: 300;
   font-size:   clamp(1rem, 1.4vw, 1.2rem);
   line-height: 1.55;
   letter-spacing: -0.005em;
@@ -144,7 +144,7 @@ body {
 
 .micro-label {
   font-family: var(--font-mono), monospace;
-  font-weight: 500;
+  font-weight: 600;
   font-size:   0.6875rem; /* 11px */
   line-height: 1;
   letter-spacing: 0.18em;
@@ -155,7 +155,7 @@ body {
 /* Replaces the *italic + color* headline cliché with a family contrast. */
 .accent-word {
   font-family: var(--font-mono), monospace;
-  font-weight: 500;
+  font-weight: 600;
   font-size:   0.78em;
   letter-spacing: 0.02em;
   text-transform: uppercase;
