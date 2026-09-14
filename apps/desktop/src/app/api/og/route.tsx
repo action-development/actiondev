@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { BRAND } from "@/lib/seo";
+import { BRAND, BUSINESS } from "@/lib/seo";
 
 export const runtime = "edge";
 
@@ -65,7 +65,7 @@ export function GET() {
               textTransform: "uppercase",
             }}
           >
-            {BRAND.legalName}
+            {BUSINESS.displayName}
           </span>
         </div>
 

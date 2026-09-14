@@ -91,6 +91,7 @@
 | `@actiondev/desktop` | `apps/desktop` | Web desktop-only (este CLAUDE.md) | 3001 |
 | `@actiondev/mobile` | `apps/mobile` | Web mobile (Next.js 15) | 3000 |
 | `@actiondev/shared` | `packages/shared` | Data compartida (proyectos) entre desktop y mobile | — |
+| `@actiondev/pablo` | `apps/pablo` | Web personal en `pablo.actiondev.es` (proyecto Vercel propio, light-first, mobile-first) | 3002 |
 
 **Tono:** Premium, minimalista, dark-mode first, tipografía bold, animaciones fluidas, experiencias 3D inmersivas.
 
@@ -202,6 +203,10 @@ src/
 | `/contact` | Contact | Redirect a `/#contact` |
 | `/reviews` | Reviews | Redirect a `/#reviews` |
 | `/servicios` | Hub SEO | Índice de landings locales (server, sin GSAP) |
+| `/legal/aviso-legal` | Aviso legal | Titularidad LSSI art. 10 — Alcasi Systems, S.L. |
+| `/legal/privacy` | Privacidad | RGPD/LOPDGDD |
+| `/legal/terms` | Términos | Condiciones de contratación + sector público |
+| `/legal/cookies` | Cookies | Sin cookies; solo almacenamiento técnico |
 | `/desarrollo-de-aplicaciones-vigo` | Landing SEO | Keyword núcleo — máxima prioridad |
 | `/desarrollo-web-vigo` | Landing SEO | Data en `src/data/landings.ts` |
 | `/diseno-web-vigo` | Landing SEO | ídem |
@@ -223,6 +228,8 @@ Componente nav: `Header.tsx` con nav fija + CTA "Let's talk".
 - Título: `"Action — Desarrollo de Aplicaciones y Webs en Vigo"` (home), `"[Page] — Action"` (subpages)
 - Dominio canónico: `https://actiondev.es`
 - Fuente de verdad SEO: `apps/desktop/src/lib/seo.ts`. **NAP compartido** (dirección C/ Colón 20, teléfono, geo): `packages/shared/src/seo.ts` (`BUSINESS`) — debe coincidir SIEMPRE con la ficha de Google Business Profile.
+- **Titularidad legal**: `LEGAL_ENTITY` en `packages/shared/src/seo.ts`. "Action / Action Development" es una MARCA; la persona jurídica es **Alcasi Systems, S.L.** (CIF B72910664, domicilio social en Marín, Reg. Mercantil de Pontevedra). `BUSINESS.legalName` lleva la denominación social real y `BUSINESS.displayName` el nombre de marca largo para usos visuales (OG image). No volver a poner un nombre de marketing en `legalName` — el JSON-LD emite `legalName` + `vatID` para que un organismo público pueda cruzar el proveedor con el Registro Mercantil.
+- **Páginas legales** en `/legal/*` (desktop): ver `[PÁGINAS]`. Al tocar su contenido, actualizar `LEGAL_UPDATED` en `src/lib/seo.ts`. La política de cookies y la de privacidad describen el comportamiento REAL del sitio (sin analítica, formulario que abre WhatsApp sin servidor) — si se añade analítica, hay que actualizarlas Y añadir banner de consentimiento.
 - Infraestructura: `sitemap.ts`, `robots.ts` (whitelist crawlers LLM), `manifest.ts`, `public/llms.txt` (AEO), OG image dinámica en `/api/og`.
 - Structured data: `components/seo/StructuredData.tsx` (desktop) y `components/StructuredData.tsx` (mobile) — Organization + ProfessionalService con NAP/geo idénticos y mismos `@id`. Las landings añaden Service + FAQPage + BreadcrumbList.
 - **Mobile-first indexing**: Google indexa la zona mobile para `/`. Cualquier cambio SEO en desktop debe replicarse en mobile (metadata + JSON-LD).

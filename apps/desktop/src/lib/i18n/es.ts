@@ -64,11 +64,14 @@ export const es: Translations = {
     sitemapTitle: "Mapa del sitio",
     socialTitle: "En la red",
     legalTitle: "Legal",
+    legalNotice: "Aviso legal",
     legalPrivacy: "Privacidad",
     legalTerms: "Términos",
     legalCookies: "Cookies",
     madeIn: "Diseñado y desarrollado en Vigo, ES",
     rights: "Todos los derechos reservados",
+    brandDisclaimer:
+      "{brand} es una marca comercial de {legal} · CIF {taxId}",
   },
   scroll: {
     hero: "Inicio",

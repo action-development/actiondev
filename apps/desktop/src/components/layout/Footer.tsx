@@ -6,8 +6,10 @@ import { useGSAP } from "@gsap/react";
 import { gsap } from "@/lib/gsap-config";
 import { useT } from "@/lib/i18n";
 import { SOCIALS } from "@/data/socials";
+import { BUSINESS, LEGAL_ENTITY } from "@/lib/seo";
 
 const LEGAL_LINKS = [
+  { key: "notice", href: "/legal/aviso-legal" },
   { key: "privacy", href: "/legal/privacy" },
   { key: "terms", href: "/legal/terms" },
   { key: "cookies", href: "/legal/cookies" },
@@ -17,6 +19,14 @@ export function Footer() {
   const t = useT();
   const year = new Date().getFullYear();
   const footerRef = useRef<HTMLElement>(null);
+
+  // Los datos registrales viven en LEGAL_ENTITY, no en las traducciones:
+  // la cadena traducida solo aporta la conjunción, los valores vienen del
+  // single source of truth compartido con mobile.
+  const brandDisclaimer = t.footer.brandDisclaimer
+    .replace("{brand}", BUSINESS.alternateName)
+    .replace("{legal}", LEGAL_ENTITY.name)
+    .replace("{taxId}", LEGAL_ENTITY.taxId);
 
   const NAV_LINKS = [
     { label: t.scroll.hero, href: "/#home" },
@@ -119,6 +129,7 @@ export function Footer() {
                     href={l.href}
                     className="text-foreground/80 transition-colors duration-[var(--duration)] [transition-timing-function:var(--ease)] hover:text-accent"
                   >
+                    {l.key === "notice" && t.footer.legalNotice}
                     {l.key === "privacy" && t.footer.legalPrivacy}
                     {l.key === "terms" && t.footer.legalTerms}
                     {l.key === "cookies" && t.footer.legalCookies}
@@ -140,6 +151,24 @@ export function Footer() {
           <span aria-hidden className="hidden sm:inline">·</span>
           <span className="sm:ml-auto">{t.footer.madeIn}</span>
         </div>
+
+        {/*
+          Disclaimer de titularidad (LSSI art. 10). "Action" es una marca, no
+          una persona jurídica — sin esto la empresa real es invisible para
+          quien evalúe al proveedor (organismos públicos, compliance).
+        */}
+        <p
+          data-anim="reveal"
+          className="mt-4 font-mono text-[10px] leading-relaxed tracking-[0.14em] text-muted/70"
+        >
+          {brandDisclaimer}{" "}
+          <Link
+            href="/legal/aviso-legal"
+            className="underline underline-offset-2 transition-colors duration-[var(--duration)] [transition-timing-function:var(--ease)] hover:text-accent"
+          >
+            {t.footer.legalNotice}
+          </Link>
+        </p>
       </div>
     </footer>
   );

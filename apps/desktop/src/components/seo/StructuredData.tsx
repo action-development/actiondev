@@ -43,7 +43,12 @@ function buildSchema(kind: SchemaKind): object | null {
         "@id": absoluteUrl("#organization"),
         name: BRAND.name,
         alternateName: BUSINESS.alternateName,
+        // "Action" es marca; la persona jurídica es Alcasi Systems, S.L.
+        // `legalName` + `vatID` permiten cruzar el proveedor con el Registro
+        // Mercantil sin salir del JSON-LD.
         legalName: BRAND.legalName,
+        vatID: BUSINESS.taxId,
+        taxID: BUSINESS.taxId,
         url: SITE_URL,
         logo: absoluteUrl("/logos/logo.webp"),
         description: BRAND.longDescription,
@@ -102,7 +107,9 @@ function buildSchema(kind: SchemaKind): object | null {
         "@context": "https://schema.org",
         "@type": "ProfessionalService",
         "@id": absoluteUrl("#services"),
-        name: BRAND.legalName,
+        name: BUSINESS.displayName,
+        legalName: BRAND.legalName,
+        vatID: BUSINESS.taxId,
         url: absoluteUrl("/"),
         description: BRAND.longDescription,
         image: absoluteUrl("/logos/logo.webp"),

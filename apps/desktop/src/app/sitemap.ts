@@ -24,6 +24,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
+  // Documentos legales — baja prioridad, pero indexables a propósito: un
+  // organismo público debe poder encontrar por buscador quién hay detrás
+  // de la marca (Alcasi Systems, S.L. + CIF) sin navegar la web.
+  const legal: MetadataRoute.Sitemap = [
+    "/legal/aviso-legal",
+    "/legal/privacy",
+    "/legal/terms",
+    "/legal/cookies",
+  ].map((path) => ({
+    url: `${SITE_URL}${path}`,
+    lastModified: now,
+    changeFrequency: "yearly",
+    priority: 0.3,
+  }));
+
   const landingEntries: MetadataRoute.Sitemap = landings.map((l) => ({
     url: `${SITE_URL}/${l.slug}`,
     lastModified: now,
@@ -40,5 +55,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     }));
 
-  return [...home, ...landingEntries, ...projectEntries];
+  return [...home, ...landingEntries, ...projectEntries, ...legal];
 }

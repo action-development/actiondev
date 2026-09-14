@@ -64,11 +64,18 @@ export interface Translations {
     sitemapTitle: string;
     socialTitle: string;
     legalTitle: string;
+    legalNotice: string;
     legalPrivacy: string;
     legalTerms: string;
     legalCookies: string;
     madeIn: string;
     rights: string;
+    /**
+     * Disclaimer de marca. Placeholders `{brand}`, `{legal}` y `{taxId}` — se
+     * interpolan en Footer.tsx desde LEGAL_ENTITY para no duplicar los datos
+     * registrales en cada traducción.
+     */
+    brandDisclaimer: string;
   };
   scroll: {
     hero: string;

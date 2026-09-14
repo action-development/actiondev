@@ -9,9 +9,27 @@
  * Business Profile.
  */
 
-import { BUSINESS } from "@actiondev/shared";
+import {
+  BUSINESS,
+  LEGAL_ENTITY,
+  OFFICE_ADDRESS_LINE,
+  REGISTERED_ADDRESS_LINE,
+  REGISTRY_LINE,
+} from "@actiondev/shared";
 
-export { BUSINESS };
+export {
+  BUSINESS,
+  LEGAL_ENTITY,
+  OFFICE_ADDRESS_LINE,
+  REGISTERED_ADDRESS_LINE,
+  REGISTRY_LINE,
+};
+
+/**
+ * Fecha de última revisión de los documentos legales (ISO).
+ * Actualizar SIEMPRE que se toque el contenido de /legal/*.
+ */
+export const LEGAL_UPDATED = "2026-09-14";
 
 export const SITE_URL = BUSINESS.domain;
 

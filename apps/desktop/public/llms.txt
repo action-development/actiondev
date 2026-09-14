@@ -5,7 +5,12 @@
 ## Datos de la empresa (NAP)
 
 - **Nombre**: Action (Action Digital Agency / Action Development)
-- **Dirección**: Rúa Colón, 20 — 36201 Vigo, Pontevedra, España
+- **Titular legal**: Action Development es una **marca comercial** de **Alcasi Systems, S.L.** — la persona jurídica que contrata, factura y responde. No es una entidad independiente.
+- **CIF**: B72910664
+- **Domicilio social**: Lugar Puerto Pesquero Este, S/N, Nave 21 — 36900 Marín, Pontevedra, España
+- **Datos registrales**: Registro Mercantil de Pontevedra, Tomo 4428, Folio 200, Sección 8, Hoja PO-70894 (constituida el 22/12/2022)
+- **Aviso legal**: https://actiondev.es/legal/aviso-legal
+- **Dirección** (oficina): Rúa Colón, 20 — 36201 Vigo, Pontevedra, España
 - **Teléfono / WhatsApp**: +34 614 02 74 10
 - **Email**: hi@actiondev.es
 - **Dominio canónico**: https://actiondev.es

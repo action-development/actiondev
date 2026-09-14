@@ -64,11 +64,14 @@ export const en: Translations = {
     sitemapTitle: "Sitemap",
     socialTitle: "Elsewhere",
     legalTitle: "Legal",
+    legalNotice: "Legal notice",
     legalPrivacy: "Privacy",
     legalTerms: "Terms",
     legalCookies: "Cookies",
     madeIn: "Designed & built in Vigo, ES",
     rights: "All rights reserved",
+    brandDisclaimer:
+      "{brand} is a trading name of {legal} · Spanish VAT {taxId}",
   },
   scroll: {
     hero: "Hero",

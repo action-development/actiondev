@@ -19,7 +19,11 @@ const schema = {
       "@id": ORG_ID,
       name: BUSINESS.name,
       alternateName: BUSINESS.alternateName,
+      // Marca "Action" vs. persona jurídica: mismos identificadores que emite
+      // desktop, para que Google vea una sola entidad con CIF verificable.
       legalName: BUSINESS.legalName,
+      vatID: BUSINESS.taxId,
+      taxID: BUSINESS.taxId,
       url: BUSINESS.domain,
       logo: `${BUSINESS.domain}/logos/logo.webp`,
       email: BUSINESS.email,
@@ -46,7 +50,9 @@ const schema = {
     {
       "@type": "ProfessionalService",
       "@id": `${BUSINESS.domain}/#services`,
-      name: BUSINESS.legalName,
+      name: BUSINESS.displayName,
+      legalName: BUSINESS.legalName,
+      vatID: BUSINESS.taxId,
       url: BUSINESS.domain,
       image: `${BUSINESS.domain}/logos/logo.webp`,
       telephone: BUSINESS.phoneE164,
