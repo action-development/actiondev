@@ -294,8 +294,16 @@ export function PageCube({ data, position, spawnIndex = 0, onNearby, onNearbyExi
              * a un CDN de terceros en plena ruta crítica del hero, justo lo que ya
              * nos costó el HDR de drei. Verificado con Playwright interceptando red.
              * Mismo criterio que `carousel-3d.tsx`, que se quitó troika por esto.
+             *
+             * El archivo es un SUBSET (Latin-1, 191 glifos, 13,9 KB frente a los
+             * 156 KB de la Poppins Bold completa) generado con:
+             *   pyftsubset Poppins-Bold.ttf --output-file=Poppins-Bold-subset.ttf \
+             *     --unicodes="U+0020-007E,U+00A0-00FF" --layout-features='' \
+             *     --no-hinting --desubroutinize --drop-tables+=DSIG
+             * Si algún día una etiqueta necesita un glifo fuera de Latin-1, hay que
+             * regenerarlo o el carácter saldrá en blanco.
              */
-            font="/fonts/Poppins-Bold.ttf"
+            font="/fonts/Poppins-Bold-subset.ttf"
             position={[face.pos[0], face.pos[1], face.pos[2]]}
             rotation={[face.rot[0], face.rot[1], face.rot[2]]}
             fontSize={fontSize}
