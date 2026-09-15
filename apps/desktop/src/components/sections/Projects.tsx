@@ -123,6 +123,41 @@ export function Projects() {
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => setMounted(true), []);
 
+	/**
+	 * Gate de montaje del carrusel 3D.
+	 *
+	 * POR QUÉ: el culling de las cards vive en su `useFrame` y va por ÁNGULO de la
+	 * card, no por viewport del DOM. En cuanto el canvas monta y arranca el
+	 * frameloop, las 3 cards dentro de HARD_CULL_DEG llaman a `loadTexture()` y se
+	 * bajan sus vídeos. Medido con Playwright sin hacer scroll: 4,8 MB de .webm
+	 * descargándose mientras el usuario sigue mirando el hero, compitiendo por
+	 * ancho de banda con los 2,2 MB de Rapier. Por eso la home "se quedaba pillada".
+	 *
+	 * El rootMargin da medio viewport de margen: monta antes de que se vea, pero
+	 * NO al cargar la página. Ojo al calibrarlo — la sección del carrusel arranca
+	 * sobre los 200vh (hero del juego + hero de Projects), así que un rootMargin
+	 * del 100% dispara con el scroll a cero y el gate no sirve de nada. Medido.
+	 *
+	 * Una vez montado no se desmonta: tirar el contexto WebGL y las texturas de
+	 * vídeo al hacer scroll atrás costaría más que mantenerlo vivo.
+	 */
+	const [carouselNear, setCarouselNear] = useState(false);
+	useEffect(() => {
+		const section = sectionRef.current;
+		if (!section) return;
+		const observer = new IntersectionObserver(
+			([entry]) => {
+				if (entry.isIntersecting) {
+					setCarouselNear(true);
+					observer.disconnect();
+				}
+			},
+			{ rootMargin: "50% 0px" }
+		);
+		observer.observe(section);
+		return () => observer.disconnect();
+	}, []);
+
 	// --- Hero section ---
 	useEffect(() => {
 		const hero = heroRef.current;
@@ -344,7 +379,11 @@ export function Projects() {
 						</div>
 
 						<CentralColumn textRef={columnTextRef} label={t.projects.columnLabel} />
-						<Carousel3D projects={projects} scrollRef={scrollRef} locale={locale} />
+						{carouselNear ? (
+							<Carousel3D projects={projects} scrollRef={scrollRef} locale={locale} />
+						) : (
+							<CarouselLoading />
+						)}
 						<ProjectIndicator nameRef={indicatorRef} />
 						<ProgressBar barRef={progressBarRef} labelRef={progressLabelRef} />
 					</div>

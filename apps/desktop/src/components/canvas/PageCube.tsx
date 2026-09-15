@@ -287,6 +287,15 @@ export function PageCube({ data, position, spawnIndex = 0, onNearby, onNearbyExi
         ]).map((face, i) => (
           <Text
             key={i}
+            /**
+             * `font` LOCAL Y OBLIGATORIO. Sin esta prop, troika-three-text cae en
+             * `unicode-font-resolver` y se baja la tipografía EN RUNTIME desde
+             * cdn.jsdelivr.net: dos JSON de índice más dos .woff. Cuatro peticiones
+             * a un CDN de terceros en plena ruta crítica del hero, justo lo que ya
+             * nos costó el HDR de drei. Verificado con Playwright interceptando red.
+             * Mismo criterio que `carousel-3d.tsx`, que se quitó troika por esto.
+             */
+            font="/fonts/Poppins-Bold.ttf"
             position={[face.pos[0], face.pos[1], face.pos[2]]}
             rotation={[face.rot[0], face.rot[1], face.rot[2]]}
             fontSize={fontSize}
