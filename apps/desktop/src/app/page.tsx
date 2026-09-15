@@ -23,6 +23,24 @@ const GameScene = dynamic(
 
 const SESSION_KEY = "action-loaded";
 
+/**
+ * Arranca la descarga de Rapier en paralelo, no en cascada.
+ *
+ * `<Physics>` hace `suspend(() => import("@dimforge/rapier3d-compat"))`, así que
+ * sin esto la secuencia es: bundle de la página → chunk de GameScene → render de
+ * GameWorld → *ahí* empieza a bajar el módulo de física. Son tres round-trips en
+ * serie antes de tocar los 2,2 MB del build `compat` (lleva el WASM embebido en
+ * base64, no es un .wasm aparte).
+ *
+ * Lanzándolo en el mount de la home, esos 2,2 MB viajan a la vez que el chunk de
+ * GameScene. Cuando `<Physics>` suspenda, el módulo ya está en el registro del
+ * bundler y resuelve al instante. El `catch` vacío es deliberado: si falla, que
+ * falle en su sitio (dentro del Suspense) y no como rechazo sin gestionar.
+ */
+function prefetchPhysics() {
+  void import("@dimforge/rapier3d-compat").catch(() => {});
+}
+
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [gamePaused, setGamePaused] = useState(false);
@@ -56,6 +74,12 @@ export default function HomePage() {
     sessionStorage.setItem(SESSION_KEY, "1");
     setLoading(false);
     requestAnimationFrame(() => requestAnimationFrame(() => ScrollTrigger.refresh()));
+  }, []);
+
+  // Prioridad máxima: los 2,2 MB de física empiezan a bajar en el primer mount,
+  // en paralelo con el chunk de GameScene, no después de él.
+  useEffect(() => {
+    prefetchPhysics();
   }, []);
 
   useEffect(() => {

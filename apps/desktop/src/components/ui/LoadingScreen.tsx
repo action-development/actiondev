@@ -32,6 +32,15 @@ interface LoadingScreenProps {
 const LOGO_DURATION    = 550;   // ms — logo fade-in/translate
 const PHASE_1_DURATION = 1000;  // ms — minimum on-screen time
 const STALL_DURATION   = 15000; // ms — slow drift while stalled
+/**
+ * Escotilla de emergencia. Sin esto, si `ready` no llega nunca (fallo de WebGL,
+ * chunk de física que no baja, red cortada a mitad) la pantalla de carga se
+ * queda clavada en 95 % PARA SIEMPRE y el sitio es inaccesible. Pasado este
+ * plazo se continúa igualmente: se verá el canvas entrar tarde, pero la web
+ * queda utilizable. Debe ser holgadamente mayor que STALL_DURATION para no
+ * dispararse en conexiones lentas que sí van a terminar.
+ */
+const STALL_TIMEOUT    = 25000; // ms — continuar aunque `ready` no llegue
 const SPRINT_DURATION  = 350;   // ms — sprint to 100 once ready
 const FADE_DURATION    = 500;   // ms — final container fade-out
 const STALL_PEAK       = 95;    // value reached at end of stall
@@ -104,10 +113,11 @@ export function LoadingScreen({ ready, onComplete }: LoadingScreenProps) {
           }
         }
       } else if (phase === "stall") {
-        const stallT = Math.min((now - phaseStartTime) / STALL_DURATION, 1);
+        const stallElapsed = now - phaseStartTime;
+        const stallT = Math.min(stallElapsed / STALL_DURATION, 1);
         const v      = 85 + stallT * (STALL_PEAK - 85);
         setCountIfChanged(Math.round(v));
-        if (readyRef.current) {
+        if (readyRef.current || stallElapsed >= STALL_TIMEOUT) {
           phase          = "sprint";
           phaseStartTime = now;
           sprintFromVal  = v;

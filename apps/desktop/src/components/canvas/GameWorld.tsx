@@ -4,9 +4,9 @@ import { useRef, useCallback, useEffect, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Physics, RigidBody, CuboidCollider, type RapierRigidBody } from "@react-three/rapier";
 import { scratchRapierVec } from "./_pools";
-import { Environment } from "@react-three/drei";
 import * as THREE from "three";
 import { LandingDust, type LandingDustHandle } from "./LandingDust";
+import { SceneEnvironment } from "./SceneEnvironment";
 
 import { Character, type CharacterHandle } from "./Character";
 import { PageCube, type PageCubeData } from "./PageCube";
@@ -311,7 +311,7 @@ export function GameWorld({ paused = false, physicsPaused = false, physicsActive
         shadow-camera-bottom={-10}
         shadow-bias={-0.0005}
       />
-      <Environment preset="night" />
+      <SceneEnvironment />
 
       <fog attach="fog" args={["#0a0a12", 50, 110]} />
       <Starfield />

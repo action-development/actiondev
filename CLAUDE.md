@@ -373,4 +373,6 @@ Para actualizar snapshots tras cambios visuales intencionales: `pnpm test:e2e:up
 - **No poner clases Tailwind de transform/posición en elementos que GSAP anima** — GSAP debe ser el único dueño del transform matrix (ver ERR-001 en `.agent/wiki/error_library.md`)
 - **No olvidar `visibility:hidden` en elementos que GSAP posiciona desde estado inicial diferente** — evita flash antes de init (ver ERR-002)
 - **No shallow rendering** en ningún test — Testing Library monta componentes completos
+- **No usar `<Environment preset="…">` ni `files=` de drei** — descarga un HDR de 1,75 MB desde `raw.githack.com` (CDN de terceros, con redirect 301) y suspende el `<Suspense>` que envuelve `GameWorld`, dejando el `LoadingScreen` clavado en 85-95 %. El entorno se genera en GPU con `SceneEnvironment.tsx` (Lightformers, 0 bytes de red). Lo mismo aplica a cualquier helper de drei que cargue assets remotos por defecto.
+- **No dejar que un asset remoto bloquee `onReady`** — todo lo que viva dentro del `<Suspense>` de `GameScene` retrasa el fin de la pantalla de carga. Assets nuevos → locales y precargados en paralelo, nunca en cascada.
 - **No declarar "done"** sin ejecutar los tests
