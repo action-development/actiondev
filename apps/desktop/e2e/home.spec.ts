@@ -9,7 +9,7 @@ test("hero section renders canvas and key text", async ({ page }) => {
 	await expect(page.locator("canvas").first()).toBeVisible();
 
 	// Texto DOM del hero (instrucciones del juego — fuera del canvas)
-	await expect(page.getByText(/(score or scroll|encesta o scrollea)/i)).toBeVisible();
+	await expect(page.getByText(/(load the ship to navigate|carga el barco para navegar)/i)).toBeVisible();
 
 	// Screenshot con canvas enmascarado (render WebGL no-determinista)
 	await expect(page).toHaveScreenshot("hero.png", {
@@ -18,13 +18,27 @@ test("hero section renders canvas and key text", async ({ page }) => {
 	});
 });
 
-test("loading screen shows on first visit", async ({ page }) => {
-	// Sin el initScript → loading screen visible
+test("loading screen is the accent blinds and retracts when the scene is ready", async ({ page }) => {
 	await page.goto("/");
-	// Loading screen debe aparecer brevemente
-	const loadingScreen = page.locator('[data-testid="loading-screen"], .loading-screen').first();
-	// Si no tiene data-testid buscamos por canvas que ocupa full screen durante loading
-	await expect(page.locator("canvas").first()).toBeVisible({ timeout: 10_000 });
+	// Persiana cerrada (solo franjas, sin logo ni contador) desde el primer paint
+	const loadingScreen = page.getByTestId("loading-screen");
+	await expect(loadingScreen).toBeVisible();
+	await expect(loadingScreen.locator("img")).toHaveCount(0);
+	// Se recoge y desmonta cuando la escena está lista
+	await expect(page.locator("canvas").first()).toBeVisible({ timeout: 15_000 });
+	await expect(loadingScreen).toHaveCount(0, { timeout: 30_000 });
+});
+
+test("navigating between routes closes and reopens the blinds", async ({ page }) => {
+	await page.goto("/legal/cookies");
+	await page.waitForLoadState("load");
+	const blinds = page.getByTestId("page-blinds");
+	await expect(blinds).toHaveAttribute("data-state", "idle");
+
+	await page.getByRole("link", { name: "Privacidad" }).click();
+	await expect(blinds).toHaveAttribute("data-state", /closing|closed/);
+	await expect(page).toHaveURL(/\/legal\/privacy$/);
+	await expect(blinds).toHaveAttribute("data-state", "idle", { timeout: 10_000 });
 });
 
 test("header is visible and has navigation links", async ({ page }) => {

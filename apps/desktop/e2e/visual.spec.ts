@@ -14,23 +14,23 @@ test.describe("Visual regression", () => {
     });
   });
 
-  test("home — projects section", async ({ page }) => {
-    await page.goto("/");
+  test("projects page", async ({ page }) => {
+    await page.goto("/projects");
     await page.waitForLoadState("domcontentloaded");
     await page.evaluate(() => {
       document.getElementById("projects")?.scrollIntoView({ behavior: "instant" });
     });
     await page.waitForTimeout(500);
-    await expect(page).toHaveScreenshot("home-projects.png");
+    await expect(page).toHaveScreenshot("projects-page.png");
   });
 
-  test("home — contact section", async ({ page }) => {
-    await page.goto("/");
+  test("contact page", async ({ page }) => {
+    await page.goto("/contact");
     await page.waitForLoadState("domcontentloaded");
     await page.evaluate(() => {
       document.getElementById("contact")?.scrollIntoView({ behavior: "instant" });
     });
     await page.waitForTimeout(300);
-    await expect(page).toHaveScreenshot("home-contact.png");
+    await expect(page).toHaveScreenshot("contact-page.png");
   });
 });

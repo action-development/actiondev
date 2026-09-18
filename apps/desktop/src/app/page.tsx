@@ -1,20 +1,12 @@
 "use client";
 
 import { useRef, useCallback, useState, useEffect } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { EASING, DURATION } from "@/lib/animations";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { SmoothScroll } from "@/components/animations/SmoothScroll";
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { ScrollIndicator } from "@/components/layout/ScrollIndicator";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
-import { Projects } from "@/components/sections/Projects";
-import { ProjectsIndex } from "@/components/sections/ProjectsIndex";
-import { Testimonials } from "@/components/sections/Testimonials";
-import { Contact } from "@/components/sections/Contact";
-import { StructuredData } from "@/components/seo/StructuredData";
+import { usePageTransition } from "@/components/animations/PageTransition";
+import { PORT_CONTAINERS } from "@/data/port-containers";
 
 const GameScene = dynamic(
   () => import("@/components/canvas/GameScene").then((m) => m.GameScene),
@@ -41,13 +33,20 @@ function prefetchPhysics() {
   void import("@dimforge/rapier3d-compat").catch(() => {});
 }
 
+/**
+ * Home = pantalla de inicio del "videojuego". Solo vive aquí el hero "La Grúa":
+ * ocupa el viewport entero, no hay scroll ni secciones debajo. Cada contenedor
+ * cargado en el barco navega a su propia ruta (`/projects`, `/resenas`,
+ * `/contact` — ver `data/port-containers.ts`), donde las antiguas secciones de
+ * la home viven tal cual con Lenis + GSAP.
+ */
 export default function HomePage() {
+  const router = useRouter();
+  const { navigate } = usePageTransition();
   const [loading, setLoading] = useState(true);
   const [gamePaused, setGamePaused] = useState(false);
   const [physicsActive, setPhysicsActive] = useState(false);
   const [loadingReady, setLoadingReady] = useState(false);
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const transitioning = useRef(false);
   const homeRef = useRef<HTMLElement>(null);
 
   // Fired once when GameWorld mounts + shaders are compiled.
@@ -73,7 +72,6 @@ export default function HomePage() {
   const handleLoadingComplete = useCallback(() => {
     sessionStorage.setItem(SESSION_KEY, "1");
     setLoading(false);
-    requestAnimationFrame(() => requestAnimationFrame(() => ScrollTrigger.refresh()));
   }, []);
 
   // Prioridad máxima: los 2,2 MB de física empiezan a bajar en el primer mount,
@@ -81,6 +79,14 @@ export default function HomePage() {
   useEffect(() => {
     prefetchPhysics();
   }, []);
+
+  // Los destinos del juego son rutas reales: precalentarlas mientras el
+  // visitante juega para que el wipe aterrice sin pantalla en blanco.
+  useEffect(() => {
+    for (const c of PORT_CONTAINERS) {
+      if (c.href.startsWith("/")) router.prefetch(c.href);
+    }
+  }, [router]);
 
   useEffect(() => {
     if (sessionStorage.getItem(SESSION_KEY)) {
@@ -95,7 +101,7 @@ export default function HomePage() {
     }
   }, []);
 
-  // Pause physics when game section leaves viewport
+  // Pause physics/render when the tab is hidden or the canvas leaves the viewport.
   useEffect(() => {
     const el = homeRef.current;
     if (!el) return;
@@ -132,77 +138,29 @@ export default function HomePage() {
     };
   }, []);
 
-  // Score → radial wipe → scroll to section
+  // Contenedor en la bodega → persiana (PageTransition) → ruta de esa sección.
   const handleNavigate = useCallback((href: string) => {
-    const overlay = overlayRef.current;
-    if (!overlay || transitioning.current) return;
-
-    transitioning.current = true;
-    overlay.style.display = "block";
-    overlay.style.clipPath = "circle(0% at 50% 50%)";
-    overlay.style.opacity = "1";
-
-    gsap.to(overlay, {
-      clipPath: "circle(100% at 50% 50%)",
-      duration: DURATION.DEFAULT,
-      ease: EASING.EXIT,
-      onComplete: () => {
-        const sectionId = href.startsWith("#") ? href.slice(1) : href;
-        const el = document.getElementById(sectionId);
-        if (el) el.scrollIntoView({ behavior: "instant" });
-
-        setTimeout(() => {
-          gsap.to(overlay, {
-            opacity: 0,
-            duration: DURATION.OVERLAY,
-            ease: EASING.ENTER,
-            onComplete: () => {
-              overlay.style.display = "none";
-              overlay.style.opacity = "1";
-              transitioning.current = false;
-            },
-          });
-        }, 150);
-      },
-    });
-  }, []);
+    // Solo rutas reales. Un "#algo" es un destino que todavía no existe
+    // (p. ej. el contenedor EQUIPO): sin esto la persiana se cerraba, no
+    // había a dónde ir y volvía al mismo sitio. Parecía roto.
+    if (!href.startsWith("/")) return;
+    navigate(href);
+  }, [navigate]);
 
   return (
-    <SmoothScroll>
-      <StructuredData kind="projects" />
-      <StructuredData kind="reviews" />
+    <>
       <Header />
-      <ScrollIndicator />
-
-      <section ref={homeRef} id="home" className="relative overflow-hidden min-h-screen">
-        {loading && <LoadingScreen ready={loadingReady} onComplete={handleLoadingComplete} />}
-        <GameScene paused={loading || gamePaused} physicsPaused={gamePaused} renderPaused={gamePaused} physicsActive={physicsActive} onNavigate={handleNavigate} onReady={handleGameReady} />
-      </section>
 
       <main id="main-content">
-        <div id="projects">
-          <Projects />
-          <ProjectsIndex />
-        </div>
-        <div id="reviews">
-          <Testimonials />
-        </div>
-        <div id="contact">
-          <Contact />
-        </div>
+        <section
+          ref={homeRef}
+          id="home"
+          className="relative h-[100dvh] overflow-hidden"
+        >
+          {loading && <LoadingScreen ready={loadingReady} onComplete={handleLoadingComplete} />}
+          <GameScene paused={loading || gamePaused} physicsPaused={gamePaused} renderPaused={gamePaused} physicsActive={physicsActive} onNavigate={handleNavigate} onReady={handleGameReady} />
+        </section>
       </main>
-
-      <Footer />
-
-      <div
-        ref={overlayRef}
-        className="fixed inset-0 z-[100] pointer-events-none"
-        style={{
-          display: "none",
-          clipPath: "circle(0% at 50% 50%)",
-          background: "radial-gradient(ellipse at center, #111 0%, #000 100%)",
-        }}
-      />
-    </SmoothScroll>
+    </>
   );
 }

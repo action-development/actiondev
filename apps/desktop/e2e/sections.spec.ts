@@ -1,13 +1,11 @@
 import { test, expect, type Page } from "./fixtures";
 import { waitForPage } from "./helpers";
 
-test.beforeEach(async ({ page }) => {
-	await page.goto("/");
+// Las antiguas secciones de la home viven ahora cada una en su ruta.
+// Scroll bypassing Lenis con scrollIntoView nativo.
+async function openSection(page: Page, path: string, id: string) {
+	await page.goto(path);
 	await waitForPage(page);
-});
-
-// Scroll to a section bypassing Lenis by using native JS scrollIntoView
-async function scrollToSection(page: Page, id: string) {
 	await page.evaluate((sectionId) => {
 		document.getElementById(sectionId)?.scrollIntoView({ behavior: "instant", block: "start" });
 	}, id);
@@ -15,7 +13,7 @@ async function scrollToSection(page: Page, id: string) {
 }
 
 test("projects section renders", async ({ page }) => {
-	await scrollToSection(page, "projects");
+	await openSection(page, "/projects", "projects");
 
 	await expect(page.locator("#projects")).toBeVisible();
 
@@ -26,18 +24,9 @@ test("projects section renders", async ({ page }) => {
 	});
 });
 
-test("testimonials section renders", async ({ page }) => {
-	await scrollToSection(page, "reviews");
-
-	await expect(page.locator("#reviews")).toBeVisible();
-
-	await expect(page).toHaveScreenshot("testimonials-section.png", {
-		animations: "disabled",
-		fullPage: false,
-	});
-});
-
 test("contact section has form fields", async ({ page }) => {
+	await page.goto("/contact");
+	await waitForPage(page);
 	// Scroll hasta el campo para que ScrollTrigger GSAP (start: "top 92%") se dispare
 	await page.evaluate(() => {
 		document.getElementById("contact-name")?.scrollIntoView({ behavior: "instant", block: "center" });

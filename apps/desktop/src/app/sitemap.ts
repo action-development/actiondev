@@ -3,7 +3,6 @@ import { SITE_URL } from "@/lib/seo";
 import { projects } from "@/data/projects";
 import { landings } from "@/data/landings";
 
-// Hash anchors (#projects, #contact …) are not indexable pages — omit them.
 const CORE_LANDING = "desarrollo-de-aplicaciones-vigo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -18,6 +17,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${SITE_URL}/servicios`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${SITE_URL}/projects`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/contact`,
+      lastModified: now,
+      changeFrequency: "yearly",
+      priority: 0.6,
+    },
+    {
+      url: `${SITE_URL}/resenas`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,

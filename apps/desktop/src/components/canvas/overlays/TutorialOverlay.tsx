@@ -3,13 +3,16 @@
 import { useState, useEffect, useRef } from "react";
 import type { GameState } from "@/hooks/use-game-state";
 import { useT } from "@/lib/i18n";
+import styles from "./TutorialOverlay.module.css";
 
 type TutorialStep = {
-  label: string;
+  /** Teclas dibujadas como tapas físicas (mismo lenguaje que el mando RC). */
+  keys: { label: string; accent?: boolean }[];
   action: string;
-  trigger: "key" | "pickup" | "throw";
-  keys?: string[];
+  trigger: "move" | "pickup" | "throw";
 };
+
+const MOVE_KEYS = ["KeyA", "KeyD", "ArrowLeft", "ArrowRight"];
 
 interface TutorialOverlayProps {
   gameState: GameState;
@@ -24,26 +27,29 @@ export function TutorialOverlay({ gameState }: TutorialOverlayProps) {
   stepRef.current = step;
 
   // Steps derived from translations so they react to locale changes
+  // Las tapas replican los botones del mando: flechas olive, gancho lima.
   const TUTORIAL_STEPS: TutorialStep[] = [
-    { label: "A / D",        action: t.tutorial.move,    trigger: "key",    keys: ["KeyA", "KeyD", "ArrowLeft", "ArrowRight"] },
-    { label: "SPACE",        action: t.tutorial.jump,    trigger: "key",    keys: ["Space"] },
-    { label: "E",            action: t.tutorial.pickup,  trigger: "pickup" },
-    { label: "CLICK & DRAG", action: t.tutorial.throw,   trigger: "throw"  },
+    { keys: [{ label: "◀" }, { label: "▶" }],          action: t.tutorial.move,   trigger: "move"   },
+    { keys: [{ label: t.game.remote.lower, accent: true }], action: t.tutorial.pickup, trigger: "pickup" },
+    { keys: [{ label: t.game.remote.lower, accent: true }], action: t.tutorial.throw,  trigger: "throw"  },
   ];
 
-  // Delay tutorial start so cubes have time to fall
+  // Delay tutorial start so containers have time to land on the quay
   useEffect(() => {
     const timer = setTimeout(() => setVisible(true), 2000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Key-based steps — window listener
+  // Paso "mover": teclas A/D o un click (que lanza la maniobra automática).
+  // NO se escucha `mousemove`: el ratón ya no conduce la grúa.
   useEffect(() => {
     if (!visible || step >= TUTORIAL_STEPS.length) return;
-    const current = TUTORIAL_STEPS[step];
-    if (current.trigger !== "key" || !current.keys) return;
+    if (TUTORIAL_STEPS[step].trigger !== "move") return;
 
+    let done = false;
     const advance = () => {
+      if (done) return;
+      done = true;
       setFading(true);
       setTimeout(() => {
         setFading(false);
@@ -53,9 +59,14 @@ export function TutorialOverlay({ gameState }: TutorialOverlayProps) {
       }, 400);
     };
 
-    const onKey = (e: KeyboardEvent) => { if (current.keys!.includes(e.code)) advance(); };
+    const onKey = (e: KeyboardEvent) => { if (MOVE_KEYS.includes(e.code)) advance(); };
+    const onDown = (e: MouseEvent) => { if (e.button === 0) advance(); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onDown);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, visible]);
 
@@ -102,29 +113,27 @@ export function TutorialOverlay({ gameState }: TutorialOverlayProps) {
 
   return (
     <div
-      className="absolute inset-0 z-30 flex items-start justify-center pt-[30vh] pointer-events-none"
+      className="absolute inset-0 z-30 flex items-start justify-center pt-[16vh] pointer-events-none"
       style={{
         opacity: fading ? 0 : 1,
         transition: "opacity var(--duration-fast) var(--ease)",
       }}
     >
-      <div className="flex flex-col items-center gap-4">
-        <div className="flex items-center gap-4 rounded-md border border-[var(--hairline-strong)] bg-background/80 px-6 py-3 backdrop-blur-sm">
-          <span className="font-mono text-[13px] font-semibold tracking-[0.18em] uppercase text-foreground">
-            {current.label}
-          </span>
-          <span aria-hidden className="h-3 w-px bg-[var(--hairline-strong)]" />
-          <span className="micro-label text-foreground/50">{current.action}</span>
+      <div className="flex flex-col items-center">
+        <div className={styles.sign} data-testid="tutorial-sign">
+          <div className={styles.keys} aria-hidden>
+            {current.keys.map((k, i) => (
+              <span key={i} className={`${styles.cap} ${k.accent ? styles.accent : ""}`}>
+                {k.label}
+              </span>
+            ))}
+          </div>
+          <span aria-hidden className={styles.divider} />
+          <span className={styles.action}>{current.action}</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className={styles.leds} aria-hidden>
           {TUTORIAL_STEPS.map((_, i) => (
-            <span
-              key={i}
-              aria-hidden
-              className={`h-px transition-all ${
-                i <= step ? "w-6 bg-accent" : "w-3 bg-[var(--hairline-strong)]"
-              }`}
-            />
+            <span key={i} className={styles.led} data-on={i <= step} data-current={i === step} />
           ))}
         </div>
       </div>

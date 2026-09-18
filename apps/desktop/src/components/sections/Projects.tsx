@@ -7,12 +7,19 @@ import { createPortal } from "react-dom";
 import { CardBackgroundPreview } from "@/components/effects/card-background-preview";
 import { AccentWord } from "@/components/ui/AccentWord";
 import { featuredProjects as projects } from "@/data/projects";
+import { PORT_CONTAINERS } from "@/data/port-containers";
 import { useLocale, useT } from "@/lib/i18n";
+import hud from "./projects-hud.module.css";
 
+/** Color del contenedor TRABAJO del muelle: la carga que trajo al visitante hasta aquí. */
+const CARGO_COLOR = PORT_CONTAINERS.find((c) => c.labelKey === "work")?.color ?? "#c8ff00";
+
+// Recorrido del contenedor colgado: amplitudes más cortas que las del antiguo
+// cubo — un contenedor de 40 pies que cruza toda la pantalla tapa las cards.
 const DECORATION_PATH = {
-	x: { amp: 6, cycles: 1.3 },
-	y: { amp: 3.5, cycles: 2.1 },
-	z: { amp: 5, cycles: 0.7 },
+	x: { amp: 5.2, cycles: 1.1 },
+	y: { amp: 2.4, cycles: 1.7 },
+	z: { amp: 3, cycles: 0.7 },
 } as const;
 
 // Camera at z=14, fov=40 → half-screen height ≈ tan(20°) * 14 ≈ 5.1 Three.js units.
@@ -26,7 +33,10 @@ function CarouselLoading() {
 	const t = useT();
 	return (
 		<div className="absolute inset-0 flex items-center justify-center">
-			<span className="font-mono text-xs text-foreground/20 animate-pulse">{t.projects.loading}</span>
+			<span className={hud.plate} role="status">
+				<span aria-hidden className={`${hud.led} ${hud.ledBlink}`} />
+				{t.projects.loading}
+			</span>
 		</div>
 	);
 }
@@ -36,8 +46,8 @@ const Carousel3D = dynamic(
 	{ ssr: false, loading: () => <CarouselLoading /> }
 );
 
-const FloatingCubeLiteCanvas = dynamic(
-	() => import("@/components/canvas/FloatingCubeLite").then((m) => m.FloatingCubeLiteCanvas),
+const HangingCargoCanvas = dynamic(
+	() => import("@/components/canvas/HangingCargo").then((m) => m.HangingCargoCanvas),
 	{ ssr: false }
 );
 
@@ -73,23 +83,27 @@ function CentralColumn({ textRef, label }: { textRef: RefObject<HTMLSpanElement 
 	);
 }
 
+/** Placa de contenedor con el nombre del proyecto a la vista, flanqueada por flechas de tinta. */
 function ProjectIndicator({ nameRef }: { nameRef: RefObject<HTMLSpanElement | null> }) {
 	return (
-		<div className="absolute bottom-8 right-8 z-20 hidden items-center gap-4 md:flex">
-			<span className="font-mono text-xs text-foreground/30">&lt;&lt;</span>
-			<span ref={nameRef} className="min-w-[140px] text-center font-mono text-[11px] uppercase tracking-[0.2em] text-foreground/50" />
-			<span className="font-mono text-xs text-foreground/30">&gt;&gt;</span>
+		<div className="absolute bottom-8 right-8 z-20 hidden items-center gap-3 md:flex">
+			<span aria-hidden className={hud.arrow}>&lt;&lt;</span>
+			<span ref={nameRef} className={`${hud.tag} min-w-[160px]`} style={{ ["--crate" as string]: CARGO_COLOR } as React.CSSProperties} />
+			<span aria-hidden className={hud.arrow}>&gt;&gt;</span>
 		</div>
 	);
 }
 
+/** Manómetro de la descarga: columna con aguja de lima y lectura en %. */
 function ProgressBar({ barRef, labelRef }: { barRef: RefObject<HTMLDivElement | null>; labelRef: RefObject<HTMLSpanElement | null> }) {
 	return (
-		<div className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 flex-col items-center gap-1 md:flex">
-			<div className="h-32 w-px overflow-hidden rounded-full bg-[var(--hairline-strong)]">
-				<div ref={barRef} className="h-full w-full origin-top rounded-full bg-foreground/50" style={{ transform: "scaleY(0)" }} />
+		<div className="absolute right-6 top-1/2 z-20 hidden -translate-y-1/2 md:flex">
+			<div className={hud.gauge}>
+				<div className={hud.gaugeTrack}>
+					<div ref={barRef} className={hud.gaugeFill} style={{ transform: "scaleY(0)" }} />
+				</div>
+				<span ref={labelRef} className={hud.gaugeLabel}>0%</span>
 			</div>
-			<span ref={labelRef} className="mt-1 font-mono text-[9px] text-foreground/30">0%</span>
 		</div>
 	);
 }
@@ -317,11 +331,11 @@ export function Projects() {
 					style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none", opacity: 0 }}
 					aria-hidden="true"
 				>
-					<FloatingCubeLiteCanvas
+					<HangingCargoCanvas
 						scrollRef={cubeRef}
-						color="#c8ff00"
+						color={CARGO_COLOR}
+						label={t.nav.work}
 						path={DECORATION_PATH}
-						position="absolute"
 					/>
 				</div>,
 				document.body
@@ -330,16 +344,20 @@ export function Projects() {
 
 	return (
 		<>
-			{/* Single cube rendered at document.body — escapes overflow:hidden on all ancestors */}
+			{/* El contenedor colgado se renderiza en document.body — escapa del overflow:hidden de todos los ancestros */}
 			{cubePortal}
 
-			<div ref={wrapperRef}>
+			<div ref={wrapperRef} className={hud.hud}>
 				{/* Hero headline */}
 				<div
 					ref={heroRef}
-					className="relative z-[2] flex h-[80vh] flex-col items-center justify-center overflow-hidden container-editorial"
+					className="relative z-[2] flex h-[80vh] flex-col items-center justify-center gap-8 overflow-hidden container-editorial"
 					style={{ perspective: "600px" }}
 				>
+					<span data-word className={`${hud.plate} inline-flex`}>
+						<span aria-hidden className={hud.led} />
+						{t.projects.dock}
+					</span>
 					<h2 className="display-xl max-w-5xl text-center text-foreground">
 						<span ref={line1Ref} className="block will-change-transform">
 							{t.projects.transform.split(" ").map((word, i) => (
@@ -356,9 +374,11 @@ export function Projects() {
 				</div>
 
 				<div className="relative z-[2] flex items-center justify-center gap-6 pb-[calc(var(--section-py)/2)]">
-					<span className="h-px w-16 bg-[var(--hairline-strong)]" />
-					<span className="micro-label text-foreground/50">{t.projects.selectedWork}</span>
-					<span className="h-px w-16 bg-[var(--hairline-strong)]" />
+					<span className="h-0.5 w-16 bg-[var(--hairline-strong)]" />
+					<span className={hud.tag} style={{ ["--crate" as string]: CARGO_COLOR } as React.CSSProperties}>
+						{t.projects.selectedWork}
+					</span>
+					<span className="h-0.5 w-16 bg-[var(--hairline-strong)]" />
 				</div>
 
 				<section
@@ -373,9 +393,14 @@ export function Projects() {
 					<div className="sticky top-0 h-screen overflow-hidden">
 						<CardBackgroundPreview />
 
-						<div className="absolute right-8 top-20 z-20 hidden items-center gap-3 md:flex">
-							<span className="micro-label text-foreground/60">{t.projects.sectionLabel}</span>
-							<span className="h-px w-6 bg-[var(--hairline-strong)]" />
+						<div className="absolute right-6 top-24 z-20 hidden items-center gap-3 md:flex">
+							<span className={hud.plate}>{t.projects.sectionLabel}</span>
+						</div>
+						<div className="absolute bottom-8 left-8 z-20 hidden md:flex">
+							<span className={hud.plate}>
+								<span aria-hidden className={`${hud.led} ${hud.ledBlink}`} />
+								{t.projects.hint}
+							</span>
 						</div>
 
 						<CentralColumn textRef={columnTextRef} label={t.projects.columnLabel} />

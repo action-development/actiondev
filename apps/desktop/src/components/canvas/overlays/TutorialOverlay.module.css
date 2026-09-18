@@ -1,0 +1,127 @@
+/* ─────────────────────────────────────────────────────────────── */
+/*  CARTEL DEL TUTORIAL  (TutorialOverlay.tsx)                     */
+/*                                                                 */
+/*  Mismo lenguaje que el mando RC: colores planos, contorno de    */
+/*  tinta, canto duro (box-shadow sin difuminar) y teclas físicas  */
+/*  olive/lima. Es un letrero colgado del cielo del cómic, no un   */
+/*  toast de UI.                                                   */
+/* ─────────────────────────────────────────────────────────────── */
+.sign {
+  --tut-ink:   #1a1410;
+  --tut-body:  #47453d;
+  --tut-cap:   #7f8a34;
+  --tut-text:  #f1ead6;
+  --tut-muted: #d8d1bd;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px 12px 16px;
+  border: 2.5px solid var(--tut-ink);
+  border-radius: 16px;
+  background: var(--tut-body);
+  color: var(--tut-text);
+  box-shadow: 0 6px 0 var(--tut-ink);
+  animation: sign-drop 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Remaches en las esquinas superiores: chapa atornillada. */
+.sign::before,
+.sign::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  width: 7px;
+  height: 7px;
+  border: 2px solid var(--tut-ink);
+  border-radius: 50%;
+  background: #6f6c60;
+}
+.sign::before { left: 6px; }
+.sign::after  { right: 6px; }
+
+/* Teclas: mismas tapas que el mando (`.key` de RemoteControl.module.css). */
+.keys {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border: 2.5px solid var(--tut-ink);
+  border-radius: 9px;
+  background: var(--tut-cap);
+  color: var(--tut-ink);
+  box-shadow: 0 4px 0 var(--tut-ink);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  animation: cap-tap 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.cap:nth-child(2) { animation-delay: 0.8s; }
+.accent {
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.divider {
+  width: 2.5px;
+  height: 22px;
+  border-radius: 2px;
+  background: var(--tut-ink);
+  opacity: 0.7;
+}
+
+.action {
+  font-family: var(--font-display), sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--tut-text);
+}
+
+/* Progreso: LEDs con tinta, como el del mando. */
+.leds {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.led {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--tut-ink);
+  border-radius: 50%;
+  background: #4d6a2a;
+  transition: background var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease);
+}
+.led[data-on="true"] {
+  background: var(--accent);
+}
+.led[data-current="true"] {
+  transform: scale(1.25);
+}
+
+/* La tecla se hunde sola de vez en cuando: "púlsame". */
+@keyframes cap-tap {
+  0%, 78%, 100% { transform: translateY(0);   box-shadow: 0 4px 0 var(--tut-ink); }
+  84%, 92%      { transform: translateY(3px); box-shadow: 0 1px 0 var(--tut-ink); }
+}
+/* Entra cayendo del cielo y rebota como colgado de una cadena. */
+@keyframes sign-drop {
+  from { transform: translateY(-24px) rotate(-2deg); opacity: 0; }
+  to   { transform: translateY(0) rotate(0);          opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sign, .cap { animation: none; }
+}

@@ -1,0 +1,171 @@
+/* ─────────────────────────────────────────────────────────────── */
+/*  MANDO DE RADIOCONTROL DEL HERO  (RemoteControl.tsx)            */
+/*                                                                 */
+/*  Caja 3D real con CSS (preserve-3d + 6 caras), no una imagen.   */
+/*  CSS Module y no Tailwind: la geometría de las caras son        */
+/*  transforms encadenados, en clases arbitrarias es ilegible.     */
+/*  Colores planos + contorno de tinta para casar con el cómic de  */
+/*  la escena (mismos hex que PaintedCranePieces).                 */
+/* ─────────────────────────────────────────────────────────────── */
+.stage {
+  --rc-ink:       #1a1410;
+  --rc-body:      #47453d;
+  --rc-body-dark: #24231f;
+  --rc-steel:     #5a584e;
+  --rc-cap:       #7f8a34;
+  --rc-w:         312px;  /* formato horizontal tipo panel arcade: bajo, */
+  --rc-h:         104px;  /* cabe en el muelle sin tapar los contenedores */
+  --rc-d:         18px;   /* media profundidad de la caja */
+  perspective: 900px;
+  perspective-origin: 50% 20%;
+}
+
+.body {
+  position: relative;
+  width: var(--rc-w);
+  height: var(--rc-h);
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rc-rx, 26deg)) rotateY(calc(-3deg + var(--rc-ry, 0deg)));
+  transition: transform var(--duration) var(--ease);
+}
+
+.face {
+  position: absolute;
+  background: var(--rc-body);
+  border: 2.5px solid var(--rc-ink);
+}
+
+/* Panel frontal: el único interactivo. */
+.front {
+  inset: 0;
+  border-radius: 18px;
+  transform: translateZ(var(--rc-d));
+}
+.back {
+  inset: 0;
+  border-radius: 18px;
+  background: var(--rc-body-dark);
+  transform: translateZ(calc(var(--rc-d) * -1)) rotateY(180deg);
+}
+
+/* Cantos: dan el grosor. `translateZ` ANTES de rotar (espacio del mundo),
+   así la cara queda centrada en z y no colgando hacia el espectador. */
+/* Cantos verticales: el derecho es el lado iluminado (la luz del atardecer
+   entra por la derecha en la escena), el izquierdo queda en sombra. */
+.side {
+  top: 0;
+  width: calc(var(--rc-d) * 2);
+  height: var(--rc-h);
+  background: var(--rc-body-dark);
+}
+.right { background: #6f6c60; }
+.left  { left: 0;  transform-origin: left center;  transform: translateZ(calc(var(--rc-d) * -1)) rotateY(-90deg); }
+.right { right: 0; transform-origin: right center; transform: translateZ(calc(var(--rc-d) * -1)) rotateY(90deg); }
+
+.capFace {
+  left: 0;
+  width: var(--rc-w);
+  height: calc(var(--rc-d) * 2);
+  background: var(--rc-steel);
+}
+.top    { top: 0;    transform-origin: center top;    transform: translateZ(calc(var(--rc-d) * -1)) rotateX(90deg); }
+.bottom { bottom: 0; transform-origin: center bottom; transform: translateZ(calc(var(--rc-d) * -1)) rotateX(-90deg); }
+
+/* Antena: sale del canto superior del panel, con su bola. */
+.antenna {
+  position: absolute;
+  left: 22px;
+  bottom: calc(100% - 4px);
+  width: 10px;
+  height: 58px;
+  border: 2px solid var(--rc-ink);
+  border-radius: 4px 4px 0 0;
+  background: var(--rc-steel);
+  transform-origin: bottom center;
+  transform: rotateZ(-8deg);
+}
+.antenna::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -13px;
+  width: 15px;
+  height: 15px;
+  margin-left: -9px;
+  border: 2px solid var(--rc-ink);
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Botones: el <button> es SOLO el área de contacto y NO se mueve nunca; el
+   relieve y el hundido los hace la tapa interior (`.key`).
+   POR QUÉ: mover el propio botón al pulsarlo lo saca de debajo del cursor
+   dentro del padre en perspectiva → el navegador dispara `pointerleave` y la
+   pulsación se cancela sola (se mantenía pulsado 1 frame). */
+.btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border: 2.5px solid var(--rc-ink);
+  border-radius: inherit;
+  background: var(--rc-cap);
+  color: var(--rc-ink);
+  /* Reborde de tinta plano (no es una sombra difusa): es el canto del botón. */
+  box-shadow: 0 5px 0 var(--rc-ink);
+  transition: transform 90ms var(--ease-snap), box-shadow 90ms var(--ease-snap);
+}
+.btn[data-pressed="true"] .key {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--rc-ink);
+}
+
+.arrow { width: 50px; height: 50px; border-radius: 12px; }
+.hook  { width: 70px; height: 70px; border-radius: 50%; }
+.hook .key { background: var(--accent); }
+
+/* Rejilla del altavoz: líneas de tinta, sin imágenes. */
+.grille {
+  height: 14px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--rc-ink) 0 2px,
+    transparent 2px 5px
+  );
+  opacity: 0.55;
+}
+
+/* LED de encendido. */
+.led {
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--rc-ink);
+  border-radius: 50%;
+  background: var(--accent);
+  animation: blink 2.4s steps(1, end) infinite;
+}
+@keyframes blink {
+  0%, 74%  { background: var(--accent); }
+  75%, 100% { background: #4d6a2a; }
+}
+
+/* Pantallas estrechas: el mando no debe comerse el muelle. */
+@media (max-width: 1100px) {
+  .stage { zoom: 0.85; }
+}

@@ -7,6 +7,7 @@ import { gsap, ScrollTrigger } from "@/lib/gsap-config";
 import { projects, type Project } from "@/data/projects";
 import { AccentWord } from "@/components/ui/AccentWord";
 import { useLocale, useT } from "@/lib/i18n";
+import hud from "./projects-hud.module.css";
 
 const SCRAMBLE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const SCRAMBLE_DURATION = 0.6;
@@ -91,7 +92,8 @@ function ProjectRow({ project, index, locale, onHover }: ProjectRowProps) {
 			{...linkProps}
 			data-row
 			className={[
-				"group relative flex items-baseline gap-4 border-b border-[var(--hairline)] py-4 transition-colors duration-300 md:py-[1.15rem]",
+				hud.row,
+				"group relative flex items-center gap-4 py-4 transition-colors duration-300 md:py-[1.15rem]",
 				isPlaceholder ? "cursor-default" : "cursor-pointer",
 			].join(" ")}
 			onMouseEnter={() => {
@@ -104,7 +106,7 @@ function ProjectRow({ project, index, locale, onHover }: ProjectRowProps) {
 			}}
 			aria-label={`${project.title} — ${category}`}
 		>
-			<span className="w-6 shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] tabular-nums text-foreground/30">
+			<span className={`${hud.stencil} shrink-0 tabular-nums`}>
 				{String(index + 1).padStart(2, "0")}
 			</span>
 
@@ -120,7 +122,7 @@ function ProjectRow({ project, index, locale, onHover }: ProjectRowProps) {
 
 			<span
 				aria-hidden
-				className="pointer-events-none absolute bottom-0 left-0 h-px w-0 bg-accent transition-[width] duration-500 ease-out group-hover:w-full"
+				className="pointer-events-none absolute -bottom-0.5 left-0 h-0.5 w-0 bg-accent transition-[width] duration-500 ease-out group-hover:w-full"
 			/>
 		</Tag>
 	);
@@ -214,21 +216,18 @@ export function ProjectsIndex() {
 				ref={sectionRef}
 				id="projects-index"
 				aria-label={locale === "es" ? "Índice completo de proyectos" : "Full project index"}
-				className="relative z-[2] section-padding"
+				className={`${hud.hud} relative z-[2] section-padding`}
 			>
 				<div className="container-editorial">
 					<div className="flex flex-col items-start gap-6 pb-12 md:flex-row md:items-end md:justify-between md:pb-16">
 						<div className="flex flex-col gap-4">
 							<div className="flex items-center gap-3">
-								<span className="h-px w-10 bg-[var(--hairline-strong)]" />
-								<span className="micro-label text-foreground/60">{indexLabel}</span>
+								<span className={hud.plate}>{indexLabel}</span>
 							</div>
 							<h2 className="display-l max-w-2xl text-foreground">{allWorkLabel}</h2>
 						</div>
 
-						<span className="font-mono text-[11px] uppercase tracking-[0.2em] text-foreground/40">
-							{countLabel}
-						</span>
+						<span className={hud.tag}>{countLabel}</span>
 					</div>
 
 					<div className="flex flex-wrap gap-2 pb-8 md:pb-12">
@@ -239,12 +238,7 @@ export function ProjectsIndex() {
 									key={cat.key}
 									type="button"
 									onClick={() => setFilter(cat.key)}
-									className={[
-										"rounded-full border px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] transition-colors duration-300",
-										active
-											? "border-accent bg-accent text-background"
-											: "border-[var(--hairline-strong)] text-foreground/60 hover:border-foreground/40 hover:text-foreground",
-									].join(" ")}
+									className={hud.chip}
 									aria-pressed={active}
 								>
 									{cat.label}
@@ -253,7 +247,7 @@ export function ProjectsIndex() {
 						})}
 					</div>
 
-					<div className="grid grid-cols-1 gap-x-14 border-t border-[var(--hairline)] md:grid-cols-2">
+					<div className="grid grid-cols-1 gap-x-14 border-t-2 border-[rgba(241,234,214,0.1)] md:grid-cols-2">
 						{visibleProjects.map((project, i) => (
 							<ProjectRow
 								key={project.id}
@@ -270,11 +264,11 @@ export function ProjectsIndex() {
 						className="mt-20 flex flex-col items-center gap-7 text-center md:mt-28"
 					>
 						<div className="flex items-center gap-3">
-							<span className="h-px w-10 bg-[var(--hairline-strong)]" />
-							<span className="micro-label text-foreground/45">
+							<span className="h-0.5 w-10 bg-[var(--hairline-strong)]" />
+							<span className={hud.plate}>
 								{locale === "es" ? "Fin del índice" : "End of index"}
 							</span>
-							<span className="h-px w-10 bg-[var(--hairline-strong)]" />
+							<span className="h-0.5 w-10 bg-[var(--hairline-strong)]" />
 						</div>
 
 						<h3 className="display-l max-w-3xl text-foreground/90">
@@ -304,32 +298,37 @@ export function ProjectsIndex() {
 				</div>
 			</section>
 
+			{/* Viñeta de cómic que sigue al cursor: papel, marco de tinta, sombra dura y pie con el nombre */}
 			<div
 				ref={cursorRef}
 				aria-hidden
-				className="pointer-events-none fixed left-0 top-0 z-[60] hidden md:block"
+				className={`${hud.hud} pointer-events-none fixed left-0 top-0 z-[60] hidden md:block`}
 				style={{
 					opacity: 0,
 					transform: "translate3d(0,0,0)",
 					marginLeft: "32px",
-					marginTop: "-120px",
+					marginTop: "-140px",
 				}}
 			>
-				<div
-					ref={cursorImgRef}
-					className="relative w-[400px] overflow-hidden rounded-[var(--radius-md)] border border-[var(--hairline-strong)] bg-card"
-					style={{ aspectRatio: "1600 / 947" }}
-				>
-					{hovered ? (
-						<Image
-							src={hovered.image}
-							alt=""
-							fill
-							sizes="400px"
-							className="object-contain"
-							priority={false}
-						/>
-					) : null}
+				<div className={`${hud.panel} w-[420px]`}>
+					<div ref={cursorImgRef} className={hud.panelInner} style={{ aspectRatio: "1600 / 947" }}>
+						{hovered ? (
+							<Image
+								src={hovered.image}
+								alt=""
+								fill
+								sizes="420px"
+								className="object-cover"
+								priority={false}
+							/>
+						) : null}
+					</div>
+					<div className={hud.panelCaption}>
+						<span className="truncate">{hovered?.title ?? ""}</span>
+						<span className="shrink-0 font-mono text-[10px] font-bold tracking-[0.12em] opacity-60">
+							{hovered?.year ?? ""}
+						</span>
+					</div>
 				</div>
 			</div>
 		</>

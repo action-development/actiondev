@@ -1,0 +1,228 @@
+/* ─────────────────────────────────────────────────────────────── */
+/*  HUD DE /projects  (Projects.tsx + ProjectsIndex.tsx)           */
+/*                                                                 */
+/*  Mismo lenguaje que el header "HUD del puerto", el mando RC y   */
+/*  el cartel del tutorial: colores planos, contorno de tinta y    */
+/*  canto duro (box-shadow sin difuminar). Cada pieza de UI es una */
+/*  chapa, una placa o una tecla: la página es el muelle de        */
+/*  descarga del contenedor TRABAJO, no un dashboard.              */
+/* ─────────────────────────────────────────────────────────────── */
+.hud {
+  --hud-ink:   #1a1410;
+  --hud-body:  #47453d;
+  --hud-dark:  #24231f;
+  --hud-steel: #6f6c60;
+  --hud-cap:   #7f8a34;
+  --hud-text:  #f1ead6;
+  --hud-muted: #d8d1bd;
+  --hud-paper: #f1ead6;
+}
+
+/* ── Chapa atornillada: etiquetas de sección y estados ─────────── */
+.plate {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 16px;
+  border: 2.5px solid var(--hud-ink);
+  border-radius: 10px;
+  background: var(--hud-body);
+  color: var(--hud-text);
+  box-shadow: 0 4px 0 var(--hud-ink);
+  font-family: var(--font-display), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.plate::before,
+.plate::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  width: 6px;
+  height: 6px;
+  border: 2px solid var(--hud-ink);
+  border-radius: 50%;
+  background: var(--hud-steel);
+}
+.plate::before { left: 4px; }
+.plate::after  { right: 4px; }
+
+/* LED de estado dentro de una chapa (carga, progreso). */
+.led {
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--hud-ink);
+  border-radius: 50%;
+  background: var(--accent);
+}
+.ledBlink { animation: led-blink 0.9s steps(2, start) infinite; }
+@keyframes led-blink { to { background: var(--hud-dark); } }
+
+/* ── Placa de contenedor: color de carga + tinta ───────────────── */
+.tag {
+  --crate: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 14px;
+  border: 2.5px solid var(--hud-ink);
+  border-radius: 6px;
+  background: var(--crate);
+  color: var(--hud-ink);
+  box-shadow: 0 4px 0 var(--hud-ink);
+  font-family: var(--font-display), sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Flechas de tinta a los lados del nombre del proyecto. */
+.arrow {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--hud-muted);
+  letter-spacing: -0.1em;
+}
+
+/* ── Manómetro del carrusel: columna con aguja de lima ─────────── */
+.gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px;
+  border: 2.5px solid var(--hud-ink);
+  border-radius: 10px;
+  background: var(--hud-body);
+  box-shadow: 0 4px 0 var(--hud-ink);
+}
+.gaugeTrack {
+  position: relative;
+  width: 10px;
+  height: 128px;
+  overflow: hidden;
+  border: 2px solid var(--hud-ink);
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 14px, rgba(26, 20, 16, 0.45) 14px 16px),
+    var(--hud-dark);
+}
+.gaugeFill {
+  position: absolute;
+  inset: 0;
+  transform-origin: top;
+  background: var(--accent);
+}
+.gaugeLabel {
+  min-width: 34px;
+  padding: 3px 0;
+  border: 2px solid var(--hud-ink);
+  border-radius: 4px;
+  background: var(--hud-dark);
+  color: var(--accent);
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+/* ── Teclas de filtro del índice: como las del mando ───────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 16px;
+  border: 2.5px solid var(--hud-ink);
+  border-radius: 8px;
+  background: var(--hud-cap);
+  color: var(--hud-ink);
+  box-shadow: 0 4px 0 var(--hud-ink);
+  transform: translateY(-2px);
+  cursor: pointer;
+  font-family: var(--font-display), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: transform 90ms var(--ease-snap), box-shadow 90ms var(--ease-snap), background 90ms var(--ease-snap);
+}
+.chip:hover { background: #9ba64a; }
+.chip[aria-pressed="true"] {
+  background: var(--accent);
+  box-shadow: 0 0 0 var(--hud-ink);
+  transform: translateY(2px);
+}
+.chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* ── Número de fila estarcido, como el código BIC del contenedor ─ */
+.stencil {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 22px;
+  border: 2px solid var(--hud-ink);
+  border-radius: 4px;
+  background: var(--hud-dark);
+  color: var(--hud-muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  transition: background 90ms var(--ease-snap), color 90ms var(--ease-snap);
+}
+
+/* ── Viñeta flotante del cursor: panel de cómic ────────────────── */
+.panel {
+  padding: 10px;
+  border: 3px solid var(--hud-ink);
+  border-radius: 6px;
+  background: var(--hud-paper);
+  box-shadow: 10px 10px 0 var(--hud-ink);
+}
+.panelInner {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid var(--hud-ink);
+  border-radius: 2px;
+  background: var(--hud-dark);
+}
+.panelCaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 2px 0;
+  color: var(--hud-ink);
+  font-family: var(--font-display), sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Fila del índice: barra de tinta + carga de lima al pasar ──── */
+.row {
+  border-bottom: 2px solid rgba(241, 234, 214, 0.1);
+}
+.row:hover .stencil,
+.row:focus-visible .stencil {
+  background: var(--accent);
+  color: var(--hud-ink);
+}

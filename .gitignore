@@ -47,3 +47,6 @@ apps/desktop/e2e/snapshots/
 .fallow/
 *.mp4
 public/projets_videos/
+.vercel
+apps/desktop/_*
+apps/desktop/scripts/_*.tmp.ts

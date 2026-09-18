@@ -3,6 +3,7 @@ import { geistSans, geistMono, syne } from "@/lib/fonts";
 import { BRAND, SITE_URL, SOCIAL, OG_IMAGE } from "@/lib/seo";
 import { StructuredData } from "@/components/seo/StructuredData";
 import { LocaleProvider } from "@/lib/i18n";
+import { PageTransition } from "@/components/animations/PageTransition";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -96,7 +97,7 @@ export default function RootLayout({
           <StructuredData kind="organization" />
           <StructuredData kind="website" />
           <StructuredData kind="services" />
-          {children}
+          <PageTransition>{children}</PageTransition>
         </LocaleProvider>
       </body>
     </html>

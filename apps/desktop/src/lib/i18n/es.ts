@@ -23,6 +23,9 @@ export const es: Translations = {
     loading: "Cargando proyectos…",
     sectionLabel: "Proyectos",
     columnLabel: "PROYECTOS",
+    dock: "Muelle de descarga",
+    hint: "Scroll para descargar",
+    cargoTag: "Carga",
   },
   testimonials: {
     trusted: "La confianza de",
@@ -82,19 +85,41 @@ export const es: Translations = {
     ariaLabel: "Progreso de sección",
   },
   tutorial: {
-    move: "para mover",
-    jump: "para saltar",
-    pickup: "para coger",
-    throw: "para apuntar y lanzar",
+    move: "mueve la grúa",
+    pickup: "engancha un contenedor",
+    throw: "suéltalo en el barco",
   },
   loading: {
     ariaLabel: "Porcentaje de carga",
   },
   game: {
-    scoreHint: "Encesta o scrollea para navegar",
+    scoreHint: "Carga el barco para navegar",
+    remote: {
+      model: "ACTION RC-1",
+      lower: "BAJAR",
+      left: "Mover la grúa a la izquierda",
+      right: "Mover la grúa a la derecha",
+      hook: "Bajar el gancho o soltar el contenedor",
+    },
+    tally: {
+      label: "Gaviotas abatidas",
+      one: "gaviota",
+      many: "gaviotas",
+    },
   },
   notFound: {
     subtitle: "La página que buscas no existe — o nunca existió.",
     cta: "Volver al inicio",
+  },
+  plaza: {
+    title: "La plaza de las reseñas",
+    subtitle: "Cada cliente, un personaje. Cada reseña, una historia real.",
+    hint: "Haz click en un personaje para leer su reseña",
+    countLabel: "{count} reseñas",
+    back: "Volver al inicio",
+    backAriaLabel: "Volver a la home de Action",
+    loading: "Preparando la plaza…",
+    closeAriaLabel: "Cerrar reseña",
+    dialogAriaLabel: "Reseña de {name}",
   },
 };

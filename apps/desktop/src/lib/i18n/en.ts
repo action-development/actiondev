@@ -23,6 +23,9 @@ export const en: Translations = {
     loading: "Loading projects…",
     sectionLabel: "Projects",
     columnLabel: "PROJECTS",
+    dock: "Unloading dock",
+    hint: "Scroll to unload",
+    cargoTag: "Cargo",
   },
   testimonials: {
     trusted: "Trusted by",
@@ -82,19 +85,41 @@ export const en: Translations = {
     ariaLabel: "Section progress",
   },
   tutorial: {
-    move: "to move",
-    jump: "to jump",
-    pickup: "to pick up",
-    throw: "to aim & throw",
+    move: "move the crane",
+    pickup: "hook a container",
+    throw: "drop it on the ship",
   },
   loading: {
     ariaLabel: "Loading percentage",
   },
   game: {
-    scoreHint: "Score or scroll to navigate",
+    scoreHint: "Load the ship to navigate",
+    remote: {
+      model: "ACTION RC-1",
+      lower: "DROP",
+      left: "Move the crane left",
+      right: "Move the crane right",
+      hook: "Lower the hook or release the container",
+    },
+    tally: {
+      label: "Gulls downed",
+      one: "gull",
+      many: "gulls",
+    },
   },
   notFound: {
     subtitle: "The page you're looking for doesn't exist — or never did.",
     cta: "Back to home",
+  },
+  plaza: {
+    title: "The reviews plaza",
+    subtitle: "Every client, a character. Every review, a real story.",
+    hint: "Click on a character to read their review",
+    countLabel: "{count} reviews",
+    back: "Back to home",
+    backAriaLabel: "Back to the Action homepage",
+    loading: "Setting up the plaza…",
+    closeAriaLabel: "Close review",
+    dialogAriaLabel: "Review by {name}",
   },
 };

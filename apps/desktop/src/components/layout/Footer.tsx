@@ -29,10 +29,10 @@ export function Footer() {
     .replace("{taxId}", LEGAL_ENTITY.taxId);
 
   const NAV_LINKS = [
-    { label: t.scroll.hero, href: "/#home" },
-    { label: t.scroll.work, href: "/#projects" },
-    { label: t.scroll.reviews, href: "/#reviews" },
-    { label: t.scroll.contact, href: "/#contact" },
+    { label: t.scroll.hero, href: "/" },
+    { label: t.scroll.work, href: "/projects" },
+    { label: t.scroll.reviews, href: "/resenas" },
+    { label: t.scroll.contact, href: "/contact" },
   ];
 
   useGSAP(

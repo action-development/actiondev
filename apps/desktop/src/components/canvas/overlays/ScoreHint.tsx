@@ -6,7 +6,7 @@ export function ScoreHint() {
   const t = useT();
 
   return (
-    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 pointer-events-none flex flex-col items-center gap-2">
+    <div className="absolute bottom-10 right-8 z-10 pointer-events-none flex flex-col items-end gap-2">
       <p className="micro-label text-foreground/55 tracking-[0.2em]">{t.game.scoreHint}</p>
       {/* Animated chevron — bounces to draw attention */}
       <svg

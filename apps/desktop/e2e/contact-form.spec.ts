@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 import { waitForPage } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-	await page.goto("/");
+	await page.goto("/contact");
 	await waitForPage(page);
 	await page.evaluate(() => {
 		document.getElementById("contact-name")?.scrollIntoView({ behavior: "instant", block: "center" });

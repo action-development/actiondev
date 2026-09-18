@@ -23,6 +23,9 @@ export interface Translations {
     loading: string;
     sectionLabel: string;
     columnLabel: string;
+    dock: string;
+    hint: string;
+    cargoTag: string;
   };
   testimonials: {
     trusted: string;
@@ -87,7 +90,6 @@ export interface Translations {
   };
   tutorial: {
     move: string;
-    jump: string;
     pickup: string;
     throw: string;
   };
@@ -96,9 +98,36 @@ export interface Translations {
   };
   game: {
     scoreHint: string;
+    remote: {
+      model: string;
+      lower: string;
+      left: string;
+      right: string;
+      hook: string;
+    };
+    /** Easter egg: contador de gaviotas abatidas (arriba a la derecha). */
+    tally: {
+      label: string;
+      one: string;
+      many: string;
+    };
   };
   notFound: {
     subtitle: string;
     cta: string;
+  };
+  /** Sala 3D de reseñas — /resenas ("plaza de personajes"). */
+  plaza: {
+    title: string;
+    subtitle: string;
+    hint: string;
+    /** Plantilla con placeholder `{count}` — se interpola en PlazaHud.tsx. */
+    countLabel: string;
+    back: string;
+    backAriaLabel: string;
+    loading: string;
+    closeAriaLabel: string;
+    /** Plantilla con placeholder `{name}` — se interpola en ReviewCard.tsx. */
+    dialogAriaLabel: string;
   };
 }

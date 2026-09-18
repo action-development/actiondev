@@ -1,0 +1,300 @@
+/* ─────────────────────────────────────────────────────────────── */
+/*  HEADER "HOLOGRAMA"  (Header.tsx)                               */
+/*                                                                 */
+/*  Mismo lenguaje que la flecha holográfica sobre la bodega del   */
+/*  barco (`port/Ship.tsx`, HOLO_FRAG): lima aditivo translúcido,  */
+/*  borde fresnel más claro (#eaffb0), líneas de barrido que       */
+/*  suben, parpadeo de proyector con tartamudeo y doble imagen     */
+/*  desfasada. Un único panel proyectado a todo el ancho.          */
+/* ─────────────────────────────────────────────────────────────── */
+.panel {
+  --holo:      var(--accent);
+  --holo-edge: #eaffb0;
+  --holo-dim:  rgba(200, 255, 0, 0.10);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  height: 64px;
+  padding: 0 22px;
+  color: var(--holo);
+  border: 1px solid rgba(234, 255, 176, 0.38);
+  background:
+    /* Barrido: franjas que suben, como en el shader (fract(vY*5 - t)). */
+    repeating-linear-gradient(to top, rgba(200, 255, 0, 0.045) 0 3px, transparent 3px 8px),
+    /* Interior translúcido: más denso cerca de los bordes (fresnel). */
+    linear-gradient(to bottom, rgba(200, 255, 0, 0.07), rgba(200, 255, 0, 0.025) 30%, rgba(200, 255, 0, 0.025) 70%, rgba(200, 255, 0, 0.07)),
+    rgba(8, 8, 8, 0.34);
+  background-size: 100% 8px, 100% 100%, 100% 100%;
+  box-shadow:
+    inset 0 0 0 1px rgba(200, 255, 0, 0.08),
+    inset 0 0 14px rgba(200, 255, 0, 0.05),
+    0 0 10px rgba(200, 255, 0, 0.10);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation:
+    holo-scan 2.2s linear infinite,
+    holo-flicker 7s steps(1, end) infinite;
+}
+/* Doble imagen: el mismo contorno desplazado, la "interferencia" del proyector. */
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translate(2px, -1px);
+  border: 1px solid rgba(200, 255, 0, 0.14);
+  pointer-events: none;
+}
+/* Haz del proyector: el borde inferior se difumina hacia abajo. */
+.panel::after {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 100%;
+  height: 18px;
+  background: linear-gradient(to bottom, rgba(200, 255, 0, 0.10), transparent);
+  pointer-events: none;
+}
+@keyframes holo-scan {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to   { background-position: 0 -8px, 0 0, 0 0; }
+}
+/* Parpadeo leve con dos tartamudeos por ciclo. */
+@keyframes holo-flicker {
+  0%, 100% { opacity: 1; }
+  41%      { opacity: 0.94; }
+  42%      { opacity: 1; }
+  77%      { opacity: 0.96; }
+  78%      { opacity: 1; }
+}
+
+/* Corchetes de las esquinas, en el color del borde fresnel. */
+.corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--holo-edge);
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px rgba(200, 255, 0, 0.35));
+}
+.tl { top: -2px; left: -2px;  border-right: 0; border-bottom: 0; }
+.tr { top: -2px; right: -2px; border-left: 0;  border-bottom: 0; }
+.bl { bottom: -2px; left: -2px;  border-right: 0; border-top: 0; }
+.br { bottom: -2px; right: -2px; border-left: 0;  border-top: 0; }
+
+/* Texto proyectado: brillo + doble imagen desfasada. */
+.glow {
+  text-shadow:
+    0 0 6px rgba(200, 255, 0, 0.25),
+    1px 1px 0 rgba(200, 255, 0, 0.14);
+}
+
+.divider {
+  width: 1px;
+  height: 34px;
+  background: linear-gradient(to bottom, transparent, rgba(234, 255, 176, 0.4), transparent);
+}
+
+/* ── Marca + telemetría ───────────────────────────────────────── */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  height: 100%;
+}
+.brand:focus-visible { outline: 2px solid var(--holo-edge); outline-offset: 4px; }
+.logo {
+  height: 26px;
+  width: auto;
+  /* Logo proyectado en lima: invertido y teñido con el color del holograma. */
+  filter: invert(1) sepia(0.6) saturate(3) hue-rotate(35deg) brightness(1.05);
+  opacity: 0.9;
+}
+.telemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: rgba(234, 255, 176, 0.8);
+  white-space: nowrap;
+}
+.telemetry b {
+  font-weight: 700;
+  color: var(--holo);
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--holo-edge);
+  box-shadow: 0 0 5px rgba(200, 255, 0, 0.5);
+  animation: holo-pulse 2s ease-in-out infinite;
+}
+@keyframes holo-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+.cursor {
+  display: inline-block;
+  width: 5px;
+  height: 9px;
+  margin-left: 3px;
+  background: var(--holo);
+  box-shadow: none;
+  vertical-align: -1px;
+  animation: holo-blink 1s steps(1, end) infinite;
+}
+@keyframes holo-blink {
+  50% { opacity: 0; }
+}
+
+/* ── Navegación: índice + etiqueta, retícula proyectada ───────── */
+.nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  height: 100%;
+}
+.link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 18px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(234, 255, 176, 0.78);
+  transition: color var(--duration) var(--ease), background var(--duration) var(--ease), text-shadow var(--duration) var(--ease);
+}
+.index {
+  font-size: 9px;
+  color: rgba(200, 255, 0, 0.7);
+}
+/* Retícula: dos corchetes que se cierran sobre la etiqueta. */
+.link::before,
+.link::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  width: 7px;
+  border: 1.5px solid var(--holo-edge);
+  filter: drop-shadow(0 0 3px rgba(200, 255, 0, 0.4));
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease), transform var(--duration) var(--ease);
+}
+.link::before { left: 0;  border-right: 0; transform: translateX(-8px); }
+.link::after  { right: 0; border-left: 0;  transform: translateX(8px); }
+.link:hover,
+.link:focus-visible,
+.link[aria-current="page"] {
+  color: var(--holo-edge);
+  text-shadow: 0 0 6px rgba(200, 255, 0, 0.35), 1px 1px 0 rgba(200, 255, 0, 0.15);
+}
+.link:hover::before, .link:hover::after,
+.link:focus-visible::before, .link:focus-visible::after,
+.link[aria-current="page"]::before, .link[aria-current="page"]::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+.link[aria-current="page"] {
+  background: var(--holo-dim);
+}
+.link:focus-visible { outline: none; }
+
+/* ── Idioma: segmentado proyectado ────────────────────────────── */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid rgba(234, 255, 176, 0.45);
+  background: none;
+  cursor: pointer;
+}
+.switch:focus-visible { outline: 2px solid var(--holo-edge); outline-offset: 3px; }
+.seg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: rgba(234, 255, 176, 0.6);
+  transition: color var(--duration) var(--ease), background var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+}
+.seg[data-on="true"] {
+  background: var(--holo);
+  color: var(--background);
+  box-shadow: 0 0 6px rgba(200, 255, 0, 0.3);
+}
+
+/* ── CTA: prompt proyectado, se solidifica al apuntar ─────────── */
+.cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--holo-edge);
+  background: var(--holo-dim);
+  box-shadow: 0 0 8px rgba(200, 255, 0, 0.18), inset 0 0 8px rgba(200, 255, 0, 0.08);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--holo-edge);
+  overflow: hidden;
+  transition: color var(--duration) var(--ease), box-shadow var(--duration) var(--ease), text-shadow var(--duration) var(--ease);
+}
+.cta > span { position: relative; z-index: 1; }
+/* Relleno que barre de izquierda a derecha: el holograma se vuelve sólido. */
+.fill {
+  position: absolute;
+  inset: 0;
+  background: var(--holo);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--duration-slow) var(--ease);
+  z-index: 0;
+}
+.cta:hover,
+.cta:focus-visible {
+  color: var(--background);
+  text-shadow: none;
+  box-shadow: 0 0 14px rgba(200, 255, 0, 0.35);
+}
+.cta:hover .fill,
+.cta:focus-visible .fill { transform: scaleX(1); }
+.cta:hover .cursor,
+.cta:focus-visible .cursor { background: var(--background); box-shadow: none; }
+.cta:focus-visible { outline: 2px solid var(--foreground); outline-offset: 3px; }
+.arrow { transition: transform var(--duration) var(--ease); }
+.cta:hover .arrow { transform: translate(2px, -2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .panel, .led, .cursor { animation: none; }
+  .link::before, .link::after, .fill, .arrow, .seg, .link, .cta { transition: none; }
+}

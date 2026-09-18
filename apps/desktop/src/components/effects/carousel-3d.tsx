@@ -2,7 +2,6 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { ScrollInvalidator, onCanvasCreated } from "@/lib/r3f-utils";
 import * as THREE from "three";
 import type { Project } from "@/data/projects";
@@ -35,9 +34,32 @@ const HYSTERESIS = 8;
 const REVEAL_THRESHOLD = FACING_THRESHOLD - HYSTERESIS;
 const HIDE_THRESHOLD = FACING_THRESHOLD + HYSTERESIS;
 
-const CARD_PAD = 8;
+// Viñeta de cómic: margen de papel alrededor de la imagen, marco de tinta y
+// sombra dura desplazada (misma gramática que las chapas del HUD del header).
+const CARD_PAD = 14;
 const IMG_W = CARD_W - CARD_PAD * 2;
 const IMG_H = CARD_H - CARD_PAD * 2;
+const FRAME = 10;
+const SHADOW_OFFSET = 16;
+const INK = "#1a1410";
+const PAPER = "#f1ead6";
+const TAG = "#c8ff00";
+
+/** Familia real de Poppins que inyecta next/font (nombre hasheado) — leída de la variable CSS. */
+function displayFontFamily(): string {
+	const v = getComputedStyle(document.documentElement).getPropertyValue("--font-geist-sans").trim();
+	return v ? `${v}, system-ui, sans-serif` : "system-ui, sans-serif";
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+	ctx.beginPath();
+	ctx.moveTo(x + r, y);
+	ctx.arcTo(x + w, y, x + w, y + h, r);
+	ctx.arcTo(x + w, y + h, x, y + h, r);
+	ctx.arcTo(x, y + h, x, y, r);
+	ctx.arcTo(x, y, x + w, y, r);
+	ctx.closePath();
+}
 
 const HARD_CULL_DEG = 170;
 const FADE_START_DEG = 90;
@@ -56,18 +78,39 @@ function createOverlayTexture(category: string, title: string): THREE.CanvasText
 	const ctx = canvas.getContext("2d")!;
 
 	ctx.clearRect(0, 0, w, h);
+	const family = displayFontFamily();
+	const pad = 16 * dpr;
 
-	// Category — small, accent muted
-	ctx.font = `${9 * dpr}px system-ui, sans-serif`;
-	ctx.fillStyle = "#b06a3a";
+	// Placa de contenedor con la categoría: lima, borde de tinta, canto duro
+	ctx.font = `800 ${10 * dpr}px ${family}`;
 	ctx.letterSpacing = `${1.4 * dpr}px`;
-	ctx.fillText(category.toUpperCase(), 18 * dpr, h - 32 * dpr);
+	const cat = category.toUpperCase();
+	const tagW = ctx.measureText(cat).width + 20 * dpr;
+	const tagH = 24 * dpr;
+	const tagY = h - pad - tagH;
+	ctx.fillStyle = INK;
+	roundRect(ctx, pad, tagY + 3 * dpr, tagW, tagH, 4 * dpr);
+	ctx.fill();
+	ctx.fillStyle = TAG;
+	roundRect(ctx, pad, tagY, tagW, tagH, 4 * dpr);
+	ctx.fill();
+	ctx.lineWidth = 2 * dpr;
+	ctx.strokeStyle = INK;
+	ctx.stroke();
+	ctx.fillStyle = INK;
+	ctx.textBaseline = "middle";
+	ctx.fillText(cat, pad + 10 * dpr, tagY + tagH / 2 + dpr);
 
-	// Title — larger, white
-	ctx.font = `500 ${18 * dpr}px system-ui, sans-serif`;
-	ctx.fillStyle = "#f0f0f0";
-	ctx.letterSpacing = "0px";
-	ctx.fillText(title, 18 * dpr, h - 10 * dpr);
+	// Título: rotulado de cómic — relleno papel con contorno de tinta
+	ctx.textBaseline = "alphabetic";
+	ctx.font = `800 ${22 * dpr}px ${family}`;
+	ctx.letterSpacing = `${-0.4 * dpr}px`;
+	ctx.lineJoin = "round";
+	ctx.lineWidth = 5 * dpr;
+	ctx.strokeStyle = INK;
+	ctx.strokeText(title, pad, tagY - 12 * dpr);
+	ctx.fillStyle = PAPER;
+	ctx.fillText(title, pad, tagY - 12 * dpr);
 
 	const texture = new THREE.CanvasTexture(canvas);
 	texture.minFilter = THREE.LinearFilter;
@@ -96,6 +139,7 @@ function Card3D({
 	sharedPlaneGeo,
 	sharedImgGeo,
 	sharedEdgesGeo,
+	sharedFrameGeo,
 	sharedHitAreaMat,
 }: {
 	project: Project;
@@ -105,6 +149,7 @@ function Card3D({
 	sharedPlaneGeo: THREE.PlaneGeometry;
 	sharedImgGeo: THREE.PlaneGeometry;
 	sharedEdgesGeo: THREE.EdgesGeometry;
+	sharedFrameGeo: THREE.PlaneGeometry;
 	sharedHitAreaMat: THREE.MeshBasicMaterial;
 }) {
 	const groupRef = useRef<THREE.Group>(null);
@@ -123,15 +168,22 @@ function Card3D({
 		[]
 	);
 	const darkMat = useMemo(
-		() => new THREE.MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0.15, side: THREE.FrontSide }),
+		() => new THREE.MeshBasicMaterial({ color: "#000000", transparent: true, opacity: 0, side: THREE.FrontSide }),
 		[]
 	);
+	// Papel de la viñeta (DoubleSide: por detrás se ve el dorso del panel).
 	const cardBaseMat = useMemo(
-		() => new THREE.MeshBasicMaterial({ color: "#0e0e11", side: THREE.DoubleSide, transparent: true, opacity: 1 }),
+		() => new THREE.MeshBasicMaterial({ color: PAPER, side: THREE.DoubleSide, transparent: true, opacity: 1 }),
 		[]
 	);
+	// Canto de tinta sobre el papel.
 	const borderMat = useMemo(
-		() => new THREE.LineBasicMaterial({ color: "#c8ff00", transparent: true, opacity: 0.07 }),
+		() => new THREE.LineBasicMaterial({ color: INK, transparent: true, opacity: 1 }),
+		[]
+	);
+	// Marco de tinta detrás del papel + sombra dura desplazada (mismo material).
+	const inkMat = useMemo(
+		() => new THREE.MeshBasicMaterial({ color: INK, side: THREE.DoubleSide, transparent: true, opacity: 1 }),
 		[]
 	);
 	const overlayMat = useMemo(() => {
@@ -140,7 +192,6 @@ function Card3D({
 	}, [categoryLabel, project.title]);
 
 	const { invalidate } = useThree();
-	const router = useRouter();
 	const textureLoaded = useRef(false);
 	const cancelledRef = useRef(false);
 
@@ -199,10 +250,11 @@ function Card3D({
 			darkMat.dispose();
 			cardBaseMat.dispose();
 			borderMat.dispose();
+			inkMat.dispose();
 			overlayMat.map?.dispose();
 			overlayMat.dispose();
 		};
-	}, [imageMat, darkMat, cardBaseMat, borderMat, overlayMat]);
+	}, [imageMat, darkMat, cardBaseMat, borderMat, inkMat, overlayMat]);
 
 	useFrame((_, delta) => {
 		if (!groupRef.current || !scrollRef.current) return;
@@ -235,7 +287,8 @@ function Card3D({
 		}
 
 		cardBaseMat.opacity = fade;
-		borderMat.opacity = 0.07 * fade;
+		borderMat.opacity = fade;
+		inkMat.opacity = fade;
 
 		let facing = cardAngle % 360;
 		if (facing > 180) facing -= 360;
@@ -272,8 +325,8 @@ function Card3D({
 				overlayRef.current.visible = hoverOpacity.current > 0.01;
 			}
 
-			darkMat.opacity = (0.15 + hoverOpacity.current * 0.35) * fade;
-			darkMat.visible = true;
+			darkMat.opacity = hoverOpacity.current * 0.45 * fade;
+			darkMat.visible = darkMat.opacity > 0.01;
 
 			if (
 				videoRef.current &&
@@ -289,7 +342,7 @@ function Card3D({
 			}
 		} else {
 			if (overlayRef.current) overlayRef.current.visible = false;
-			darkMat.opacity = 0.15;
+			darkMat.opacity = 0;
 			darkMat.visible = false;
 			hoverOpacity.current = 0;
 		}
@@ -303,6 +356,9 @@ function Card3D({
 			position={[Math.sin(angleRad) * RADIUS, -(index * Y_STEP), Math.cos(angleRad) * RADIUS]}
 			rotation={[0, angleRad, 0]}
 		>
+			{/* Sombra dura desplazada y marco de tinta: la viñeta "pegada" sobre el fondo */}
+			<mesh geometry={sharedFrameGeo} position={[SHADOW_OFFSET, -SHADOW_OFFSET, -2]} material={inkMat} />
+			<mesh geometry={sharedFrameGeo} position={[0, 0, -1]} material={inkMat} />
 			<mesh geometry={sharedPlaneGeo} material={cardBaseMat} />
 			<lineSegments geometry={sharedEdgesGeo} position={[0, 0, 0.5]} material={borderMat} />
 
@@ -317,9 +373,9 @@ function Card3D({
 					position={[0, 0, 4]}
 					material={sharedHitAreaMat}
 					onClick={() => {
-						// router.push: client-side nav preserva bundle, smooth scroll y el propio carrusel.
-						// window.location.href hacía full reload (~800ms TTI extra).
-						router.push(`/projects/${project.slug}`);
+						// No hay página de detalle: la card abre la web real del cliente en
+						// pestaña nueva. Un `url: "#"` es un proyecto sin web pública todavía.
+						if (project.url !== "#") window.open(project.url, "_blank", "noopener,noreferrer");
 					}}
 					onPointerEnter={() => {
 						hoveredRef.current = true;
@@ -367,6 +423,7 @@ function CarouselScene({
 	const sharedPlaneGeo = useMemo(() => new THREE.PlaneGeometry(CARD_W, CARD_H), []);
 	const sharedImgGeo = useMemo(() => new THREE.PlaneGeometry(IMG_W, IMG_H), []);
 	const sharedEdgesGeo = useMemo(() => new THREE.EdgesGeometry(sharedPlaneGeo), [sharedPlaneGeo]);
+	const sharedFrameGeo = useMemo(() => new THREE.PlaneGeometry(CARD_W + FRAME * 2, CARD_H + FRAME * 2), []);
 	const sharedHitAreaMat = useMemo(
 		() => new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.FrontSide }),
 		[]
@@ -377,9 +434,10 @@ function CarouselScene({
 			sharedPlaneGeo.dispose();
 			sharedImgGeo.dispose();
 			sharedEdgesGeo.dispose();
+			sharedFrameGeo.dispose();
 			sharedHitAreaMat.dispose();
 		};
-	}, [sharedPlaneGeo, sharedImgGeo, sharedEdgesGeo, sharedHitAreaMat]);
+	}, [sharedPlaneGeo, sharedImgGeo, sharedEdgesGeo, sharedFrameGeo, sharedHitAreaMat]);
 
 	useEffect(() => {
 		if (camera instanceof THREE.PerspectiveCamera) {
@@ -430,6 +488,7 @@ function CarouselScene({
 						sharedPlaneGeo={sharedPlaneGeo}
 						sharedImgGeo={sharedImgGeo}
 						sharedEdgesGeo={sharedEdgesGeo}
+						sharedFrameGeo={sharedFrameGeo}
 						sharedHitAreaMat={sharedHitAreaMat}
 					/>
 				);

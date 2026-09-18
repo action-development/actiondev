@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { useT } from "@/lib/i18n";
+import { Blinds, blindsDuration } from "@/components/ui/Blinds";
 
 interface LoadingScreenProps {
   ready: boolean;
@@ -10,7 +10,17 @@ interface LoadingScreenProps {
 }
 
 /**
- * LoadingScreen — pure React state + a single requestAnimationFrame loop.
+ * LoadingScreen — persiana de acento cerrada + contador; se abre al estar lista.
+ *
+ * Visual: SOLO las lamas de `Blinds`, sin logo ni contador (decisión del
+ * cliente). Cubren la pantalla desde el primer paint (SSR incluido, sin flash)
+ * y al llegar a 100 % se recogen de arriba abajo y aparece la escena. El
+ * progreso sigue existiendo para lectores de pantalla (`aria-live`) y para la
+ * máquina de fases, pero no se pinta.
+ * Es la MISMA persiana que `PageTransition` usa entre rutas: una sola pieza
+ * visual para "cargar" y "cambiar de pestaña".
+ *
+ * Pure React state + a single requestAnimationFrame loop.
  *
  * Why no GSAP here:
  *   GSAP fights React reconciliation when DOM properties are touched from both
@@ -26,10 +36,9 @@ interface LoadingScreenProps {
  *   "loading" — count 0 → 85 over 1 s (guaranteed minimum on-screen time).
  *   "stall"   — count 85 → 95 very slowly while waiting for ready.
  *   "sprint"  — when ready becomes true, count → 100 quickly.
- *   "fading"  — opacity 1 → 0, then onComplete fires.
+ *   "opening" — blinds retract (CSS transition), then onComplete fires.
  */
 
-const LOGO_DURATION    = 550;   // ms — logo fade-in/translate
 const PHASE_1_DURATION = 1000;  // ms — minimum on-screen time
 const STALL_DURATION   = 15000; // ms — slow drift while stalled
 /**
@@ -42,23 +51,18 @@ const STALL_DURATION   = 15000; // ms — slow drift while stalled
  */
 const STALL_TIMEOUT    = 25000; // ms — continuar aunque `ready` no llegue
 const SPRINT_DURATION  = 350;   // ms — sprint to 100 once ready
-const FADE_DURATION    = 500;   // ms — final container fade-out
 const STALL_PEAK       = 95;    // value reached at end of stall
 
 const easeInOut1 = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 const easeIn2    = (t: number) => t * t;
-const easeOut2   = (t: number) => 1 - Math.pow(1 - t, 2);
-const easeOut3   = (t: number) => 1 - Math.pow(1 - t, 3);
 
-type Phase = "loading" | "stall" | "sprint" | "fading" | "done";
+type Phase = "loading" | "stall" | "sprint" | "opening";
 
 export function LoadingScreen({ ready, onComplete }: LoadingScreenProps) {
   const t = useT();
 
   const [count, setCount]             = useState(0);
-  const [opacity, setOpacity]         = useState(1);
-  const [logoOpacity, setLogoOpacity] = useState(0);
-  const [logoY, setLogoY]             = useState(16);
+  const [opening, setOpening]         = useState(false);
 
   // Mirror props into refs so the rAF loop closure always reads the current value
   // without having to re-create the loop when ready or onComplete change.
@@ -76,14 +80,12 @@ export function LoadingScreen({ ready, onComplete }: LoadingScreenProps) {
     let phaseStartTime = 0;
     let sprintFromVal = 0;
 
+    let openTimer = 0;
+
     // Avoid setState if the displayed value didn't change → fewer re-renders.
     let lastCount = -1;
-    let lastOpacity = 1;
     const setCountIfChanged = (v: number) => {
       if (v !== lastCount) { lastCount = v; setCount(v); }
-    };
-    const setOpacityIfChanged = (v: number) => {
-      if (Math.abs(v - lastOpacity) > 0.01) { lastOpacity = v; setOpacity(v); }
     };
 
     const tick = (now: number) => {
@@ -92,12 +94,6 @@ export function LoadingScreen({ ready, onComplete }: LoadingScreenProps) {
         phaseStartTime = now;
       }
       const elapsed = now - startTime;
-
-      // Logo entrance — independent of counter phase
-      const logoT = Math.min(elapsed / LOGO_DURATION, 1);
-      const lE    = easeOut3(logoT);
-      setLogoOpacity(lE);
-      setLogoY(16 * (1 - lE));
 
       if (phase === "loading") {
         const t = Math.min(elapsed / PHASE_1_DURATION, 1);
@@ -128,73 +124,37 @@ export function LoadingScreen({ ready, onComplete }: LoadingScreenProps) {
           Math.round(sprintFromVal + (100 - sprintFromVal) * easeIn2(t))
         );
         if (t >= 1) {
-          phase          = "fading";
-          phaseStartTime = now;
-        }
-      } else if (phase === "fading") {
-        const t = Math.min((now - phaseStartTime) / FADE_DURATION, 1);
-        setOpacityIfChanged(1 - easeOut2(t));
-        if (t >= 1) {
-          phase = "done";
-          onCompleteRef.current();
+          // La persiana se abre con transición CSS (Blinds); el contador y el
+          // logo se van en el mismo barrido. Al terminar, onComplete desmonta.
+          phase = "opening";
+          setOpening(true);
+          openTimer = window.setTimeout(() => onCompleteRef.current(), blindsDuration());
           return;
         }
       }
 
-      if (phase !== "done") raf = requestAnimationFrame(tick);
+      raf = requestAnimationFrame(tick);
     };
 
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(openTimer);
+    };
   }, []);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-background"
-      style={{ opacity }}
+      data-testid="loading-screen"
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ pointerEvents: opening ? "none" : "auto" }}
     >
-      <div className="flex flex-1 flex-col items-center justify-center gap-16 px-8">
+      <Blinds closed={!opening} />
 
-        {/* Logo */}
-        <div style={{ opacity: logoOpacity, transform: `translateY(${logoY}px)` }}>
-          <Image
-            src="/logos/logo.webp"
-            alt="Action"
-            width={1563}
-            height={625}
-            priority
-            className="w-40 h-auto md:w-52"
-            style={{ filter: "brightness(0) invert(1)" }}
-          />
-        </div>
-
-        {/* Counter + bar */}
-        <div className="flex flex-col items-center gap-5 select-none">
-          <div
-            className="font-mono font-bold tabular-nums text-foreground leading-none"
-            style={{ fontSize: "clamp(72px, 10vw, 120px)" }}
-            aria-live="polite"
-            aria-label={t.loading.ariaLabel}
-          >
-            <span>{count}</span>
-            <span
-              className="text-accent"
-              style={{ fontSize: "0.4em", marginLeft: "0.06em" }}
-              aria-hidden
-            >
-              %
-            </span>
-          </div>
-
-          <div className="w-40 md:w-52 h-px bg-foreground/10 overflow-hidden">
-            <div
-              className="h-full bg-accent origin-left"
-              style={{ transform: `scaleX(${count / 100})` }}
-            />
-          </div>
-        </div>
-
-      </div>
+      {/* Progreso solo para tecnología asistiva: visualmente son solo las franjas */}
+      <span className="sr-only" aria-live="polite" aria-label={t.loading.ariaLabel}>
+        {count}%
+      </span>
     </div>
   );
 }

@@ -27,19 +27,76 @@ test.describe("Home page", () => {
     await expect(page.locator('nav[aria-label="Main navigation"]')).toBeVisible();
   });
 
-  test("scrolls to projects section", async ({ page }) => {
+  test("gull tally easter egg stays hidden until a gull is shot", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.locator("canvas").first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("gull-tally")).toHaveCount(0);
+  });
+
+  test("home is a single full-viewport screen (no sections below the game)", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.locator("#projects")).toHaveCount(0);
+    await expect(page.locator("#contact")).toHaveCount(0);
+    await expect(page.locator("footer")).toHaveCount(0);
+  });
+
+  test("hero remote control moves the crane and drops the hook", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (err) => errors.push(err.message));
+
     await page.goto("/");
     await page.waitForLoadState("domcontentloaded");
 
-    await page.evaluate(() => {
-      document.getElementById("projects")?.scrollIntoView();
-    });
+    const remote = page.getByTestId("hero-remote");
+    await expect(remote).toBeVisible({ timeout: 15_000 });
 
-    await expect(page.locator("#projects")).toBeInViewport();
+    // Mantener la flecha derecha marca el botón como pulsado (y mueve el carro).
+    const right = page.getByTestId("remote-right");
+    await right.hover();
+    await page.mouse.down();
+    await expect(right).toHaveAttribute("data-pressed", "true");
+    await page.mouse.up();
+    await expect(right).toHaveAttribute("data-pressed", "false");
+
+    // El teclado físico hunde el botón correspondiente del mando.
+    await page.keyboard.down("KeyA");
+    await expect(page.getByTestId("remote-left")).toHaveAttribute("data-pressed", "true");
+    await page.keyboard.up("KeyA");
+    await expect(page.getByTestId("remote-left")).toHaveAttribute("data-pressed", "false");
+
+    // El botón de gancho no debe romper el bucle de juego.
+    await page.getByTestId("remote-hook").click();
+    await page.waitForTimeout(500);
+    expect(errors).toHaveLength(0);
+  });
+});
+
+test.describe("Navigation", () => {
+  test("language toggle switches locale", async ({ page }) => {
+    await page.goto("/");
+    const toggle = page.locator('button[aria-label*="nglish"], button[aria-label*="spañol"]').first();
+    await expect(toggle).toBeVisible();
+  });
+
+  test("CTA link points to contact", async ({ page }) => {
+    await page.goto("/");
+    const cta = page.locator('a[href="/contact"]').first();
+    await expect(cta).toBeVisible();
+  });
+});
+
+test.describe("Projects page", () => {
+  test("renders featured projects section", async ({ page }) => {
+    await page.goto("/projects");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page).toHaveURL(/\/projects$/);
+    await expect(page.locator("#projects")).toBeVisible();
   });
 
   test("renders full project index with all entries", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/projects");
     await page.waitForLoadState("domcontentloaded");
 
     await page.evaluate(() => {
@@ -55,7 +112,7 @@ test.describe("Home page", () => {
   });
 
   test("category filter narrows the project list", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/projects");
     await page.waitForLoadState("domcontentloaded");
 
     await page.evaluate(() => {
@@ -74,14 +131,13 @@ test.describe("Home page", () => {
     expect(filteredRows).toBeLessThan(totalRows);
     expect(filteredRows).toBeGreaterThan(0);
   });
+});
 
-  test("scrolls to contact section and form is present", async ({ page }) => {
-    await page.goto("/");
+test.describe("Contact page", () => {
+  test("loads and renders form", async ({ page }) => {
+    await page.goto("/contact");
     await page.waitForLoadState("domcontentloaded");
-
-    await page.evaluate(() => {
-      document.getElementById("contact")?.scrollIntoView();
-    });
+    await expect(page).toHaveURL(/\/contact$/);
 
     const form = page.locator('form[aria-label]');
     await expect(form).toBeVisible();
@@ -90,33 +146,11 @@ test.describe("Home page", () => {
   });
 });
 
-test.describe("Navigation", () => {
-  test("language toggle switches locale", async ({ page }) => {
-    await page.goto("/");
-    const toggle = page.locator('button[aria-label*="nglish"], button[aria-label*="spañol"]').first();
-    await expect(toggle).toBeVisible();
-  });
-
-  test("CTA link points to contact", async ({ page }) => {
-    await page.goto("/");
-    const cta = page.locator('a[href="/#contact"]').first();
-    await expect(cta).toBeVisible();
-  });
-});
-
-test.describe("Projects page", () => {
-  test("redirects to home anchor", async ({ page }) => {
-    await page.goto("/projects");
+test.describe("Reviews page", () => {
+  test("redirects to the 3D plaza", async ({ page }) => {
+    await page.goto("/reviews");
     await page.waitForLoadState("domcontentloaded");
-    await expect(page).toHaveURL(/\/(#projects|projects)/);
-  });
-});
-
-test.describe("Contact page", () => {
-  test("loads and renders form", async ({ page }) => {
-    await page.goto("/contact");
-    await page.waitForLoadState("domcontentloaded");
-    await expect(page).toHaveURL(/contact/);
+    await expect(page).toHaveURL(/\/resenas$/);
   });
 });
 

@@ -24,6 +24,8 @@ export function useGameState() {
   const onPowerUpdate   = useRef<((power: number, charging: boolean) => void) | null>(null);
   const onHoldingUpdate = useRef<((holding: boolean) => void) | null>(null);
   const onThrow         = useRef<(() => void) | null>(null);
+  /** Easter egg: una gaviota abatida. Lo escucha `GullTally`. */
+  const onGullKill      = useRef<(() => void) | null>(null);
 
   const setPower = useCallback((power: number, charging: boolean) => {
     powerRef.current    = power;
@@ -38,6 +40,10 @@ export function useGameState() {
 
   const notifyThrow = useCallback(() => {
     onThrow.current?.();
+  }, []);
+
+  const notifyGullKill = useCallback(() => {
+    onGullKill.current?.();
   }, []);
 
   const reset = useCallback(() => {
@@ -57,9 +63,11 @@ export function useGameState() {
     setPower,
     setHolding,
     notifyThrow,
+    notifyGullKill,
     onPowerUpdate,
     onHoldingUpdate,
     onThrow,
+    onGullKill,
     reset,
   };
 }

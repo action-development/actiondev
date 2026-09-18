@@ -11,7 +11,7 @@ test("logo links to home", async ({ page }) => {
 	await expect(page).toHaveURL(/\//);
 });
 
-test("nav link 'Let's talk' scrolls to contact", async ({ page }) => {
+test("nav link 'Let's talk' navigates to /contact", async ({ page }) => {
 	await page.goto("/");
 	await waitForPage(page);
 
@@ -19,10 +19,8 @@ test("nav link 'Let's talk' scrolls to contact", async ({ page }) => {
 	await expect(ctaLink).toBeVisible();
 	await ctaLink.click();
 
-	// Tras click debe llegar a la sección contact (visible en viewport o URL con hash)
-	await page.waitForTimeout(800);
-	const contactSection = page.locator("#contact");
-	await expect(contactSection).toBeInViewport({ ratio: 0.1 });
+	await expect(page).toHaveURL(/\/contact$/);
+	await expect(page.locator("#contact")).toBeVisible();
 });
 
 test("header nav links scroll to correct sections", async ({ page }) => {
