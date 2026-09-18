@@ -85,21 +85,36 @@ export const es: Translations = {
     ariaLabel: "Progreso de sección",
   },
   tutorial: {
+    click: "haz clic en un contenedor",
     move: "mueve la grúa",
+    row: "cambia de fila",
     pickup: "engancha un contenedor",
     throw: "suéltalo en el barco",
+    manual: "o manéjala tú",
   },
   loading: {
     ariaLabel: "Porcentaje de carga",
   },
   game: {
-    scoreHint: "Carga el barco para navegar",
+    hud: {
+      clickToGo: "Clic",
+      soon: "Próximamente",
+      hintRow: "Vuelve a la fila del barco",
+      hintCarry: "Llévalo hasta la flecha del barco",
+      hintRelease: "¡Suéltalo! Pulsa BAJAR",
+      heading: "Rumbo a",
+      skip: "Ir sin jugar",
+    },
     remote: {
       model: "ACTION RC-1",
       lower: "BAJAR",
       left: "Mover la grúa a la izquierda",
       right: "Mover la grúa a la derecha",
+      up: "Alejar la grúa",
+      down: "Acercar la grúa",
       hook: "Bajar el gancho o soltar el contenedor",
+      row: "FILA",
+      actionKey: "ESPACIO",
     },
     tally: {
       label: "Gaviotas abatidas",

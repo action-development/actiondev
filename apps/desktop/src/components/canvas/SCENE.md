@@ -4,6 +4,11 @@ La home es un juego: el visitante maneja una grúa pórtico del puerto de Vigo,
 engancha contenedores (TRABAJO / RESEÑAS / CONTACTO) y los suelta en la bodega
 de un portacontenedores para navegar a cada página (`/projects`, `/resenas`,
 `/contact` — la home es SOLO este juego, a viewport completo, sin scroll).
+
+El muelle tiene **TRES FILAS en profundidad** (`port/quay-rows.ts`,
+`QUAY_ROWS = [3.2, 0, -3.2]`) y el pórtico ENTERO viaja de una a otra con ▲ ▼
+(W / S): delante los proyectos, en medio la del barco (`SHIP_ROW`, z = 0, la
+única desde la que se puede cargar la bodega) y al fondo el decorado jugable.
 Estética cómic (toon
 shading + contornos), con las Cíes, bateas y gaviotas al fondo.
 
@@ -35,14 +40,17 @@ GameScene (Canvas + overlays DOM + resolución de la fase del día)
     ├── luces (hemisphere + directional) + fog  ← desde la paleta
     ├── port/PortSky      cielo shader + nubes de cómic
     ├── port/PortBay      agua shader, Cíes, Morrazo, faro, bateas, grúas lejanas
+    ├── port/HookGuide    hilos + huella holográfica bajo el spreader
+    ├── port/TargetMarker halo de hover + flecha que señala un contenedor
     └── Physics (Rapier, gravedad 20, dt 1/60)
         ├── topes laterales x = ±20.5
-        ├── port/Seagulls     gaviotas en vuelo + una posada en la pluma
+        ├── port/Seagulls     gaviotas patiamarillas: vuelan y se posan en grúa y contenedores
     ├── port/Quay           muelle (collider top y = -6)
         ├── port/Ship           bodega (suelo y = -6.6) + sensor de carga
         │   └── port/PaintedShip   casco, bodega y puente pintados (modo painted)
-        ├── port/Crane          visual + spreader cinemático
-        └── port/CargoContainer × 3 (datos: src/data/port-containers.ts)
+        ├── port/Crane          visual (grupo que viaja en z) + spreader cinemático
+        └── port/CargoContainer × 11, repartidos en 3 filas
+                                (datos: src/data/port-containers.ts, campo `row`)
 ```
 
 ## Fases del día
@@ -136,35 +144,134 @@ que las sombras de los contenedores caigan hacia delante-izquierda como en el di
 - **Click sobre un contenedor = maniobra completa automática** (`AutoRun` en
   `GameWorld`): el carro va a su x, espera a estar quieto y alineado
   (`AUTO_ALIGN_X` / `AUTO_CALM_VEL` — con el péndulo vivo engancharía de
-  refilón), baja, engancha, sube, viaja a `SHIP_DROP_X` y suelta. Cualquier
-  tecla, el mando o una acción manual la cancelan. Hit-test del click:
-  `pickContainerAt` (AABB con margen `PICK_SLACK`) sobre el plano z = 0, en el
-  mismo interceptor que las gaviotas — así el click no entra además en la cola
+  refilón), baja, engancha, sube, viaja a `SHIP_DROP_X` y suelta. Con filas, la
+  maniobra manda TAMBIÉN en profundidad: fija `rowIndex` a la fila del
+  contenedor (fase `pick`) o a `SHIP_ROW` (fase `drop`) y no baja el gancho ni
+  suelta hasta que el pórtico ha llegado (`AUTO_ALIGN_Z` = 0.1 y `gantryVel`
+  calmada). Cualquier tecla, el mando o una acción manual la cancelan. Hit-test
+  del click: un `THREE.Plane` POR FILA (`ROW_PLANES`, de delante hacia atrás;
+  gana el primer acierto porque es el que tapa a los demás) y
+  `pickContainerAt` (AABB con margen `PICK_SLACK` + filtro de fila) sobre el
+  plano de esa fila, en el mismo interceptor que las gaviotas — así el click no entra además en la cola
   de acciones. Cursor `pointer` al pasar por encima.
-- Carro: A/D/flechas o el mando, con velocidad y aceleración limitadas →
+- Carro: A/D/←/→ o el mando, con velocidad y aceleración limitadas →
   alimenta el péndulo del spreader (`stepSway`). **El ratón NO mueve el
   carro** (decisión de accesibilidad: seguir al cursor exige puntería y pulso;
   el público senior se queda fuera). El ratón solo apunta: gaviotas, cursor y
   `disturbance`.
 - Mando de radiocontrol (`overlays/RemoteControl.tsx`): overlay DOM abajo en el
-  centro, HORIZONTAL tipo panel arcade (flechas | marca | BAJAR) para caber en
+  centro, HORIZONTAL tipo panel arcade (cruceta 2×2 | marca | BAJAR) para caber en
   la franja libre del muelle sin tapar contenedores; caja 3D en CSS (`RemoteControl.module.css`). Sus flechas y su botón
   escriben en `lib/hero-remote.ts` (`remoteInput`), que el `useFrame` lee como
-  una tecla más. Va FUERA del canvas a propósito: dentro, cada toque contaría
+  una tecla más (`left`/`right` se MANTIENEN; `rowDelta` y `actions` son colas
+  de pulsos). La cruceta es 2×2: arriba ◀ ▶ (carro), abajo ▼ ▲ (fila del
+  muelle); las tapas bajaron a 40 px para que el mando creciera de 312 a 324 px
+  y siguiera siendo el mismo panel. Va FUERA del canvas a propósito: dentro, cada toque contaría
   además como click de acción y retrasaría `onReady`. El teclado físico hunde
   sus botones (solo visual: el teclado ya mueve la grúa, escribir en
   `remoteInput` duplicaría la acción).
-- Acción (click SOBRE EL CANVAS, Espacio, E, S, ↓, botón del mando) — `use-action-queue`:
+- **Fila del muelle (profundidad)**: W / ↑ = ALEJAR (índice +1, hacia el
+  fondo), S / ↓ = ACERCAR, o las flechas verticales del mando. Es un PULSO por
+  flanco, no un "mantener": una pulsación = una fila. El pórtico la sigue con su
+  propia inercia (`GANTRY_MAX_SPEED` 6 / `GANTRY_ACCEL` 14, contra 17 / 42 del
+  carro: pesa mucho más). No hay péndulo en z en la v1 — el balanceo sigue
+  siendo solo en x. `Crane.update(trolleyX, hookX, hookY, gantryZ)` recoloca el
+  grupo raíz de la grúa y, aparte, el spreader.
+- Acción (click SOBRE EL CANVAS, Espacio, E, botón del mando) — `use-action-queue`.
+  **S y ↓ ya NO bajan el gancho**: ahora son "acercar la grúa".
   - `idle` sin carga → `lowering`
-  - `lowering` → para al tocar techo de contenedor (`findGrabTarget`) o suelo
+  - `lowering` → para al tocar techo de contenedor de SU FILA (`findGrabTarget`,
+    con `hookZ` y tolerancia `GRAB_Z_TOL` = 1.2) o suelo
     (`groundTopAt`); si hay contenedor lo engancha (kinematic) → `raising`
   - `lowering` + acción → cancela → `raising`
   - `idle` con carga → suelta (dynamic, hereda velocidad carro + balanceo)
-- Contenedor soltado (`thrownIds`) que entra en el sensor de bodega → navega
-  tras 900 ms (`page.tsx`: wipe radial + `router.push` a la ruta del `href`;
-  un `href` "#..." sin página se ignora). `gatedIds` evita doble disparo;
-  sale de la bodega → se libera.
-- Contenedor por debajo de y = -11 (a la ría) → reaparece en su `spawnX`.
+- Contenedor soltado (`thrownIds`) que entra en el sensor de bodega →
+  `gameState.notifyCargo()` (aviso "RUMBO A …") + bocina (`playHornSfx`) y
+  navega tras 900 ms (`page.tsx`: persiana + `router.push` a la ruta del
+  `href`). Un `href` "#..." (destino aún sin página: EQUIPO, GALICIA, ALCASI,
+  VIGO) se sigue pudiendo cargar, pero solo avisa "PRÓXIMAMENTE", sin bocina ni
+  navegación. `gatedIds` evita doble disparo; sale de la bodega → se libera.
+- Contenedor por debajo de y = -11 (a la ría) → reaparece en su `spawnX` y su
+  `spawnZ` (su fila de origen, no la del pórtico).
+- **Guía holográfica del gancho** (`port/HookGuide.tsx`): cuatro hilos
+  verticales desde las esquinas del spreader (x = hookX ± `SPREADER_HALF_W`·0.85,
+  z = hookZ ± 0.6) hasta la cota de aterrizaje, más una huella tumbada en esa
+  superficie. Con presa, la huella salta AL CONTENEDOR (su x, z, techo y ancho)
+  y sube de alfa (0.25 → 0.5); sin presa se queda en el suelo bajo el gancho.
+  Solo con el gancho sobre el muelle (x ≤ `QUAY_EDGE_X`): sobre agua o barco
+  no se pinta nada. Visible con el spreader vacío en `idle` y en `lowering` — subiendo o con carga
+  ya no se elige presa. El objetivo lo calcula GameWorld con el MISMO
+  `findGrabTarget` que engancha, así que la guía no puede mentir. Handle
+  imperativo (`update()` una vez por frame), fuera de `<Physics>`: es luz, no
+  materia. Cero reservas: caja y plano unitarios que solo se escalan.
+- **Shader de holograma compartido** (`port/holo-material.ts`): la flecha de la
+  bodega y la guía del gancho salen de `createHoloMaterial()`. Sus valores por
+  defecto SON los de la flecha (barrido en y, escala 5, base 0.28, fresnel 0.6):
+  tocarlos cambia el barco. La huella pide `base` alto y `fresnel` casi nulo —
+  de canto, el fresnel de un plano horizontal vale 1 en toda su superficie y la
+  convertía en un rectángulo macizo.
+- Con carga fuera de `SHIP_ROW`, la flecha holográfica de la bodega se atenúa
+  (`ShipHandle.setDimmed`, uniform `uAlpha` a 0.25): desde otra fila no se
+  puede soltar dentro. Es un handle imperativo para no re-renderizar el barco.
+
+## Ayudas para entender el juego (HUD)
+
+Todo sale de la misma voz holográfica (shader `holo-material.ts` en 3D, clases
+`holo` de `overlays/HeroHud.module.css` en DOM, calcadas del Header). GameWorld
+NO re-renderiza nada: avisa por callbacks de `useGameState` solo al CAMBIAR
+(`onHover`, `onHint`, `onRow`, `subscribeCargo`/`notifyCargo`) y escribe por
+ref lo que se mueve a 60 fps.
+
+- **Hover sobre un contenedor** (o la grúa justo encima de uno: el objetivo de
+  la guía del gancho, si el puntero no está sobre otro) → halo lima (`port/TargetMarker.tsx`, carcasa
+  con fresnel alto) + etiqueta flotante DOM (`HoverTag`): nombre y
+  "CLIC → /ruta" o "PRÓXIMAMENTE". La etiqueta se ancla al techo del
+  contenedor proyectándolo a pantalla cada frame (`gameState.hoverTagEl`, solo
+  `style.transform`). Con carga colgando no hay hover: ahí el click significa
+  "llévalo al barco".
+- **Tutorial con dos caminos** (`overlays/TutorialOverlay.tsx`): por defecto
+  "haz clic en un contenedor" con la flecha holográfica botando sobre PROYECTOS
+  (`gameState.pointAt`), luego "suéltalo en el barco" y una leyenda final de
+  4,5 s con los controles manuales. Si lo primero que toca son teclas o el
+  mando, cambia al camino manual (mover → fila → enganchar → soltar).
+- **Con carga**: hueco fantasma en la bodega (`ShipHandle.setDrop`, caja
+  holográfica del tamaño de la carga + aristas lima): tenue fuera de la fila del
+  barco, medio en la fila, a tope y latiendo cuando el gancho está sobre la
+  bodega (ahí sigue al gancho: es donde caerá). Pista DOM encima del mando
+  (`CraneHintBar`): "vuelve a la fila del barco" / "llévalo hasta la flecha" /
+  "¡suéltalo!". Durante la maniobra automática no hay pista.
+- **Mando**: indicador de FILA (tres pilotos, el del medio con el barco) y la
+  tecla impresa en cada tapa (W A S D, ESPACIO bajo BAJAR).
+- **Demostración en reposo** (`DEMO_AFTER_S` = 8 s sin tocar nada y sin haber
+  cargado aún): la grúa se planta sola sobre PROYECTOS y la flecha lo señala.
+  No lo engancha. Una vez por visita; cualquier entrada la apaga.
+- **Ir sin jugar** (`SkipMenu`, abajo a la derecha): desplegable con
+  Proyectos / Reseñas / Contacto como `<Link>` (pasan por la persiana).
+
+## Gaviotas — dónde se posan
+
+`port/gull-behaviour.ts` (lógica pura, testeada) + `port/Seagulls.tsx` (render).
+
+- Un posadero es una SUPERFICIE que existe en 3D en todas las fases, nunca un
+  punto fijo: `crane` (cara de arriba de la pluma, `BOOM_TOP_Y`, o del
+  travesaño del pórtico; z RELATIVA al pórtico, que viaja entre filas) o
+  `container` (techo de un contenedor del juego, leído de la física cada frame;
+  no vale si cuelga del gancho o tiene otro encima). El atrezo del muelle y el
+  bolardo NO sirven: en modo pintado no se dibujan y las aves flotaban.
+- `resolvePerch` da el punto de apoyo; el ave se coloca en `apoyo − FOOT_Y ×
+  escala`, así la planta de las patas toca la superficie a cualquier escala.
+- Posadas usan `PERCH_SCALE` (0.78); en vuelo, la de su órbita (más grande,
+  porque vuelan lejos). Despegue y aterrizaje interpolan.
+- Se van si: el spreader se acerca EN SU FILA, el cursor a < 2, el carro pasa
+  por su tramo de pluma, el pórtico se pone en marcha (las de la grúa), el
+  contenedor se mueve bajo sus patas, lo enganchan o hay un disparo.
+- La aproximación recalcula el destino cada frame y aborta si el posadero
+  desaparece.
+- Modelo: cuerpo en huso (torno), pico ganchudo con mancha roja en el gonys y
+  mandíbula articulada (grito con la cabeza atrás), ojo amarillo con anillo
+  rojo, alas plegadas con primarias negras y espejos blancos sobre la cola,
+  patas amarillas palmeadas (recogidas en vuelo, fuera al aterrizar).
+  Geometrías compartidas entre todas las aves.
 
 ## Easter egg — caza de gaviotas
 
@@ -217,8 +324,30 @@ el click se ignora.
   fuera no deja el carro corriendo.
 - **Encuadre**: el canvas muestra aprox. y ∈ [-10, 10] en z = 0, con el borde
   derecho en x ≈ 15 a 16:10. La marca de carga está en `MARKER_X = 10.6` por eso.
-- **Patas de la grúa en z = -2** y atrezo en z = -3.4: los contenedores (z ±0.75)
-  pasan por delante sin chocar. No mover patas al plano de juego.
+- **El barco NO cambia de fila**: está en z = 0 y ahí se queda. La profundidad
+  es del muelle, no de la ría.
+- **Dos contenedores de la MISMA fila necesitan 3,2 de paso en x** (ancho del
+  spreader); dos de filas distintas pueden compartir x tranquilamente.
+- **Patas de la grúa en z = -2 RELATIVO al carro**: viajan con el pórtico. El
+  atrezo del muelle (`PROP_STACKS`) se fue a z = -7.5 porque en -3.4 se metía
+  dentro de la fila del fondo (-3.2). Ojo: la losa del muelle llega a
+  `Z_BACK` = -4, así que en modo PROCEDURAL esas pilas quedan justo fuera de
+  ella. No se ven en producción (ninguna fase usa ese modo); si algún día se
+  usa, hay que acercarlas y encogerlas, no estirar la losa (el encuadre del
+  fondo pintado depende de ella).
+- **El spreader va FUERA del grupo que viaja en z**, aunque sea parte de la
+  grúa: `@react-three/rapier` fotografía la inversa de la matriz del padre UNA
+  vez, al crear el cuerpo, y no la recalcula. Dentro del grupo móvil el
+  spreader se pintaría a 2 × `gantryZ`. Su posición se escribe en MUNDO.
+- **El bloqueo de z de los contenedores no hay que tocarlo** (`CargoContainer`,
+  `enabledTranslations [true, true, false]`). Comprobado contra Rapier 0.19:
+  un cuerpo `kinematicPosition` IGNORA el bloqueo (por eso la carga colgada sí
+  cambia de fila), `setTranslation` también (por eso el respawn funciona), y en
+  dinámico el bloqueo detiene contactos e impulsos (por eso nada se cuela entre
+  filas). El ÚNICO agujero: una `setLinvel` con z ≠ 0 SÍ mueve el cuerpo aunque
+  el eje esté bloqueado — por eso `release()` pone la z de la velocidad a 0.
+- **Física del muelle y topes a z ∈ [-5, 5]**: con la banda antigua (±3) los
+  contenedores de las filas 0 y 2 caían al vacío.
 - **Cíes aplastadas con `CIES_SCALE`**: con proporción real de dibujo salían
   pirámides.
 - **`antialias: true`**: los contornos de `<Outlines>` sin MSAA hacen sierra.

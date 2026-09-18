@@ -71,19 +71,146 @@ function finish(canvas: HTMLCanvasElement) {
   return t;
 }
 
-/** Costado largo: nervios verticales entintados. */
-function sideTexture(base: THREE.Color, lengthUnits: number, seed: string) {
-  const w = Math.round(lengthUnits * PX_PER_UNIT);
-  const h = FACE_H;
-  const c = document.createElement("canvas");
-  c.width = w;
-  c.height = h;
-  const ctx = c.getContext("2d")!;
+/* ---------------------------------------------------------------------------
+ * Rotulación de naviera
+ * -------------------------------------------------------------------------*/
+
+export const LABEL_FONT = "PortStencil";
+const LABEL_FONT_URL = "/fonts/Poppins-Bold-subset.ttf";
+/** Tinta negra de la rotulación. */
+const LABEL_INK = "rgba(26,20,16,0.92)";
+/** Alternativa clara: mismo hueso que el código BIC, para bases muy oscuras. */
+const LABEL_BONE = "rgba(240,232,214,0.92)";
+/** Altura de mayúscula respecto a la cara del costado. */
+const LABEL_CAP = 0.78;
+/** Margen lateral libre a cada lado. */
+const LABEL_MARGIN = 0.08;
+const LABEL_SX_MIN = 0.55;
+const LABEL_SX_MAX = 1.35;
+
+let labelFontPromise: Promise<boolean> | null = null;
+
+/**
+ * Fuente local de la rotulación (subset Latin-1 de 13,9 KB, la misma que usaba
+ * el `<Text>` de drei). Se registra UNA vez por sesión con la FontFace API y se
+ * comparte entre contenedores: es un fichero de `public/`, vive fuera del
+ * `<Suspense>` del hero y nunca retrasa la pantalla de carga. Hasta que
+ * resuelve, el costado se pinta SIN letras y se repinta al llegar.
+ */
+export function loadLabelFont() {
+  if (labelFontPromise) return labelFontPromise;
+  if (typeof document === "undefined" || typeof FontFace === "undefined") {
+    labelFontPromise = Promise.resolve(false);
+    return labelFontPromise;
+  }
+  const face = new FontFace(LABEL_FONT, `url(${LABEL_FONT_URL})`, { weight: "700" });
+  labelFontPromise = face
+    .load()
+    .then((loaded) => {
+      document.fonts.add(loaded);
+      return true;
+    })
+    .catch(() => false);
+  return labelFontPromise;
+}
+
+/** Luminancia relativa (WCAG) del color ya envejecido. */
+function luminance(c: THREE.Color) {
+  const lin = (v: number) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
+}
+
+/**
+ * Rótulo pintado sobre la chapa, al estilo de las navieras (MAERSK, EVERGREEN):
+ * mayúsculas gordas a TODA la altura del costado, escaladas EN HORIZONTAL para
+ * que la palabra llene el largo del contenedor menos los márgenes.
+ *
+ * Regla de tamaño:
+ *  1. cuerpo tal que la altura de mayúscula sea el 78 % de la cara (medida real
+ *     con `actualBoundingBoxAscent`, no estimada);
+ *  2. `sx = disponible / medido`, recortado a [0.55, 1.35];
+ *  3. si al recortar la palabra queda MÁS ESTRECHA que el hueco, se centra;
+ *  4. si aun con 0.55 se sale, se reduce el cuerpo hasta que entre.
+ *
+ * Color: tinta negra SIEMPRE, salvo que la luminancia relativa de la base
+ * envejecida sea < 0,12 — ahí el negro no leería y se pinta en hueso
+ * (rgba(240,232,214)), el mismo del código BIC.
+ */
+function paintLabel(ctx: CanvasRenderingContext2D, w: number, h: number, base: THREE.Color, label: string) {
+  const text = label.toUpperCase();
+  const available = w * (1 - LABEL_MARGIN * 2);
+  if (available <= 0 || !text) return;
+
+  const setFont = (px: number) => { ctx.font = `700 ${px}px "${LABEL_FONT}", sans-serif`; };
+  const capOf = (px: number) => {
+    const m = ctx.measureText("H");
+    return m.actualBoundingBoxAscent || px * 0.7;
+  };
+
+  const targetCap = h * LABEL_CAP;
+  // Dos pasadas: la primera estima el cuerpo, la segunda lo corrige con la
+  // altura de mayúscula REAL de la fuente ya cargada.
+  let px = targetCap / 0.7;
+  setFont(px);
+  px = (px * targetCap) / capOf(px);
+  setFont(px);
+
+  let measured = ctx.measureText(text).width;
+  let sx = available / measured;
+  if (sx > LABEL_SX_MAX) sx = LABEL_SX_MAX;
+  if (sx < LABEL_SX_MIN) {
+    // Ni con el estrechado máximo entra: se baja el cuerpo, no se aprieta más.
+    px *= available / (LABEL_SX_MIN * measured);
+    setFont(px);
+    measured = ctx.measureText(text).width;
+    sx = Math.min(LABEL_SX_MAX, available / measured);
+  }
+
+  const cap = capOf(px);
+  const baseline = h / 2 + cap / 2;
+  const top = baseline - cap;
+
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = luminance(base) < 0.12 ? LABEL_BONE : LABEL_INK;
+  ctx.translate(w / 2, baseline);
+  ctx.scale(sx, 1);
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+
+  // Puentes de plantilla: dos franjas finas del color de la chapa que cortan
+  // las letras, como en la pintura con estarcido.
+  ctx.fillStyle = base.getStyle();
+  for (const f of [0.3, 0.62]) ctx.fillRect(0, Math.round(top + cap * f), w, 2);
+}
+
+/**
+ * Costado largo: nervios verticales entintados. Con `label` pinta además la
+ * rotulación de naviera; el rótulo va DEBAJO de nervios y suciedad (los nervios
+ * se bajan de opacidad para que las letras asomen) para que parezca pintura
+ * sobre la chapa y no una pegatina.
+ */
+function drawSide(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  base: THREE.Color,
+  seed: string,
+  label: string | undefined,
+  fontReady: boolean,
+) {
   const rand = rng(seed);
 
+  ctx.globalAlpha = 1;
   ctx.fillStyle = base.getStyle();
   ctx.fillRect(0, 0, w, h);
 
+  if (label && fontReady) paintLabel(ctx, w, h, base, label);
+
+  // Con rótulo, los nervios pasan por ENCIMA a media opacidad: desgastan las
+  // letras y siguen leyéndose los dos.
+  ctx.globalAlpha = label && fontReady ? 0.55 : 1;
   const rib = 30;
   for (let x = 14; x < w - 14; x += rib) {
     ctx.fillStyle = shade(base, 0.07);
@@ -93,18 +220,45 @@ function sideTexture(base: THREE.Color, lengthUnits: number, seed: string) {
     ctx.fillStyle = "rgba(26,20,16,0.55)";
     ctx.fillRect(x + 17, 12, 1.5, h - 26);
   }
+  ctx.globalAlpha = 1;
 
   grime(ctx, w, h);
 
-  // Marcas de estarcido (código BIC), como en los contenedores pintados
-  ctx.fillStyle = "rgba(240,232,214,0.55)";
-  ctx.font = "bold 13px monospace";
+  // Marcas de estarcido (código BIC): pequeño y arriba a la derecha, pegado al
+  // carril, para no pelearse con la rotulación.
+  ctx.fillStyle = "rgba(240,232,214,0.5)";
+  ctx.font = "bold 9px monospace";
   const code = `ACTU ${String(Math.floor(rand() * 900000 + 100000))} ${Math.floor(rand() * 9)}`;
-  ctx.fillText(code, w - 20 - ctx.measureText(code).width, 32);
-  ctx.fillRect(w - 20 - 60, 40, 60, 3);
+  ctx.fillText(code, w - 16 - ctx.measureText(code).width, 24);
 
   inkFrame(ctx, w, h, base);
-  return finish(c);
+}
+
+/**
+ * Costado. Se pinta ya sin letras (síncrono) y se repinta cuando la fuente
+ * local está registrada; `cancel` evita tocar una textura ya liberada — mismo
+ * patrón que `doorTexture` con la máscara del logo.
+ */
+function sideTexture(base: THREE.Color, lengthUnits: number, seed: string, label?: string) {
+  const w = Math.round(lengthUnits * PX_PER_UNIT);
+  const h = FACE_H;
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext("2d")!;
+  drawSide(ctx, w, h, base, seed, label, false);
+  const texture = finish(c);
+
+  if (!label) return { texture, cancel: () => {} };
+
+  let alive = true;
+  loadLabelFont().then((ok) => {
+    if (!alive || !ok) return;
+    drawSide(ctx, w, h, base, seed, label, true);
+    texture.needsUpdate = true;
+  });
+
+  return { texture, cancel: () => { alive = false; } };
 }
 
 const LOGO_URL = "/logos/action_globe.webp";
@@ -286,6 +440,12 @@ function roofTexture(base: THREE.Color) {
 
 /**
  * Materiales en el orden de caras de BoxGeometry: +x, -x, +y, -y, +z, -z.
+ *
+ * La cámara mira al costado +z: ahí va el costado CON rotulación. El -z lleva
+ * el mismo costado sin letras (nervios + código BIC), que es lo que se ve al
+ * volcar el contenedor. El rótulo depende del idioma, así que `label` forma
+ * parte de la identidad de estos materiales: al cambiarlo hay que recrearlos.
+ *
  * El llamador es dueño de los recursos: llamar a `dispose()` al desmontar.
  */
 export function createContainerMaterials(
@@ -293,9 +453,11 @@ export function createContainerMaterials(
   color: string,
   lengthUnits: number,
   gradientMap: THREE.Texture,
+  label?: string,
 ) {
   const base = weather(color);
-  const side = sideTexture(base, lengthUnits, id);
+  const { texture: front, cancel: cancelFront } = sideTexture(base, lengthUnits, id, label);
+  const { texture: back } = sideTexture(base, lengthUnits, id);
   const { texture: door, cancel: cancelDoor } = doorTexture(base, id);
   const roof = roofTexture(base);
 
@@ -303,16 +465,18 @@ export function createContainerMaterials(
     new THREE.MeshToonMaterial({ color: "#ffffff", map, gradientMap });
 
   const doorMat = make(door);
-  const sideMat = make(side);
+  const frontMat = make(front);
+  const backMat = make(back);
   const roofMat = make(roof);
-  const materials = [doorMat, doorMat, roofMat, roofMat, sideMat, sideMat];
+  const materials = [doorMat, doorMat, roofMat, roofMat, frontMat, backMat];
 
   return {
     materials,
     dispose() {
+      cancelFront();
       cancelDoor();
-      for (const t of [side, door, roof]) t.dispose();
-      for (const m of [doorMat, sideMat, roofMat]) m.dispose();
+      for (const t of [front, back, door, roof]) t.dispose();
+      for (const m of [doorMat, frontMat, backMat, roofMat]) m.dispose();
     },
   };
 }

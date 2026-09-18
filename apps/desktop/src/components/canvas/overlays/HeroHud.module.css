@@ -1,0 +1,221 @@
+/* ─────────────────────────────────────────────────────────────── */
+/*  HUD DE AYUDA DEL HERO  (HeroHud.tsx)                           */
+/*                                                                 */
+/*  Etiqueta flotante, pista de la grúa, aviso "rumbo a…" y        */
+/*  menú "ir sin jugar". Mismo holograma que el Header             */
+/*  (`layout/Header.module.css`) y que la flecha de la bodega:     */
+/*  es la voz de la máquina, no una capa de UI aparte.             */
+/* ─────────────────────────────────────────────────────────────── */
+.holo {
+  position: relative;
+  color: var(--accent);
+  border: 1px solid rgba(234, 255, 176, 0.38);
+  background:
+    repeating-linear-gradient(to top, rgba(200, 255, 0, 0.045) 0 3px, transparent 3px 8px),
+    rgba(8, 8, 8, 0.5);
+  background-size: 100% 8px, 100% 100%;
+  box-shadow:
+    inset 0 0 0 1px rgba(200, 255, 0, 0.08),
+    inset 0 0 14px rgba(200, 255, 0, 0.05),
+    0 0 10px rgba(200, 255, 0, 0.1);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation:
+    holo-scan 2.2s linear infinite,
+    holo-flicker 7s steps(1, end) infinite;
+}
+/* Doble imagen desfasada: la interferencia del proyector. */
+.holo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translate(2px, -1px);
+  border: 1px solid rgba(200, 255, 0, 0.14);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.glow {
+  text-shadow:
+    0 0 6px rgba(200, 255, 0, 0.25),
+    1px 1px 0 rgba(200, 255, 0, 0.14);
+}
+.mono {
+  font-family: var(--font-mono), monospace;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.display {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* ── Etiqueta flotante (hover sobre un contenedor) ────────────── */
+/* El nodo exterior lo mueve GameWorld con `transform` cada frame;  */
+/* el interior se centra encima del punto y hace su entrada.        */
+.tagAnchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 20;
+  pointer-events: none;
+  will-change: transform;
+}
+.tag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  animation:
+    tag-in 0.22s var(--ease) both,
+    holo-scan 2.2s linear infinite,
+    holo-flicker 7s steps(1, end) infinite;
+}
+/* Haz del proyector: la etiqueta "sale" del contenedor. */
+.tag::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 1px;
+  height: 14px;
+  background: linear-gradient(to bottom, rgba(234, 255, 176, 0.6), transparent);
+}
+.tagTitle { font-size: 15px; }
+.tagDest  { font-size: 9px; color: #eaffb0; opacity: 0.85; }
+.tag[data-soon="true"] .tagDest { color: #d8d1bd; opacity: 0.7; }
+
+@keyframes tag-in {
+  from { opacity: 0; transform: translate(-50%, calc(-100% + 6px)); }
+  to   { opacity: 1; transform: translate(-50%, -100%); }
+}
+
+/* ── Pista de la grúa (encima del mando) ──────────────────────── */
+.hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 10px;
+  white-space: nowrap;
+  animation:
+    hint-in 0.25s var(--ease) both,
+    holo-scan 2.2s linear infinite,
+    holo-flicker 7s steps(1, end) infinite;
+}
+.hintIcon {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+/* "Suelta" es LA acción: se enciende y late. */
+.hint[data-hint="release"] {
+  color: #0a0a0a;
+  background: var(--accent);
+  border-color: #eaffb0;
+  text-shadow: none;
+  animation:
+    hint-in 0.25s var(--ease) both,
+    hint-pulse 0.9s var(--ease) infinite;
+}
+@keyframes hint-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes hint-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200, 255, 0, 0.55); }
+  60%      { box-shadow: 0 0 0 10px rgba(200, 255, 0, 0); }
+}
+
+/* ── Aviso "rumbo a…" / "próximamente" ────────────────────────── */
+.toast {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 30px 14px;
+  border-radius: 14px;
+  animation:
+    toast-in 0.4s var(--ease) both,
+    holo-scan 2.2s linear infinite,
+    holo-flicker 7s steps(1, end) infinite;
+}
+.toastKicker { font-size: 10px; color: #eaffb0; opacity: 0.85; }
+.toastTitle  { font-size: clamp(26px, 3.4vw, 44px); }
+.toast[data-soon="true"] .toastKicker { color: #d8d1bd; }
+@keyframes toast-in {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Ir sin jugar ─────────────────────────────────────────────── */
+.skip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.skipBtn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 9px;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease), background var(--duration-fast) var(--ease);
+}
+.skipBtn:hover,
+.skipBtn[aria-expanded="true"] {
+  color: #0a0a0a;
+  background: var(--accent);
+  text-shadow: none;
+}
+.skipBtn:focus-visible,
+.skipLink:focus-visible {
+  outline: 2px solid #eaffb0;
+  outline-offset: 3px;
+}
+.skipList {
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 6px;
+  border-radius: 12px;
+  animation:
+    hint-in 0.2s var(--ease) both,
+    holo-scan 2.2s linear infinite;
+}
+.skipLink {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 10px;
+  transition: background var(--duration-fast) var(--ease);
+}
+.skipLink:hover { background: rgba(200, 255, 0, 0.12); }
+.skipIndex { font-size: 8px; opacity: 0.6; }
+
+@keyframes holo-scan {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 0 -8px, 0 0; }
+}
+@keyframes holo-flicker {
+  0%, 100% { opacity: 1; }
+  41%      { opacity: 0.94; }
+  42%      { opacity: 1; }
+  77%      { opacity: 0.96; }
+  78%      { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo, .tag, .hint, .hint[data-hint="release"], .toast, .skipList {
+    animation: none;
+  }
+}

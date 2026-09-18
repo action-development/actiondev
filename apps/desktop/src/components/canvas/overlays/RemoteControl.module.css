@@ -13,8 +13,9 @@
   --rc-body-dark: #24231f;
   --rc-steel:     #5a584e;
   --rc-cap:       #7f8a34;
-  --rc-w:         312px;  /* formato horizontal tipo panel arcade: bajo, */
-  --rc-h:         104px;  /* cabe en el muelle sin tapar los contenedores */
+  --rc-pad:       #6e7830; /* base del d-pad: un pelín más oscura que las tapas */
+  --rc-w:         348px;  /* formato horizontal tipo panel arcade: bajo, */
+  --rc-h:         120px;  /* +16px sobre el original para alojar la cruz 3×3 */
   --rc-d:         18px;   /* media profundidad de la caja */
   perspective: 900px;
   perspective-origin: 50% 20%;
@@ -135,7 +136,90 @@
   box-shadow: 0 1px 0 var(--rc-ink);
 }
 
-.arrow { width: 50px; height: 50px; border-radius: 12px; }
+/* D-pad en cruz: ▲ arriba (fila del muelle, se aleja), ◀ ▶ carro a los
+   lados (se mantienen), ▼ abajo (se acerca). Las cuatro teclas comparten una
+   base olive común (placa moldeada) con un hub de tinta en el centro, como
+   un d-pad de mando de verdad — no cuatro botones sueltos. */
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, 33px);
+  grid-template-rows: repeat(3, 33px);
+  grid-template-areas:
+    ".    up    ."
+    "left hub   right"
+    ".    down  .";
+  gap: 2px;
+  padding: 3px;
+  border-radius: 16px;
+  background: var(--rc-pad);
+  border: 2px solid var(--rc-ink);
+}
+
+.dpadUp    { grid-area: up; }
+.dpadDown  { grid-area: down; }
+.dpadLeft  { grid-area: left; }
+.dpadRight { grid-area: right; }
+
+/* Hub central: no es un botón, solo remata la cruz como en un d-pad real. */
+.hub {
+  grid-area: hub;
+  align-self: center;
+  justify-self: center;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--rc-ink);
+}
+
+.arrow { width: 100%; height: 100%; border-radius: 8px; }
+.arrow .key { position: relative; }
+
+/* Letra del teclado impresa en la tapa (A / D / W / S): el mando es también la
+   leyenda de las teclas. Esquina inferior derecha, pequeña, sin competir con
+   la flecha. */
+.keyHint {
+  position: absolute;
+  right: 3px;
+  bottom: 1px;
+  font-family: var(--font-mono), monospace;
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.6;
+}
+
+/* Indicador de FILA: tres pilotos apilados como la cruceta (arriba = fondo,
+   abajo = delante). El de en medio lleva el barco: es la única fila desde la
+   que se carga. El encendido es la fila en la que está el pórtico. */
+.rowMeter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rowPips {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rowPip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 8px;
+  border: 1.5px solid var(--rc-ink);
+  border-radius: 3px;
+  background: #3a3f22;
+  color: var(--rc-ink);
+  transition: background var(--duration-fast) var(--ease);
+}
+.rowPip[data-ship="true"] { background: #4d5a2a; }
+.rowPip[data-on="true"] {
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(200, 255, 0, 0.55);
+}
+.shipGlyph { color: #d8d1bd; }
+.rowPip[data-on="true"] .shipGlyph { color: var(--rc-ink); }
 .hook  { width: 70px; height: 70px; border-radius: 50%; }
 .hook .key { background: var(--accent); }
 

@@ -8,8 +8,8 @@ test("hero section renders canvas and key text", async ({ page }) => {
 	// Canvas 3D presente
 	await expect(page.locator("canvas").first()).toBeVisible();
 
-	// Texto DOM del hero (instrucciones del juego — fuera del canvas)
-	await expect(page.getByText(/(load the ship to navigate|carga el barco para navegar)/i)).toBeVisible();
+	// Mando de radiocontrol (overlay DOM del juego — fuera del canvas)
+	await expect(page.getByTestId("hero-remote")).toBeVisible();
 
 	// Screenshot con canvas enmascarado (render WebGL no-determinista)
 	await expect(page).toHaveScreenshot("hero.png", {

@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, type Ref, type RefObject } from "react";
+import { useEffect, useRef, type Ref, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Outlines } from "@react-three/drei";
 import * as THREE from "three";
 import type { PortPalette } from "./time-of-day";
 import { getToonGradient, OUTLINE_THIN } from "./toon";
 import {
-  PERCHES, isDisturbed, pickPerch, takeoffEase, type Disturbance,
+  PERCHES, isDisturbed, pickPerch, resolvePerch, takeoffEase, type Disturbance, type PerchPoint,
 } from "./gull-behaviour";
 import {
   FADE_END, RESPAWN_MIN, fadeAt, fallOffset, type GullTarget,
@@ -48,7 +48,28 @@ const FLIGHTS: Flight[] = [
 ];
 
 const WHITE = "#f7f5ee";
-const GREY = "#aab3c2";
+/** Manto gris azulado de la patiamarilla adulta. */
+const GREY = "#9fa9ba";
+const INK_TIP = "#1b1b22";
+const YELLOW = "#ffc93a";
+/** Patas amarillas: es lo que le da el nombre (Larus michahellis). */
+const LEG_YELLOW = "#f2b82e";
+const GONYS_RED = "#e2483a";
+
+/**
+ * Altura de las PATAS en unidades de modelo: del origen del ave (centro del
+ * cuerpo) a la planta de los pies. Posada, el origen va a `superficie −
+ * FOOT_Y × escala` — así apoya justo encima, ni hundida ni flotando, sea cual
+ * sea su tamaño.
+ */
+const FOOT_Y = -0.4;
+/**
+ * Escala del ave cuando está en el muelle o en la grúa. Las que vuelan lejos
+ * (z −12 … −60) llevan escala mayor para leerse; posadas a z ≈ 0 esa escala
+ * las convertía en albatros junto a un contenedor. Despegue y aterrizaje
+ * interpolan entre las dos.
+ */
+const PERCH_SCALE = 0.78;
 
 /**
  * Perfil del ala vista desde arriba, dibujado con la ENVERGADURA en +y y la
@@ -66,18 +87,107 @@ function wingShape(span: number, chord: number, taper: number) {
   return s;
 }
 
+function polyShape(points: [number, number][]) {
+  const s = new THREE.Shape();
+  s.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < points.length; i++) s.lineTo(points[i][0], points[i][1]);
+  s.closePath();
+  return s;
+}
+
 const ARM_SPAN = 0.6;
 const HAND_SPAN = 0.68;
+/** Fracción de la mano (desde la punta) que es negra: las primarias. */
+const TIP_FRACTION = 0.42;
 
-function useWingGeometries() {
-  return useMemo(() => {
-    const extrude = (shape: THREE.Shape) =>
-      new THREE.ExtrudeGeometry(shape, { depth: 0.045, bevelEnabled: false });
-    return {
-      arm: extrude(wingShape(ARM_SPAN, 0.34, 0.9)),
-      hand: extrude(wingShape(HAND_SPAN, 0.3, 0.5)),
-    };
-  }, []);
+interface GullGeometries {
+  body: THREE.BufferGeometry;
+  arm: THREE.BufferGeometry;
+  hand: THREE.BufferGeometry;
+  handTip: THREE.BufferGeometry;
+  foldWing: THREE.BufferGeometry;
+  foldTip: THREE.BufferGeometry;
+  beakUpper: THREE.BufferGeometry;
+  beakLower: THREE.BufferGeometry;
+  foot: THREE.BufferGeometry;
+}
+
+/**
+ * Geometrías COMPARTIDAS por todas las gaviotas (una sola vez por página):
+ * son 5 aves con el mismo cuerpo, no tiene sentido tener 5 copias en la GPU.
+ * No se liberan — viven lo que vive el hero, igual que el gradiente toon.
+ */
+let gullGeo: GullGeometries | null = null;
+function getGullGeometries(): GullGeometries {
+  if (gullGeo) return gullGeo;
+  const thin = (shape: THREE.Shape, depth: number) => {
+    const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false });
+    g.translate(0, 0, -depth / 2);
+    return g;
+  };
+
+  // Cuerpo en huso: pecho lleno, espalda recta y cola afilada. Torno sobre y
+  // (de la cola a +y el pecho) y luego tumbado para que +y pase a ser +x.
+  const body = new THREE.LatheGeometry(
+    [
+      [0, -0.62], [0.05, -0.5], [0.11, -0.32], [0.17, -0.1],
+      [0.19, 0.05], [0.17, 0.2], [0.12, 0.3], [0, 0.36],
+    ].map(([r, y]) => new THREE.Vector2(r, y)),
+    14,
+  );
+  body.rotateZ(-Math.PI / 2);
+
+  // Mano gris hasta donde empiezan las primarias; la punta negra es otra pieza
+  // del MISMO contorno, así el corte coincide.
+  const handTaper = 0.5;
+  const handChord = 0.3;
+  const cut = HAND_SPAN * (1 - TIP_FRACTION);
+  const chordAtCut = handChord * (1 - (1 - handTaper) * (cut / HAND_SPAN));
+  const hand = thin(wingShape(cut + 0.01, handChord, chordAtCut / handChord), 0.045);
+  const handTip = thin(wingShape(HAND_SPAN - cut, chordAtCut, (handChord * handTaper) / chordAtCut), 0.05);
+  handTip.translate(0, cut, 0);
+
+  // Ala plegada de perfil: hoja gris sobre el costado y primarias negras que
+  // se cruzan por encima de la cola blanca, como en la patiamarilla.
+  const foldWing = thin(
+    polyShape([
+      [0.22, 0.1], [0.12, 0.17], [-0.05, 0.19], [-0.25, 0.16],
+      [-0.4, 0.1], [-0.36, 0.04], [-0.18, -0.02], [0.08, -0.01],
+    ]),
+    0.035,
+  );
+  const foldTip = thin(
+    polyShape([[-0.3, 0.13], [-0.55, 0.1], [-0.74, 0.055], [-0.72, 0.03], [-0.5, 0.03], [-0.32, 0.05]]),
+    0.04,
+  );
+
+  // Pico fuerte, amarillo, con la punta en gancho; la mandíbula inferior va
+  // aparte para poder abrirla en el grito.
+  const beakUpper = thin(
+    polyShape([[0, 0.045], [0.12, 0.04], [0.21, 0.025], [0.255, 0], [0.245, -0.022], [0.22, -0.01], [0, -0.005]]),
+    0.07,
+  );
+  const beakLower = thin(
+    polyShape([[0, -0.005], [0.2, -0.012], [0.17, -0.03], [0.13, -0.047], [0, -0.04]]),
+    0.06,
+  );
+
+  // Pie palmeado: tres dedos en abanico hacia delante, tumbado sobre el suelo.
+  const foot = thin(polyShape([[-0.03, 0], [0.1, 0.06], [0.08, 0.02], [0.12, 0], [0.08, -0.02], [0.1, -0.06]]), 0.02);
+  foot.rotateX(-Math.PI / 2);
+
+  gullGeo = {
+    body,
+    arm: thin(wingShape(ARM_SPAN, 0.34, 0.9), 0.045),
+    hand,
+    handTip,
+    foldWing,
+    foldTip,
+    beakUpper,
+    beakLower,
+    foot,
+  };
+  return gullGeo;
 }
 
 interface WingProps {
@@ -91,13 +201,13 @@ interface WingProps {
 }
 
 function Wing({ side, palette, innerRef, outerRef, flat }: WingProps) {
-  const geo = useWingGeometries();
+  const geo = getGullGeometries();
   const gradient = getToonGradient();
   const o = palette.outline;
   const feather = (color: string) =>
     flat
-      ? <meshBasicMaterial color={color} toneMapped={false} />
-      : <meshToonMaterial color={color} gradientMap={gradient} />;
+      ? <meshBasicMaterial color={color} toneMapped={false} side={THREE.DoubleSide} />
+      : <meshToonMaterial color={color} gradientMap={gradient} side={THREE.DoubleSide} />;
 
   return (
     <group
@@ -105,103 +215,162 @@ function Wing({ side, palette, innerRef, outerRef, flat }: WingProps) {
       position={[0.04, 0.09, side * 0.1]}
       rotation={[side * (Math.PI / 2), 0, 0]}
     >
-      <mesh geometry={geo.arm} position={[0, 0, -0.022]}>
+      <mesh geometry={geo.arm}>
         {feather(GREY)}
         <Outlines thickness={OUTLINE_THIN} color={o} />
       </mesh>
       <group ref={outerRef} position={[0, ARM_SPAN - 0.02, 0]}>
-        <mesh geometry={geo.hand} position={[0, 0, -0.022]}>
+        <mesh geometry={geo.hand}>
           {feather(GREY)}
           <Outlines thickness={OUTLINE_THIN} color={o} />
         </mesh>
-        {/* Primarias negras con la mota blanca de la patiamarilla */}
-        <mesh position={[-0.02, HAND_SPAN - 0.06, 0]}>
-          <boxGeometry args={[0.16, 0.18, 0.05]} />
-          <meshBasicMaterial color={o} toneMapped={false} />
+        {/* Primarias negras con los "espejos" blancos de la patiamarilla */}
+        <mesh geometry={geo.handTip}>
+          <meshBasicMaterial color={INK_TIP} toneMapped={false} side={THREE.DoubleSide} />
+          <Outlines thickness={OUTLINE_THIN} color={o} />
         </mesh>
-        <mesh position={[-0.02, HAND_SPAN - 0.02, 0.03]}>
-          <boxGeometry args={[0.05, 0.05, 0.02]} />
-          <meshBasicMaterial color={WHITE} toneMapped={false} />
-        </mesh>
+        {[0.52, 0.64].map((y) => (
+          <mesh key={y} position={[-0.03, y, 0]} scale={[1, 1, 0.5]}>
+            <sphereGeometry args={[0.03, 8, 6]} />
+            <meshBasicMaterial color={WHITE} toneMapped={false} />
+          </mesh>
+        ))}
       </group>
     </group>
   );
 }
 
-interface BodyProps {
-  palette: PortPalette;
-  flat: boolean;
-  wings: {
-    innerL: Ref<THREE.Group>; outerL: Ref<THREE.Group>;
-    innerR: Ref<THREE.Group>; outerR: Ref<THREE.Group>;
-    /** Grupo de alas extendidas (vuelo). */
-    open: Ref<THREE.Group>;
-    /** Grupo de alas plegadas (posada). */
-    folded: Ref<THREE.Group>;
-  };
+interface BodyRefs {
+  innerL: Ref<THREE.Group>; outerL: Ref<THREE.Group>;
+  innerR: Ref<THREE.Group>; outerR: Ref<THREE.Group>;
+  /** Grupo de alas extendidas (vuelo). */
+  open: Ref<THREE.Group>;
+  /** Grupo de alas plegadas (posada). */
+  folded: Ref<THREE.Group>;
+  /** Tronco (respira posada). */
+  torso: Ref<THREE.Group>;
+  /** Cabeza: mira a los lados y echa atrás para gritar. */
+  head: Ref<THREE.Group>;
+  /** Mandíbula inferior: se abre en el grito. */
+  jaw: Ref<THREE.Group>;
+  /** Patas: fuera posada, al aterrizar y abatida; recogidas en vuelo. */
+  legs: Ref<THREE.Group>;
 }
 
-function GullBody({ palette, flat, wings }: BodyProps) {
+function GullBody({ palette, flat, refs }: { palette: PortPalette; flat: boolean; refs: BodyRefs }) {
+  const geo = getGullGeometries();
   const gradient = getToonGradient();
   const o = palette.outline;
-  const body = (color: string) =>
+  const paint = (color: string) =>
     flat
       ? <meshBasicMaterial color={color} toneMapped={false} />
       : <meshToonMaterial color={color} gradientMap={gradient} />;
 
   return (
     <group>
-      {/* Cuerpo */}
-      <mesh rotation={[0, 0, Math.PI / 2]} scale={[1, 1, 0.85]}>
-        <capsuleGeometry args={[0.17, 0.5, 4, 12]} />
-        {body(WHITE)}
-        <Outlines thickness={OUTLINE_THIN} color={o} />
-      </mesh>
-      {/* Manto gris sobre el lomo */}
-      <mesh position={[-0.05, 0.11, 0]} rotation={[0, 0, Math.PI / 2]} scale={[1, 1, 0.7]}>
-        <capsuleGeometry args={[0.12, 0.34, 4, 10]} />
-        {body(GREY)}
-      </mesh>
-      {/* Cabeza, ojo y pico con la mota roja */}
-      <mesh position={[0.37, 0.12, 0]}>
-        <sphereGeometry args={[0.15, 12, 10]} />
-        {body(WHITE)}
-        <Outlines thickness={OUTLINE_THIN} color={o} />
-      </mesh>
-      {[-1, 1].map((z) => (
-        <mesh key={z} position={[0.44, 0.16, z * 0.09]}>
-          <sphereGeometry args={[0.035, 8, 6]} />
-          <meshBasicMaterial color={o} toneMapped={false} />
+      <group ref={refs.torso}>
+        {/* Cuerpo en huso */}
+        <mesh geometry={geo.body} scale={[1, 0.95, 0.85]} castShadow>
+          {paint(WHITE)}
+          <Outlines thickness={OUTLINE_THIN} color={o} />
         </mesh>
-      ))}
-      <mesh position={[0.57, 0.1, 0]} rotation={[0, 0, -Math.PI / 2]}>
-        <coneGeometry args={[0.055, 0.26, 8]} />
-        <meshBasicMaterial color="#ffc93a" toneMapped={false} />
-      </mesh>
-      <mesh position={[0.64, 0.07, 0]}>
-        <sphereGeometry args={[0.028, 8, 6]} />
-        <meshBasicMaterial color="#e2483a" toneMapped={false} />
-      </mesh>
-      {/* Cola con la punta oscura */}
-      <mesh position={[-0.42, 0.06, 0]} rotation={[0, 0, Math.PI / 2 + 0.2]} scale={[1, 1, 0.35]}>
-        <coneGeometry args={[0.17, 0.32, 6]} />
-        {body(WHITE)}
-        <Outlines thickness={OUTLINE_THIN} color={o} />
-      </mesh>
+        {/* Manto gris sobre el lomo */}
+        <mesh position={[-0.1, 0.12, 0]} rotation={[0, 0, Math.PI / 2 + 0.06]} scale={[1, 1, 0.78]}>
+          <capsuleGeometry args={[0.1, 0.36, 4, 10]} />
+          {paint(GREY)}
+        </mesh>
 
-      {/* Alas plegadas (posada) y extendidas (vuelo): se alterna la visibilidad. */}
-      <group ref={wings.folded}>
+        {/* Alas plegadas (posada): hoja gris + primarias negras cruzadas sobre la cola */}
+        <group ref={refs.folded}>
+          {[-1, 1].map((side) => (
+            <group key={side} position={[0, 0, side * 0.155]}>
+              <mesh geometry={geo.foldWing}>
+                {paint(GREY)}
+                <Outlines thickness={OUTLINE_THIN} color={o} />
+              </mesh>
+              <mesh geometry={geo.foldTip} position={[0, 0, side * 0.01]}>
+                <meshBasicMaterial color={INK_TIP} toneMapped={false} />
+                <Outlines thickness={OUTLINE_THIN} color={o} />
+              </mesh>
+              {/* Espejo blanco en la primaria y media luna blanca de las terciarias */}
+              <mesh position={[-0.62, 0.065, side * 0.035]} scale={[1.3, 0.8, 0.4]}>
+                <sphereGeometry args={[0.022, 8, 6]} />
+                <meshBasicMaterial color={WHITE} toneMapped={false} />
+              </mesh>
+              <mesh position={[-0.26, 0.16, side * 0.02]} rotation={[0, 0, -0.2]}>
+                <boxGeometry args={[0.2, 0.022, 0.02]} />
+                <meshBasicMaterial color={WHITE} toneMapped={false} />
+              </mesh>
+            </group>
+          ))}
+        </group>
+
+        <group ref={refs.open}>
+          <Wing side={1} palette={palette} flat={flat} innerRef={refs.innerL} outerRef={refs.outerL} />
+          <Wing side={-1} palette={palette} flat={flat} innerRef={refs.innerR} outerRef={refs.outerR} />
+        </group>
+      </group>
+
+      {/* Cabeza: pivota en el cuello */}
+      <group ref={refs.head} position={[0.28, 0.13, 0]}>
+        <mesh position={[0.07, 0.05, 0]} scale={[1.12, 1, 0.92]}>
+          <sphereGeometry args={[0.14, 14, 10]} />
+          {paint(WHITE)}
+          <Outlines thickness={OUTLINE_THIN} color={o} />
+        </mesh>
+        {/* Ojo: anillo orbital rojo, iris amarillo pálido y pupila — a los dos lados */}
         {[-1, 1].map((side) => (
-          <mesh key={side} position={[-0.08, 0.06, side * 0.13]} rotation={[0, 0, 0.08]} scale={[1, 0.5, 0.45]}>
-            <capsuleGeometry args={[0.1, 0.42, 4, 8]} />
-            {body(GREY)}
+          <group key={side} position={[0.14, 0.09, side * 0.1]}>
+            <mesh>
+              <sphereGeometry args={[0.032, 10, 8]} />
+              <meshBasicMaterial color={GONYS_RED} toneMapped={false} />
+            </mesh>
+            <mesh position={[0.004, 0, side * 0.012]}>
+              <sphereGeometry args={[0.026, 10, 8]} />
+              <meshBasicMaterial color="#f4e6a6" toneMapped={false} />
+            </mesh>
+            <mesh position={[0.008, 0.002, side * 0.03]}>
+              <sphereGeometry args={[0.012, 8, 6]} />
+              <meshBasicMaterial color={o} toneMapped={false} />
+            </mesh>
+          </group>
+        ))}
+        {/* Pico: superior fija, inferior con bisagra */}
+        <group position={[0.2, 0.02, 0]}>
+          <mesh geometry={geo.beakUpper}>
+            <meshBasicMaterial color={YELLOW} toneMapped={false} />
             <Outlines thickness={OUTLINE_THIN} color={o} />
           </mesh>
-        ))}
+          <group ref={refs.jaw}>
+            <mesh geometry={geo.beakLower}>
+              <meshBasicMaterial color={YELLOW} toneMapped={false} />
+              <Outlines thickness={OUTLINE_THIN} color={o} />
+            </mesh>
+            {/* Mancha roja del gonys: lo que pican los pollos para pedir comida */}
+            {[-1, 1].map((side) => (
+              <mesh key={side} position={[0.145, -0.03, side * 0.028]} scale={[1.2, 1, 0.5]}>
+                <sphereGeometry args={[0.02, 8, 6]} />
+                <meshBasicMaterial color={GONYS_RED} toneMapped={false} />
+              </mesh>
+            ))}
+          </group>
+        </group>
       </group>
-      <group ref={wings.open}>
-        <Wing side={1} palette={palette} flat={flat} innerRef={wings.innerL} outerRef={wings.outerL} />
-        <Wing side={-1} palette={palette} flat={flat} innerRef={wings.innerR} outerRef={wings.outerR} />
+
+      {/* Patas amarillas palmeadas: la planta queda EXACTAMENTE en FOOT_Y */}
+      <group ref={refs.legs}>
+        {[-0.075, 0.075].map((z) => (
+          <group key={z} position={[0.04, 0, z]}>
+            <mesh position={[0, -0.28, 0]} rotation={[0, 0, -0.08]}>
+              <cylinderGeometry args={[0.02, 0.024, 0.24, 6]} />
+              <meshBasicMaterial color={LEG_YELLOW} toneMapped={false} />
+            </mesh>
+            <mesh geometry={geo.foot} position={[0.01, FOOT_Y + 0.01, 0]}>
+              <meshBasicMaterial color={LEG_YELLOW} toneMapped={false} />
+              <Outlines thickness={OUTLINE_THIN} color={o} />
+            </mesh>
+          </group>
+        ))}
       </group>
     </group>
   );
@@ -216,6 +385,13 @@ const CRUISE_MIN = 9;
 /** Aunque nadie la moleste, de vez en cuando levanta el vuelo sola. */
 const RESTLESS_MIN = 22;
 const RESTLESS_EXTRA = 26;
+/** Si el contenedor bajo sus patas se mueve más que esto en un frame, se va. */
+const SHOVE = 0.05;
+/** Grito ("long call"): cabeza atrás y pico abierto, de vez en cuando. */
+const CALL_TIME = 1.3;
+const CALL_EVERY = 7;
+/** Fracción de la aproximación a partir de la cual saca las patas. */
+const GEAR_DOWN = 0.55;
 
 interface GullState {
   mode: Mode;
@@ -233,6 +409,14 @@ interface GullState {
   seenPulse: number;
   /** Segundos fuera de escena antes de reaparecer tras ser abatida. */
   respawnAt: number;
+  /** Escala actual (vuelo ↔ posada). */
+  scale: number;
+  /** Escala con la que empezó el despegue o la aproximación. */
+  scaleFrom: number;
+  /** Último apoyo visto (para notar que el contenedor se mueve). */
+  last: THREE.Vector3;
+  /** Próximo grito (s dentro de `perched`). */
+  callAt: number;
 }
 
 /** Materiales del ave (cuerpo, alas y contornos) para el fundido al ser abatida. */
@@ -254,6 +438,7 @@ function setOpacity(materials: THREE.Material[], opacity: number) {
 
 const _from = new THREE.Vector3();
 const _to = new THREE.Vector3();
+const _pt: PerchPoint = { x: 0, y: 0, z: 0 };
 
 function Gull({
   flight, palette, flat, startPerch, taken, disturbance, seed, targets,
@@ -275,6 +460,9 @@ function Gull({
   const outerR = useRef<THREE.Group>(null);
   const open = useRef<THREE.Group>(null);
   const folded = useRef<THREE.Group>(null);
+  const torso = useRef<THREE.Group>(null);
+  const head = useRef<THREE.Group>(null);
+  const jaw = useRef<THREE.Group>(null);
   const legs = useRef<THREE.Group>(null);
 
   const st = useRef<GullState>({
@@ -288,6 +476,10 @@ function Gull({
     blend: startPerch >= 0 ? 0 : 1,
     seenPulse: 0,
     respawnAt: RESPAWN_MIN + (seed % 5),
+    scale: startPerch >= 0 ? PERCH_SCALE : flight.scale,
+    scaleFrom: flight.scale,
+    last: new THREE.Vector3(Number.NaN, 0, 0),
+    callAt: 3 + (seed % CALL_EVERY),
   });
   const materials = useRef<THREE.Material[] | null>(null);
 
@@ -339,21 +531,57 @@ function Gull({
     let armAmp = 0.62;
     let flapRate = 7.5;
     let gliding = Math.sin(clock * 0.45 + flight.phase * 2) > 0.1;
+    /** Patas fuera: posada, abatida o en el tramo final del aterrizaje. */
+    let gear = false;
+    let headYaw = 0;
+    let headPitch = 0;
+    let jawOpen = 0;
+    let breathe = 0;
+
+    const takeOff = () => {
+      taken.delete(c.perch);
+      c.from.copy(g.position);
+      c.scaleFrom = c.scale;
+      c.mode = "takeoff";
+      c.t = 0;
+      c.last.x = Number.NaN;
+    };
 
     if (c.mode === "perched") {
       const perch = PERCHES[c.perch];
-      g.position.set(perch.pos[0], perch.pos[1], perch.pos[2]);
-      const base = perch.facing === 1 ? 0 : Math.PI;
-      // Mira a un lado y a otro, a golpes, como hacen.
-      g.rotation.set(0, base + (Math.sin(clock * 0.7 + seed) > 0 ? 0.45 : -0.4), 0);
       const startled = d && d.pulse !== c.seenPulse;
-      if ((d && isDisturbed(perch, d)) || startled || c.t > c.restlessAt) {
-        taken.delete(c.perch);
-        c.from.copy(g.position);
-        c.mode = "takeoff";
-        c.t = 0;
+      const grounded = !!d && resolvePerch(perch, d, _pt);
+      // ¿Se ha movido el apoyo de golpe? (el contenedor lo empujan o lo arrastra
+      // el spreader). La grúa en marcha ya la cubre `isDisturbed`.
+      const shoved =
+        grounded && perch.kind === "container" && !Number.isNaN(c.last.x) &&
+        Math.abs(_pt.x - c.last.x) + Math.abs(_pt.y - c.last.y) > SHOVE;
+      if (!grounded || shoved || (d && isDisturbed(perch, d)) || startled || c.t > c.restlessAt) {
+        takeOff();
+      } else {
+        c.last.set(_pt.x, _pt.y, _pt.z);
+        c.scale = PERCH_SCALE;
+        g.position.set(_pt.x, _pt.y - FOOT_Y * c.scale, _pt.z);
+        const base = perch.facing === 1 ? 0 : Math.PI;
+        g.rotation.set(0, base + Math.sin(clock * 0.21 + seed) * 0.12, 0);
+        // Mira a un lado y a otro, a golpes, como hacen.
+        headYaw = Math.sin(clock * 0.7 + seed) > 0 ? 0.5 : -0.45;
+        breathe = Math.sin(clock * 2.1 + seed) * 0.025;
+        gear = true;
+        // Grito: cabeza atrás, pico abierto y cerrándose a golpes.
+        const since = c.t - c.callAt;
+        if (since > 0 && since < CALL_TIME) {
+          const env = Math.sin((Math.PI * since) / CALL_TIME);
+          headPitch = 0.75 * env;
+          headYaw = 0;
+          jawOpen = env * (0.35 + 0.15 * Math.sin(since * 26));
+        } else if (since >= CALL_TIME) {
+          c.callAt = c.t + CALL_EVERY + ((seed * 3) % 5);
+        }
       }
-    } else if (c.mode === "takeoff") {
+    }
+
+    if (c.mode === "takeoff") {
       const k = takeoffEase(c.t / TAKEOFF_TIME);
       const away = PERCHES[c.perch]?.facing ?? 1;
       g.position.set(
@@ -362,9 +590,11 @@ function Gull({
         c.from.z + 1.2 * k,
       );
       g.rotation.set(-0.25 * (1 - k), away === 1 ? 0 : Math.PI, 0.1 * Math.sin(clock * 12));
+      c.scale = THREE.MathUtils.lerp(c.scaleFrom, flight.scale, k);
       armAmp = 0.95;
       flapRate = 11;
       gliding = false;
+      gear = k < 0.35; // recoge las patas nada más soltarse
       if (c.t >= TAKEOFF_TIME) {
         c.mode = "cruise";
         c.t = 0;
@@ -381,6 +611,7 @@ function Gull({
         THREE.MathUtils.lerp(c.from.y, fy, b),
         THREE.MathUtils.lerp(c.from.z, fz, b),
       );
+      c.scale = flight.scale;
       const dx = -Math.sin(t) * flight.rx;
       const dz = Math.cos(2 * t) * flight.rz;
       g.rotation.y = Math.atan2(-dz, dx);
@@ -393,6 +624,7 @@ function Gull({
           taken.add(spot);
           c.target = spot;
           c.from.copy(g.position);
+          c.scaleFrom = c.scale;
           c.mode = "approach";
           c.t = 0;
         } else {
@@ -408,6 +640,7 @@ function Gull({
       );
       g.rotation.x += 4.5 * dt;
       g.rotation.z += 6 * dt;
+      gear = true;
       if (materials.current) setOpacity(materials.current, fadeAt(c.t));
       if (c.t >= FADE_END) {
         c.mode = "gone";
@@ -425,32 +658,51 @@ function Gull({
         c.mode = "cruise";
         c.t = 0;
         c.blend = 0;
+        c.scale = flight.scale;
         c.cruiseFor = CRUISE_MIN + (seed % 7);
         const target = targets?.get(seed);
         if (target) target.alive = true;
       }
-    } else {
-      // Aproximación: arco descendente hasta el posadero, frenando con las alas.
+    } else if (c.mode === "approach") {
+      // Aproximación: arco descendente hasta el posadero, frenando con las
+      // alas. El destino se recalcula CADA frame: la grúa puede estar viajando
+      // de fila o el contenedor moviéndose. Si deja de existir, aborta.
       const perch = PERCHES[c.target];
-      const k = Math.min(1, c.t / APPROACH_TIME);
-      const e = k * k * (3 - 2 * k);
-      _from.copy(c.from);
-      _to.set(perch.pos[0], perch.pos[1], perch.pos[2]);
-      g.position.lerpVectors(_from, _to, e);
-      g.position.y += Math.sin(Math.PI * e) * 1.4;
-      const dirX = _to.x - _from.x;
-      g.rotation.set(0.12 * (1 - e), dirX >= 0 ? 0 : Math.PI, 0);
-      armAmp = 0.35 + 0.35 * (1 - e);
-      flapRate = 5.5;
-      gliding = false;
-      if (k >= 1) {
-        c.perch = c.target;
+      if (!d || !resolvePerch(perch, d, _pt) || isDisturbed(perch, d)) {
+        taken.delete(c.target);
         c.target = -1;
-        c.mode = "perched";
+        c.from.copy(g.position);
+        c.mode = "cruise";
         c.t = 0;
-        c.restlessAt = RESTLESS_MIN + ((seed * 7) % RESTLESS_EXTRA);
+        c.blend = 0;
+      } else {
+        const k = Math.min(1, c.t / APPROACH_TIME);
+        const e = k * k * (3 - 2 * k);
+        c.scale = THREE.MathUtils.lerp(c.scaleFrom, PERCH_SCALE, e);
+        _from.copy(c.from);
+        _to.set(_pt.x, _pt.y - FOOT_Y * c.scale, _pt.z);
+        g.position.lerpVectors(_from, _to, e);
+        g.position.y += Math.sin(Math.PI * e) * 1.4;
+        const dirX = _to.x - _from.x;
+        // Al final se encabrita: cuerpo arriba y alas frenando.
+        g.rotation.set(0, dirX >= 0 ? 0 : Math.PI, 0.35 * Math.max(0, e - 0.6) / 0.4);
+        armAmp = 0.35 + 0.45 * Math.max(0, e - 0.5);
+        flapRate = 5.5 + 5 * Math.max(0, e - 0.7);
+        gliding = false;
+        gear = e > GEAR_DOWN;
+        if (k >= 1) {
+          c.perch = c.target;
+          c.target = -1;
+          c.mode = "perched";
+          c.t = 0;
+          c.restlessAt = RESTLESS_MIN + ((seed * 7) % RESTLESS_EXTRA);
+          c.callAt = 2 + (seed % 4);
+          c.last.x = Number.NaN;
+        }
       }
     }
+
+    g.scale.setScalar(c.scale);
 
     if (d) c.seenPulse = d.pulse;
     const target = targets?.get(seed);
@@ -464,7 +716,13 @@ function Gull({
     const perched = c.mode === "perched" || c.mode === "shot";
     if (open.current) open.current.visible = !perched;
     if (folded.current) folded.current.visible = perched;
-    if (legs.current) legs.current.visible = perched;
+    if (legs.current) legs.current.visible = gear;
+    if (torso.current) torso.current.scale.y = 1 + breathe;
+    if (head.current) {
+      head.current.rotation.y = headYaw;
+      head.current.rotation.z = headPitch;
+    }
+    if (jaw.current) jaw.current.rotation.z = -jawOpen;
 
     if (!perched) {
       const beat = Math.sin(clock * flapRate + flight.phase);
@@ -480,20 +738,12 @@ function Gull({
   });
 
   return (
-    <group ref={root} scale={flight.scale}>
+    <group ref={root} scale={st.current.scale}>
       <GullBody
         palette={palette}
         flat={flat}
-        wings={{ innerL, outerL, innerR, outerR, open, folded }}
+        refs={{ innerL, outerL, innerR, outerR, open, folded, torso, head, jaw, legs }}
       />
-      <group ref={legs}>
-        {[-0.08, 0.08].map((z) => (
-          <mesh key={z} position={[0.08, -0.26, z]}>
-            <boxGeometry args={[0.05, 0.22, 0.05]} />
-            <meshBasicMaterial color="#e9a13a" toneMapped={false} />
-          </mesh>
-        ))}
-      </group>
     </group>
   );
 }
@@ -508,7 +758,7 @@ export function Seagulls({
 }: {
   palette: PortPalette;
   flat?: boolean;
-  /** Qué hay cerca (carro, spreader, cursor). Sin esto nunca se asustan. */
+  /** Qué hay cerca (carro, spreader, pórtico, contenedores, cursor). Sin esto nunca se asustan. */
   disturbance?: RefObject<Disturbance>;
   /** Registro de blancos del easter egg (`GullHunt`). Sin esto no se pueden abatir. */
   targets?: Map<number, GullTarget>;
@@ -527,7 +777,8 @@ export function Seagulls({
           flight={f}
           palette={palette}
           flat={flat}
-          // Las dos primeras nacen posadas; el resto, volando.
+          // Las tres primeras nacen posadas en la pluma (posaderos 0-2, que
+          // siempre existen); el resto, volando.
           startPerch={i < 3 ? i : -1}
           taken={taken}
           disturbance={disturbance ?? fallback}

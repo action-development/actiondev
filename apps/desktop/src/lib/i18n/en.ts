@@ -85,21 +85,36 @@ export const en: Translations = {
     ariaLabel: "Section progress",
   },
   tutorial: {
+    click: "click a container",
     move: "move the crane",
+    row: "change row",
     pickup: "hook a container",
     throw: "drop it on the ship",
+    manual: "or drive it yourself",
   },
   loading: {
     ariaLabel: "Loading percentage",
   },
   game: {
-    scoreHint: "Load the ship to navigate",
+    hud: {
+      clickToGo: "Click",
+      soon: "Coming soon",
+      hintRow: "Back to the ship's row",
+      hintCarry: "Carry it to the ship's arrow",
+      hintRelease: "Drop it! Press DROP",
+      heading: "Heading to",
+      skip: "Skip the game",
+    },
     remote: {
       model: "ACTION RC-1",
       lower: "DROP",
       left: "Move the crane left",
       right: "Move the crane right",
+      up: "Move the crane away",
+      down: "Bring the crane closer",
       hook: "Lower the hook or release the container",
+      row: "ROW",
+      actionKey: "SPACE",
     },
     tally: {
       label: "Gulls downed",

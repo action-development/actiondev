@@ -11,8 +11,11 @@ import {
 } from "@/components/canvas/port/crane-logic";
 import { resolveTimeOfDay, timeOfDayForHour } from "@/components/canvas/port/time-of-day";
 import { pickShipAt } from "@/components/canvas/port/ship-hull";
+import { clampRow, nearestRowIndex, QUAY_ROWS, SHIP_ROW } from "@/components/canvas/port/quay-rows";
 
 const box = (id: string, x: number, y: number, halfW = 1.3) => ({ id, x, y, halfW, halfH: 0.75 });
+/** Contenedor en una FILA concreta (z), para el eje de profundidad. */
+const rowBox = (id: string, x: number, y: number, z: number, halfW = 1.3) => ({ id, x, y, z, halfW, halfH: 0.75 });
 
 describe("findGrabTarget", () => {
   it("engancha el contenedor bajo el spreader", () => {
@@ -32,6 +35,30 @@ describe("findGrabTarget", () => {
   it("no engancha uno cuyo techo ya está por encima del spreader", () => {
     expect(findGrabTarget([box("a", 0, -3)], 0, -4.5)).toBeNull();
   });
+
+  it("sin z, todo cuenta como fila del barco (compatibilidad)", () => {
+    expect(findGrabTarget([box("a", 0, -5.25)], 0, -4.5, 0)?.id).toBe("a");
+  });
+
+  it("ignora los contenedores de otra fila", () => {
+    const front = rowBox("front", 0, -5.25, 3.2);
+    const back = rowBox("back", 0, -5.25, -3.2);
+    expect(findGrabTarget([front, back], 0, -4.5, 0)).toBeNull();
+    expect(findGrabTarget([front, back], 0, -4.5, 3.2)?.id).toBe("front");
+    expect(findGrabTarget([front, back], 0, -4.5, -3.2)?.id).toBe("back");
+  });
+
+  it("con dos en la misma x y filas distintas engancha el de la fila del pórtico", () => {
+    const stack = [rowBox("misma-x-fondo", 0, -3.75, -3.2), rowBox("misma-x-barco", 0, -5.25, 0)];
+    // El del fondo está MÁS ALTO: sin el filtro de fila ganaría él.
+    expect(findGrabTarget(stack, 0, -2.9, 0)?.id).toBe("misma-x-barco");
+  });
+
+  it("tolera que el pórtico no haya frenado del todo sobre la fila", () => {
+    const c = rowBox("a", 0, -5.25, 0);
+    expect(findGrabTarget([c], 0, -4.5, 0.9)?.id).toBe("a");
+    expect(findGrabTarget([c], 0, -4.5, 1.4)).toBeNull();
+  });
 });
 
 describe("pickContainerAt", () => {
@@ -50,6 +77,34 @@ describe("pickContainerAt", () => {
   it("con una pila gana el de arriba, que es el enganchable", () => {
     const stack = [box("bottom", 0, -5.25), box("top", 0, -3.75)];
     expect(pickContainerAt(stack, 0, -4.3)?.id).toBe("top");
+  });
+
+  it("limitado a una fila, ignora los de las otras", () => {
+    const rows = [rowBox("front", 0, -5.25, 3.2), rowBox("back", 0, -5.25, -3.2)];
+    expect(pickContainerAt(rows, 0, -5.25, 3.2)?.id).toBe("front");
+    expect(pickContainerAt(rows, 0, -5.25, -3.2)?.id).toBe("back");
+    expect(pickContainerAt(rows, 0, -5.25, 0)).toBeNull();
+    // Sin z se buscan todos (comportamiento de una sola fila).
+    expect(pickContainerAt(rows, 0, -5.25)).not.toBeNull();
+  });
+});
+
+describe("filas del muelle", () => {
+  it("la fila del barco es z = 0 y va en medio", () => {
+    expect(QUAY_ROWS[SHIP_ROW]).toBe(0);
+    expect(QUAY_ROWS[0]).toBeGreaterThan(QUAY_ROWS[QUAY_ROWS.length - 1]);
+  });
+
+  it("no se sale del muelle", () => {
+    expect(clampRow(-1)).toBe(0);
+    expect(clampRow(99)).toBe(QUAY_ROWS.length - 1);
+    expect(clampRow(1)).toBe(1);
+  });
+
+  it("asigna una z a su fila más cercana", () => {
+    expect(nearestRowIndex(3.2)).toBe(0);
+    expect(nearestRowIndex(0.4)).toBe(SHIP_ROW);
+    expect(nearestRowIndex(-3.1)).toBe(QUAY_ROWS.length - 1);
   });
 });
 
@@ -183,40 +238,92 @@ describe("lighthouse beam", () => {
   });
 });
 
-import { PERCHES, isDisturbed, pickPerch, takeoffEase, FLEE_RADIUS, type Disturbance } from "@/components/canvas/port/gull-behaviour";
+import {
+  PERCHES, isDisturbed, pickPerch, resolvePerch, takeoffEase, FLEE_RADIUS, GANTRY_FLEE_VEL, POINTER_FLEE_RADIUS,
+  type Disturbance, type PerchPoint,
+} from "@/components/canvas/port/gull-behaviour";
+import { BOOM_TOP_Y } from "@/components/canvas/port/Crane";
 
-const calm: Disturbance = { trolleyX: 999, hookX: 999, hookY: 999, pointerX: 999, pointerY: 999, pulse: 0 };
+/** Contenedores de los posaderos, quietos en el suelo del muelle (y = -5.25). */
+const quayBoxes = PERCHES.flatMap((p, i) =>
+  p.kind === "container" ? [rowBox(p.id, -20 + i * 4, -5.25, QUAY_ROWS[i % 3])] : [],
+);
+const calm: Disturbance = {
+  trolleyX: 999, hookX: 999, hookY: 999, pointerX: 999, pointerY: 999, pulse: 0,
+  gantryZ: 0, gantryVel: 0, containers: quayBoxes, heldId: null,
+};
+const craneIdx = PERCHES.findIndex((p) => p.kind === "crane");
+const boxIdx = PERCHES.findIndex((p) => p.kind === "container");
+const at = (i: number, d: Disturbance = calm): PerchPoint => {
+  const out = { x: 0, y: 0, z: 0 };
+  resolvePerch(PERCHES[i], d, out);
+  return out;
+};
 
 describe("gull behaviour", () => {
   it("leaves a perch alone when nothing is near", () => {
     expect(PERCHES.every((p) => !isDisturbed(p, calm))).toBe(true);
   });
 
-  it("flees when the spreader or the pointer gets close", () => {
-    const [x, y] = PERCHES[4].pos;
-    expect(isDisturbed(PERCHES[4], { ...calm, hookX: x + FLEE_RADIUS * 0.5, hookY: y })).toBe(true);
-    expect(isDisturbed(PERCHES[4], { ...calm, pointerX: x, pointerY: y + FLEE_RADIUS * 0.5 })).toBe(true);
-    expect(isDisturbed(PERCHES[4], { ...calm, hookX: x + FLEE_RADIUS * 3, hookY: y })).toBe(false);
+  it("perches on the boom's top face and travels with the gantry", () => {
+    expect(at(craneIdx).y).toBe(BOOM_TOP_Y);
+    const moved = at(craneIdx, { ...calm, gantryZ: 3.2 });
+    expect(moved.z - at(craneIdx).z).toBeCloseTo(3.2);
   });
 
-  it("only the birds on the boom mind the trolley", () => {
-    const onBoom = PERCHES[0];
-    const onStack = PERCHES[4];
-    expect(isDisturbed(onBoom, { ...calm, trolleyX: onBoom.pos[0] + 1 })).toBe(true);
-    expect(isDisturbed(onStack, { ...calm, trolleyX: onStack.pos[0] })).toBe(false);
+  it("perches on a container's roof, wherever it is now", () => {
+    const p = PERCHES[boxIdx];
+    const box = quayBoxes.find((b) => p.kind === "container" && b.id === p.id)!;
+    const pt = at(boxIdx);
+    expect(pt.y).toBeCloseTo(box.y + box.halfH);
+    expect(pt.z).toBe(box.z);
+  });
+
+  it("loses the container perch when it is hooked or buried under another", () => {
+    const p = PERCHES[boxIdx];
+    if (p.kind !== "container") throw new Error("expected container perch");
+    const box = quayBoxes.find((b) => b.id === p.id)!;
+    const out = { x: 0, y: 0, z: 0 };
+    expect(resolvePerch(p, { ...calm, heldId: p.id }, out)).toBe(false);
+    const lid = { ...box, id: "lid", y: box.y + 1.5 };
+    expect(resolvePerch(p, { ...calm, containers: [...quayBoxes, lid] }, out)).toBe(false);
+    expect(isDisturbed(p, { ...calm, heldId: p.id })).toBe(true);
+  });
+
+  it("flees when the spreader or the pointer gets close", () => {
+    const { x, y } = at(boxIdx);
+    expect(isDisturbed(PERCHES[boxIdx], { ...calm, hookX: x + FLEE_RADIUS * 0.5, hookY: y, gantryZ: at(boxIdx).z })).toBe(true);
+    expect(isDisturbed(PERCHES[boxIdx], { ...calm, pointerX: x, pointerY: y + POINTER_FLEE_RADIUS * 0.5 })).toBe(true);
+    expect(isDisturbed(PERCHES[boxIdx], { ...calm, hookX: x + FLEE_RADIUS * 3, hookY: y })).toBe(false);
+  });
+
+  it("ignores a spreader working another row", () => {
+    const { x, y, z } = at(boxIdx);
+    expect(isDisturbed(PERCHES[boxIdx], { ...calm, hookX: x, hookY: y, gantryZ: z + 6.4 })).toBe(false);
+  });
+
+  it("only the birds on the crane mind the trolley and the moving gantry", () => {
+    const onBoom = PERCHES[craneIdx];
+    const onBox = PERCHES[boxIdx];
+    expect(isDisturbed(onBoom, { ...calm, trolleyX: at(craneIdx).x + 1 })).toBe(true);
+    expect(isDisturbed(onBox, { ...calm, trolleyX: at(boxIdx).x })).toBe(false);
+    expect(isDisturbed(onBoom, { ...calm, gantryVel: GANTRY_FLEE_VEL * 2 })).toBe(true);
+    expect(isDisturbed(onBox, { ...calm, gantryVel: GANTRY_FLEE_VEL * 2 })).toBe(false);
   });
 
   it("picks the nearest free and quiet perch", () => {
-    const taken = new Set([0, 1]);
-    const spot = pickPerch(taken, calm, PERCHES[2].pos[0] + 0.5);
-    expect(spot).toBe(2);
+    const taken = new Set(PERCHES.map((_, i) => i).filter((i) => i !== 2));
+    expect(pickPerch(taken, calm, at(2).x + 0.5)).toBe(2);
     expect(pickPerch(new Set(PERCHES.map((_, i) => i)), calm, 0)).toBe(-1);
   });
 
-  it("never returns a perch that is being disturbed", () => {
-    const [x, y] = PERCHES[2].pos;
-    const spot = pickPerch(new Set(), { ...calm, hookX: x, hookY: y }, x);
-    expect(spot).not.toBe(2);
+  it("never returns a perch that is being disturbed or gone", () => {
+    const { x, y } = at(2);
+    expect(pickPerch(new Set(), { ...calm, hookX: x, hookY: y }, x)).not.toBe(2);
+    const p = PERCHES[boxIdx];
+    if (p.kind !== "container") throw new Error("expected container perch");
+    const only = new Set(PERCHES.map((_, i) => i).filter((i) => i !== boxIdx));
+    expect(pickPerch(only, { ...calm, heldId: p.id }, 0)).toBe(-1);
   });
 
   it("eases the takeoff between 0 and 1", () => {

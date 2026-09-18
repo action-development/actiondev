@@ -4,6 +4,22 @@ import { useRef, useCallback } from "react";
 
 export type GameState = ReturnType<typeof useGameState>;
 
+/** Contenedor tal y como lo cuenta la HUD: nombre visible y a dónde lleva. */
+export interface CargoInfo {
+  id: string;
+  label: string;
+  /** Ruta real ("/projects") o "#algo" = destino aún sin página. */
+  href: string;
+}
+
+/**
+ * Pista contextual mientras la grúa lleva carga (`overlays/HeroHud.tsx`).
+ * - `row`: la carga está fuera de la fila del barco.
+ * - `carry`: en la fila buena, pero aún no sobre la bodega.
+ * - `release`: encima de la bodega — soltar ahora entra.
+ */
+export type CraneHint = "row" | "carry" | "release" | null;
+
 /**
  * Central game state for the hero physics playground.
  *
@@ -27,6 +43,30 @@ export function useGameState() {
   /** Easter egg: una gaviota abatida. Lo escucha `GullTally`. */
   const onGullKill      = useRef<(() => void) | null>(null);
 
+  // --- HUD de ayuda (overlays DOM). GameWorld solo llama cuando CAMBIA algo. ---
+  /** Contenedor bajo el puntero (o `null`). Lo escucha la etiqueta flotante. */
+  const onHover = useRef<((info: CargoInfo | null) => void) | null>(null);
+  /**
+   * Nodo DOM de la etiqueta flotante: GameWorld le escribe el `transform` cada
+   * frame mientras hay hover (proyección del techo del contenedor a pantalla).
+   * Por ref y no por estado: seguir a un contenedor que se mueve a 60 fps con
+   * `setState` re-renderizaría el overlay 60 veces por segundo.
+   */
+  const hoverTagEl = useRef<HTMLDivElement | null>(null);
+  const onHint = useRef<((hint: CraneHint) => void) | null>(null);
+  /** Fila del pórtico (índice de `QUAY_ROWS`). Lo escucha el mando. */
+  const onRow = useRef<((row: number) => void) | null>(null);
+  /**
+   * Contenedor que entra en la bodega. Varios oyentes (aviso "rumbo a", objetivo
+   * del tutorial), así que es un conjunto y no un único callback.
+   */
+  const cargoListeners = useRef(new Set<(info: CargoInfo) => void>());
+  /**
+   * Id del contenedor que el tutorial quiere señalar con la flecha holográfica.
+   * Lo escribe el tutorial (DOM) y lo lee el bucle de juego.
+   */
+  const pointAt = useRef<string | null>(null);
+
   const setPower = useCallback((power: number, charging: boolean) => {
     powerRef.current    = power;
     chargingRef.current = charging;
@@ -44,6 +84,18 @@ export function useGameState() {
 
   const notifyGullKill = useCallback(() => {
     onGullKill.current?.();
+  }, []);
+
+  const subscribeCargo = useCallback((fn: (info: CargoInfo) => void) => {
+    const set = cargoListeners.current;
+    set.add(fn);
+    return () => {
+      set.delete(fn);
+    };
+  }, []);
+
+  const notifyCargo = useCallback((info: CargoInfo) => {
+    for (const fn of cargoListeners.current) fn(info);
   }, []);
 
   const reset = useCallback(() => {
@@ -68,6 +120,13 @@ export function useGameState() {
     onHoldingUpdate,
     onThrow,
     onGullKill,
+    onHover,
+    hoverTagEl,
+    onHint,
+    onRow,
+    pointAt,
+    subscribeCargo,
+    notifyCargo,
     reset,
   };
 }

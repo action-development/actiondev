@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { RigidBody, CuboidCollider, type RapierRigidBody } from "@react-three/rapier";
-import { Outlines, Text } from "@react-three/drei";
+import { Outlines } from "@react-three/drei";
 import type { PortPalette } from "./time-of-day";
 import { getToonGradient, OUTLINE } from "./toon";
 import { createContainerMaterials } from "./container-textures";
@@ -13,8 +13,19 @@ import { createContainerMaterials } from "./container-textures";
  * Aspecto de contenedor pintado (nervios entintados, óxido, puertas): ver
  * `container-textures.ts`. Texturas de canvas 2D por contenedor, 0 bytes de red.
  *
- * Física bloqueada al plano de juego: traslación en z y rotación en x/y
- * desactivadas. Solo puede volcar sobre su eje z, que es lo que se ve.
+ * Física bloqueada a SU FILA: traslación en z y rotación en x/y desactivadas.
+ * Solo puede volcar sobre su eje z, que es lo que se ve.
+ *
+ * EL BLOQUEO DE Z SE QUEDA COMO ESTÁ aunque ahora la grúa viaje en profundidad,
+ * y no hay que soltarlo ni volverlo a poner al enganchar. Comprobado contra
+ * Rapier 0.19 (los detalles, en `canvas/SCENE.md`):
+ *
+ * - Un cuerpo `kinematicPosition` IGNORA el bloqueo: mientras cuelga del
+ *   spreader, `setNextKinematicTranslation` lo lleva a la z que haga falta.
+ * - `setTranslation` también lo ignora → el respawn a `spawnZ` funciona.
+ * - En dinámico el bloqueo sí manda: contactos e impulsos en z no lo mueven,
+ *   así que al soltarlo se queda CLAVADO en la fila donde cayó y jamás se
+ *   cuela de una fila a otra.
  */
 
 export interface ContainerData {
@@ -36,21 +47,22 @@ interface CargoContainerProps {
   data: ContainerData;
   label: string;
   position: [number, number, number];
+  /** Se mantiene por firma: el skin es de canvas y no depende de la hora. */
   palette: PortPalette;
   onRegister: (id: string, rb: RapierRigidBody | null) => void;
 }
 
-export function CargoContainer({ data, label, position, palette, onRegister }: CargoContainerProps) {
+export function CargoContainer({ data, label, position, onRegister }: CargoContainerProps) {
   const rbRef = useRef<RapierRigidBody>(null);
   const gradient = getToonGradient();
   const w = data.halfW * 2;
-  // Ancho por carácter ≈ 0.86·fontSize con este letterSpacing; se reduce para
-  // que etiquetas largas ("CONTACTO") quepan en un contenedor de 20 pies.
-  const fontSize = Math.min(0.38, (w - 0.8) / (label.length * 0.86));
 
+  // El rótulo va HORNEADO en la textura del costado +z (ver
+  // `container-textures.ts`), no en un `<Text>` encima: cambia con el idioma,
+  // así que entra en las dependencias y las texturas se recrean al traducir.
   const skin = useMemo(
-    () => createContainerMaterials(data.id, data.color, w, gradient),
-    [data.id, data.color, w, gradient],
+    () => createContainerMaterials(data.id, data.color, w, gradient, label),
+    [data.id, data.color, w, gradient, label],
   );
   useEffect(() => () => skin.dispose(), [skin]);
 
@@ -81,24 +93,6 @@ export function CargoContainer({ data, label, position, palette, onRegister }: C
         <boxGeometry args={[w, CONTAINER_HALF_H * 2, HALF_D * 2]} />
         <Outlines thickness={OUTLINE} color="#1a1410" />
       </mesh>
-
-      {/* Placa con la etiqueta — chapa oscura atornillada, legible sobre cualquier color */}
-      <mesh position={[0, 0, HALF_D + 0.01]}>
-        <planeGeometry args={[Math.min(w - 0.4, label.length * fontSize * 0.86 + 0.5), 0.62]} />
-        <meshBasicMaterial color={palette.outline} toneMapped={false} />
-      </mesh>
-      <Text
-        font="/fonts/Poppins-Bold-subset.ttf"
-        position={[0, -0.01, HALF_D + 0.03]}
-        fontSize={fontSize}
-        letterSpacing={0.12}
-        color={data.color}
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={w - 0.6}
-      >
-        {label.toUpperCase()}
-      </Text>
     </RigidBody>
   );
 }

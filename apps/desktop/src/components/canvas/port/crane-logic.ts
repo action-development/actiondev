@@ -1,6 +1,10 @@
 /**
  * Lógica pura de la grúa — sin Three ni Rapier, testeable en Vitest.
- * Todo en coordenadas de mundo sobre el plano de juego z = 0.
+ *
+ * Todo en coordenadas de mundo. El perfil (x, y) es el mismo para las tres
+ * filas del muelle (`quay-rows.ts`): el suelo no cambia con la profundidad, así
+ * que `groundTopAt` y compañía siguen siendo funciones de x. La z solo entra
+ * donde hay que distinguir FILAS — enganchar y pinchar.
  */
 
 /** Cota superior del suelo bajo una x: muelle, bodega del barco o agua. */
@@ -37,12 +41,24 @@ export interface GrabCandidate {
   id: string;
   x: number;
   y: number;
+  /** Profundidad (fila). Opcional: sin ella se asume la fila del barco (z = 0). */
+  z?: number;
   halfW: number;
   halfH: number;
 }
 
 /**
- * Contenedor que el spreader engancharía bajando en `hookX`.
+ * Tolerancia en profundidad para dar un contenedor por "debajo del gancho".
+ * Las filas están a 3,2 y un contenedor mide 1,5 de fondo: con 1,2 el pórtico
+ * tiene que estar claramente sobre la fila, pero no hace falta que haya
+ * terminado de frenar al milímetro.
+ */
+export const GRAB_Z_TOL = 1.2;
+
+/**
+ * Contenedor que el spreader engancharía bajando en `hookX` con el pórtico en
+ * `hookZ`.
+ * - Debe estar EN LA FILA del pórtico (`zTol`): la grúa no engancha en diagonal.
  * - Debe estar bajo el gancho con margen (85% del semiancho): enganchar de
  *   refilón un contenedor que apenas asoma se siente injusto.
  * - Con varios apilados gana el de arriba (techo más alto).
@@ -52,10 +68,13 @@ export function findGrabTarget<T extends GrabCandidate>(
   candidates: readonly T[],
   hookX: number,
   hookBottomY: number,
+  hookZ = 0,
+  zTol = GRAB_Z_TOL,
 ): T | null {
   let best: T | null = null;
   let bestTop = -Infinity;
   for (const c of candidates) {
+    if (Math.abs((c.z ?? 0) - hookZ) > zTol) continue;
     if (Math.abs(c.x - hookX) > c.halfW * 0.85) continue;
     const top = c.y + c.halfH;
     if (top > hookBottomY + 0.05) continue;
@@ -75,17 +94,31 @@ export function findGrabTarget<T extends GrabCandidate>(
 export const PICK_SLACK = 0.35;
 
 /**
- * Contenedor sobre el que cae un click, en coordenadas del plano de juego.
+ * Margen en profundidad del click. Más generoso que el del gancho: aquí no se
+ * engancha nada, solo se decide qué contenedor de ESA fila se ha pinchado, y el
+ * rayo se corta contra el plano exacto de la fila.
+ */
+export const PICK_Z_TOL = 1.6;
+
+/**
+ * Contenedor sobre el que cae un click, en coordenadas de mundo.
  * Con una pila, gana el de arriba: es el único que la grúa puede enganchar.
+ *
+ * `z` limita la búsqueda a una FILA: el interceptor corta el rayo contra el
+ * plano de cada fila, de delante hacia atrás, y pregunta solo por los de esa
+ * profundidad. Sin `z` se buscan todos (comportamiento de una sola fila).
  */
 export function pickContainerAt<T extends GrabCandidate>(
   candidates: readonly T[],
   x: number,
   y: number,
+  z?: number,
+  zTol = PICK_Z_TOL,
 ): T | null {
   let best: T | null = null;
   let bestTop = -Infinity;
   for (const c of candidates) {
+    if (z !== undefined && Math.abs((c.z ?? 0) - z) > zTol) continue;
     if (Math.abs(c.x - x) > c.halfW + PICK_SLACK) continue;
     if (Math.abs(c.y - y) > c.halfH + PICK_SLACK) continue;
     const top = c.y + c.halfH;

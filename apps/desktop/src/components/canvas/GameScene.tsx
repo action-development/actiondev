@@ -7,7 +7,7 @@ import type { WebGLRenderer } from "three";
 import { useGameState } from "@/hooks/use-game-state";
 import { GameWorld } from "./GameWorld";
 import { TutorialOverlay } from "./overlays/TutorialOverlay";
-import { ScoreHint } from "./overlays/ScoreHint";
+import { CargoToast, CraneHintBar, HoverTag, SkipMenu } from "./overlays/HeroHud";
 import { RemoteControl } from "./overlays/RemoteControl";
 import { GullTally } from "./overlays/GullTally";
 import Image from "next/image";
@@ -106,16 +106,21 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
         style={{ background: "linear-gradient(to bottom, rgba(5,8,24,0.55), transparent)" }}
       />
 
-      {/* Velo inferior: el aviso "Carga el barco…" sobre el muelle claro de día. */}
+      {/* Velo inferior: el mando y "ir sin jugar" sobre el muelle claro de día. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-32"
         style={{ background: "linear-gradient(to top, rgba(5,8,24,0.5), transparent)" }}
       />
 
+      {/* HUD de ayuda: etiqueta de hover, pista de la grúa, aviso de carga y
+          salida sin jugar (ver overlays/HeroHud.tsx). */}
+      <HoverTag gameState={gameState} />
       <TutorialOverlay gameState={gameState} />
-      <ScoreHint />
-      <RemoteControl />
+      <CraneHintBar gameState={gameState} />
+      <CargoToast gameState={gameState} />
+      <SkipMenu />
+      <RemoteControl gameState={gameState} />
       <GullTally gameState={gameState} />
     </div>
   );

@@ -89,21 +89,48 @@ export interface Translations {
     ariaLabel: string;
   };
   tutorial: {
+    /** Camino fácil: un click en un contenedor hace toda la maniobra. */
+    click: string;
     move: string;
+    /** Eje de profundidad: cambiar de fila del muelle (▲ ▼). */
+    row: string;
     pickup: string;
     throw: string;
+    /** Leyenda final del camino fácil: los controles manuales, opcionales. */
+    manual: string;
   };
   loading: {
     ariaLabel: string;
   };
   game: {
-    scoreHint: string;
+    /** HUD de ayuda (`canvas/overlays/HeroHud.tsx`). */
+    hud: {
+      /** Etiqueta flotante: "clic → /projects". */
+      clickToGo: string;
+      /** Destino aún sin página. */
+      soon: string;
+      hintRow: string;
+      hintCarry: string;
+      hintRelease: string;
+      /** Aviso al cargar: "Rumbo a". */
+      heading: string;
+      /** Menú para ir a las secciones sin jugar. */
+      skip: string;
+    };
     remote: {
       model: string;
       lower: string;
       left: string;
       right: string;
+      /** Aleja la grúa una fila (hacia el fondo del muelle). */
+      up: string;
+      /** Acerca la grúa una fila (hacia la cámara). */
+      down: string;
       hook: string;
+      /** Rótulo del indicador de fila del mando. */
+      row: string;
+      /** Tecla de acción impresa bajo "BAJAR". */
+      actionKey: string;
     };
     /** Easter egg: contador de gaviotas abatidas (arriba a la derecha). */
     tally: {

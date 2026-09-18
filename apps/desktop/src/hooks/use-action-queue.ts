@@ -2,8 +2,14 @@
 
 import { useEffect, useRef, type MutableRefObject } from "react";
 
-/** Teclas que disparan la acción principal del juego (bajar / soltar). */
-export const ACTION_KEYS: ReadonlySet<string> = new Set(["Space", "KeyE", "KeyS", "ArrowDown"]);
+/**
+ * Teclas que disparan la acción principal del juego (bajar / soltar).
+ *
+ * S y ↓ YA NO están aquí: con el eje de profundidad son "acercar la grúa"
+ * (`QUAY_ROWS`), igual que W y ↑ son "alejar". Bajar el gancho queda en Espacio
+ * y E, que es lo que enseña el tutorial y lo que dice el mando.
+ */
+export const ACTION_KEYS: ReadonlySet<string> = new Set(["Space", "KeyE"]);
 
 /**
  * Cola de pulsaciones para el bucle de juego: devuelve un contador que el

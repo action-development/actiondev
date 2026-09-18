@@ -10,6 +10,10 @@
  *
  * `actions` es una COLA (contador), no un booleano: una pulsación corta puede
  * empezar y acabar entre dos frames — ver `use-action-queue`.
+ *
+ * `rowDelta` es otra cola, pero CON SIGNO: el cambio de fila es discreto (una
+ * pulsación = una fila), no un "mantener" como las flechas de izquierda y
+ * derecha. El bucle lo suma y lo pone a cero cada frame.
  */
 export const remoteInput = {
   /** Mantener la flecha izquierda del mando. */
@@ -18,6 +22,8 @@ export const remoteInput = {
   right: false,
   /** Pulsaciones del botón de gancho pendientes de consumir. */
   actions: 0,
+  /** Saltos de fila pendientes: +1 por cada ▲ (alejar), -1 por cada ▼ (acercar). */
+  rowDelta: 0,
 };
 
 /** Suelta las pulsaciones (pausa del juego, pérdida de foco, desmontaje). */
@@ -25,4 +31,5 @@ export function resetRemoteInput() {
   remoteInput.left = false;
   remoteInput.right = false;
   remoteInput.actions = 0;
+  remoteInput.rowDelta = 0;
 }

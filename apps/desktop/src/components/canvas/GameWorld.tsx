@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
   Physics,
@@ -16,9 +16,10 @@ import { useKeyboard } from "@/hooks/use-keyboard";
 import { useActionQueue } from "@/hooks/use-action-queue";
 import { remoteInput, resetRemoteInput } from "@/lib/hero-remote";
 import { useMousePosition } from "@/hooks/use-mouse-position";
-import type { GameState } from "@/hooks/use-game-state";
+import type { CargoInfo, CraneHint, GameState } from "@/hooks/use-game-state";
 import { useT } from "@/lib/i18n";
 import { PORT_CONTAINERS } from "@/data/port-containers";
+import { clampRow, nearestRowIndex, QUAY_ROWS, SHIP_ROW } from "./port/quay-rows";
 import type { PortPalette } from "./port/time-of-day";
 import { ComicClouds, PortSky } from "./port/PortSky";
 import { Seagulls } from "./port/Seagulls";
@@ -27,13 +28,15 @@ import { GullHunt, type GullHuntHandle } from "./port/GullHunt";
 import { pickGullTarget, type GullTarget } from "./port/gull-hunt-logic";
 import { PortBay } from "./port/PortBay";
 import { Quay } from "./port/Quay";
-import { Ship } from "./port/Ship";
+import { Ship, type DropState, type ShipHandle } from "./port/Ship";
 import { pickShipAt } from "./port/ship-hull";
 import { playHornSfx } from "@/lib/hero-sfx";
 import { PaintedFraming, WaterOccluder } from "./port/PaintedLayer";
 import { PaintedLighthouse } from "./port/PaintedScenery";
 import type { SceneMode } from "./port/painted-backdrops";
 import { CargoContainer, CONTAINER_HALF_H, type ContainerData } from "./port/CargoContainer";
+import { HookGuide, type HookGuideHandle } from "./port/HookGuide";
+import { TargetMarker, type TargetMarkerHandle } from "./port/TargetMarker";
 import {
   Crane,
   CRANE_START_X,
@@ -47,7 +50,10 @@ import {
   approach,
   findGrabTarget,
   groundTopAt,
+  HOLD_MAX_X,
+  HOLD_MIN_X,
   pickContainerAt,
+  QUAY_EDGE_X,
   restingY,
   SHIP_DROP_X,
   stepSway,
@@ -64,8 +70,13 @@ import {
  *   encima, baja el gancho, engancha y lo deja en la bodega. Un click, cero
  *   destreza. El carro NO sigue al ratón: mover el ratón por la pantalla no
  *   mueve nada, así que no hay forma de "estropear" la maniobra sin querer.
- * - **Manual** — A/D/flechas o el mando mueven el carro, y la acción
- *   (Espacio / E / botón del mando) baja el gancho y suelta.
+ * - **Manual** — A/D/flechas o el mando mueven el carro, W/S (↑/↓) cambian de
+ *   FILA del muelle, y la acción (Espacio / E / botón del mando) baja el gancho
+ *   y suelta.
+ *
+ * DOS EJES: el muelle tiene tres filas en z (`port/quay-rows.ts`) y el pórtico
+ * ENTERO viaja de una a otra, más lento que el carro. Solo se engancha lo que
+ * está en la fila del pórtico, y solo se suelta en la bodega desde `SHIP_ROW`.
  *
  * Cualquier entrada manual durante la maniobra automática la cancela: manda
  * quien toca.
@@ -93,6 +104,17 @@ const TROLLEY_GAIN = 3.4;
 /** Velocidad a la que A/D desplazan el objetivo (u/s). */
 const KEY_TARGET_SPEED = 14;
 
+/**
+ * Dinámica del pórtico en profundidad. Mismo modelo que el carro pero MÁS
+ * LENTO: un pórtico mueve miles de toneladas sobre los carriles y el carro solo
+ * su propio peso. Esa diferencia es la que hace que cambiar de fila se sienta
+ * como una decisión y no como un gesto. Sin péndulo en z (v1): el balanceo del
+ * spreader sigue siendo solo en x.
+ */
+const GANTRY_MAX_SPEED = 6;
+const GANTRY_ACCEL = 14;
+const GANTRY_GAIN = 3.4;
+
 const LOWER_SPEED = 12;
 const RAISE_SPEED = 9;
 /** Por debajo de esto un contenedor se ha caído a la ría → reaparece en el muelle. */
@@ -107,6 +129,8 @@ const NAVIGATE_DELAY_MS = 900;
  */
 const AUTO_ALIGN_X = 0.16;
 const AUTO_CALM_VEL = 0.7;
+/** Y en profundidad: el pórtico tiene que haber LLEGADO a la fila, no ir de paso. */
+const AUTO_ALIGN_Z = 0.1;
 
 /**
  * Sol del fondo pintado: detrás de la escena y a la derecha. Ilumina los
@@ -127,6 +151,8 @@ type HookPhase = "idle" | "lowering" | "raising";
 interface AutoRun {
   id: string;
   phase: "pick" | "drop";
+  /** Fila (índice de `QUAY_ROWS`) a la que tiene que viajar el pórtico. */
+  row: number;
   lowered: boolean;
 }
 
@@ -134,6 +160,8 @@ interface Tracked {
   rb: RapierRigidBody;
   data: ContainerData;
   spawnX: number;
+  /** Fila donde nació: al caerse a la ría vuelve a SU sitio, no al del pórtico. */
+  spawnZ: number;
   /** Nivel en su pila: al reaparecer vuelve a su sitio, no al suelo. */
   tier: number;
   cand: GrabCandidate;
@@ -142,7 +170,15 @@ interface Tracked {
 const _hit = new THREE.Vector3();
 const _raycaster = new THREE.Raycaster();
 const _ndc = new THREE.Vector2();
-const _plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+/**
+ * Un plano por fila del muelle, de delante hacia atrás. El hit-test del click
+ * corta el rayo contra cada uno y pregunta solo por los contenedores de esa
+ * profundidad: gana el primero que acierta, que es el que tapa a los demás.
+ * Módulo (no por frame): cero reservas en el bucle.
+ */
+const ROW_PLANES = QUAY_ROWS.map((z) => new THREE.Plane(new THREE.Vector3(0, 0, 1), -z));
+/** Plano de la fila del barco: el de siempre (z = 0), para barco y gaviotas. */
+const _plane = ROW_PLANES[SHIP_ROW];
 const _identityQuat = { x: 0, y: 0, z: 0, w: 1 };
 
 /**
@@ -151,6 +187,20 @@ const _identityQuat = { x: 0, y: 0, z: 0, w: 1 };
  * contenedores YA están puestos en el muelle.
  */
 const RESPAWN_DROP = 2;
+
+/**
+ * Demostración en reposo ("attract mode" de recreativa): si nadie toca nada en
+ * este tiempo y aún no se ha cargado ningún contenedor, la grúa se planta sola
+ * sobre `DEMO_TARGET_ID` y la flecha holográfica lo señala. NO lo engancha: es
+ * una invitación, no una maniobra. Una vez por visita.
+ */
+const DEMO_AFTER_S = 8;
+const DEMO_TARGET_ID = "projects";
+/** Etiqueta flotante: cuánto por encima del techo del contenedor se ancla. */
+const TAG_LIFT = 0.45;
+/** Pórtico "en la fila del barco" a efectos de la pista de soltar. */
+const SHIP_ROW_Z_TOL = 0.5;
+const _tagPos = new THREE.Vector3();
 
 interface GameWorldProps {
   paused?: boolean;
@@ -200,17 +250,20 @@ export function GameWorld({
       return true;
     }
     // Click sobre un contenedor → maniobra automática, no acción de gancho.
-    if (_raycaster.ray.intersectPlane(_plane, _hit)) {
-      const box = pickContainerAt(candidates.current, _hit.x, _hit.y);
+    // Una fila cada vez, de delante hacia atrás: el primero que acierta es el
+    // que el visitante está viendo, porque tapa a los de detrás.
+    for (let r = 0; r < ROW_PLANES.length; r++) {
+      if (!_raycaster.ray.intersectPlane(ROW_PLANES[r], _hit)) continue;
+      const box = pickContainerAt(candidates.current, _hit.x, _hit.y, QUAY_ROWS[r]);
       if (box) {
         autoRequest.current = box.id;
         return true;
       }
-      // Click sobre el barco → bocina de zarpar. Tampoco baja el gancho.
-      if (pickShipAt(_hit.x, _hit.y)) {
-        playHornSfx();
-        return true;
-      }
+    }
+    // Click sobre el barco → bocina de zarpar. Tampoco baja el gancho.
+    if (_raycaster.ray.intersectPlane(_plane, _hit) && pickShipAt(_hit.x, _hit.y)) {
+      playHornSfx();
+      return true;
     }
     return false;
   };
@@ -230,7 +283,22 @@ export function GameWorld({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /** Nombre visible y destino de cada contenedor, para la HUD. */
+  const cargoInfo = useMemo(
+    () =>
+      new Map<string, CargoInfo>(
+        PORT_CONTAINERS.map((d) => [d.id, { id: d.id, label: d.label ?? t.nav[d.labelKey ?? "work"], href: d.href }]),
+      ),
+    [t],
+  );
+  const cargoInfoRef = useRef(cargoInfo);
+  cargoInfoRef.current = cargoInfo;
+
   const craneRef = useRef<CraneHandle>(null);
+  /** Halo de hover + flecha que señala (visual, fuera de Physics). */
+  const markerRef = useRef<TargetMarkerHandle>(null);
+  /** Guía holográfica bajo el spreader: se le escribe una vez por frame. */
+  const guideRef = useRef<HookGuideHandle>(null);
 
   // Qué hay cerca de las gaviotas (carro, spreader, cursor): lo leen ellas.
   const disturbance = useRef<Disturbance>({
@@ -247,12 +315,14 @@ export function GameWorld({
     if (rb) {
       const def = PORT_CONTAINERS.find((c) => c.id === id);
       if (!def) return;
+      const z = QUAY_ROWS[clampRow(def.row)];
       map.set(id, {
         rb,
         data: def,
         spawnX: def.spawnX,
+        spawnZ: z,
         tier: def.tier,
-        cand: { id, x: 0, y: 0, halfW: def.halfW, halfH: CONTAINER_HALF_H },
+        cand: { id, x: 0, y: 0, z, halfW: def.halfW, halfH: CONTAINER_HALF_H },
       });
     } else {
       map.delete(id);
@@ -267,7 +337,24 @@ export function GameWorld({
     targetX: CRANE_START_X,
     hookY: HOOK_TOP_Y,
     phase: "idle" as HookPhase,
+    // Profundidad: la fila es un entero (lo que se pulsa) y `gantryZ` su
+    // traducción continua (lo que se ve), que llega con retraso.
+    rowIndex: SHIP_ROW,
+    gantryZ: QUAY_ROWS[SHIP_ROW],
+    gantryVel: 0,
+    targetZ: QUAY_ROWS[SHIP_ROW],
   });
+  /** Flancos de W/S: cambiar de fila es un pulso, no un "mantener". */
+  const rowKeyHeld = useRef(false);
+  const shipRef = useRef<ShipHandle>(null);
+  /** Último estado enviado a la flecha de la bodega: evita escribir uniforms cada frame. */
+  const markerDim = useRef(false);
+  // Últimos valores enviados a la HUD DOM: solo se notifica al CAMBIAR.
+  const hoverId = useRef<string | null>(null);
+  const lastHint = useRef<CraneHint>(null);
+  const lastRow = useRef(-1);
+  /** Reposo y demostración (ver `DEMO_AFTER_S`). */
+  const idle = useRef({ t: 0, demoDone: false, pointing: false, loaded: false });
   const sway = useRef<SwayState>({ offset: 0, velocity: 0 });
   const held = useRef<Tracked | null>(null);
   const auto = useRef<AutoRun | null>(null);
@@ -297,6 +384,14 @@ export function GameWorld({
     if (!thrownIds.current.has(data.id) || gatedIds.current.has(data.id)) return;
     thrownIds.current.delete(data.id);
     gatedIds.current.add(data.id);
+    idle.current.loaded = true;
+    // Confirmación ANTES de la persiana: aviso "rumbo a…" (HeroHud) y, si hay
+    // destino real, bocina de zarpar. Un "#…" (página aún no hecha) solo avisa
+    // "próximamente" — sin esto cargarlo parecía un fallo.
+    const info = cargoInfoRef.current.get(data.id);
+    if (info) gameState.notifyCargo(info);
+    if (!data.href.startsWith("/")) return;
+    playHornSfx();
     setTimeout(() => onNavigate?.(data.href), NAVIGATE_DELAY_MS);
   }, [gameState, onNavigate]);
 
@@ -318,6 +413,13 @@ export function GameWorld({
       autoRequest.current = null;
       resetRemoteInput();
       if (c.phase === "lowering") c.phase = "raising";
+      rowKeyHeld.current = false;
+      guideRef.current?.update(c.trolleyX, c.hookY, c.gantryZ, null, groundTopAt(c.trolleyX), false);
+      markerRef.current?.update(null, null);
+      if (hoverId.current !== null) {
+        hoverId.current = null;
+        gameState.onHover.current?.(null);
+      }
       return;
     }
 
@@ -337,26 +439,77 @@ export function GameWorld({
     const left = k.has("KeyA") || k.has("ArrowLeft") || remoteInput.left;
     const right = k.has("KeyD") || k.has("ArrowRight") || remoteInput.right;
     const mp = mousePos.current;
+
+    // --- Entrada: cambio de FILA. Discreto: un pulso = una fila. ---
+    // El mando encola con signo; el teclado se lee por FLANCO (mantener W no
+    // recorre el muelle entero, que es lo que pasaba si se leyera el estado).
+    let rowDelta = remoteInput.rowDelta;
+    remoteInput.rowDelta = 0;
+    const up = k.has("KeyW") || k.has("ArrowUp");
+    const down = k.has("KeyS") || k.has("ArrowDown");
+    if (up || down) {
+      if (!rowKeyHeld.current) rowDelta += up ? 1 : -1;
+      rowKeyHeld.current = true;
+    } else {
+      rowKeyHeld.current = false;
+    }
+
     // Tocar los mandos manda sobre la maniobra automática.
-    if (left || right || action) auto.current = null;
+    const touched = left || right || action || rowDelta !== 0;
+    if (touched) auto.current = null;
+
+    // --- Reposo → demostración. Cualquier entrada (o un click en un
+    // contenedor) cuenta como "está jugando" y apaga la flecha de la demo. ---
+    const rest = idle.current;
+    if (touched || autoRequest.current) {
+      rest.t = 0;
+      rest.pointing = false;
+    } else if (!held.current && !auto.current && c.phase === "idle") {
+      rest.t += dt;
+      if (!rest.demoDone && !rest.loaded && rest.t > DEMO_AFTER_S) {
+        const demo = tracked.current.get(DEMO_TARGET_ID);
+        rest.demoDone = true;
+        if (demo) {
+          // Solo coloca el objetivo: la inercia del carro y del pórtico hacen
+          // el resto, y la guía del gancho se "engancha" visualmente sola.
+          c.targetX = demo.cand.x;
+          c.rowIndex = nearestRowIndex(demo.cand.z ?? 0);
+          rest.pointing = true;
+        }
+      }
+    }
     if (left || right) c.targetX += (right ? 1 : -1) * KEY_TARGET_SPEED * dt;
+    if (rowDelta !== 0) c.rowIndex = clampRow(c.rowIndex + rowDelta);
 
     // --- Maniobra automática (click en un contenedor) ---
     if (autoRequest.current) {
       const id = autoRequest.current;
       autoRequest.current = null;
       // Con algo colgando, el click significa "llévalo al barco".
-      if (held.current) auto.current = { id: held.current.data.id, phase: "drop", lowered: true };
-      else if (tracked.current.has(id)) auto.current = { id, phase: "pick", lowered: false };
+      if (held.current) {
+        auto.current = { id: held.current.data.id, phase: "drop", row: SHIP_ROW, lowered: true };
+      } else {
+        const tr = tracked.current.get(id);
+        // La fila se toma de DÓNDE ESTÁ, no de dónde nació: puede haberse
+        // soltado en otra.
+        if (tr) auto.current = { id, phase: "pick", row: nearestRowIndex(tr.cand.z ?? 0), lowered: false };
+      }
     }
 
     const run = auto.current;
     if (run) {
-      if (held.current) run.phase = "drop";
+      if (held.current) {
+        run.phase = "drop";
+        run.row = SHIP_ROW; // la bodega solo está en la fila del barco
+      }
       // Posición del gancho al final del frame anterior: sirve para saber si
       // la vertical ya está sobre el objetivo.
       const hookNow = c.trolleyX + sway.current.offset;
       const calm = Math.abs(c.trolleyVel) < AUTO_CALM_VEL && Math.abs(sway.current.velocity) < AUTO_CALM_VEL;
+      // La maniobra manda también en profundidad: primero se planta en la fila.
+      c.rowIndex = run.row;
+      const onRow =
+        Math.abs(c.gantryZ - QUAY_ROWS[run.row]) < AUTO_ALIGN_Z && Math.abs(c.gantryVel) < AUTO_CALM_VEL;
 
       if (run.phase === "pick") {
         const tr = tracked.current.get(run.id);
@@ -364,7 +517,7 @@ export function GameWorld({
           auto.current = null; // desapareció, o bajó y volvió de vacío
         } else {
           c.targetX = tr.cand.x;
-          if (c.phase === "idle" && calm && Math.abs(hookNow - tr.cand.x) < AUTO_ALIGN_X) {
+          if (c.phase === "idle" && calm && onRow && Math.abs(hookNow - tr.cand.x) < AUTO_ALIGN_X) {
             run.lowered = true;
             action = true; // → lowering
           }
@@ -373,7 +526,7 @@ export function GameWorld({
         auto.current = null; // ya está soltado
       } else {
         c.targetX = SHIP_DROP_X;
-        if (c.phase === "idle" && calm && Math.abs(hookNow - SHIP_DROP_X) < AUTO_ALIGN_X) {
+        if (c.phase === "idle" && calm && onRow && Math.abs(hookNow - SHIP_DROP_X) < AUTO_ALIGN_X) {
           release(c.trolleyVel + sway.current.velocity, true);
           auto.current = null;
         }
@@ -392,16 +545,23 @@ export function GameWorld({
     stepSway(sway.current, held.current ? accel * 1.4 : accel, dt);
     const hookX = c.trolleyX + sway.current.offset;
 
+    // --- Pórtico en profundidad: misma inercia, más pesada. Sin péndulo en z. ---
+    c.targetZ = QUAY_ROWS[c.rowIndex];
+    const desiredZ = Math.min(Math.max((c.targetZ - c.gantryZ) * GANTRY_GAIN, -GANTRY_MAX_SPEED), GANTRY_MAX_SPEED);
+    c.gantryVel = approach(c.gantryVel, desiredZ, GANTRY_ACCEL * dt);
+    c.gantryZ += c.gantryVel * dt;
+
     // --- Refresca candidatos con la física actual ---
     for (const tr of tracked.current.values()) {
       const p = tr.rb.translation();
       tr.cand.x = p.x;
       tr.cand.y = p.y;
+      tr.cand.z = p.z;
       if (p.y < SINK_Y && tr !== held.current) {
         scratchRapierVec.x = tr.spawnX;
         scratchRapierVec.y =
           restingY(tr.spawnX, CONTAINER_HALF_H) + tr.tier * CONTAINER_HALF_H * 2 + RESPAWN_DROP;
-        scratchRapierVec.z = 0;
+        scratchRapierVec.z = tr.spawnZ;
         tr.rb.setTranslation(scratchRapierVec, true);
         tr.rb.setRotation(_identityQuat, true);
         scratchRapierVec.x = 0; scratchRapierVec.y = 0; scratchRapierVec.z = 0;
@@ -426,7 +586,7 @@ export function GameWorld({
       c.hookY -= LOWER_SPEED * dt;
       const bottom = c.hookY - SPREADER_HALF_H;
       // Solo se baja con el spreader vacío (con carga, la acción es soltar).
-      const target = findGrabTarget(candidates.current, hookX, bottom + LOWER_SPEED * dt);
+      const target = findGrabTarget(candidates.current, hookX, bottom + LOWER_SPEED * dt, c.gantryZ);
       const floor = target ? target.y + target.halfH : groundTopAt(hookX);
       if (bottom <= floor) {
         c.hookY = floor + SPREADER_HALF_H;
@@ -453,10 +613,35 @@ export function GameWorld({
       }
     }
 
+    /*
+     * Guía holográfica del gancho. Se dibuja cuando SIRVE para decidir: con el
+     * spreader vacío y parado (`idle`) o mientras baja. Subiendo o con carga no
+     * aporta nada — ahí ya no se elige presa — y sería ruido sobre el dibujo.
+     *
+     * El objetivo es el MISMO que usa `lowering` para enganchar (`findGrabTarget`
+     * con la fila del pórtico), así que lo que se pinta es literalmente lo que
+     * se va a agarrar, no una aproximación. En `idle` el fondo del spreader está
+     * arriba del todo y la función filtra solo por x/z y se queda con el techo
+     * más alto: devuelve el de la cima de la pila, que es el enganchable.
+     */
+    // Solo sobre el muelle: sobre el agua o el barco no hay nada que elegir y
+    // los hilos colgando al vacío eran ruido.
+    const showGuide = held.current === null && c.phase !== "raising" && hookX <= QUAY_EDGE_X;
+    const guideTarget = showGuide
+      ? findGrabTarget(candidates.current, hookX, c.hookY - SPREADER_HALF_H, c.gantryZ)
+      : null;
+    guideRef.current?.update(hookX, c.hookY, c.gantryZ, guideTarget, groundTopAt(hookX), showGuide);
+
     const dist = disturbance.current;
     dist.trolleyX = c.trolleyX;
     dist.hookX = hookX;
     dist.hookY = c.hookY;
+    // Las gaviotas se posan en la grúa (que viaja en z) y en los techos de los
+    // contenedores: necesitan saber dónde está todo ESTE frame.
+    dist.gantryZ = c.gantryZ;
+    dist.gantryVel = c.gantryVel;
+    dist.containers = candidates.current;
+    dist.heldId = held.current ? held.current.data.id : null;
 
     // El ratón ya no conduce la grúa, pero sigue espantando gaviotas y decide
     // el cursor: cruz sobre una gaviota (pista del easter egg), mano sobre un
@@ -465,10 +650,21 @@ export function GameWorld({
     const { origin: ro, direction: rd } = _raycaster.ray;
     const overGull = pickGullTarget(ro.x, ro.y, ro.z, rd.x, rd.y, rd.z, gullTargets.values()) !== null;
     let overBox = false;
+    let hovered: GrabCandidate | null = null;
+    // El puntero para las gaviotas sigue leyéndose en la fila del barco.
     if (_raycaster.ray.intersectPlane(_plane, _hit)) {
       dist.pointerX = _hit.x;
       dist.pointerY = _hit.y;
-      overBox = !overGull && (pickContainerAt(candidates.current, _hit.x, _hit.y) !== null || pickShipAt(_hit.x, _hit.y));
+      overBox = !overGull && pickShipAt(_hit.x, _hit.y);
+    }
+    // Contenedores: mismo recorrido de filas que el click, para que el cursor
+    // no mienta sobre lo que se puede pinchar.
+    if (!overGull && !overBox) {
+      for (let r = 0; r < ROW_PLANES.length && !overBox; r++) {
+        if (!_raycaster.ray.intersectPlane(ROW_PLANES[r], _hit)) continue;
+        hovered = pickContainerAt(candidates.current, _hit.x, _hit.y, QUAY_ROWS[r]);
+        overBox = hovered !== null;
+      }
     }
     const wantCursor = overGull ? "crosshair" : overBox ? "pointer" : "";
     if (wantCursor !== cursor.current) {
@@ -476,15 +672,75 @@ export function GameWorld({
       gl.domElement.style.cursor = wantCursor;
     }
 
-    craneRef.current?.update(c.trolleyX, hookX, c.hookY);
+    craneRef.current?.update(c.trolleyX, hookX, c.hookY, c.gantryZ);
 
     const h = held.current;
     if (h) {
       scratchRapierVec.x = hookX;
       scratchRapierVec.y = c.hookY - SPREADER_HALF_H - CONTAINER_HALF_H - 0.02;
-      scratchRapierVec.z = 0;
+      // La carga viaja en la fila del pórtico. Un cuerpo cinemático IGNORA el
+      // bloqueo de traslación en z, así que aquí la z sí se mueve; al soltarlo
+      // vuelve a dinámico y el bloqueo lo deja clavado en esa fila.
+      scratchRapierVec.z = c.gantryZ;
       h.rb.setNextKinematicTranslation(scratchRapierVec);
     }
+
+    // Flecha de la bodega atenuada cuando la carga está fuera de la fila del
+    // barco: desde ahí no se puede soltar dentro.
+    const dim = h !== null && c.rowIndex !== SHIP_ROW;
+    if (dim !== markerDim.current) {
+      markerDim.current = dim;
+      shipRef.current?.setDimmed(dim);
+    }
+
+    /*
+     * --- HUD de ayuda ---
+     * Con carga: hueco fantasma en la bodega + pista de texto (fila / llévala /
+     * suelta). "Encima de la bodega" = el contenedor entero cabe entre sus
+     * mamparos a esta x, que es cuando soltar entra de verdad. Durante la
+     * maniobra automática no hay pista: la grúa ya sabe lo que hace.
+     */
+    let drop: DropState = "hidden";
+    let hint: CraneHint = null;
+    if (h) {
+      const inShipRow = c.rowIndex === SHIP_ROW && Math.abs(c.gantryZ - QUAY_ROWS[SHIP_ROW]) < SHIP_ROW_Z_TOL;
+      const overHold = hookX >= HOLD_MIN_X + h.cand.halfW * 0.6 && hookX <= HOLD_MAX_X - h.cand.halfW * 0.6;
+      drop = !inShipRow ? "dim" : overHold ? "ready" : "target";
+      if (!auto.current) hint = drop === "dim" ? "row" : drop === "ready" ? "release" : "carry";
+    }
+    shipRef.current?.setDrop(drop, h ? h.cand.halfW : 1.3, hookX);
+    if (hint !== lastHint.current) {
+      lastHint.current = hint;
+      gameState.onHint.current?.(hint);
+    }
+    if (c.rowIndex !== lastRow.current) {
+      lastRow.current = c.rowIndex;
+      gameState.onRow.current?.(c.rowIndex);
+    }
+
+    // Hover: halo + etiqueta flotante. Vale el puntero o, si no hay, el
+    // contenedor que la grúa tiene justo debajo (el mismo de la guía del
+    // gancho): "estás sobre ESTE". Con carga colgando no — ahí un click ya no
+    // elige contenedor, significa "llévalo al barco".
+    const hover = h ? null : hovered ?? guideTarget;
+    const hid = hover ? hover.id : null;
+    if (hid !== hoverId.current) {
+      hoverId.current = hid;
+      gameState.onHover.current?.(hid ? cargoInfoRef.current.get(hid) ?? null : null);
+    }
+    const tag = gameState.hoverTagEl.current;
+    if (hover && tag) {
+      _tagPos.set(hover.x, hover.y + hover.halfH + TAG_LIFT, hover.z ?? 0).project(camera);
+      const px = ((_tagPos.x + 1) / 2) * gl.domElement.clientWidth;
+      const py = ((1 - _tagPos.y) / 2) * gl.domElement.clientHeight;
+      tag.style.transform = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0)`;
+    }
+
+    // Flecha que señala: la pide el tutorial (DOM) o la demostración en reposo.
+    // Nunca sobre lo que ya cuelga del gancho.
+    const pointId = gameState.pointAt.current ?? (rest.pointing ? DEMO_TARGET_ID : null);
+    const pointTr = pointId && !h ? tracked.current.get(pointId) : undefined;
+    markerRef.current?.update(hover, pointTr ? pointTr.cand : null);
   });
 
   // En modo pintado lo estático ya está en la imagen: su 3D solo aporta física y oclusión.
@@ -506,10 +762,10 @@ export function GameWorld({
         intensity={palette.sunIntensity}
         castShadow
         shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-26}
-        shadow-camera-right={26}
-        shadow-camera-top={14}
-        shadow-camera-bottom={-12}
+        shadow-camera-left={-28}
+        shadow-camera-right={28}
+        shadow-camera-top={16}
+        shadow-camera-bottom={-14}
         shadow-bias={-0.0006}
       />
 
@@ -520,16 +776,19 @@ export function GameWorld({
       {!showStatic && <PaintedLighthouse />}
       {showMoving && <Seagulls palette={palette} flat={!showStatic} disturbance={disturbance} targets={gullTargets} />}
       {showMoving && <GullHunt ref={hunt} outline={palette.outline} onHit={handleGullHit} />}
+      {/* Guía del gancho: va FUERA de <Physics> a propósito — es luz, no materia. */}
+      {showMoving && <HookGuide ref={guideRef} />}
+      {showMoving && <TargetMarker ref={markerRef} />}
 
       <Physics gravity={[0, -GRAVITY, 0]} timeStep={1 / 60} interpolate paused={!physicsActive || physicsPaused}>
         {/* Topes laterales invisibles: nada se escapa del encuadre. */}
         <RigidBody type="fixed" colliders={false}>
-          <CuboidCollider position={[-20.5, 4, 0]} args={[0.5, 16, 3]} />
-          <CuboidCollider position={[20.5, 4, 0]} args={[0.5, 16, 3]} />
+          <CuboidCollider position={[-20.5, 4, 0]} args={[0.5, 16, 5]} />
+          <CuboidCollider position={[20.5, 4, 0]} args={[0.5, 16, 5]} />
         </RigidBody>
 
         <Quay palette={palette} showStatic={showStatic} />
-        <Ship showStatic={showStatic} showMarker={showMoving} palette={palette} onEnterHold={handleEnterHold} onExitHold={handleExitHold} />
+        <Ship ref={shipRef} showStatic={showStatic} showMarker={showMoving} palette={palette} onEnterHold={handleEnterHold} onExitHold={handleExitHold} />
         <Crane ref={craneRef} palette={palette} showStatic={showStatic} showMoving={showMoving} />
 
         {showMoving && PORT_CONTAINERS.map((def) => (
@@ -540,7 +799,7 @@ export function GameWorld({
             position={[
               def.spawnX,
               restingY(def.spawnX, CONTAINER_HALF_H) + def.tier * CONTAINER_HALF_H * 2,
-              0,
+              QUAY_ROWS[clampRow(def.row)],
             ]}
             palette={palette}
             onRegister={handleRegister}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { RigidBody, CuboidCollider, type IntersectionEnterPayload, type IntersectionExitPayload } from "@react-three/rapier";
 import { Outlines } from "@react-three/drei";
@@ -8,6 +8,8 @@ import * as THREE from "three";
 import type { PortPalette } from "./time-of-day";
 import { HOLD_FLOOR_Y, HOLD_MAX_X, HOLD_MIN_X, SHIP_DROP_X } from "./crane-logic";
 import { getToonGradient, OUTLINE, OUTLINE_THIN } from "./toon";
+import { createHoloMaterial, HOLO_COLOR, holoArrowShape } from "./holo-material";
+import { CONTAINER_HALF_H } from "./CargoContainer";
 import { PaintedShip } from "./PaintedShip";
 
 /**
@@ -39,52 +41,47 @@ const MARKER_DEPTH = 0.5;
  * Volumen 3D con shader de holograma (líneas de barrido, borde fresnel,
  * parpadeo y doble imagen) en vez de HUD plano: los corchetes de videojuego
  * rompían el estilo pintado, y una flecha opaca no se leía como "señal".
+ *
+ * El shader vive en `holo-material.ts` desde que la guía del gancho
+ * (`HookGuide.tsx`) usa el mismo lenguaje. Los valores por defecto de
+ * `createHoloMaterial` SON los de esta flecha: cambiarlos la cambia a ella.
  */
-const HOLO_VERT = /* glsl */ `
-  varying vec3 vNormal;
-  varying vec3 vView;
-  varying float vY;
-  void main() {
-    vec4 wp = modelMatrix * vec4(position, 1.0);
-    vNormal = normalize(normalMatrix * normal);
-    vView = normalize(cameraPosition - wp.xyz);
-    vY = wp.y;
-    gl_Position = projectionMatrix * viewMatrix * wp;
-  }
-`;
 
-const HOLO_FRAG = /* glsl */ `
-  uniform float uTime;
-  uniform vec3 uColor;
-  uniform float uAlpha;
-  varying vec3 vNormal;
-  varying vec3 vView;
-  varying float vY;
-  void main() {
-    // Líneas de barrido que suben por la flecha.
-    float scan = 0.55 + 0.45 * step(0.5, fract(vY * 5.0 - uTime * 1.6));
-    // Borde luminoso tipo fresnel: el interior queda translúcido.
-    float fresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 1.6);
-    // Parpadeo de proyector: leve y con un tartamudeo ocasional.
-    float flicker = 0.9 + 0.1 * sin(uTime * 37.0) * sin(uTime * 3.3);
-    float a = (0.28 + fresnel * 0.6) * scan * flicker * uAlpha;
-    vec3 col = mix(uColor, vec3(1.0), fresnel * 0.5);
-    gl_FragColor = vec4(col, a);
-  }
-`;
+/**
+ * Estado del HUECO de descarga (contenedor fantasma en la bodega):
+ * - `hidden`: la grúa va de vacío — no hay nada que descargar.
+ * - `dim`: lleva carga pero fuera de la fila del barco.
+ * - `target`: fila buena, aún no encima de la bodega.
+ * - `ready`: encima de la bodega — soltar ahora entra.
+ */
+export type DropState = "hidden" | "dim" | "target" | "ready";
 
-function arrowShape() {
-  const s = new THREE.Shape();
-  s.moveTo(0, 0);
-  s.lineTo(1.35, 1.3);
-  s.lineTo(0.55, 1.3);
-  s.lineTo(0.55, 2.6);
-  s.lineTo(-0.55, 2.6);
-  s.lineTo(-0.55, 1.3);
-  s.lineTo(-1.35, 1.3);
-  s.closePath();
-  return s;
+/**
+ * Mando a distancia de la marca de carga. Se usa cuando la grúa se lleva un
+ * contenedor a otra FILA: desde ahí no se puede soltar en la bodega, así que la
+ * flecha se apaga a medias en vez de seguir invitando. Es un handle imperativo
+ * y no un prop para que apagarla NO re-renderice el barco: solo toca uniforms.
+ */
+export interface ShipHandle {
+  /** `true` = flecha atenuada (la carga está fuera de la fila del barco). */
+  setDimmed(dimmed: boolean): void;
+  /**
+   * Hueco fantasma de la bodega. Una llamada por frame desde GameWorld.
+   * @param halfW semiancho del contenedor que cuelga (el hueco mide lo mismo).
+   * @param landX x donde caería si se suelta ahora (solo cuenta en `ready`).
+   */
+  setDrop(state: DropState, halfW: number, landX: number): void;
 }
+
+/** Opacidad del hueco fantasma por estado. */
+const DROP_ALPHA: Record<DropState, number> = { hidden: 0, dim: 0.15, target: 0.45, ready: 1 };
+/** Suavizado del hueco (1/s): aparece, se enciende y se desliza sin saltos. */
+const DROP_SNAP = 10;
+
+/** Alpha de la flecha: normal y atenuada (la fantasma va siempre más floja). */
+const MARKER_ALPHA = 1;
+const MARKER_ALPHA_DIM = 0.25;
+const GHOST_FACTOR = 0.35;
 
 export interface ShipProps {
   palette: PortPalette;
@@ -109,7 +106,10 @@ function hullShape() {
   return s;
 }
 
-export function Ship({ palette, onEnterHold, onExitHold, showStatic = true, showMarker = true }: ShipProps) {
+export const Ship = forwardRef<ShipHandle, ShipProps>(function Ship(
+  { palette, onEnterHold, onExitHold, showStatic = true, showMarker = true },
+  ref,
+) {
   const gradient = getToonGradient();
   const o = palette.outline;
 
@@ -127,33 +127,71 @@ export function Ship({ palette, onEnterHold, onExitHold, showStatic = true, show
   // única pista visual de adónde hay que llevar el contenedor.
   const markerRef = useRef<THREE.Group>(null);
   const arrowGeo = useMemo(() => {
-    const g = new THREE.ExtrudeGeometry(arrowShape(), { depth: MARKER_DEPTH, bevelEnabled: false });
+    const g = new THREE.ExtrudeGeometry(holoArrowShape(), { depth: MARKER_DEPTH, bevelEnabled: false });
     g.translate(0, 0, -MARKER_DEPTH / 2);
     return g;
   }, []);
-  const holoMat = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        vertexShader: HOLO_VERT,
-        fragmentShader: HOLO_FRAG,
-        uniforms: { uTime: { value: 0 }, uColor: { value: new THREE.Color("#c8ff00") }, uAlpha: { value: 1 } },
-        transparent: true,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending,
-        toneMapped: false,
-      }),
+  const holoMat = useMemo(() => createHoloMaterial(), []);
+
+  // Hueco fantasma: "tu contenedor va AQUÍ". Caja unitaria escalada al tamaño
+  // de la carga + aristas lima nítidas; la caja sola, de frente, apenas se ve.
+  const dropRef = useRef<THREE.Group>(null);
+  const dropBoxGeo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), []);
+  const dropEdgeGeo = useMemo(() => new THREE.EdgesGeometry(dropBoxGeo), [dropBoxGeo]);
+  const dropMat = useMemo(
+    () => createHoloMaterial({ alpha: 0, scanAxis: [0, 1, 0], scanScale: 4, scanSpeed: -1.2, base: 0.22, fresnel: 0.5 }),
     [],
   );
+  const dropEdgeMat = useMemo(
+    () => new THREE.LineBasicMaterial({ color: HOLO_COLOR, transparent: true, opacity: 0, depthWrite: false, toneMapped: false }),
+    [],
+  );
+  const drop = useRef({ state: "hidden" as DropState, halfW: 1.3, x: MARKER_X, alpha: 0 });
   const ghostMat = useMemo(() => {
     const m = holoMat.clone();
-    m.uniforms.uAlpha.value = 0.35;
+    m.uniforms.uAlpha.value = GHOST_FACTOR;
     return m;
   }, [holoMat]);
-  useFrame((state) => {
+
+  useImperativeHandle(ref, () => ({
+    setDimmed(dimmed: boolean) {
+      const a = dimmed ? MARKER_ALPHA_DIM : MARKER_ALPHA;
+      holoMat.uniforms.uAlpha.value = a;
+      ghostMat.uniforms.uAlpha.value = a * GHOST_FACTOR;
+    },
+    setDrop(state: DropState, halfW: number, landX: number) {
+      const d = drop.current;
+      d.state = state;
+      d.halfW = halfW;
+      // Sobre la bodega el hueco sigue al gancho (es donde caerá); fuera de
+      // ella se queda en la marca, que es adonde hay que ir.
+      d.x = state === "ready" ? Math.min(Math.max(landX, HOLD_MIN_X + halfW), HOLD_MAX_X - halfW) : MARKER_X;
+    },
+  }), [holoMat, ghostMat]);
+
+  useFrame((state, delta) => {
+    const t = state.clock.elapsedTime;
+
+    const g = dropRef.current;
+    if (g) {
+      const d = drop.current;
+      const a = 1 - Math.exp(-DROP_SNAP * Math.min(delta, 1 / 30));
+      const target = DROP_ALPHA[d.state];
+      d.alpha += (target - d.alpha) * a;
+      g.visible = d.alpha > 0.01;
+      if (g.visible) {
+        g.position.x += (d.x - g.position.x) * a;
+        g.scale.x += (d.halfW * 2 - g.scale.x) * a;
+        // "ready" late: el pulso dice "ahora".
+        const pulse = d.state === "ready" ? 0.8 + 0.2 * Math.sin(t * 9) : 1;
+        dropMat.uniforms.uAlpha.value = d.alpha * pulse;
+        dropMat.uniforms.uTime.value = t;
+        dropEdgeMat.opacity = Math.min(d.alpha * 1.4, 1) * pulse;
+      }
+    }
+
     const m = markerRef.current;
     if (!m) return;
-    const t = state.clock.elapsedTime;
     holoMat.uniforms.uTime.value = t;
     ghostMat.uniforms.uTime.value = t + 0.13;
     // Bote con rebote seco (|sin|): cae, toca y sube — lenguaje de cartoon.
@@ -209,6 +247,19 @@ export function Ship({ palette, onEnterHold, onExitHold, showStatic = true, show
       </mesh>
       </group>
 
+      {/* Hueco fantasma de descarga: solo con carga colgando (ver `setDrop`). */}
+      {showMarker && (
+        <group
+          ref={dropRef}
+          position={[MARKER_X, HOLD_FLOOR_Y + CONTAINER_HALF_H, 0]}
+          scale={[2.6, CONTAINER_HALF_H * 2, 1.5]}
+          visible={false}
+        >
+          <mesh geometry={dropBoxGeo} material={dropMat} />
+          <lineSegments geometry={dropEdgeGeo} material={dropEdgeMat} />
+        </group>
+      )}
+
       <group ref={markerRef} position={[MARKER_X, HOLD_FLOOR_Y + 2.4, MARKER_Z]} visible={showMarker}>
         {/* Doble imagen desfasada: la "interferencia" del proyector */}
         <mesh geometry={arrowGeo} material={ghostMat} position={[0.12, 0.06, -0.04]} />
@@ -247,4 +298,4 @@ export function Ship({ palette, onEnterHold, onExitHold, showStatic = true, show
       </group>
     </group>
   );
-}
+});

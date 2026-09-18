@@ -3,20 +3,38 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { remoteInput, resetRemoteInput } from "@/lib/hero-remote";
 import { ACTION_KEYS } from "@/hooks/use-action-queue";
+import type { GameState } from "@/hooks/use-game-state";
+import { QUAY_ROWS, SHIP_ROW } from "../port/quay-rows";
 import { useT } from "@/lib/i18n";
 import styles from "./RemoteControl.module.css";
 
-type Key = "left" | "right" | "hook";
+/**
+ * Botones del mando. `left` / `right` se MANTIENEN (mueven el carro mientras
+ * se pulsan); `up` / `down` (fila del muelle) y `hook` son PULSOS: encolan una
+ * acción y se acabó.
+ */
+type Key = "left" | "right" | "up" | "down" | "hook";
 
 /** Cuánto dura el "mantener pulsado" simulado de una activación por teclado. */
 const KEYBOARD_HOLD_MS = 260;
 
-const NO_KEYS: Record<Key, boolean> = { left: false, right: false, hook: false };
+const NO_KEYS: Record<Key, boolean> = { left: false, right: false, up: false, down: false, hook: false };
+
+/** Tecla física impresa en cada flecha: el mando hace de leyenda del teclado. */
+const KEY_LETTER: Record<"left" | "right" | "up" | "down", string> = { left: "A", right: "D", up: "W", down: "S" };
+
+/**
+ * Filas del indicador, de ARRIBA abajo como la cruceta: ▲ aleja (fondo, índice
+ * alto) y ▼ acerca (delante, índice 0).
+ */
+const ROW_PIPS = QUAY_ROWS.map((_, i) => QUAY_ROWS.length - 1 - i);
 
 /** Tecla física → botón del mando que se ilumina (mismas teclas que `GameWorld`). */
 function keyToButton(code: string): Key | null {
   if (code === "KeyA" || code === "ArrowLeft") return "left";
   if (code === "KeyD" || code === "ArrowRight") return "right";
+  if (code === "KeyW" || code === "ArrowUp") return "up";
+  if (code === "KeyS" || code === "ArrowDown") return "down";
   if (ACTION_KEYS.has(code)) return "hook";
   return null;
 }
@@ -38,8 +56,16 @@ function isTypingTarget(el: EventTarget | null): boolean {
  * La caja es CSS 3D real (ver `RemoteControl.module.css`). Los botones escriben en
  * `remoteInput`, que `GameWorld.useFrame` lee igual que el teclado.
  */
-export function RemoteControl() {
+export function RemoteControl({ gameState }: { gameState: GameState }) {
   const t = useT();
+  // Fila del pórtico: GameWorld avisa solo al cambiar (nunca por frame).
+  const [row, setRow] = useState(SHIP_ROW);
+  useEffect(() => {
+    gameState.onRow.current = setRow;
+    return () => {
+      gameState.onRow.current = null;
+    };
+  }, [gameState]);
   const [pressed, setPressed] = useState<Record<Key, boolean>>(NO_KEYS);
   // Teclas físicas mantenidas: SOLO visual. El teclado ya mueve la grúa por su
   // cuenta (`use-keyboard` / `use-action-queue`); escribir aquí en
@@ -48,7 +74,7 @@ export function RemoteControl() {
   const holdTimers = useRef<Partial<Record<Key, ReturnType<typeof setTimeout>>>>({});
 
   const release = useCallback((key: Key) => {
-    if (key !== "hook") remoteInput[key] = false;
+    if (key === "left" || key === "right") remoteInput[key] = false;
     setPressed((p) => (p[key] ? { ...p, [key]: false } : p));
   }, []);
 
@@ -58,13 +84,17 @@ export function RemoteControl() {
     // solo al hundirse la tapa dentro del padre en perspectiva).
     e?.currentTarget.setPointerCapture?.(e.pointerId);
     if (key === "hook") remoteInput.actions++;
+    // Cambio de fila: pulso con signo, no "mantener". ▲ aleja, ▼ acerca.
+    else if (key === "up") remoteInput.rowDelta++;
+    else if (key === "down") remoteInput.rowDelta--;
     else remoteInput[key] = true;
     setPressed((p) => ({ ...p, [key]: true }));
   }, []);
 
   // Soltar también si el puntero se levanta fuera del botón: sin esto, arrastrar
   // desde la flecha y soltar sobre el cielo deja el carro corriendo para siempre.
-  // Espejo del teclado: A/D/←/→ hunden las flechas, Espacio/E/S/↓ el gancho.
+  // Espejo del teclado: A/D/←/→ hunden las flechas de carro, W/S/↑/↓ las de
+  // fila y Espacio/E el gancho.
   useEffect(() => {
     const set = (e: KeyboardEvent, down: boolean) => {
       const key = keyToButton(e.code);
@@ -88,7 +118,7 @@ export function RemoteControl() {
     const timers = holdTimers.current;
     const releaseAll = () => {
       resetRemoteInput();
-      setPressed({ left: false, right: false, hook: false });
+      setPressed(NO_KEYS);
     };
     window.addEventListener("pointerup", releaseAll);
     window.addEventListener("pointercancel", releaseAll);
@@ -116,12 +146,19 @@ export function RemoteControl() {
 
   const isDown = (key: Key) => pressed[key] || keyHeld[key];
 
-  const arrowProps = (key: "left" | "right") => ({
+  const ARROW_LABELS: Record<"left" | "right" | "up" | "down", string> = {
+    left: t.game.remote.left,
+    right: t.game.remote.right,
+    up: t.game.remote.up,
+    down: t.game.remote.down,
+  };
+
+  const arrowProps = (key: "left" | "right" | "up" | "down") => ({
     type: "button" as const,
     className: `${styles.btn} ${styles.arrow}`,
     "data-pressed": isDown(key),
     "data-testid": `remote-${key}`,
-    "aria-label": key === "left" ? t.game.remote.left : t.game.remote.right,
+    "aria-label": ARROW_LABELS[key],
     onPointerDown: (e: React.PointerEvent) => press(key, e),
     onPointerUp: () => release(key),
     onPointerCancel: () => release(key),
@@ -148,20 +185,40 @@ export function RemoteControl() {
         <div className={`${styles.face} ${styles.front} flex items-center justify-between gap-3 px-4`}>
           <span aria-hidden className={styles.antenna} />
 
-          {/* Flechas: mueven el carro de la grúa mientras se mantengan */}
-          <div className="flex items-center gap-2">
-            <button {...arrowProps("left")}>
+          {/* Cruceta en cruz (D-pad): ▲ arriba (fila del muelle, se aleja),
+              ◀ ▶ a los lados (carro, se mantienen), ▼ abajo (se acerca). */}
+          <div className={styles.pad}>
+            <button {...arrowProps("up")} className={`${styles.btn} ${styles.arrow} ${styles.dpadUp}`}>
               <span className={styles.key}>
-                <svg aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 10l5-5 5 5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
+                <span aria-hidden className={styles.keyHint}>{KEY_LETTER.up}</span>
               </span>
             </button>
-            <button {...arrowProps("right")}>
+            <button {...arrowProps("left")} className={`${styles.btn} ${styles.arrow} ${styles.dpadLeft}`}>
               <span className={styles.key}>
-                <svg aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span aria-hidden className={styles.keyHint}>{KEY_LETTER.left}</span>
+              </span>
+            </button>
+            <span aria-hidden className={styles.hub} />
+            <button {...arrowProps("right")} className={`${styles.btn} ${styles.arrow} ${styles.dpadRight}`}>
+              <span className={styles.key}>
+                <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="none">
                   <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
+                <span aria-hidden className={styles.keyHint}>{KEY_LETTER.right}</span>
+              </span>
+            </button>
+            <button {...arrowProps("down")} className={`${styles.btn} ${styles.arrow} ${styles.dpadDown}`}>
+              <span className={styles.key}>
+                <svg aria-hidden width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 6l5 5 5-5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span aria-hidden className={styles.keyHint}>{KEY_LETTER.down}</span>
               </span>
             </button>
           </div>
@@ -173,6 +230,22 @@ export function RemoteControl() {
               <span className="whitespace-nowrap font-mono text-[8px] font-bold tracking-[0.16em] text-[#d8d1bd]">
                 {t.game.remote.model}
               </span>
+            </div>
+            {/* Indicador de fila: el pórtico en profundidad, con la del barco marcada. */}
+            <div className={styles.rowMeter} data-testid="remote-row" data-row={row}>
+              <span className="font-mono text-[7px] font-bold tracking-[0.16em] text-[#d8d1bd]">{t.game.remote.row}</span>
+              <div className={styles.rowPips}>
+                {ROW_PIPS.map((i) => (
+                  <span key={i} className={styles.rowPip} data-on={i === row} data-ship={i === SHIP_ROW}>
+                    {i === SHIP_ROW && (
+                      <svg aria-hidden width="10" height="6" viewBox="0 0 10 6" className={styles.shipGlyph}>
+                        <path d="M0 2h10L8.2 6H1.8Z" fill="currentColor" />
+                        <rect x="5.6" y="0" width="1.6" height="2" fill="currentColor" />
+                      </svg>
+                    )}
+                  </span>
+                ))}
+              </div>
             </div>
             <span className={`${styles.grille} w-full`} />
           </div>
@@ -190,7 +263,10 @@ export function RemoteControl() {
             onClick={handleClick("hook")}
           >
             <span className={`${styles.key} font-mono text-[10px] font-bold tracking-[0.14em]`}>
-              {t.game.remote.lower}
+              <span className="flex flex-col items-center gap-0.5 leading-none">
+                {t.game.remote.lower}
+                <span aria-hidden className="text-[6.5px] tracking-[0.12em] opacity-60">{t.game.remote.actionKey}</span>
+              </span>
             </span>
           </button>
         </div>
