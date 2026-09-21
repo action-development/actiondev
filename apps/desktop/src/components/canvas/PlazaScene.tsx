@@ -16,7 +16,7 @@ export interface PlazaSceneProps {
   onSelect: (id: string | null) => void;
   /** La escena ya ha pintado su primer frame. */
   onReady?: () => void;
-  /** Se está llevando un muñeco en la mano (para la pista del HUD). */
+  /** Se está llevando un muñeco en la mano. */
   onHoldChange?: (holding: boolean) => void;
 }
 

@@ -1,7 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
-
 import { useT } from "@/lib/i18n";
 
 interface PlazaHudProps {
@@ -9,25 +7,16 @@ interface PlazaHudProps {
   count: number;
   /** Oculta el hint de interacción cuando ya hay una ficha abierta. */
   hintVisible: boolean;
-  /** Se está llevando un muñeco: la pista pasa a la leyenda de controles. */
+  /** Se está llevando un muñeco en la mano. El HUD ya no lo pinta —la leyenda
+   * de controles se retiró— pero el aviso sigue cableado desde la escena. */
   holding?: boolean;
-}
-
-/** Eje impreso en la leyenda de arrastre: tapa con borde de acento, sin
- * sombras (regla de diseño del sitio). */
-function Axis({ children }: { children: ReactNode }) {
-  return (
-    <span className="rounded-full border border-accent/50 px-2 py-0.5 font-mono text-[10px] leading-none text-accent">
-      {children}
-    </span>
-  );
 }
 
 /**
  * Chrome DOM de /resenas: título, contador y hint de interacción. La navegación
  * (incl. volver al inicio) la lleva el Header global de PlazaPage. Sobre el fondo oscuro del sitio: tokens semánticos de globals.css.
  */
-export function PlazaHud({ count, hintVisible, holding = false }: PlazaHudProps) {
+export function PlazaHud({ count, hintVisible }: PlazaHudProps) {
   const t = useT();
 
   return (
@@ -48,28 +37,15 @@ export function PlazaHud({ count, hintVisible, holding = false }: PlazaHudProps)
       </div>
 
       {/* Hint de interacción — abajo, se retira cuando hay una ficha abierta.
-          Con un muñeco en la mano pasa a ser la leyenda de ejes: el arrastre
-          solo mueve de lado y en profundidad, nunca hacia arriba (ver
-          `canvas/plaza/drag-depth.ts`). */}
+          Una sola línea: el arrastre no lleva leyenda de controles (se quitó
+          por decisión del cliente, no reintroducirla). */}
       <div
         className={`flex justify-center transition-opacity duration-300 ${
-          hintVisible || holding ? "opacity-100" : "opacity-0"
+          hintVisible ? "opacity-100" : "opacity-0"
         }`}
-        aria-hidden={!hintVisible && !holding}
+        aria-hidden={!hintVisible}
       >
-        {holding ? (
-          <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
-            <Axis>← →</Axis>
-            <span>{t.plaza.hintAxisSide}</span>
-            <span className="text-muted">·</span>
-            <Axis>↑ ↓</Axis>
-            <span>{t.plaza.hintAxisDepth}</span>
-            <span className="text-muted">·</span>
-            <span className="text-muted">{t.plaza.hintDrop}</span>
-          </p>
-        ) : (
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">{t.plaza.hint}</p>
-        )}
+        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">{t.plaza.hint}</p>
       </div>
     </div>
   );

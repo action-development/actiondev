@@ -14,7 +14,7 @@ interface PlazaWorldProps {
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onReady?: () => void;
-  /** Se está llevando un muñeco en la mano (para la pista del HUD). */
+  /** Se está llevando un muñeco en la mano. */
   onHoldChange?: (holding: boolean) => void;
 }
 

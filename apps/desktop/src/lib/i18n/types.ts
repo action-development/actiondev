@@ -157,12 +157,9 @@ export interface Translations {
   plaza: {
     title: string;
     subtitle: string;
+    /** Única pista de la plaza. Llevar un muñeco NO muestra leyenda de
+     * controles: se retiró por decisión del cliente. */
     hint: string;
-    /** Leyenda con un muñeco en la mano: los dos ejes del arrastre, lado
-     * (← →) y profundidad (↑ ↓). No hay eje de altura. */
-    hintAxisSide: string;
-    hintAxisDepth: string;
-    hintDrop: string;
     /** Plantilla con placeholder `{count}` — se interpola en PlazaHud.tsx. */
     countLabel: string;
     loading: string;

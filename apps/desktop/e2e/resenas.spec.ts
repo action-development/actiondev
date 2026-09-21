@@ -178,8 +178,9 @@ test.describe("Plaza de reseñas", () => {
 
     const [x, y] = await grabDoll(page);
 
-    // Con un muñeco en la mano, la pista pasa a ser la leyenda de los dos ejes.
-    await expect(page.getByText("más lejos o más cerca")).toBeVisible();
+    // Llevar un muñeco NO saca leyenda de controles: se retiró por decisión
+    // del cliente y no debe volver por la puerta de atrás.
+    await expect(page.getByText(/de lado|más lejos o más cerca/i)).toHaveCount(0);
 
     // El eje vertical del puntero es profundidad, no altura: se mueve arriba y
     // abajo sin cambiar de modo ni soltar el agarre (antes Mayús lo conmutaba
