@@ -99,7 +99,7 @@ export function CargoToast({ gameState }: { gameState: GameState }) {
 
   useEffect(() => gameState.subscribeCargo(setInfo), [gameState]);
 
-  // Un destino real no hace falta ocultarlo: la persiana llega antes. El de
+  // Un destino real no hace falta ocultarlo: la pantalla de carga llega antes. El de
   // "próximamente" se va solo y el juego sigue.
   useEffect(() => {
     if (!info) return;

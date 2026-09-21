@@ -446,7 +446,7 @@ export function GameWorld({
     thrownIds.current.delete(data.id);
     gatedIds.current.add(data.id);
     idle.current.loaded = true;
-    // Confirmación ANTES de la persiana: aviso "rumbo a…" (HeroHud) y, si hay
+    // Confirmación ANTES de la pantalla de carga: aviso "rumbo a…" (HeroHud) y, si hay
     // destino real, bocina de zarpar. Un "#…" (página aún no hecha) solo avisa
     // "próximamente" — sin esto cargarlo parecía un fallo.
     const info = cargoInfoRef.current.get(data.id);

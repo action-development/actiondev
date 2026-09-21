@@ -138,10 +138,10 @@ export default function HomePage() {
     };
   }, []);
 
-  // Contenedor en la bodega → persiana (PageTransition) → ruta de esa sección.
+  // Contenedor en la bodega → pantalla de carga (PageTransition) → ruta de esa sección.
   const handleNavigate = useCallback((href: string) => {
     // Solo rutas reales. Un "#algo" es un destino que todavía no existe
-    // (p. ej. el contenedor EQUIPO): sin esto la persiana se cerraba, no
+    // (p. ej. el contenedor EQUIPO): sin esto la pantalla de carga entraba, no
     // había a dónde ir y volvía al mismo sitio. Parecía roto.
     if (!href.startsWith("/")) return;
     navigate(href);

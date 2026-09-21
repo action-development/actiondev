@@ -187,7 +187,7 @@ que las sombras de los contenedores caigan hacia delante-izquierda como en el di
   - `idle` con carga → suelta (dynamic, hereda velocidad carro + balanceo)
 - Contenedor soltado (`thrownIds`) que entra en el sensor de bodega →
   `gameState.notifyCargo()` (aviso "RUMBO A …") + bocina (`playHornSfx`) y
-  navega tras 900 ms (`page.tsx`: persiana + `router.push` a la ruta del
+  navega tras 900 ms (`page.tsx`: pantalla de carga + `router.push` a la ruta del
   `href`). Un `href` "#..." (destino aún sin página: EQUIPO, GALICIA, ALCASI,
   VIGO) se sigue pudiendo cargar, pero solo avisa "PRÓXIMAMENTE", sin bocina ni
   navegación. `gatedIds` evita doble disparo; sale de la bodega → se libera.
@@ -253,7 +253,7 @@ ref lo que se mueve a 60 fps.
   cargado aún): la grúa se planta sola sobre PROYECTOS y la flecha lo señala.
   No lo engancha. Una vez por visita; cualquier entrada la apaga.
 - **Ir sin jugar** (`SkipMenu`, abajo a la derecha): desplegable con
-  Proyectos / Reseñas / Contacto como `<Link>` (pasan por la persiana).
+  Proyectos / Reseñas / Contacto como `<Link>` (pasan por la pantalla de carga).
 
 ## Gaviotas — dónde se posan
 
