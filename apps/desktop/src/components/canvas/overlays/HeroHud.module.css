@@ -200,8 +200,6 @@
   transition: background var(--duration-fast) var(--ease);
 }
 .skipLink:hover { background: rgba(200, 255, 0, 0.12); }
-.skipIndex { font-size: 8px; opacity: 0.6; }
-
 @keyframes holo-scan {
   from { background-position: 0 0, 0 0; }
   to   { background-position: 0 -8px, 0 0; }

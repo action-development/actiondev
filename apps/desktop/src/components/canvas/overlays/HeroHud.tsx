@@ -142,9 +142,8 @@ export function SkipMenu() {
     <nav className={`${styles.skip} absolute bottom-8 right-8 z-40`} aria-label={t.game.hud.skip}>
       {open && (
         <div id="hero-skip-list" className={`${styles.holo} ${styles.skipList}`}>
-          {links.map((l, i) => (
+          {links.map((l) => (
             <Link key={l.href} href={l.href} className={`${styles.skipLink} ${styles.mono} ${styles.glow}`}>
-              <span className={styles.skipIndex}>{String(i + 1).padStart(2, "0")}</span>
               {l.label}
             </Link>
           ))}

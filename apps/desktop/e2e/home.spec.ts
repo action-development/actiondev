@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 import { waitForPage, canvasMasks } from "./helpers";
 
 test("hero section renders canvas and key text", async ({ page }) => {
-	await page.goto("/");
+	await page.goto("/?hora=atardecer");
 	await waitForPage(page);
 
 	// Canvas 3D presente
@@ -42,7 +42,7 @@ test("navigating between routes closes and reopens the blinds", async ({ page })
 });
 
 test("header is visible and has navigation links", async ({ page }) => {
-	await page.goto("/");
+	await page.goto("/?hora=atardecer");
 	await waitForPage(page);
 
 	const header = page.locator("header, nav[aria-label='Main navigation']").first();

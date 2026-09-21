@@ -30,10 +30,7 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
   // es `ssr: false`, así que leer `window` aquí no provoca desajuste de hidratación.
   const { timeOfDay, mode } = useMemo(() => {
     const search = new URLSearchParams(window.location.search);
-    // En dev forzamos `atardecer` (fase en la que se está trabajando) salvo que
-    // la query pida otra. En producción manda la hora local del visitante.
-    const devDefault = process.env.NODE_ENV === "development" ? "atardecer" : null;
-    const tod = resolveTimeOfDay(new Date(), search.get("hora") ?? devDefault);
+    const tod = resolveTimeOfDay(new Date(), search.get("hora"));
     return { timeOfDay: tod, mode: resolveSceneMode(tod, search) };
   }, []);
   const palette = PALETTES[timeOfDay];

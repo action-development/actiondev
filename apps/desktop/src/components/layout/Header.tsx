@@ -30,10 +30,9 @@ function useTelemetry(): Telemetry | null {
     const tick = () => {
       const now = new Date();
       const search = new URLSearchParams(window.location.search);
-      const devDefault = process.env.NODE_ENV === "development" ? "atardecer" : null;
       setData({
         clock: now.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }),
-        phase: resolveTimeOfDay(now, search.get("hora") ?? devDefault),
+        phase: resolveTimeOfDay(now, search.get("hora")),
       });
     };
     tick();
@@ -41,6 +40,42 @@ function useTelemetry(): Telemetry | null {
     return () => window.clearInterval(id);
   }, []);
   return data;
+}
+
+/** Scroll mínimo (px) entre eventos para contar como cambio de dirección. */
+const SCROLL_DELTA = 6;
+/** Por encima de esta posición (px) el header siempre está visible. */
+const ALWAYS_SHOW_BELOW = 80;
+
+/**
+ * `true` cuando el header debe esconderse: al bajar más allá de
+ * `ALWAYS_SHOW_BELOW`. Al subir (o al volver arriba) reaparece. Lenis mueve el
+ * scroll nativo, así que basta el evento `scroll` de `window`. Solo hace
+ * `setState` al cambiar de estado, no en cada evento.
+ */
+function useHideOnScroll(): boolean {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y < ALWAYS_SHOW_BELOW) {
+        setHidden(false);
+      } else if (Math.abs(y - lastY) >= SCROLL_DELTA) {
+        setHidden(y > lastY);
+      } else {
+        return;
+      }
+      lastY = y;
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return hidden;
 }
 
 /**
@@ -55,6 +90,7 @@ export function Header() {
   const { locale, setLocale } = useLocale();
   const t = useT();
   const telemetry = useTelemetry();
+  const hidden = useHideOnScroll();
 
   function handleLogoClick(e: React.MouseEvent) {
     e.preventDefault();
@@ -79,7 +115,8 @@ export function Header() {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
+      className={`${styles.shell} fixed top-0 left-0 right-0 z-50 pointer-events-none`}
+      data-hidden={hidden}
       role="banner"
     >
       {/* Fuera de la home hay contenido que scrollea por debajo: un fundido
@@ -136,7 +173,7 @@ export function Header() {
 
         {/* Enlaces: índice + etiqueta, retícula al apuntar */}
         <ul role="list" className={`${styles.nav} hidden md:inline-flex`}>
-          {navigation.slice(1).map((item, i) => {
+          {navigation.map((item) => {
             const active = isActive(item.href);
             const label = navLabels[item.label] ?? item.label;
             return (
@@ -146,9 +183,6 @@ export function Header() {
                   aria-current={active ? "page" : undefined}
                   className={styles.link}
                 >
-                  <span aria-hidden className={styles.index}>
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
                   <span>{label}</span>
                 </Link>
               </li>

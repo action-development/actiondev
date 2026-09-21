@@ -7,6 +7,16 @@
 /*  suben, parpadeo de proyector con tartamudeo y doble imagen     */
 /*  desfasada. Un único panel proyectado a todo el ancho.          */
 /* ─────────────────────────────────────────────────────────────── */
+/* Contenedor fijo: se esconde hacia arriba al bajar y vuelve al subir. Se
+   desplaza 8rem (panel 64 + margen 20 + fundido de 112 fuera de la home) para
+   que no asome ni el degradado. `focus-within` lo mantiene visible al navegar
+   con teclado. */
+.shell {
+  transition: transform var(--duration-slow) var(--ease);
+  will-change: transform;
+}
+.shell[data-hidden="true"]:not(:focus-within) { transform: translateY(-8rem); }
+
 .panel {
   --holo:      var(--accent);
   --holo-edge: #eaffb0;
@@ -183,10 +193,6 @@
   color: rgba(234, 255, 176, 0.78);
   transition: color var(--duration) var(--ease), background var(--duration) var(--ease), text-shadow var(--duration) var(--ease);
 }
-.index {
-  font-size: 9px;
-  color: rgba(200, 255, 0, 0.7);
-}
 /* Retícula: dos corchetes que se cierran sobre la etiqueta. */
 .link::before,
 .link::after {
@@ -296,5 +302,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .panel, .led, .cursor { animation: none; }
-  .link::before, .link::after, .fill, .arrow, .seg, .link, .cta { transition: none; }
+  .shell, .link::before, .link::after, .fill, .arrow, .seg, .link, .cta { transition: none; }
 }
