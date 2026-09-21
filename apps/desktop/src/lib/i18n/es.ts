@@ -34,6 +34,8 @@ export const es: Translations = {
     subtitle: "Sin compromiso. Respondemos en menos de 24 horas.",
     emailLabel: "Email",
     askAI: "Pregunta a la IA sobre nosotros",
+    aiPrompt:
+      "Quiero entender qué es Action.dev y a qué se dedican. Son una agencia digital especializada en diseño y desarrollo, experiencias web inmersivas con Three.js y React, identidad de marca y servicios de crecimiento como SEO y CRO. Resume sus capacidades, trabajos destacados y qué les hace diferentes. Responde en español: https://actiondev.es/",
     nameLabel: "Nombre *",
     namePlaceholder: "Tu nombre completo",
     phoneLabel: "Teléfono",

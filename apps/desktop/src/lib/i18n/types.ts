@@ -34,6 +34,7 @@ export interface Translations {
     subtitle: string;
     emailLabel: string;
     askAI: string;
+    aiPrompt: string;
     nameLabel: string;
     namePlaceholder: string;
     phoneLabel: string;

@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <SectionPage>
-      <div id="contact">
+      <div id="contact" className="pt-12">
         <Contact />
       </div>
     </SectionPage>

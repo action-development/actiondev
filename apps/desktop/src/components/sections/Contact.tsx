@@ -3,7 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "@/lib/gsap-config";
-import { AI_ASSISTANTS } from "@/data/ai-assistants";
+import { buildAiAssistants } from "@/data/ai-assistants";
 import { CONTACT, buildWhatsappUrl } from "@/data/socials";
 import { AccentWord } from "@/components/ui/AccentWord";
 import { useLocale, useT } from "@/lib/i18n";
@@ -135,7 +135,7 @@ export function Contact() {
             <div data-anim="aside-block" className="flex flex-col gap-3">
               <p className={fieldLabelClass}>{t.contact.askAI}</p>
               <ul className="flex flex-col gap-1" role="list">
-                {AI_ASSISTANTS.map((ai) => (
+                {buildAiAssistants(t.contact.aiPrompt).map((ai) => (
                   <li key={ai.name}>
                     <a
                       href={ai.url}
