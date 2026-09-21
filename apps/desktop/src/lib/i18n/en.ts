@@ -19,12 +19,8 @@ export const en: Translations = {
     transform: "Transform your ideas",
     into: "into",
     accent: "sales",
-    selectedWork: "Selected Work",
     loading: "Loading projects…",
-    sectionLabel: "Projects",
     columnLabel: "PROJECTS",
-    dock: "Unloading dock",
-    hint: "Scroll to unload",
     cargoTag: "Cargo",
   },
   testimonials: {

@@ -79,38 +79,38 @@ function createOverlayTexture(category: string, title: string): THREE.CanvasText
 
 	ctx.clearRect(0, 0, w, h);
 	const family = displayFontFamily();
-	const pad = 16 * dpr;
+	const pad = 12 * dpr;
 
 	// Placa de contenedor con la categoría: lima, borde de tinta, canto duro
-	ctx.font = `800 ${10 * dpr}px ${family}`;
-	ctx.letterSpacing = `${1.4 * dpr}px`;
+	ctx.font = `800 ${7 * dpr}px ${family}`;
+	ctx.letterSpacing = `${1 * dpr}px`;
 	const cat = category.toUpperCase();
-	const tagW = ctx.measureText(cat).width + 20 * dpr;
-	const tagH = 24 * dpr;
+	const tagW = ctx.measureText(cat).width + 13 * dpr;
+	const tagH = 16 * dpr;
 	const tagY = h - pad - tagH;
 	ctx.fillStyle = INK;
-	roundRect(ctx, pad, tagY + 3 * dpr, tagW, tagH, 4 * dpr);
+	roundRect(ctx, pad, tagY + 2 * dpr, tagW, tagH, 2.5 * dpr);
 	ctx.fill();
 	ctx.fillStyle = TAG;
-	roundRect(ctx, pad, tagY, tagW, tagH, 4 * dpr);
+	roundRect(ctx, pad, tagY, tagW, tagH, 2.5 * dpr);
 	ctx.fill();
-	ctx.lineWidth = 2 * dpr;
+	ctx.lineWidth = 1.25 * dpr;
 	ctx.strokeStyle = INK;
 	ctx.stroke();
 	ctx.fillStyle = INK;
 	ctx.textBaseline = "middle";
-	ctx.fillText(cat, pad + 10 * dpr, tagY + tagH / 2 + dpr);
+	ctx.fillText(cat, pad + 6.5 * dpr, tagY + tagH / 2 + dpr);
 
 	// Título: rotulado de cómic — relleno papel con contorno de tinta
 	ctx.textBaseline = "alphabetic";
-	ctx.font = `800 ${22 * dpr}px ${family}`;
-	ctx.letterSpacing = `${-0.4 * dpr}px`;
+	ctx.font = `800 ${13 * dpr}px ${family}`;
+	ctx.letterSpacing = `${-0.2 * dpr}px`;
 	ctx.lineJoin = "round";
-	ctx.lineWidth = 5 * dpr;
+	ctx.lineWidth = 3.5 * dpr;
 	ctx.strokeStyle = INK;
-	ctx.strokeText(title, pad, tagY - 12 * dpr);
+	ctx.strokeText(title, pad, tagY - 8 * dpr);
 	ctx.fillStyle = PAPER;
-	ctx.fillText(title, pad, tagY - 12 * dpr);
+	ctx.fillText(title, pad, tagY - 8 * dpr);
 
 	const texture = new THREE.CanvasTexture(canvas);
 	texture.minFilter = THREE.LinearFilter;

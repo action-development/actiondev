@@ -19,12 +19,8 @@ export const es: Translations = {
     transform: "Transforma tus ideas",
     into: "en",
     accent: "ventas",
-    selectedWork: "Trabajo seleccionado",
     loading: "Cargando proyectos…",
-    sectionLabel: "Proyectos",
     columnLabel: "PROYECTOS",
-    dock: "Muelle de descarga",
-    hint: "Scroll para descargar",
     cargoTag: "Carga",
   },
   testimonials: {

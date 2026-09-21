@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useGSAP } from "@gsap/react";
 import { gsap, ScrollTrigger } from "@/lib/gsap-config";
@@ -72,12 +72,11 @@ function ScrambleTitle({ text, active, className }: ScrambleTitleProps) {
 
 interface ProjectRowProps {
 	project: Project;
-	index: number;
 	locale: "en" | "es";
 	onHover: (project: Project | null) => void;
 }
 
-function ProjectRow({ project, index, locale, onHover }: ProjectRowProps) {
+function ProjectRow({ project, locale, onHover }: ProjectRowProps) {
 	const [hovered, setHovered] = useState(false);
 	const isPlaceholder = project.url === "#";
 	const category = locale === "es" ? project.categoryEs ?? project.category : project.category;
@@ -106,10 +105,6 @@ function ProjectRow({ project, index, locale, onHover }: ProjectRowProps) {
 			}}
 			aria-label={`${project.title} — ${category}`}
 		>
-			<span className={`${hud.stencil} shrink-0 tabular-nums`}>
-				{String(index + 1).padStart(2, "0")}
-			</span>
-
 			<ScrambleTitle
 				text={project.title}
 				active={hovered}
@@ -138,25 +133,6 @@ export function ProjectsIndex() {
 	const yTo = useRef<ReturnType<typeof gsap.quickTo> | null>(null);
 
 	const [hovered, setHovered] = useState<Project | null>(null);
-	const [filter, setFilter] = useState<string>("ALL");
-
-	const categories = useMemo(() => {
-		const labelAll = locale === "es" ? "TODOS" : "ALL";
-		const set = new Set<string>();
-		for (const p of projects) {
-			const cat = locale === "es" ? p.categoryEs ?? p.category : p.category;
-			set.add(cat);
-		}
-		return [{ key: "ALL", label: labelAll }, ...Array.from(set).map((c) => ({ key: c, label: c.toUpperCase() }))];
-	}, [locale]);
-
-	const visibleProjects = useMemo(() => {
-		if (filter === "ALL") return projects;
-		return projects.filter((p) => {
-			const cat = locale === "es" ? p.categoryEs ?? p.category : p.category;
-			return cat === filter;
-		});
-	}, [filter, locale]);
 
 	useEffect(() => {
 		const cursor = cursorRef.current;
@@ -201,14 +177,10 @@ export function ProjectsIndex() {
 				},
 			});
 		},
-		{ scope: sectionRef, dependencies: [visibleProjects.length] }
+		{ scope: sectionRef, dependencies: [projects.length] }
 	);
 
-	const indexLabel = locale === "es" ? "ÍNDICE" : "INDEX";
 	const allWorkLabel = locale === "es" ? "Todo el trabajo." : "Every project.";
-	const countLabel = locale === "es"
-		? `${visibleProjects.length} PROYECTOS`
-		: `${visibleProjects.length} PROJECTS`;
 
 	return (
 		<>
@@ -219,40 +191,13 @@ export function ProjectsIndex() {
 				className={`${hud.hud} relative z-[2] section-padding`}
 			>
 				<div className="container-editorial">
-					<div className="flex flex-col items-start gap-6 pb-12 md:flex-row md:items-end md:justify-between md:pb-16">
-						<div className="flex flex-col gap-4">
-							<div className="flex items-center gap-3">
-								<span className={hud.plate}>{indexLabel}</span>
-							</div>
-							<h2 className="display-l max-w-2xl text-foreground">{allWorkLabel}</h2>
-						</div>
-
-						<span className={hud.tag}>{countLabel}</span>
-					</div>
-
-					<div className="flex flex-wrap gap-2 pb-8 md:pb-12">
-						{categories.map((cat) => {
-							const active = filter === cat.key;
-							return (
-								<button
-									key={cat.key}
-									type="button"
-									onClick={() => setFilter(cat.key)}
-									className={hud.chip}
-									aria-pressed={active}
-								>
-									{cat.label}
-								</button>
-							);
-						})}
-					</div>
+					<h2 className="display-l max-w-2xl pb-12 text-foreground md:pb-16">{allWorkLabel}</h2>
 
 					<div className="grid grid-cols-1 gap-x-14 border-t-2 border-[rgba(241,234,214,0.1)] md:grid-cols-2">
-						{visibleProjects.map((project, i) => (
+						{projects.map((project) => (
 							<ProjectRow
 								key={project.id}
 								project={project}
-								index={i}
 								locale={locale}
 								onHover={setHovered}
 							/>
@@ -263,14 +208,6 @@ export function ProjectsIndex() {
 						data-end-coda
 						className="mt-20 flex flex-col items-center gap-7 text-center md:mt-28"
 					>
-						<div className="flex items-center gap-3">
-							<span className="h-0.5 w-10 bg-[var(--hairline-strong)]" />
-							<span className={hud.plate}>
-								{locale === "es" ? "Fin del índice" : "End of index"}
-							</span>
-							<span className="h-0.5 w-10 bg-[var(--hairline-strong)]" />
-						</div>
-
 						<h3 className="display-l max-w-3xl text-foreground/90">
 							{locale === "es" ? (
 								<>

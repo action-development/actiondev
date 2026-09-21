@@ -95,6 +95,27 @@ test.describe("Projects page", () => {
     await expect(page.locator("#projects")).toBeVisible();
   });
 
+  test("el contenedor colgado no aparece arriba, ni al entrar ni al volver", async ({ page }) => {
+    await page.goto("/projects");
+    await page.waitForLoadState("domcontentloaded");
+    const cargo = page.locator('[data-testid="hanging-cargo"]');
+    const opacity = async () => Number(await cargo.evaluate((el) => getComputedStyle(el).opacity));
+
+    await expect(cargo).toHaveCount(1);
+    expect(await opacity()).toBe(0);
+
+    // Dentro del carrusel sí se ve.
+    await page.evaluate(() => {
+      const s = document.querySelector('section[aria-label="Featured projects showcase"]') as HTMLElement;
+      window.scrollTo(0, s.offsetTop + s.offsetHeight * 0.3);
+    });
+    await expect.poll(opacity).toBeGreaterThan(0.9);
+
+    // Al volver arriba del todo vuelve a estar oculto.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(opacity, { timeout: 5000 }).toBe(0);
+  });
+
   test("renders full project index with all entries", async ({ page }) => {
     await page.goto("/projects");
     await page.waitForLoadState("domcontentloaded");
@@ -109,27 +130,6 @@ test.describe("Projects page", () => {
     const rows = section.locator("[data-row]");
     await expect(rows.first()).toBeVisible();
     expect(await rows.count()).toBeGreaterThan(20);
-  });
-
-  test("category filter narrows the project list", async ({ page }) => {
-    await page.goto("/projects");
-    await page.waitForLoadState("domcontentloaded");
-
-    await page.evaluate(() => {
-      document.getElementById("projects-index")?.scrollIntoView();
-    });
-
-    const section = page.locator("#projects-index");
-    const totalRows = await section.locator("[data-row]").count();
-
-    // Primer chip después de "TODOS" — no depende de que exista una categoría
-    // concreta (el chip "BRANDING" desapareció al curar projects.ts).
-    const firstCategoryChip = section.locator("button[aria-pressed]").nth(1);
-    await firstCategoryChip.click();
-
-    const filteredRows = await section.locator("[data-row]").count();
-    expect(filteredRows).toBeLessThan(totalRows);
-    expect(filteredRows).toBeGreaterThan(0);
   });
 });
 

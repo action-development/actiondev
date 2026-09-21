@@ -2,20 +2,20 @@
 
 import { Suspense, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Outlines, Text } from "@react-three/drei";
+import { Outlines } from "@react-three/drei";
 import * as THREE from "three";
 import { ScrollInvalidator, onCanvasCreated } from "@/lib/r3f-utils";
 import { getToonGradient, OUTLINE, OUTLINE_THIN } from "@/components/canvas/port/toon";
-import { createContainerMaterials } from "@/components/canvas/port/container-textures";
+import { createContainerMaterials, loadLabelFont } from "@/components/canvas/port/container-textures";
 import { stepSway, type SwayState } from "@/components/canvas/port/crane-logic";
 
 /**
  * HangingCargo — el contenedor TRABAJO que el visitante cargó en la home,
  * colgado del spreader de la grúa, recorriendo `/projects` mientras se hace
  * scroll. Sustituye al cubo wireframe: mismo contrato de posición
- * (`scrollRef.progress` → órbita de Lissajous, `yOffset` → descenso) pero con
+ * (`scrollRef.progress` → guiñada lenta, `yOffset` → descenso vertical) pero con
  * el lenguaje del hero: texturas de contenedor pintadas, toon + contorno de
- * tinta, cables y péndulo (`stepSway`, el mismo muelle amortiguado del juego).
+ * tinta, rótulo pintado sobre la chapa (el mismo de la home), cables y péndulo (`stepSway`, el mismo muelle amortiguado del juego).
  *
  * Cámara en z=14 / fov 40 → media altura de pantalla ≈ 5 unidades: `Projects`
  * calibra el descenso con ese número (`VIEWPORT_HALF`). No cambiar la cámara
@@ -71,8 +71,14 @@ function Cargo({
   const { invalidate } = useThree();
 
   const gradient = getToonGradient();
-  const skin = useMemo(() => createContainerMaterials("projects-cargo", color, HALF_W * 2, gradient), [color, gradient]);
+  const skin = useMemo(() => createContainerMaterials("projects-cargo", color, HALF_W * 2, gradient, label), [color, gradient, label]);
   useEffect(() => () => skin.dispose(), [skin]);
+  // El costado se repinta cuando llega la fuente; en `frameloop="demand"` hay que pedir el frame.
+  useEffect(() => {
+    let alive = true;
+    loadLabelFont().then(() => alive && setTimeout(invalidate, 50));
+    return () => { alive = false; };
+  }, [invalidate, skin]);
 
   const steelMat = useMemo(() => new THREE.MeshToonMaterial({ color: STEEL, gradientMap: gradient }), [gradient]);
   const cableMat = useMemo(() => new THREE.MeshBasicMaterial({ color: CABLE, toneMapped: false }), []);
@@ -115,8 +121,6 @@ function Cargo({
   });
 
   const w = HALF_W * 2;
-  const fontSize = Math.min(0.38, (w - 0.8) / (label.length * 0.86));
-  const plateW = Math.min(w - 0.4, label.length * fontSize * 0.86 + 0.5);
   const cableLen = PIVOT_Y + 6;
 
   return (
@@ -148,23 +152,6 @@ function Cargo({
               <boxGeometry args={[w, HALF_H * 2, HALF_D * 2]} />
               <Outlines thickness={OUTLINE} color={INK} />
             </mesh>
-
-            {/* Placa con la etiqueta, como en el muelle */}
-            <mesh position={[0, 0, HALF_D + 0.01]} material={plateMat}>
-              <planeGeometry args={[plateW, 0.62]} />
-            </mesh>
-            <Text
-              font="/fonts/Poppins-Bold-subset.ttf"
-              position={[0, -0.01, HALF_D + 0.03]}
-              fontSize={fontSize}
-              letterSpacing={0.12}
-              color={color}
-              anchorX="center"
-              anchorY="middle"
-              maxWidth={w - 0.6}
-            >
-              {label.toUpperCase()}
-            </Text>
           </group>
         </group>
       </group>

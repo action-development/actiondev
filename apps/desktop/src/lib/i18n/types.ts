@@ -19,12 +19,8 @@ export interface Translations {
     transform: string;
     into: string;
     accent: string;
-    selectedWork: string;
     loading: string;
-    sectionLabel: string;
     columnLabel: string;
-    dock: string;
-    hint: string;
     cargoTag: string;
   };
   testimonials: {

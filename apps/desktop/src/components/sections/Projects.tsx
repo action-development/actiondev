@@ -14,20 +14,23 @@ import hud from "./projects-hud.module.css";
 /** Color del contenedor TRABAJO del muelle: la carga que trajo al visitante hasta aquí. */
 const CARGO_COLOR = PORT_CONTAINERS.find((c) => c.labelKey === "work")?.color ?? "#c8ff00";
 
-// Recorrido del contenedor colgado: amplitudes más cortas que las del antiguo
-// cubo — un contenedor de 40 pies que cruza toda la pantalla tapa las cards.
+// Recorrido del contenedor colgado: sin órbita. Se queda en el eje central
+// (x = z = 0) y solo baja en vertical con el scroll del carrusel (`yOffset`).
 const DECORATION_PATH = {
-	x: { amp: 5.2, cycles: 1.1 },
-	y: { amp: 2.4, cycles: 1.7 },
-	z: { amp: 3, cycles: 0.7 },
+	x: { amp: 0, cycles: 0 },
+	y: { amp: 0, cycles: 0 },
+	z: { amp: 0, cycles: 0 },
 } as const;
 
 // Camera at z=14, fov=40 → half-screen height ≈ tan(20°) * 14 ≈ 5.1 Three.js units.
 const VIEWPORT_HALF = 5;
-// DESCENT is how far the cube drops (in units) between the headline and the sticky section.
-const DESCENT = 2.5;
-// Orbit fraction pre-seeded during the descent → sticky bridge (so orbit starts visibly earlier).
-const PRE_ORBIT = 0.06;
+// Caída total (unidades) desde el centro hasta quedar fuera por abajo: media pantalla + el contenedor.
+const CARGO_DROP = VIEWPORT_HALF + 1;
+// Fracción del scroll del carrusel a partir de la cual se funde (ya casi fuera por abajo,
+// solo quedan los cables): hasta entonces es visible y baja al ritmo del scroll.
+const CARGO_FADE_START = 0.9;
+// Fracción inicial del scroll del carrusel en la que el contenedor aparece fundiendo (0 → 1).
+const CARGO_FADE_IN = 0.04;
 
 function CarouselLoading() {
 	const t = useT();
@@ -94,20 +97,6 @@ function ProjectIndicator({ nameRef }: { nameRef: RefObject<HTMLSpanElement | nu
 	);
 }
 
-/** Manómetro de la descarga: columna con aguja de lima y lectura en %. */
-function ProgressBar({ barRef, labelRef }: { barRef: RefObject<HTMLDivElement | null>; labelRef: RefObject<HTMLSpanElement | null> }) {
-	return (
-		<div className="absolute right-6 top-1/2 z-20 hidden -translate-y-1/2 md:flex">
-			<div className={hud.gauge}>
-				<div className={hud.gaugeTrack}>
-					<div ref={barRef} className={hud.gaugeFill} style={{ transform: "scaleY(0)" }} />
-				</div>
-				<span ref={labelRef} className={hud.gaugeLabel}>0%</span>
-			</div>
-		</div>
-	);
-}
-
 // --- Projects ────────────────────────────────────────────────────────────────
 
 export function Projects() {
@@ -119,11 +108,9 @@ export function Projects() {
 	const line1Ref         = useRef<HTMLSpanElement>(null);
 	const line2Ref         = useRef<HTMLSpanElement>(null);
 	const indicatorRef     = useRef<HTMLSpanElement>(null);
-	const progressBarRef   = useRef<HTMLDivElement>(null);
-	const progressLabelRef = useRef<HTMLSpanElement>(null);
 	const columnTextRef    = useRef<HTMLSpanElement>(null);
 
-	// Single cube state — progress drives Lissajous orbit, yOffset drives descent
+	// Single cube state — progress drives the slow yaw, yOffset drives the vertical drop
 	const cubeRef        = useRef({ progress: 0, yOffset: 0 });
 	const cubeWrapperRef = useRef<HTMLDivElement>(null);
 
@@ -131,7 +118,6 @@ export function Projects() {
 	const scrollRef      = useRef({ rotation: 0, y: 0 });
 
 	const lastIndexRef   = useRef(0);
-	const lastPercentRef = useRef(0);
 
 	// Portal target — only available after mount (client-only)
 	const [mounted, setMounted] = useState(false);
@@ -181,39 +167,22 @@ export function Projects() {
 			const words = hero.querySelectorAll("[data-word]");
 			gsap.set(words, { opacity: 0, y: 30, rotateX: -30 });
 
-			// Cube + text entrance: fires when this section scrolls into view.
-			// onLeaveBack resets so scroll-back works correctly.
+			// Entrada del titular. El contenedor colgado NO se toca aquí: solo se ve durante
+			// el carrusel (ver "Sticky section"). Antes lo mostraba este trigger, que al
+			// cargar la página ya está pasado y no dispara, y el onUpdate del carrusel lo
+			// dejaba a opacity 1 al volver arriba → aparecía sobre el titular.
 			ScrollTrigger.create({
 				trigger: hero,
 				start: "top 60%",
 				onEnter: () => {
-					gsap.to(cubeWrapperRef.current, { opacity: 1, duration: 0.6, ease: "power2.out" });
 					gsap.to(words, { opacity: 1, y: 0, rotateX: 0, duration: 0.5, ease: "power3.out", stagger: 0.06, delay: 0.2 });
 				},
 				onLeaveBack: () => {
-					gsap.to(cubeWrapperRef.current, { opacity: 0, duration: 0.3, ease: "power2.in" });
 					gsap.set(words, { opacity: 0, y: 30, rotateX: -30 });
 				},
 			});
 
-			// When "top 60%" fires, the hero center is at the very bottom of the viewport
-			// (60% + 40vh = 100%). The cube defaults to yOffset=0 = viewport center, so it
-			// appears ~40% above the text. This trigger scrubs yOffset from -VIEWPORT_HALF
-			// (cube at bottom, aligned with text) to 0 (cube at center) as the hero scrolls
-			// to center — cube and text rise into the viewport together.
-			// Range ends at "center center" (hero center = viewport center = Three.js y=0).
-			// Does not overlap with the descent trigger which starts at "40% top".
-			ScrollTrigger.create({
-				trigger: hero,
-				start: "top 60%",
-				end: "center center",
-				scrub: 0.5,
-				onUpdate: (self) => {
-					cubeRef.current.yOffset = -VIEWPORT_HALF * (1 - self.progress);
-				},
-			});
-
-			// Text exits left/right on scroll — cube stays centered (progress=0 → [0,0,0])
+			// Text exits left/right on scroll
 			const tl = gsap.timeline({
 				scrollTrigger: {
 					trigger: hero,
@@ -224,25 +193,6 @@ export function Projects() {
 			});
 			tl.to(line1Ref.current, { xPercent: -120, opacity: 0, ease: "power2.in" }, 0);
 			tl.to(line2Ref.current, { xPercent: 120, opacity: 0, ease: "power2.in" }, 0);
-
-			// Cube descends as the hero scrolls away, bridging the gap to the sticky section.
-			// endTrigger covers the "Selected Work" divider so no trigger-less gap exists.
-			// yOffset follows a parabola (0 → -DESCENT → 0): the cube arcs down and rises
-			// back to center exactly when the sticky section starts — no correction needed there.
-			// PRE_ORBIT pre-seeds the Lissajous orbit so the cube is already moving laterally
-			// before the sticky carousel kicks in.
-			ScrollTrigger.create({
-				trigger: hero,
-				endTrigger: sectionRef.current!,
-				start: "40% top",
-				end: "top top",
-				scrub: 1,
-				onUpdate: (self) => {
-					const p = self.progress;
-					cubeRef.current.yOffset  = -(4 * p * (1 - p)) * DESCENT;
-					cubeRef.current.progress = p * PRE_ORBIT;
-				},
-			});
 		}, hero);
 
 		return () => ctx.revert();
@@ -254,8 +204,6 @@ export function Projects() {
 		if (!section) return;
 
 		const indicator = indicatorRef.current;
-		const bar       = progressBarRef.current;
-		const label     = progressLabelRef.current;
 
 		if (indicator) indicator.textContent = projects[0].title;
 
@@ -272,34 +220,26 @@ export function Projects() {
 					scrollRef.current.rotation = rotation;
 					scrollRef.current.y        = progress * TOTAL_Y;
 
-					// Orbit continues from PRE_ORBIT (seeded during descent) — no vertical correction
-					// needed since the descent trigger already returns yOffset to 0 at this point.
-					cubeRef.current.progress = PRE_ORBIT + progress * (1 - PRE_ORBIT);
-					cubeRef.current.yOffset  = 0;
+					// Straight vertical drop from screen center (yOffset 0) to below the viewport,
+					// linear in scroll across the WHOLE carousel (it exits as the section ends). x/z stay at 0, so the pendulum never gets excited.
+					cubeRef.current.progress = progress;
+					cubeRef.current.yOffset  = -CARGO_DROP * progress;
 
-					// Fade cube out from 75 % → 95 % of sticky scroll so it's fully hidden
-					// well before the Testimonials section appears. Driven here (not a separate
-					// ScrollTrigger) so the percentage is relative to carousel progress, not to
-					// the section's pixel height (which varies with NUM).
+					// Único dueño de la opacidad del contenedor: funde de entrada en el primer tramo
+					// del carrusel (a progress 0 vale 0 → arriba del todo nunca se ve) y de salida
+					// en el último, para que los cables no lleguen al índice. Relativo al progreso
+					// del carrusel, no a los píxeles de la sección (varían con NUM).
 					const cubeWrapper = cubeWrapperRef.current;
 					if (cubeWrapper) {
-						cubeWrapper.style.opacity = String(
-							Math.max(0, 1 - Math.max(0, (progress - 0.75) / 0.2))
-						);
+						const fadeIn = Math.min(1, progress / CARGO_FADE_IN);
+						const fadeOut = 1 - Math.max(0, (progress - CARGO_FADE_START) / (1 - CARGO_FADE_START));
+						cubeWrapper.style.opacity = String(Math.max(0, Math.min(fadeIn, fadeOut)));
 					}
 
 					const idx = Math.round(rotation / ANGLE_STEP) % NUM;
 					if (idx !== lastIndexRef.current) {
 						lastIndexRef.current = idx;
 						if (indicator && projects[idx]) indicator.textContent = projects[idx].title;
-					}
-
-					if (bar) bar.style.transform = `scaleY(${progress})`;
-
-					const pct = Math.round(progress * 100);
-					if (pct !== lastPercentRef.current) {
-						lastPercentRef.current = pct;
-						if (label) label.textContent = `${pct}%`;
 					}
 				},
 			});
@@ -328,6 +268,7 @@ export function Projects() {
 		? createPortal(
 				<div
 					ref={cubeWrapperRef}
+					data-testid="hanging-cargo"
 					style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none", opacity: 0 }}
 					aria-hidden="true"
 				>
@@ -351,13 +292,9 @@ export function Projects() {
 				{/* Hero headline */}
 				<div
 					ref={heroRef}
-					className="relative z-[2] flex h-[80vh] flex-col items-center justify-center gap-8 overflow-hidden container-editorial"
+					className="relative z-[2] flex h-[80vh] flex-col items-center justify-center gap-8 overflow-hidden pt-[20vh] container-editorial"
 					style={{ perspective: "600px" }}
 				>
-					<span data-word className={`${hud.plate} inline-flex`}>
-						<span aria-hidden className={hud.led} />
-						{t.projects.dock}
-					</span>
 					<h2 className="display-xl max-w-5xl text-center text-foreground">
 						<span ref={line1Ref} className="block will-change-transform">
 							{t.projects.transform.split(" ").map((word, i) => (
@@ -373,35 +310,14 @@ export function Projects() {
 					</h2>
 				</div>
 
-				<div className="relative z-[2] flex items-center justify-center gap-6 pb-[calc(var(--section-py)/2)]">
-					<span className="h-0.5 w-16 bg-[var(--hairline-strong)]" />
-					<span className={hud.tag} style={{ ["--crate" as string]: CARGO_COLOR } as React.CSSProperties}>
-						{t.projects.selectedWork}
-					</span>
-					<span className="h-0.5 w-16 bg-[var(--hairline-strong)]" />
-				</div>
-
 				<section
 					ref={sectionRef}
 					aria-label="Featured projects showcase"
 					className="relative z-[2]"
 					style={{ height: `${200 + NUM * 55}vh` }}
 				>
-					<div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-[0] h-[30vh] bg-gradient-to-b from-neutral-950 to-transparent" />
-					<div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[0] h-[30vh] bg-gradient-to-t from-neutral-950 to-transparent" />
-
 					<div className="sticky top-0 h-screen overflow-hidden">
 						<CardBackgroundPreview />
-
-						<div className="absolute right-6 top-24 z-20 hidden items-center gap-3 md:flex">
-							<span className={hud.plate}>{t.projects.sectionLabel}</span>
-						</div>
-						<div className="absolute bottom-8 left-8 z-20 hidden md:flex">
-							<span className={hud.plate}>
-								<span aria-hidden className={`${hud.led} ${hud.ledBlink}`} />
-								{t.projects.hint}
-							</span>
-						</div>
 
 						<CentralColumn textRef={columnTextRef} label={t.projects.columnLabel} />
 						{carouselNear ? (
@@ -410,7 +326,6 @@ export function Projects() {
 							<CarouselLoading />
 						)}
 						<ProjectIndicator nameRef={indicatorRef} />
-						<ProgressBar barRef={progressBarRef} labelRef={progressLabelRef} />
 					</div>
 				</section>
 			</div>
