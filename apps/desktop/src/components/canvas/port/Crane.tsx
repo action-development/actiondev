@@ -107,6 +107,21 @@ function placeBar(mesh: THREE.Object3D, x1: number, y1: number, x2: number, y2: 
   mesh.rotation.z = -Math.atan2(dx, dy);
 }
 
+/**
+ * Coloca el cable `i`: del headblock del spreader al carro, recto hacia arriba.
+ *
+ * Lo llaman `update()` cada frame Y el `ref` de cada cable al montarse. Lo
+ * segundo importa: `update()` no corre mientras el juego está en pausa (la
+ * pantalla de carga ya se ha abierto pero `loading` sigue a true), y sin una
+ * colocación inicial los cuatro cilindros se quedaban en el origen del grupo
+ * de la grúa — x = 0, sin rotar y de 1 unidad de alto — apilados en una barra
+ * de tinta en mitad del encuadre que saltaba a su sitio al arrancar el juego.
+ */
+function placeCable(mesh: THREE.Object3D, i: number, trolleyX: number, hookX: number, hookY: number) {
+  const dx = ROPE_SX[i] * ROPE_DX;
+  placeBar(mesh, hookX + dx, hookY + SPREADER_HALF_H + HEADBLOCK_H, trolleyX + dx, BOOM_TOP_Y);
+}
+
 function StaticBar({ from, to, z, thickness, color }: {
   from: [number, number]; to: [number, number]; z: number; thickness: number; color: string;
 }) {
@@ -167,12 +182,10 @@ export const Crane = forwardRef<CraneHandle, CraneProps>(function Crane({ palett
 
       // Los 4 cables mueren en la cara de arriba del headblock y suben rectos
       // al carro. Bucle sin reservas: solo escribe en los meshes ya creados.
-      const top = hookY + SPREADER_HALF_H + HEADBLOCK_H;
       for (let i = 0; i < ROPE_SX.length; i++) {
         const c = cableRefs.current[i];
         if (!c) continue;
-        const dx = ROPE_SX[i] * ROPE_DX;
-        placeBar(c, hookX + dx, top, trolleyX + dx, BOOM_TOP_Y);
+        placeCable(c, i, trolleyX, hookX, hookY);
       }
       const rb = spreaderRef.current;
       if (rb) {
@@ -287,7 +300,17 @@ export const Crane = forwardRef<CraneHandle, CraneProps>(function Crane({ palett
 
       {/* --- Cables: 2 parejas, a dos z, por fuera de la cabina (se recolocan en update) --- */}
       {ROPE_ZS.map((z, i) => (
-        <mesh key={i} position-z={z} visible={showMoving} ref={(m) => { cableRefs.current[i] = m; }}>
+        <mesh
+          key={i}
+          position-z={z}
+          visible={showMoving}
+          ref={(m) => {
+            cableRefs.current[i] = m;
+            // En reposo, como el carro y el spreader de al lado: el cable nace
+            // colgando donde toca, no en el origen del grupo.
+            if (m) placeCable(m, i, CRANE_START_X, CRANE_START_X, HOOK_TOP_Y);
+          }}
+        >
           <cylinderGeometry args={[showStatic ? 0.045 : 0.035, showStatic ? 0.045 : 0.035, 1, 6]} />
           <meshBasicMaterial color={showStatic ? o : PAINTED_CABLE_COLOR} />
         </mesh>

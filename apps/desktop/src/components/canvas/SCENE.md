@@ -479,6 +479,15 @@ el click se ignora.
 - **Cíes aplastadas con `CIES_SCALE`**: con proporción real de dibujo salían
   pirámides.
 - **`antialias: true`**: los contornos de `<Outlines>` sin MSAA hacen sierra.
+- **Todo lo que coloca `Crane.update()` necesita su sitio de reposo en el JSX**:
+  mientras el juego está en pausa (`GameWorld` sale del `useFrame` por
+  `if (paused)`) `update()` NO corre, y la pantalla de carga se ABRE antes de
+  que `loading` pase a false — así que se ve la escena con la grúa sin colocar
+  durante ~1 s. Los 4 cables no tenían posición inicial y se quedaban apilados
+  en el origen del grupo: un cilindro de tinta de 1 u, vertical, en mitad del
+  encuadre, que saltaba a su sitio al arrancar el juego (se veía al volver a la
+  home desde otra ruta). Ahora el `ref` de cada cable llama a `placeCable` con
+  el estado de reposo, igual que hacen el carro y el spreader con su `position`.
 - Lógica pura testeada en `src/__tests__/canvas/port-logic.test.ts`.
 
 - **Agarrar de refilón NO teletransporta**: `findGrabTarget` engancha hasta el 85 % del semiancho, así que el contenedor no queda centrado bajo el spreader. Centrarlo de golpe lo metía dentro del vecino (huecos de 0,6) y Rapier lo expulsaba a 4-5 u/s. `GameWorld` guarda el desfase en `grab` y lo consume a `GRAB_GLIDE_SPEED`; mientras tanto el contenedor va en modo fantasma (`setCollisionGroups(0)`) y solo recupera la colisión cuando está centrado y `overlapsAny` da falso. Soltar siempre restaura los grupos (un dinámico fantasma atravesaría el suelo).
