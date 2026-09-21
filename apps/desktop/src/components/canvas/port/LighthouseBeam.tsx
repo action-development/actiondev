@@ -1,15 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { beamAt } from "./lighthouse-beam";
+import { ALERT_BEAM_SPIN, ALERT_RED, type GullAlert } from "./lighthouse-alert";
 
 /**
  * Haz de luz del faro (ver `lighthouse-beam.ts` para el giro). Un cono plano
  * con degradado suave en shader: se desvanece a lo largo y por los bordes,
  * aditivo para que ilumine el cielo en vez de taparlo. Coordenadas locales:
  * origen = linterna.
+ *
+ * Durante la alerta del faro (easter egg) la óptica se embala: gira
+ * `ALERT_BEAM_SPIN` veces más rápido, en rojo y más intensa. El ángulo se
+ * ACUMULA en un reloj propio en vez de leer el de la escena — si no, al
+ * cambiar de velocidad el haz daría un salto.
  */
 
 const LENGTH = 70;
@@ -57,7 +63,16 @@ function beamGeometry() {
   return g;
 }
 
-export function LighthouseBeam({ strength = 1, color = "#fff2c8" }: { strength?: number; color?: string }) {
+export function LighthouseBeam({
+  strength = 1,
+  color = "#fff2c8",
+  alert,
+}: {
+  strength?: number;
+  color?: string;
+  /** Alerta del faro en curso: haz rojo, más rápido y más intenso. */
+  alert?: RefObject<GullAlert>;
+}) {
   const beamRef = useRef<THREE.Mesh>(null);
   const flareRef = useRef<THREE.MeshBasicMaterial>(null);
 
@@ -65,14 +80,25 @@ export function LighthouseBeam({ strength = 1, color = "#fff2c8" }: { strength?:
   const uniforms = useMemo(() => ({ uColor: { value: new THREE.Color(color) }, uIntensity: { value: 0 } }), [color]);
   useEffect(() => () => geometry.dispose(), [geometry]);
 
-  useFrame((state) => {
-    const b = beamAt(state.clock.elapsedTime);
+  /** Reloj propio de la óptica y última fase de alerta vista (para teñir sólo al cambiar). */
+  const spin = useRef(0);
+  const angry = useRef(false);
+
+  useFrame((_, delta) => {
+    const on = !!alert?.current.active;
+    if (on !== angry.current) {
+      angry.current = on;
+      uniforms.uColor.value.set(on ? ALERT_RED : color);
+      flareRef.current?.color.set(on ? ALERT_RED : color);
+    }
+    spin.current += Math.min(delta, 1 / 20) * (on ? ALERT_BEAM_SPIN : 1);
+    const b = beamAt(spin.current);
     const mesh = beamRef.current;
     if (mesh) {
       // Ligeramente elevado sobre el horizonte, hacia el lado que toque.
       mesh.rotation.z = b.side >= 0 ? 0.06 : Math.PI - 0.06;
       mesh.scale.set(LENGTH * Math.max(0.04, b.length), LENGTH * Math.max(0.04, b.length), 1);
-      uniforms.uIntensity.value = 0.32 * b.intensity * strength;
+      uniforms.uIntensity.value = 0.32 * b.intensity * strength * (on ? 1.6 : 1);
     }
     if (flareRef.current) flareRef.current.opacity = b.flare * 0.85 * strength;
   });

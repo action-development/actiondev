@@ -98,6 +98,77 @@ export function playStreakSfx(level: number) {
   tone(ac, t, 0.16, "sine", 140, 50, 0.4);
 }
 
+let alarmBusyUntil = 0;
+
+/**
+ * Alerta del faro: sirena de dos tonos (alto-bajo, tres ciclos ≈ 1,4 s) con
+ * un zumbido grave debajo que le da el cuerpo de altavoz de puerto. Como la
+ * bocina, no se apila: si ya está sonando, el click se ignora.
+ */
+export function playAlarmSfx() {
+  const ac = getContext();
+  if (!ac) return;
+  const t = ac.currentTime;
+  if (t < alarmBusyUntil) return;
+  const CYCLES = 3;
+  const STEP = 0.23;
+  const total = CYCLES * STEP * 2;
+  alarmBusyUntil = t + total;
+
+  // Dos tonos alternos: el clásico "ni-no" de sirena, en cuadrada filtrada.
+  const lp = ac.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 1800;
+  lp.Q.value = 0.7;
+  lp.connect(ac.destination);
+
+  for (let i = 0; i < CYCLES * 2; i++) {
+    const at = t + i * STEP;
+    const osc = ac.createOscillator();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(i % 2 === 0 ? 660 : 495, at);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(0.16, at + 0.03);
+    g.gain.setValueAtTime(0.16, at + STEP - 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + STEP);
+    osc.connect(g).connect(lp);
+    osc.start(at);
+    osc.stop(at + STEP + 0.02);
+  }
+
+  // Zumbido grave continuo: el aviso se oye "por megafonía", no en el oído.
+  const sub = ac.createOscillator();
+  sub.type = "sawtooth";
+  sub.frequency.setValueAtTime(74, t);
+  const subGain = ac.createGain();
+  subGain.gain.setValueAtTime(0.0001, t);
+  subGain.gain.exponentialRampToValueAtTime(0.22, t + 0.12);
+  subGain.gain.exponentialRampToValueAtTime(0.0001, t + total);
+  sub.connect(subGain).connect(lp);
+  sub.start(t);
+  sub.stop(t + total + 0.05);
+}
+
+/**
+ * Gaviota contra la pantalla: golpe seco de cuerpo + estallido de cristal
+ * (ruido agudo que cae) + tintineo de esquirlas. Rompe la cuarta pared, así
+ * que suena más cerca y más brillante que el resto de la escena.
+ */
+export function playCrashSfx() {
+  const ac = getContext();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Golpe: el cuerpo del ave contra el cristal.
+  tone(ac, t, 0.22, "sine", 140, 34, 0.75);
+  noiseBurst(ac, t, 0.12, "lowpass", 2200, 180, 0.6);
+  // Cristal: ruido agudo largo + tres esquirlas desafinadas cayendo.
+  noiseBurst(ac, t + 0.01, 0.5, "highpass", 3000, 9000, 0.4);
+  [2450, 3180, 4020].forEach((hz, i) => {
+    tone(ac, t + 0.03 + i * 0.05, 0.3, "triangle", hz, hz * 0.55, 0.12);
+  });
+}
+
 let hornBusyUntil = 0;
 
 /**

@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { LIGHTHOUSE } from "./PortBay";
 import { LighthouseBeam } from "./LighthouseBeam";
+import type { GullAlert } from "./lighthouse-alert";
 
 /**
  * Faro del modo "painted". El fondo IA ya no lo lleva: aquí se dibuja con el
  * mismo lenguaje (tinta, torre blanca), destella y su haz gira (`LighthouseBeam`).
+ *
+ * Es además el botón del easter egg "Alerta del faro": mientras dura, la
+ * linterna late en rojo en vez de destellar en grupos de dos.
  */
 
 /* -------------------------------- Faro -------------------------------- */
@@ -24,7 +28,7 @@ function towerShape(bottomW: number, topW: number, h: number) {
 }
 
 /** Faro de Cíes (Monteagudo): torre blanca y linterna que destella en grupos de 2. */
-export function PaintedLighthouse() {
+export function PaintedLighthouse({ alert }: { alert?: RefObject<GullAlert> }) {
   const lampRef = useRef<THREE.MeshBasicMaterial>(null);
 
   const geo = useMemo(() => ({
@@ -40,9 +44,17 @@ export function PaintedLighthouse() {
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
+    const lamp = lampRef.current;
+    if (!lamp) return;
+    if (alert?.current.active) {
+      // Alerta: deja de destellar en grupos y late en rojo, deprisa.
+      const pulse = 0.5 + 0.5 * Math.sin(t * 14);
+      lamp.color.setRGB(0.55 + 0.45 * pulse, 0.1 * pulse, 0.05 * pulse);
+      return;
+    }
     const phase = t % 8;
     const flash = phase < 0.35 || (phase > 0.9 && phase < 1.25) ? 1 : 0.2;
-    if (lampRef.current) lampRef.current.color.setScalar(0.75 + 0.25 * flash);
+    lamp.color.setScalar(0.75 + 0.25 * flash);
   });
 
   const flat = { toneMapped: false, fog: false } as const;
@@ -78,7 +90,7 @@ export function PaintedLighthouse() {
         <meshBasicMaterial color="#1a1410" {...flat} />
       </mesh>
       <group position={[0, 3.12, 0.15]}>
-        <LighthouseBeam />
+        <LighthouseBeam alert={alert} />
       </group>
     </group>
   );

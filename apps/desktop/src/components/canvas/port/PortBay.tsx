@@ -1,13 +1,14 @@
 "use client";
 
 import { LighthouseBeam } from "./LighthouseBeam";
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { PortPalette } from "./time-of-day";
 import { SKY_Z, orbWorldX } from "./PortSky";
 import { WATER_Y } from "./crane-logic";
 import { getToonGradient } from "./toon";
+import { ALERT_RED, type GullAlert } from "./lighthouse-alert";
 
 /**
  * La ría de Vigo: agua, Cíes al fondo, Morrazo a la derecha, costa sur a la
@@ -194,15 +195,27 @@ const CIES_SCALE: [number, number] = [1.3, 0.55];
 /** Posición del faro de Monte Faro (sobre la cima de CIES_FARO, ya escalada). */
 export const LIGHTHOUSE: [number, number, number] = [-16.4 * CIES_SCALE[0], WATER_Y + 15.4 * CIES_SCALE[1], -118];
 
-function Lighthouse({ palette }: { palette: PortPalette }) {
+/** Linterna en calma; durante la alerta pasa a `ALERT_RED`. */
+const LAMP_CALM = "#c8ff00";
+
+function Lighthouse({ palette, alert }: { palette: PortPalette; alert?: RefObject<GullAlert> }) {
   const lampRef = useRef<THREE.MeshBasicMaterial>(null);
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
+    const lamp = lampRef.current;
+    if (!lamp) return;
+    // Alerta del faro (easter egg): la linterna late deprisa y en rojo.
+    if (alert?.current.active) {
+      lamp.color.set(ALERT_RED);
+      lamp.opacity = 0.5 + 0.5 * Math.sin(t * 14);
+      return;
+    }
+    lamp.color.set(LAMP_CALM);
     // Destello real del faro de Cíes: grupos de 2 destellos. Aproximado.
     const phase = t % 8;
     const flash = phase < 0.35 || (phase > 0.9 && phase < 1.25) ? 1 : 0.15;
-    if (lampRef.current) lampRef.current.opacity = 0.25 + 0.75 * flash * Math.max(palette.lamps, 0.3);
+    lamp.opacity = 0.25 + 0.75 * flash * Math.max(palette.lamps, 0.3);
   });
 
   return (
@@ -213,10 +226,10 @@ function Lighthouse({ palette }: { palette: PortPalette }) {
       </mesh>
       <mesh position={[0, 3.1, 0.3]}>
         <circleGeometry args={[0.8, 16]} />
-        <meshBasicMaterial ref={lampRef} color="#c8ff00" transparent toneMapped={false} fog={false} />
+        <meshBasicMaterial ref={lampRef} color={LAMP_CALM} transparent toneMapped={false} fog={false} />
       </mesh>
       <group position={[0, 3.1, 0.25]}>
-        <LighthouseBeam strength={Math.max(palette.lamps, 0.35)} color="#e9ffb0" />
+        <LighthouseBeam strength={Math.max(palette.lamps, 0.35)} color="#e9ffb0" alert={alert} />
       </group>
     </group>
   );
@@ -306,7 +319,7 @@ function DistantCrane({ x, z, color, lamp }: { x: number; z: number; color: stri
 
 // -------------------------------------------------------------- BAY ---------
 
-export function PortBay({ palette }: { palette: PortPalette }) {
+export function PortBay({ palette, alert }: { palette: PortPalette; alert?: RefObject<GullAlert> }) {
   const p = palette;
   return (
     <group>
@@ -321,7 +334,7 @@ export function PortBay({ palette }: { palette: PortPalette }) {
         <planeGeometry args={[11, 0.55]} />
         <meshBasicMaterial color={p.sand} toneMapped={false} />
       </mesh>
-      <Lighthouse palette={p} />
+      <Lighthouse palette={p} alert={alert} />
       <Silhouette points={MORRAZO} z={-92} color={p.islandNear} outline={p.outline} stroke={0.7} scale={[1, 0.7]} />
 
       <DistantCrane x={-58} z={-44} color={p.islandNear} lamp={p.lamps} />

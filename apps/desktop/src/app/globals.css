@@ -416,6 +416,97 @@ html.lenis body { height: auto; }
 }
 
 /* ─────────────────────────────────────────────────────────────── */
+/*  Easter egg: alerta del faro                                    */
+/*  (canvas/port/lighthouse-alert.ts · overlays/AlertOverlay.tsx)  */
+/* ─────────────────────────────────────────────────────────────── */
+
+/* Viñeteado de alarma: late despacio y sólo toca los bordes, para no comerse
+   el juego. Excepción consciente al "sin gradientes" del sistema de diseño —
+   es un efecto de pantalla del easter egg, no parte del lenguaje de la web. */
+/* El DEGRADADO va en estilo en línea, desde `ALERT_RED` (ver AlertOverlay):
+   una sola fuente de verdad del color y, sobre todo, aquí no sobrevive —
+   Lightning CSS descarta `rgb(var(--x) / α)` al compilar y la regla se
+   quedaba sólo con la animación, con el viñeteado invisible. Ojo también con
+   `color-mix(…, transparent)`: mezcla hacia el NEGRO y tiñe de gris. */
+.alert-vignette {
+  animation: alert-vignette 1.6s ease-in-out infinite;
+}
+@keyframes alert-vignette {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+
+/* Gaviota contra el cristal: el dibujo entra de golpe y se va apagando poco a
+   poco. La duración la pone AlertOverlay en línea (`CRACK_MS`), que es también
+   el temporizador que lo saca del DOM: así el dibujo llega a opacidad 0 justo
+   cuando se quita, y no hay corte. Las paradas intermedias hacen que el
+   desvanecido sea suave de principio a fin en vez de una caída al final. */
+.crack {
+  animation: crack-fade linear both;
+}
+@keyframes crack-fade {
+  0%, 16% { opacity: 1; }
+  40%     { opacity: 0.72; }
+  65%     { opacity: 0.4; }
+  85%     { opacity: 0.15; }
+  100%    { opacity: 0; }
+}
+/* Cada trazo se "abre" desde el impacto (pathLength=1 → dash normalizado). */
+.crack-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: crack-draw 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes crack-draw {
+  to { stroke-dashoffset: 0; }
+}
+/* Fogonazo del golpe. La capa de la grieta ocupa la ventana entera, así que
+   el fogonazo NO puede heredar su tamaño: es un disco propio centrado en el
+   punto del impacto (left/top llegan por estilo en línea). */
+.crack-flash {
+  position: absolute;
+  width: 46vmax;
+  height: 46vmax;
+  margin-left: -23vmax;
+  margin-top: -23vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.9) 0%, transparent 62%);
+  animation: crack-flash 0.35s ease-out both;
+}
+@keyframes crack-flash {
+  0%   { opacity: 0.95; transform: scale(0.2); }
+  100% { opacity: 0; transform: scale(1.15); }
+}
+
+/* Sacudida del impacto: se aplica al CONTENEDOR del hero (fondo pintado +
+   canvas juntos), no al canvas solo — si no, el 3D se despegaría de la
+   imagen pintada. El scale(1.02) tapa los bordes durante el temblor. */
+.hero-shake {
+  animation: hero-shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+@keyframes hero-shake {
+  0%   { transform: scale(1.02) translate(0, 0); }
+  15%  { transform: scale(1.02) translate(-9px, 5px) rotate(-0.4deg); }
+  30%  { transform: scale(1.02) translate(7px, -6px) rotate(0.35deg); }
+  45%  { transform: scale(1.02) translate(-6px, -3px) rotate(-0.25deg); }
+  60%  { transform: scale(1.02) translate(4px, 4px) rotate(0.2deg); }
+  80%  { transform: scale(1.02) translate(-2px, -1px); }
+  100% { transform: scale(1) translate(0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* La grieta SE VE (es el premio del easter egg), pero quieta: sin trazado,
+     sin fundido, sin fogonazo y sin temblor. La quita su propio temporizador
+     a los 5 s. `animation: none` es imprescindible aquí — la regla global de
+     más abajo acorta toda animación a 0,01 ms, y con ella la grieta saltaría
+     directa a su fotograma final (invisible). */
+  .alert-vignette, .crack, .hero-shake { animation: none; }
+  .crack-line { stroke-dashoffset: 0; animation: none; }
+  .crack-flash { display: none; }
+  .hero-shake { transform: none; }
+}
+
+/* ─────────────────────────────────────────────────────────────── */
 /*  REDUCED MOTION — WCAG 2.1 SC 2.2.2 / 2.3.3                   */
 /*                                                                 */
 /*  Collapses CSS animations and transitions for users who have   */

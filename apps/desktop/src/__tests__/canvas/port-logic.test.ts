@@ -744,3 +744,146 @@ describe("racha de bajas", () => {
     expect(streakAlive(NO_STREAK, 0)).toBe(false);
   });
 });
+
+import {
+  ALERT_SECONDS,
+  CRACK_RADIUS,
+  DIVE_FIRST,
+  DIVE_TIME,
+  alertStagger,
+  claimDive,
+  crackPaths,
+  pickLighthouseAt,
+  type GullAlert,
+} from "@/components/canvas/port/lighthouse-alert";
+import { LIGHTHOUSE } from "@/components/canvas/port/PortBay";
+
+describe("pickLighthouseAt", () => {
+  const [lx, ly, lz] = LIGHTHOUSE;
+  /** Rayo desde la cámara del hero hacia un punto del mundo. */
+  const rayTo = (x: number, y: number, z: number) => {
+    const ox = 0, oy = -3, oz = 28;
+    const dx = x - ox, dy = y - oy, dz = z - oz;
+    const len = Math.hypot(dx, dy, dz);
+    return [ox, oy, oz, dx / len, dy / len, dz / len] as const;
+  };
+  const hit = (x: number, y: number, z: number) =>
+    pickLighthouseAt(...rayTo(x, y, z), LIGHTHOUSE);
+
+  it("acierta apuntando a la torre", () => {
+    expect(hit(lx, ly + 1.7, lz)).toBe(true);
+    expect(hit(lx, ly, lz)).toBe(true);
+    expect(hit(lx, ly + 3, lz)).toBe(true);
+  });
+
+  it("falla apuntando al cielo o al mar de al lado", () => {
+    expect(hit(lx, ly + 30, lz)).toBe(false);
+    expect(hit(lx + 30, ly, lz)).toBe(false);
+    expect(hit(lx, ly - 20, lz)).toBe(false);
+  });
+
+  it("no se pincha lo que queda detrás de la cámara", () => {
+    const [ox, oy, oz] = [0, -3, 28];
+    expect(pickLighthouseAt(ox, oy, oz, 0, 0, 1, LIGHTHOUSE)).toBe(false);
+  });
+
+  it("la tolerancia angular da una diana mayor que la torre, pero acotada", () => {
+    // Con slack 0 sólo vale el radio real; con el de producción, algo más.
+    expect(pickLighthouseAt(...rayTo(lx + 2.6, ly + 1.7, lz), LIGHTHOUSE, 0)).toBe(false);
+    expect(hit(lx + 2.6, ly + 1.7, lz)).toBe(true);
+    expect(hit(lx + 8, ly + 1.7, lz)).toBe(false);
+  });
+});
+
+describe("alerta del faro", () => {
+  it("el tope de seguridad deja de sobra para la embestida", () => {
+    // La alerta la cierra el choque; `ALERT_SECONDS` sólo salta si ninguna
+    // gaviota pudo embestir, así que tiene que ir holgado por encima del
+    // respiro inicial más el picado.
+    expect(ALERT_SECONDS).toBeGreaterThan(DIVE_FIRST + DIVE_TIME + 2);
+  });
+
+  it("el enjambre entra escalonado y más rápido que el de la ronda", () => {
+    const delays = new Set<number>();
+    for (let seed = 200; seed < 230; seed += 5) delays.add(alertStagger(seed + 3));
+    expect(delays.size).toBeGreaterThan(1);
+    for (const d of delays) {
+      expect(d).toBeGreaterThan(0);
+      expect(d).toBeLessThan(ALERT_SECONDS / 4);
+    }
+  });
+
+  it("sin alerta no embiste nadie", () => {
+    const alert: GullAlert = { active: false, nextDiveAt: 0 };
+    expect(claimDive(alert, 100)).toBe(false);
+    expect(alert.nextDiveAt).toBe(0);
+  });
+
+  it("la primera ave pone el reloj en hora y deja un respiro antes de la primera embestida", () => {
+    const alert: GullAlert = { active: true, nextDiveAt: 0 };
+    expect(claimDive(alert, 100)).toBe(false);
+    expect(alert.nextDiveAt).toBe(100 + DIVE_FIRST);
+    expect(claimDive(alert, 100 + DIVE_FIRST - 0.1)).toBe(false);
+  });
+
+  it("embiste UNA sola por alerta: la que coge el turno cierra la puerta", () => {
+    const alert: GullAlert = { active: true, nextDiveAt: 50 };
+    expect(claimDive(alert, 50)).toBe(true);
+    // Ni las demás en ese mismo frame ni nadie después: el choque es el final.
+    expect(claimDive(alert, 50)).toBe(false);
+    expect(claimDive(alert, 1e6)).toBe(false);
+  });
+
+  it("la alerta siguiente vuelve a repartir turno", () => {
+    // `setAlert(false)` deja `nextDiveAt` a 0 — el estado de "recién abierta".
+    const alert: GullAlert = { active: true, nextDiveAt: 0 };
+    expect(claimDive(alert, 10)).toBe(false);
+    expect(claimDive(alert, 10 + DIVE_FIRST)).toBe(true);
+  });
+});
+
+describe("grieta de la pantalla", () => {
+  /** Números de un atributo `d` (los vértices, en orden). */
+  const nums = (d: string) => (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
+  /** Primer vértice del trazo. */
+  const from = (d: string) => nums(d).slice(0, 2);
+
+  it("cada semilla da una grieta distinta y reproducible", () => {
+    expect(crackPaths(1)).toEqual(crackPaths(1));
+    expect(crackPaths(1)).not.toEqual(crackPaths(2));
+  });
+
+  it("todos los trazos son paths válidos y dentro del encuadre", () => {
+    for (const { d, w } of crackPaths(9973)) {
+      expect(d).toMatch(/^M-?\d/);
+      expect(w).toBeGreaterThan(0);
+      for (const n of nums(d)) expect(Math.abs(n)).toBeLessThanOrEqual(CRACK_RADIUS);
+    }
+  });
+
+  it("ningún trazo se cierra sobre sí mismo: son grietas, no una telaraña", () => {
+    for (const { d } of crackPaths(7)) expect(d).not.toContain("Z");
+  });
+
+  it("la grieta adelgaza al alejarse del golpe", () => {
+    const paths = crackPaths(7);
+    const ws = new Set(paths.map((p) => p.w));
+    // Astillas del impacto > tronco de rama > punta > arcos > astillas laterales.
+    expect([...ws].sort((a, b) => b - a)).toEqual([1.3, 1, 0.6, 0.45, 0.4]);
+    // Un tronco por rama, y todos arrancan EN el punto del impacto.
+    const trunks = paths.filter((p) => p.w === 1);
+    expect(trunks).toHaveLength(14);
+    for (const { d } of trunks) expect(from(d)).toEqual([0, 0]);
+  });
+
+  it("todas las ramas son largas: la grieta se sale de la pantalla por los cuatro lados", () => {
+    // La punta de cada rama, a más del 60 % del radio → escalada a la diagonal
+    // de la ventana, ninguna se queda en una mancha en mitad del encuadre.
+    const tips = crackPaths(31).filter((p) => p.w === 0.6).map((p) => {
+      const n = nums(p.d);
+      return Math.hypot(n[n.length - 2], n[n.length - 1]);
+    });
+    expect(tips).toHaveLength(14);
+    for (const r of tips) expect(r).toBeGreaterThan(CRACK_RADIUS * 0.6);
+  });
+});

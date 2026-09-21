@@ -26,11 +26,12 @@ import { Seagulls } from "./port/Seagulls";
 import type { Disturbance } from "./port/gull-behaviour";
 import { GullHunt, type GullHuntHandle } from "./port/GullHunt";
 import { pickGullTarget, type GullTarget } from "./port/gull-hunt-logic";
-import { PortBay } from "./port/PortBay";
+import { LIGHTHOUSE, PortBay } from "./port/PortBay";
+import { pickLighthouseAt } from "./port/lighthouse-alert";
 import { Quay } from "./port/Quay";
 import { Ship, type DropState, type ShipHandle } from "./port/Ship";
 import { pickShipAt } from "./port/ship-hull";
-import { playHornSfx } from "@/lib/hero-sfx";
+import { playAlarmSfx, playHornSfx } from "@/lib/hero-sfx";
 import { PaintedFraming, WaterOccluder } from "./port/PaintedLayer";
 import { PaintedLighthouse } from "./port/PaintedScenery";
 import type { SceneMode } from "./port/painted-backdrops";
@@ -91,6 +92,9 @@ import {
  * Easter egg: un click SOBRE una gaviota no baja el gancho — dispara una bala
  * desde al lado del mando (`GullHunt`). El hit-test se hace en el interceptor
  * de `use-action-queue`, antes de que el click entre en la cola de acciones.
+ * Lo mismo el barco (bocina) y el FARO de Cíes, que abre la "alerta del faro"
+ * (`port/lighthouse-alert.ts`): ojos rojos, enjambre y gaviotas contra la
+ * pantalla. Orden de prioridad: gaviota > contenedor > grúa > faro > barco.
  */
 
 /** Rapier RigidBodyType enum values (stable — mirror of @dimforge/rapier3d-compat). */
@@ -260,7 +264,12 @@ export function GameWorld({
     _ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
     _raycaster.setFromCamera(_ndc, camera);
     const { origin: o, direction: d } = _raycaster.ray;
-    const gull = pickGullTarget(o.x, o.y, o.z, d.x, d.y, d.z, gullTargets.values());
+    // Durante la alerta del faro NO se dispara: la embestida es una escena, no
+    // una ronda de tiro. Sin blanco, el click sigue su camino (contenedores,
+    // grúa…), así que la grúa se maneja igual.
+    const gull = gameState.gullAlert.current.active
+      ? null
+      : pickGullTarget(o.x, o.y, o.z, d.x, d.y, d.z, gullTargets.values());
     if (gull) {
       hunt.current?.fire(gull);
       // El tiro espanta a las posadas.
@@ -290,6 +299,13 @@ export function GameWorld({
         drag.current = { active: true, offsetX: c.trolleyX - _hit.x, startNdcY: _ndc.y, startRow: c.rowIndex };
         return true;
       }
+    }
+    // Click sobre el FARO de Cíes → alerta: el puerto se enfurece. Va después
+    // de lo que está delante (contenedores, grúa), que siempre gana.
+    if (pickLighthouseAt(o.x, o.y, o.z, d.x, d.y, d.z, LIGHTHOUSE)) {
+      playAlarmSfx();
+      gameState.notifyLighthouse();
+      return true;
     }
     // Click sobre el barco → bocina de zarpar. Tampoco baja el gancho.
     if (_raycaster.ray.intersectPlane(_plane, _hit) && pickShipAt(_hit.x, _hit.y)) {
@@ -727,7 +743,10 @@ export function GameWorld({
     // contenedor o sobre el barco (pista de que se puede pinchar).
     _raycaster.setFromCamera(mp, camera);
     const { origin: ro, direction: rd } = _raycaster.ray;
-    const overGull = pickGullTarget(ro.x, ro.y, ro.z, rd.x, rd.y, rd.z, gullTargets.values()) !== null;
+    // Sin cruz durante la alerta: el cursor no promete un disparo que no va a salir.
+    const overGull =
+      !gameState.gullAlert.current.active &&
+      pickGullTarget(ro.x, ro.y, ro.z, rd.x, rd.y, rd.z, gullTargets.values()) !== null;
     let overBox = false;
     let hovered: GrabCandidate | null = null;
     // El puntero para las gaviotas sigue leyéndose en la fila del barco.
@@ -753,7 +772,13 @@ export function GameWorld({
         _raycaster.ray.intersectPlane(_cranePlane, _hit) !== null &&
         pickCraneAt(_hit.x, _hit.y, c.trolleyX, hookX, c.hookY - SPREADER_HALF_H, BOOM_TOP_Y);
     }
-    const wantCursor = dragging ? "grabbing" : overGull ? "crosshair" : overBox ? "pointer" : overCrane ? "grab" : "";
+    // El faro también se pincha (alerta del easter egg): mano, como el barco.
+    const overLighthouse =
+      !overGull && !overBox && !overCrane && !dragging &&
+      pickLighthouseAt(ro.x, ro.y, ro.z, rd.x, rd.y, rd.z, LIGHTHOUSE);
+    const wantCursor = dragging
+      ? "grabbing"
+      : overGull ? "crosshair" : overBox || overLighthouse ? "pointer" : overCrane ? "grab" : "";
     if (wantCursor !== cursor.current) {
       cursor.current = wantCursor;
       gl.domElement.style.cursor = wantCursor;
@@ -876,11 +901,21 @@ export function GameWorld({
       />
 
       {showStatic && <PortSky palette={palette} />}
-      {showStatic && <PortBay palette={palette} />}
+      {showStatic && <PortBay palette={palette} alert={gameState.gullAlert} />}
       {!showStatic && <WaterOccluder />}
       {!showStatic && <ComicClouds palette={palette} />}
-      {!showStatic && <PaintedLighthouse />}
-      {showMoving && <Seagulls palette={palette} flat={!showStatic} disturbance={disturbance} targets={gullTargets} rush={gameState.gullRush} />}
+      {!showStatic && <PaintedLighthouse alert={gameState.gullAlert} />}
+      {showMoving && (
+        <Seagulls
+          palette={palette}
+          flat={!showStatic}
+          disturbance={disturbance}
+          targets={gullTargets}
+          rush={gameState.gullRush}
+          alert={gameState.gullAlert}
+          onScreenHit={gameState.notifyScreenHit}
+        />
+      )}
       {showMoving && <GullHunt ref={hunt} outline={palette.outline} onHit={handleGullHit} />}
       {/* Guía del gancho: va FUERA de <Physics> a propósito — es luz, no materia. */}
       {showMoving && <HookGuide ref={guideRef} />}

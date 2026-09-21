@@ -122,6 +122,8 @@ export const es: Translations = {
       roundEnd: "¡TIEMPO!",
       streak: "RACHA",
       streakKills: "MUERTES",
+      alert: "¡ALERTA!",
+      alertSub: "GAVIOTAS ENFURECIDAS",
     },
   },
   notFound: {

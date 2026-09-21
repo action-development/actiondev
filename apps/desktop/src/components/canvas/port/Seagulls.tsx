@@ -13,6 +13,10 @@ import {
   FADE_END, RESPAWN_MIN, fadeAt, fallOffset, type GullTarget,
 } from "./gull-hunt-logic";
 import { rushRespawn, rushStagger, type GullRush } from "./gull-rush";
+import {
+  ALERT_RED, DIVE_DEPTH, DIVE_PICK, DIVE_SCALE, DIVE_TIME, alertStagger, claimDive, type GullAlert,
+} from "./lighthouse-alert";
+import { playCrashSfx } from "@/lib/hero-sfx";
 
 /**
  * Gaviotas patiamarillas del puerto de Vigo.
@@ -34,6 +38,11 @@ import { rushRespawn, rushStagger, type GullRush } from "./gull-rush";
  * Ronda de caza (`gull-rush.ts`): mientras dura la cuenta atrás de 30 s entran
  * las gaviotas EXTRA (`EXTRA_FLIGHTS`, escalonadas) y las abatidas vuelven casi
  * al instante. Al acabar, las extra se desvanecen en el aire (`leave`).
+ *
+ * Alerta del faro (`lighthouse-alert.ts`): además de las extra entra el
+ * enjambre `ALERT_FLIGHTS`, TODAS sacan los ojos rojos y, por turnos
+ * (`claimDive`), una se lanza contra la cámara hasta estrellarse en el cristal
+ * (modo `dive` → `onScreenHit`, que agrieta la pantalla desde el DOM).
  *
  * Todo por transformaciones de grupo en un `useFrame`: ni clips ni huesos.
  */
@@ -65,6 +74,20 @@ const EXTRA_FLIGHTS: Flight[] = [
   { cx: 24, cy: 10, cz: -38, rx: 19, rz: 9, speed: 0.16, phase: 0.2, scale: 1.5 },
 ];
 
+/**
+ * Enjambre de la ALERTA DEL FARO. Aún más cerca y más bajas que las de la
+ * ronda: durante la alerta hay que verles los ojos rojos, y son las que mejor
+ * se lanzan contra la pantalla porque ya vuelan en primer plano.
+ */
+const ALERT_FLIGHTS: Flight[] = [
+  { cx: -2, cy: 4, cz: -7, rx: 10, rz: 4, speed: 0.3, phase: 1.1, scale: 1.05 },
+  { cx: 8, cy: 7, cz: -11, rx: 13, rz: 6, speed: 0.27, phase: 3.4, scale: 1.15 },
+  { cx: -16, cy: 5.5, cz: -13, rx: 14, rz: 6, speed: 0.29, phase: 5.6, scale: 1.2 },
+  { cx: 14, cy: 12, cz: -18, rx: 15, rz: 7, speed: 0.23, phase: 2.2, scale: 1.25 },
+  { cx: -24, cy: 8.5, cz: -22, rx: 17, rz: 8, speed: 0.25, phase: 4.7, scale: 1.3 },
+  { cx: 0, cy: 14, cz: -26, rx: 18, rz: 8, speed: 0.2, phase: 0.5, scale: 1.35 },
+];
+
 const WHITE = "#f7f5ee";
 /** Manto gris azulado de la patiamarilla adulta. */
 const GREY = "#9fa9ba";
@@ -73,6 +96,15 @@ const YELLOW = "#ffc93a";
 /** Patas amarillas: es lo que le da el nombre (Larus michahellis). */
 const LEG_YELLOW = "#f2b82e";
 const GONYS_RED = "#e2483a";
+/** Iris en calma. Durante la alerta del faro pasa a `ALERT_RED`. */
+const EYE_IRIS = "#f4e6a6";
+/**
+ * Los dos colores del iris ya como `THREE.Color`, a nivel de módulo: se
+ * comparan y se copian cada frame (ver el bucle de la alerta), así que no
+ * pueden reservarse por gaviota ni por frame.
+ */
+const EYE_CALM_RGB = new THREE.Color(EYE_IRIS);
+const EYE_ANGRY_RGB = new THREE.Color(ALERT_RED);
 
 /**
  * Altura de las PATAS en unidades de modelo: del origen del ave (centro del
@@ -273,6 +305,8 @@ interface BodyRefs {
   jaw: Ref<THREE.Group>;
   /** Patas: fuera posada, al aterrizar y abatida; recogidas en vuelo. */
   legs: Ref<THREE.Group>;
+  /** Los dos iris: se tiñen de rojo durante la alerta del faro. */
+  iris: RefObject<(THREE.MeshBasicMaterial | null)[]>;
 }
 
 function GullBody({ palette, flat, refs }: { palette: PortPalette; flat: boolean; refs: BodyRefs }) {
@@ -337,7 +371,7 @@ function GullBody({ palette, flat, refs }: { palette: PortPalette; flat: boolean
           <Outlines thickness={OUTLINE_THIN} color={o} />
         </mesh>
         {/* Ojo: anillo orbital rojo, iris amarillo pálido y pupila — a los dos lados */}
-        {[-1, 1].map((side) => (
+        {[-1, 1].map((side, i) => (
           <group key={side} position={[0.14, 0.09, side * 0.1]}>
             <mesh>
               <sphereGeometry args={[0.032, 10, 8]} />
@@ -345,7 +379,11 @@ function GullBody({ palette, flat, refs }: { palette: PortPalette; flat: boolean
             </mesh>
             <mesh position={[0.004, 0, side * 0.012]}>
               <sphereGeometry args={[0.026, 10, 8]} />
-              <meshBasicMaterial color="#f4e6a6" toneMapped={false} />
+              <meshBasicMaterial
+                ref={(el) => { refs.iris.current[i] = el; }}
+                color={EYE_IRIS}
+                toneMapped={false}
+              />
             </mesh>
             <mesh position={[0.008, 0.002, side * 0.03]}>
               <sphereGeometry args={[0.012, 8, 6]} />
@@ -394,8 +432,17 @@ function GullBody({ palette, flat, refs }: { palette: PortPalette; flat: boolean
   );
 }
 
-/** `leave`: extra que se desvanece en el aire al acabar la ronda. */
-type Mode = "perched" | "takeoff" | "cruise" | "approach" | "shot" | "gone" | "leave";
+/**
+ * `leave`: gaviota de enjambre que se desvanece en el aire al acabar su evento.
+ * `dive`: embestida contra la pantalla durante la alerta del faro.
+ */
+type Mode = "perched" | "takeoff" | "cruise" | "approach" | "shot" | "gone" | "leave" | "dive";
+
+/**
+ * A qué bandada pertenece. Las de enjambre sólo existen mientras dura SU
+ * evento; fuera de él viven en `gone` y ni siquiera se pueden abatir.
+ */
+type Swarm = "extra" | "alert";
 
 const TAKEOFF_TIME = 0.9;
 const APPROACH_TIME = 2.2;
@@ -436,6 +483,11 @@ interface GullState {
   last: THREE.Vector3;
   /** Próximo grito (s dentro de `perched`). */
   callAt: number;
+  /** Punto de impacto de la embestida (mundo, delante de la cámara). */
+  to: THREE.Vector3;
+  /** Ese mismo punto en NDC: es lo que necesita la grieta del DOM. */
+  ndcX: number;
+  ndcY: number;
 }
 
 /** Materiales del ave (cuerpo, alas y contornos) para el fundido al ser abatida. */
@@ -457,10 +509,11 @@ function setOpacity(materials: THREE.Material[], opacity: number) {
 
 const _from = new THREE.Vector3();
 const _to = new THREE.Vector3();
+const _dir = new THREE.Vector3();
 const _pt: PerchPoint = { x: 0, y: 0, z: 0 };
 
 function Gull({
-  flight, palette, flat, startPerch, taken, disturbance, seed, targets, extra = false, rush,
+  flight, palette, flat, startPerch, taken, disturbance, seed, targets, swarm, rush, alert, onScreenHit,
 }: {
   flight: Flight;
   palette: PortPalette;
@@ -471,9 +524,12 @@ function Gull({
   disturbance: RefObject<Disturbance>;
   seed: number;
   targets?: Map<number, GullTarget>;
-  /** Gaviota de la ronda de caza: sólo existe mientras `rush.active`. */
-  extra?: boolean;
+  /** Bandada de evento: sólo existe mientras dure el suyo (ronda o alerta). */
+  swarm?: Swarm;
   rush?: RefObject<GullRush>;
+  alert?: RefObject<GullAlert>;
+  /** Se estrelló contra la pantalla, en NDC. Lo recoge el overlay de la grieta. */
+  onScreenHit?: (ndcX: number, ndcY: number) => void;
 }) {
   const root = useRef<THREE.Group>(null);
   const innerL = useRef<THREE.Group>(null);
@@ -486,9 +542,13 @@ function Gull({
   const head = useRef<THREE.Group>(null);
   const jaw = useRef<THREE.Group>(null);
   const legs = useRef<THREE.Group>(null);
+  const iris = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
+
+  /** Retraso con el que entra en escena su bandada (la alerta llena el cielo antes). */
+  const stagger = swarm === "alert" ? alertStagger(seed) : rushStagger(seed);
 
   const st = useRef<GullState>({
-    mode: extra ? "gone" : startPerch >= 0 ? "perched" : "cruise",
+    mode: swarm ? "gone" : startPerch >= 0 ? "perched" : "cruise",
     t: 0,
     perch: startPerch,
     target: -1,
@@ -497,11 +557,14 @@ function Gull({
     restlessAt: RESTLESS_MIN + (seed % 13),
     blend: startPerch >= 0 ? 0 : 1,
     seenPulse: 0,
-    respawnAt: extra ? rushStagger(seed) : RESPAWN_MIN + (seed % 5),
+    respawnAt: swarm ? stagger : RESPAWN_MIN + (seed % 5),
     scale: startPerch >= 0 ? PERCH_SCALE : flight.scale,
     scaleFrom: flight.scale,
     last: new THREE.Vector3(Number.NaN, 0, 0),
     callAt: 3 + (seed % CALL_EVERY),
+    to: new THREE.Vector3(),
+    ndcX: 0,
+    ndcY: 0,
   });
   const materials = useRef<THREE.Material[] | null>(null);
 
@@ -515,7 +578,7 @@ function Gull({
       id: seed,
       x: 0, y: 999, z: 0,
       radius: 0.75 * flight.scale,
-      alive: !extra,
+      alive: !swarm,
       shoot: () => {
         const c = st.current;
         if (c.mode === "shot" || c.mode === "gone") return;
@@ -533,7 +596,7 @@ function Gull({
     };
     targets.set(seed, target);
     return () => { targets.delete(seed); };
-  }, [targets, seed, flight.scale, taken, extra]);
+  }, [targets, seed, flight.scale, taken, swarm]);
 
   useFrame((state, delta) => {
     const g = root.current;
@@ -543,21 +606,52 @@ function Gull({
     const c = st.current;
     const d = disturbance.current;
     const rushing = !!rush?.current.active;
+    const alerting = !!alert?.current.active;
+    /** ¿Está abierto el evento de SU bandada? Las de siempre vuelan pase lo que pase. */
+    const swarming = swarm === "alert" ? alerting : swarm === "extra" ? rushing : true;
     c.t += dt;
 
-    if (extra) {
-      if (c.mode === "gone" && !rushing) {
-        // Fuera de ronda: espera, con el reloj a cero para el escalonado de la próxima.
+    if (swarm) {
+      if (c.mode === "gone" && !swarming) {
+        // Fuera de su evento: espera, con el reloj a cero para el escalonado del próximo.
         c.t = 0;
-        c.respawnAt = rushStagger(seed);
-      } else if (c.mode === "cruise" && !rushing) {
-        // Acabó la cuenta atrás: se desvanece donde esté y ya no se puede abatir.
+        c.respawnAt = stagger;
+      } else if (c.mode === "cruise" && !swarming) {
+        // Se acabó: se desvanece donde esté y ya no se puede abatir.
         c.mode = "leave";
         c.t = 0;
         const own = targets?.get(seed);
         if (own) own.alive = false;
         materials.current ??= collectMaterials(g);
       }
+    }
+
+    /*
+     * Ojos rojos mientras dura la alerta del faro — todas, no sólo el enjambre.
+     *
+     * Se compara contra el color REAL del material, sin recordar la última
+     * transición. Es a propósito: un flanco ("ha cambiado, píntalo") se pierde
+     * si el estado de React se reinicia sin que se reinicie el material — lo
+     * que pasa con la recarga en caliente en desarrollo — y el ojo se queda
+     * rojo para siempre. Así converge solo, venga de donde venga. Son dos
+     * comparaciones por ave y frame: nada.
+     */
+    const eye = alerting ? EYE_ANGRY_RGB : EYE_CALM_RGB;
+    for (const m of iris.current) if (m && !m.color.equals(eye)) m.color.copy(eye);
+
+    // Embestida contra la pantalla: por turnos (`claimDive` hace de semáforo
+    // entre aves), y sólo desde el vuelo de crucero — una posada no se lanza.
+    if (alert && c.mode === "cruise" && Math.random() < DIVE_PICK && claimDive(alert.current, clock)) {
+      c.from.copy(g.position);
+      c.scaleFrom = c.scale;
+      c.mode = "dive";
+      c.t = 0;
+      // Sitio del cristal al que va: cualquiera menos los bordes, que quedan
+      // medio fuera de encuadre y la grieta no se leería entera.
+      c.ndcX = (Math.random() - 0.5) * 1.3;
+      c.ndcY = (Math.random() - 0.5) * 1.0;
+      _dir.set(c.ndcX, c.ndcY, 0.5).unproject(state.camera).sub(state.camera.position).normalize();
+      c.to.copy(state.camera.position).addScaledVector(_dir, DIVE_DEPTH);
     }
 
     // --- Vuelo en lemniscata: posición y tangente
@@ -683,16 +777,25 @@ function Gull({
       if (c.t >= FADE_END) {
         c.mode = "gone";
         c.t = 0;
-        // En plena ronda vuelve casi al instante; fuera de ella, al rato.
-        c.respawnAt = rushing ? rushRespawn(seed) : RESPAWN_MIN + (seed % 5);
+        // En plena ronda (o alerta) vuelve casi al instante; fuera, al rato.
+        c.respawnAt = rushing || alerting ? rushRespawn(seed) : RESPAWN_MIN + (seed % 5);
         g.visible = false;
         if (materials.current) setOpacity(materials.current, 1);
       }
     } else if (c.mode === "gone") {
       // Fuera de escena. Vuelve entrando por el lateral hacia su órbita.
-      if (c.t >= c.respawnAt && (!extra || rushing)) {
+      if (c.t >= c.respawnAt && (!swarm || swarming)) {
         const side = Math.cos(t) >= 0 ? 1 : -1;
         c.from.set(flight.cx + side * (flight.rx + 40), flight.cy + 5, flight.cz);
+        // La posición se PLANTA aquí, no se deja para el frame siguiente. La
+        // cadena de modos es un `else if` y `cruise` va por delante de `gone`,
+        // así que el frame del respawn ya no pasa por el lerp de la órbita: sin
+        // esto el ave se hacía visible un frame entero donde la dejó su vida
+        // anterior — el origen (0,0,0), en mitad del encuadre, la primera vez;
+        // el punto del choque contra el cristal o su última órbita después — y
+        // saltaba al lateral al siguiente. Eso era el popping del enjambre de
+        // la alerta del faro: seis parpadeos escalonados en un segundo.
+        g.position.copy(c.from);
         g.rotation.set(0, 0, 0);
         g.visible = true;
         c.mode = "cruise";
@@ -740,6 +843,37 @@ function Gull({
           c.last.x = Number.NaN;
         }
       }
+    } else if (c.mode === "dive") {
+      // Rompe la cuarta pared: se viene encima acelerando y creciendo, y al
+      // llegar al cristal desaparece detrás de la grieta (la pinta el DOM).
+      // Sigue siendo un blanco válido: dispararle antes del impacto la para.
+      const k = Math.min(1, c.t / DIVE_TIME);
+      const e = k * k;
+      g.position.lerpVectors(c.from, c.to, e);
+      c.scale = THREE.MathUtils.lerp(c.scaleFrom, DIVE_SCALE, e);
+      const cam = state.camera.position;
+      const toCamX = cam.x - g.position.x;
+      const toCamZ = cam.z - g.position.z;
+      g.rotation.set(
+        Math.sin(clock * 22) * 0.3, // cabeceo rabioso
+        Math.atan2(-toCamZ, toCamX), // de morro a la cámara (el cuerpo mira a +x)
+        Math.atan2(cam.y - g.position.y, Math.hypot(toCamX, toCamZ)),
+      );
+      armAmp = 1.05;
+      flapRate = 15;
+      gliding = false;
+      headYaw = 0;
+      jawOpen = 0.4; // viene gritando
+      if (k >= 1) {
+        onScreenHit?.(c.ndcX, c.ndcY);
+        playCrashSfx();
+        c.mode = "gone";
+        c.t = 0;
+        c.respawnAt = rushRespawn(seed);
+        g.visible = false;
+        const own = targets?.get(seed);
+        if (own) own.alive = false;
+      }
     }
 
     if (c.mode === "leave") {
@@ -747,7 +881,7 @@ function Gull({
       if (c.t >= FADE_END) {
         c.mode = "gone";
         c.t = 0;
-        c.respawnAt = rushStagger(seed);
+        c.respawnAt = stagger;
         g.visible = false;
         if (materials.current) setOpacity(materials.current, 1);
       }
@@ -761,6 +895,9 @@ function Gull({
       target.x = g.position.x;
       target.y = g.position.y;
       target.z = g.position.z;
+      // El radio va con la escala del momento: una que embiste es un blanco
+      // enorme (y se la puede parar de un tiro), una posada es pequeña.
+      target.radius = 0.75 * c.scale;
     }
 
     // Abatida: alas plegadas y patas fuera, panza arriba de cómic.
@@ -789,11 +926,11 @@ function Gull({
   });
 
   return (
-    <group ref={root} scale={st.current.scale} visible={!extra}>
+    <group ref={root} scale={st.current.scale} visible={!swarm}>
       <GullBody
         palette={palette}
         flat={flat}
-        refs={{ innerL, outerL, innerR, outerR, open, folded, torso, head, jaw, legs }}
+        refs={{ innerL, outerL, innerR, outerR, open, folded, torso, head, jaw, legs, iris }}
       />
     </group>
   );
@@ -807,6 +944,8 @@ export function Seagulls({
   disturbance,
   targets,
   rush,
+  alert,
+  onScreenHit,
 }: {
   palette: PortPalette;
   flat?: boolean;
@@ -816,6 +955,9 @@ export function Seagulls({
   targets?: Map<number, GullTarget>;
   /** Ronda de caza en curso: trae las gaviotas extra y acorta la reaparición. */
   rush?: RefObject<GullRush>;
+  /** Alerta del faro: ojos rojos, enjambre propio y embestidas a la pantalla. */
+  alert?: RefObject<GullAlert>;
+  onScreenHit?: (ndcX: number, ndcY: number) => void;
 }) {
   const fallback = useRef<Disturbance>(FAR_AWAY);
   const taken = useRef(new Set<number>()).current;
@@ -840,6 +982,8 @@ export function Seagulls({
           disturbance={disturbance ?? fallback}
           targets={targets}
           rush={rush}
+          alert={alert}
+          onScreenHit={onScreenHit}
         />
       ))}
       {extras.map((f, i) => (
@@ -853,8 +997,29 @@ export function Seagulls({
           taken={taken}
           disturbance={disturbance ?? fallback}
           targets={targets}
-          extra
+          swarm="extra"
           rush={rush}
+          alert={alert}
+          onScreenHit={onScreenHit}
+        />
+      ))}
+      {/* Enjambre de la alerta del faro: aquí NO se recorta de noche — la
+          gracia del easter egg es que el cielo se llene, sea la hora que sea. */}
+      {ALERT_FLIGHTS.map((f, i) => (
+        <Gull
+          key={`alert-${i}`}
+          seed={200 + i * 5 + 3}
+          flight={f}
+          palette={palette}
+          flat={flat}
+          startPerch={-1}
+          taken={taken}
+          disturbance={disturbance ?? fallback}
+          targets={targets}
+          swarm="alert"
+          rush={rush}
+          alert={alert}
+          onScreenHit={onScreenHit}
         />
       ))}
     </group>

@@ -143,6 +143,10 @@ export interface Translations {
       /** Aviso de racha: "RACHA · 5 MUERTES". */
       streak: string;
       streakKills: string;
+      /** Alerta del faro: aviso central y chip del contador. */
+      alert: string;
+      /** Subtítulo del aviso de alerta. */
+      alertSub: string;
     };
   };
   notFound: {

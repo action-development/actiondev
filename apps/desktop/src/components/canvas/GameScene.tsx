@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import type { WebGLRenderer } from "three";
@@ -10,6 +10,7 @@ import { TutorialOverlay } from "./overlays/TutorialOverlay";
 import { CargoToast, CraneHintBar, HoverTag, SkipMenu } from "./overlays/HeroHud";
 import { RemoteControl } from "./overlays/RemoteControl";
 import { GullTally } from "./overlays/GullTally";
+import { AlertOverlay } from "./overlays/AlertOverlay";
 import Image from "next/image";
 import { PALETTES, resolveTimeOfDay } from "./port/time-of-day";
 import { CAMERA_FOV, PAINTED_BACKDROPS, resolveSceneMode } from "./port/painted-backdrops";
@@ -39,6 +40,38 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
   // Incremented to force a full Canvas remount after WebGL context loss.
   // This re-creates the renderer and re-uploads all GPU resources cleanly.
   const [canvasKey, setCanvasKey] = useState(0);
+
+  /*
+   * Sacudida al estrellarse una gaviota contra la pantalla (alerta del faro).
+   *
+   * Va en una CAPA PROPIA que envuelve fondo pintado + canvas: tienen que
+   * temblar juntos o el 3D se despega de la imagen. Y no puede ir en el div
+   * raíz, que es el que lleva `animate-fade-in`: las dos clases escriben la
+   * propiedad `animation`, así que al quitar `.hero-shake` el nombre de la
+   * animación volvía a `fade-in` y ESTA SE REINICIABA — 0,3 s de retardo a
+   * opacidad 0 más el fundido, justo el fogonazo negro tras la grieta.
+   *
+   * Por clase y no por estado: un re-render de GameScene por un temblor de
+   * 300 ms remontaría medio hero.
+   */
+  const shakeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let timer = 0;
+    const off = gameState.subscribeScreenHit(() => {
+      const el = shakeRef.current;
+      if (!el) return;
+      window.clearTimeout(timer);
+      // Quitar y forzar reflow reinicia la animación si llegan dos seguidas.
+      el.classList.remove("hero-shake");
+      void el.offsetWidth;
+      el.classList.add("hero-shake");
+      timer = window.setTimeout(() => el.classList.remove("hero-shake"), 320);
+    });
+    return () => {
+      off();
+      window.clearTimeout(timer);
+    };
+  }, [gameState]);
 
   const handleCreated = useCallback(({ gl }: { gl: WebGLRenderer }) => {
     // Force correct renderer dimensions on mount — ResizeObserver fires async,
@@ -70,28 +103,31 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
       data-time-of-day={timeOfDay}
       data-scene-mode={mode}
     >
-      {/*
-        Fondo pintado: todo lo estático. Fuera del <Suspense> de GameWorld, así
-        que no retrasa onReady. object-cover + PaintedFraming mantienen el 3D alineado.
-      */}
-      {backdrop && (
-        <Image src={backdrop} alt="" aria-hidden fill priority sizes="100vw" className="object-cover" />
-      )}
-      <Canvas
-        key={canvasKey}
-        shadows="percentage"
-        camera={{ position: [0, -3, 28], fov: CAMERA_FOV }}
-        // antialias ON: el contorno de cómic sin MSAA se ve en dientes de sierra.
-        gl={{ antialias: true, alpha: mode === "painted", powerPreference: "high-performance" }}
-        dpr={[1, 1.5]}
-        frameloop={renderPaused ? "never" : "always"}
-        style={{ width: "100vw", height: "100vh", position: "relative" }}
-        onCreated={handleCreated}
-      >
-        <Suspense fallback={null}>
-          <GameWorld paused={paused} physicsPaused={physicsPaused} physicsActive={physicsActive} onNavigate={onNavigate} gameState={gameState} palette={palette} mode={mode} onReady={onReady} />
-        </Suspense>
-      </Canvas>
+      {/* Capa que tiembla con el impacto: fondo pintado y canvas van juntos. */}
+      <div ref={shakeRef} className="absolute inset-0">
+        {/*
+          Fondo pintado: todo lo estático. Fuera del <Suspense> de GameWorld, así
+          que no retrasa onReady. object-cover + PaintedFraming mantienen el 3D alineado.
+        */}
+        {backdrop && (
+          <Image src={backdrop} alt="" aria-hidden fill priority sizes="100vw" className="object-cover" />
+        )}
+        <Canvas
+          key={canvasKey}
+          shadows="percentage"
+          camera={{ position: [0, -3, 28], fov: CAMERA_FOV }}
+          // antialias ON: el contorno de cómic sin MSAA se ve en dientes de sierra.
+          gl={{ antialias: true, alpha: mode === "painted", powerPreference: "high-performance" }}
+          dpr={[1, 1.5]}
+          frameloop={renderPaused ? "never" : "always"}
+          style={{ width: "100vw", height: "100vh", position: "relative" }}
+          onCreated={handleCreated}
+        >
+          <Suspense fallback={null}>
+            <GameWorld paused={paused} physicsPaused={physicsPaused} physicsActive={physicsActive} onNavigate={onNavigate} gameState={gameState} palette={palette} mode={mode} onReady={onReady} />
+          </Suspense>
+        </Canvas>
+      </div>
 
       {/*
         Velo superior para que la navegación (texto claro) se lea también sobre
@@ -119,6 +155,7 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
       <SkipMenu />
       <RemoteControl gameState={gameState} />
       <GullTally gameState={gameState} />
+      <AlertOverlay gameState={gameState} />
     </div>
   );
 }

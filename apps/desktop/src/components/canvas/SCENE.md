@@ -345,6 +345,80 @@ tests en `port/gull-rush.ts`.
   única forma de mover el gancho con el ratón.
 - La clave antigua `action:gulls-downed` (total acumulado) ya no se lee.
 
+## Easter egg — alerta del faro
+
+Un click SOBRE el faro de Cíes enfurece al puerto. NO es una mecánica de juego:
+no puntúa, no abre ronda de caza y mientras dura **no se puede disparar** (el
+interceptor de `GameWorld` devuelve `null` en vez de blanco, y el cursor deja de
+ser una cruz). Es una escena, y dura lo que tarda una gaviota en estrellarse.
+
+Guion, de principio a fin:
+
+1. **Click** — hit-test `pickLighthouseAt` (`port/lighthouse-alert.ts`, con
+   tests) con la misma tolerancia ANGULAR que la caza: el faro está a ~146 u y
+   con su radio real la diana serían 18 px. Prioridad de click: gaviota >
+   contenedor > grúa > **faro** > barco, así que una gaviota que pase por
+   delante se queda el click. Suena `playAlarmSfx` (sirena de dos tonos).
+2. **Alerta** — aviso central "¡ALERTA!", viñeteado rojo pulsante, TODAS las
+   gaviotas con los ojos rojos (`EYE_IRIS` → `ALERT_RED`, un material por iris
+   que sólo se reescribe al cambiar) y entra el enjambre `ALERT_FLIGHTS` (6
+   aves, cerca y bajas, escalonadas por `alertStagger`; aquí NO se recorta de
+   noche). El haz del faro gira ×`ALERT_BEAM_SPIN` en rojo y la linterna late.
+3. **Embestida** — a los `DIVE_FIRST` s, UNA gaviota en crucero se queda el
+   turno (`claimDive`, que hace de semáforo entre aves y luego cierra la puerta
+   con `Infinity`) y pica hacia la cámara en modo `dive`. Se le puede disparar…
+   no: durante la alerta no hay disparos, así que llega siempre.
+4. **Impacto** — `onScreenHit(ndc)` → `playCrashSfx`, sacudida de pantalla y
+   **grieta a pantalla completa**. Y ahí acaba: el choque cierra la alerta.
+   `ALERT_SECONDS` (10 s) es sólo la red de seguridad por si ninguna embistió.
+
+Piezas: lógica pura y testeada en `port/lighthouse-alert.ts`; ojos y picado en
+`port/Seagulls.tsx`; haz en `port/LighthouseBeam.tsx` y linterna en
+`port/PaintedScenery.tsx` / `port/PortBay.tsx`; el resto —reloj, aviso,
+viñeteado y grieta— en `overlays/AlertOverlay.tsx`.
+
+### Gotchas de la alerta
+
+- **El respawn planta la posición en el MISMO frame.** La cadena de modos de
+  `Seagulls.tsx` es un `else if` y `cruise` va por delante de `gone`, así que el
+  frame en el que un ave vuelve a escena ya no pasa por el lerp de la órbita:
+  hay que hacer `g.position.copy(c.from)` junto al `g.visible = true`. Sin eso
+  la gaviota se hacía visible un frame entero **donde la dejó su vida anterior**
+  —el origen (0,0,0), en mitad del encuadre, la primera vez; el punto del choque
+  contra el cristal o su última órbita después— y saltaba al lateral al
+  siguiente. Era el *popping* del enjambre al pinchar el faro: seis parpadeos
+  escalonados en un segundo. Afecta igual a las abatidas y a las extra de la
+  ronda, sólo que ahí la posición vieja es plausible y no cantaba.
+- **La grieta se escala, no se redibuja.** `crackPaths` devuelve trazos
+  normalizados a radio `CRACK_RADIUS` (100) y el overlay los planta en el punto
+  del impacto con `translate(...) scale(diagonal/100)`, así que llega a las
+  cuatro esquinas desde donde sea. El grosor va DIVIDIDO por esa escala
+  (`STROKE_INK / k`) o la grieta engordaría con el tamaño de la pantalla. Cada
+  trazo lleva su grosor relativo (`w`): gruesa en el golpe, fina en las puntas,
+  y los aros son ARCOS sueltos — con anillos cerrados el dibujo se leía como
+  una telaraña.
+- **La sacudida NO puede ir en el div raíz de `GameScene`.** Ese div lleva
+  `animate-fade-in` y las dos clases escriben la propiedad `animation`: al
+  quitar `.hero-shake`, `animation-name` volvía a `fade-in` y **la animación se
+  reiniciaba** — 0,3 s de retardo a opacidad 0 más el fundido, es decir un
+  fogonazo NEGRO justo después de la grieta. Va en una capa propia que envuelve
+  fondo pintado + canvas (tienen que temblar juntos o el 3D se despega).
+- **Los overlays dependen de las PIEZAS de `gameState`, no del objeto.**
+  `useGameState()` devuelve un objeto nuevo en cada render de `GameScene`, así
+  que con `[gameState]` los efectos se remontaban a media partida y su limpieza
+  apagaba la alerta (y la ronda de caza en `GullTally`) antes de tiempo. Los
+  callbacks son `useCallback([])` y lo demás refs: estables de por vida.
+- **Los ojos NO se pintan por flanco.** Cada frame se compara el color REAL del
+  material del iris con el que toca (`m.color.equals(eye)`) y se copia si
+  difiere. Un "ha cambiado la alerta, píntalos" se pierde si el estado de React
+  se reinicia sin que se reinicie el material —lo que pasa con la recarga en
+  caliente— y la gaviota se queda con los ojos rojos para siempre. Así converge
+  sola. Son dos comparaciones por ave y frame: no cuesta nada.
+- **El viñeteado rojo va en estilo EN LÍNEA**, no en `globals.css`: Lightning
+  CSS descarta `rgb(var(--x) / α)` al compilar y la regla se quedaba sin fondo.
+  Y nada de `color-mix(…, transparent)`, que interpola hacia el negro y tiñe de
+  gris; los degradados CSS sí interpolan premultiplicado.
+
 ## Easter egg — bocina del barco
 
 Un click SOBRE el barco hace sonar la bocina de zarpar y NO baja el gancho

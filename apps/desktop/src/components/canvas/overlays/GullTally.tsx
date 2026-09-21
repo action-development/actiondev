@@ -71,6 +71,9 @@ const INITIAL: Round = {
  * Racha (`gull-rush.ts`): bajas a menos de 1,5 s unas de otras; cada 5 sube el
  * multiplicador y la baja vale ×N puntos. Cada subida lanza un aviso central
  * con impacto. Se suscribe a `gameState.onGullKill` como el resto de overlays.
+ *
+ * La alerta del faro es OTRO easter egg y no se mezcla con este: no puntúa,
+ * no abre ronda y su reloj vive en `overlays/AlertOverlay.tsx`.
  */
 export function GullTally({ gameState }: { gameState: GameState }) {
   const t = useT();
@@ -95,16 +98,24 @@ export function GullTally({ gameState }: { gameState: GameState }) {
     return () => window.clearTimeout(id);
   }, [streakBanner]);
 
+  /*
+   * Piezas sueltas y no `gameState`: el hook devuelve un objeto nuevo en cada
+   * render de `GameScene`, así que con `[gameState]` este efecto se volvía a
+   * montar a media ronda y su limpieza la cerraba sola. Callbacks
+   * `useCallback([])` y refs: estables de por vida.
+   */
+  const { gullRush, setRush, onGullKill } = gameState;
+
   useEffect(() => {
     const s = live.current;
-    const rush = gameState.gullRush.current;
+    const rush = gullRush.current;
     s.record = readRecord();
     setRound((r) => ({ ...r, record: s.record }));
 
     const finish = () => {
       window.clearInterval(s.timer);
       s.timer = 0;
-      gameState.setRush(false);
+      setRush(false);
       s.streak = NO_STREAK;
       const beaten = isNewRecord(s.score, s.record);
       if (beaten) {
@@ -132,16 +143,21 @@ export function GullTally({ gameState }: { gameState: GameState }) {
       });
     };
 
-    gameState.onGullKill.current = () => {
+    /** Abre la ronda de 30 s si no había ninguna. Devuelve los puntos de partida. */
+    const startRound = (now: number) => {
+      if (rush.active) return;
+      setRush(true);
+      s.score = 0;
+      s.streak = NO_STREAK;
+      s.endsAt = now + ROUND_SECONDS * 1000;
+      s.timer = window.setInterval(tick, 100);
+    };
+
+    onGullKill.current = () => {
       const now = Date.now();
-      if (!rush.active) {
-        gameState.setRush(true);
-        s.score = 0;
-        s.streak = NO_STREAK;
-        s.endsAt = now + ROUND_SECONDS * 1000;
-        s.timer = window.setInterval(tick, 100);
-        setBanner({ id: s.endsAt, kind: "start" });
-      }
+      const first = !rush.active;
+      startRound(now);
+      if (first) setBanner({ id: s.endsAt, kind: "start" });
       const hit = registerStreakKill(s.streak, now);
       s.streak = hit.streak;
       s.score += hit.mult;
@@ -160,12 +176,13 @@ export function GullTally({ gameState }: { gameState: GameState }) {
         streakAt: now,
       });
     };
+
     return () => {
-      gameState.onGullKill.current = null;
+      onGullKill.current = null;
       window.clearInterval(s.timer);
-      gameState.setRush(false);
+      setRush(false);
     };
-  }, [gameState]);
+  }, [gullRush, setRush, onGullKill]);
 
   const { running, score, left, record, beaten, streak, mult, streakAt } = round;
   if (score === 0 && !running) return null;

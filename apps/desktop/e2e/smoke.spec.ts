@@ -34,6 +34,38 @@ test.describe("Home page", () => {
     await expect(page.getByTestId("gull-tally")).toHaveCount(0);
   });
 
+  test("lighthouse alert: swarm, no shooting, and one gull cracks the screen", async ({ page }) => {
+    test.setTimeout(90_000);
+    const errors: string[] = [];
+    page.on("pageerror", (err) => errors.push(err.message));
+
+    // Fase fija: el faro se proyecta siempre en el mismo píxel.
+    await page.goto("/?hora=dia");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.locator("canvas").first()).toBeVisible({ timeout: 20_000 });
+    await page.waitForTimeout(5000);
+
+    // El faro de Cíes, sobre las islas. Una gaviota que pase por delante se
+    // queda el click (prioridad gaviota > faro), así que se reintenta.
+    const vignette = page.getByTestId("gull-alert-vignette");
+    for (let i = 0; i < 10 && (await vignette.count()) === 0; i++) {
+      await page.mouse.click(541, 530);
+      await page.waitForTimeout(400);
+    }
+    await expect(vignette).toBeVisible();
+
+    // Mientras dura la alerta NO se dispara: clicar gaviotas no abre contador.
+    for (const [x, y] of [[440, 225], [830, 225], [1240, 225]]) await page.mouse.click(x, y);
+    await page.waitForTimeout(400);
+    await expect(page.getByTestId("gull-tally")).toHaveCount(0);
+
+    // La embestida agrieta la pantalla y con ella se acaba el easter egg.
+    await expect(page.getByTestId("screen-crack")).toHaveCount(1, { timeout: 15_000 });
+    await expect(vignette).toHaveCount(0);
+
+    expect(errors).toEqual([]);
+  });
+
   test("home is a single full-viewport screen (no sections below the game)", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("domcontentloaded");
