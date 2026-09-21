@@ -526,6 +526,7 @@ import {
   AIM_SLACK,
   FADE_END,
   FADE_START,
+  RESPAWN_MIN,
   bulletSpeed,
   fadeAt,
   fallOffset,
@@ -621,6 +622,58 @@ describe("pickCraneAt", () => {
   });
 });
 
+import {
+  NO_STREAK,
+  ROUND_SECONDS,
+  STREAK_STEP,
+  STREAK_WINDOW_MS,
+  isNewRecord,
+  multiplierFor,
+  registerStreakKill,
+  streakAlive,
+  type Streak,
+  rushRespawn,
+  rushStagger,
+  secondsLeft,
+} from "@/components/canvas/port/gull-rush";
+
+describe("ronda de caza de gaviotas", () => {
+  it("dura 30 s y el reloj cuenta hacia arriba redondeado", () => {
+    expect(ROUND_SECONDS).toBe(30);
+    const t0 = 1_000_000;
+    expect(secondsLeft(t0 + 30_000, t0)).toBe(30);
+    expect(secondsLeft(t0 + 30_000, t0 + 100)).toBe(30);
+    expect(secondsLeft(t0 + 30_000, t0 + 29_100)).toBe(1);
+    expect(secondsLeft(t0 + 30_000, t0 + 30_000)).toBe(0);
+    expect(secondsLeft(t0 + 30_000, t0 + 45_000)).toBe(0);
+  });
+
+  it("las abatidas vuelven mucho antes en ronda que fuera de ella", () => {
+    for (let seed = 0; seed < 20; seed++) {
+      expect(rushRespawn(seed)).toBeLessThan(RESPAWN_MIN);
+      expect(rushRespawn(seed)).toBeGreaterThan(0);
+    }
+  });
+
+  it("las extra entran escalonadas y dentro de la ronda", () => {
+    const delays = new Set<number>();
+    for (let seed = 100; seed < 140; seed += 5) delays.add(rushStagger(seed + 3));
+    expect(delays.size).toBeGreaterThan(1);
+    for (const d of delays) {
+      expect(d).toBeGreaterThan(0);
+      expect(d).toBeLessThan(ROUND_SECONDS / 2);
+    }
+  });
+
+  it("sólo es récord si supera el anterior (y hay bajas)", () => {
+    expect(isNewRecord(5, 3)).toBe(true);
+    expect(isNewRecord(3, 3)).toBe(false);
+    expect(isNewRecord(2, 3)).toBe(false);
+    expect(isNewRecord(0, 0)).toBe(false);
+    expect(isNewRecord(1, 0)).toBe(true);
+  });
+});
+
 describe("overlapsAny", () => {
   const me = { x: 1.1, y: -5.25, z: 0, halfW: 1.3, halfH: 0.75 };
 
@@ -635,5 +688,59 @@ describe("overlapsAny", () => {
 
   it("ignora contenedores de otra fila", () => {
     expect(overlapsAny(me, [rowBox("b", 3.2, -5.25, -3.2)])).toBe(false);
+  });
+});
+
+describe("racha de bajas", () => {
+  /** Encadena `n` bajas separadas `gap` ms empezando en `t0`. */
+  const chain = (n: number, gap: number, t0 = 1000) => {
+    let st: Streak = NO_STREAK;
+    let last = { mult: 1, levelUp: false };
+    for (let i = 0; i < n; i++) {
+      const r = registerStreakKill(st, t0 + i * gap);
+      st = r.streak;
+      last = r;
+    }
+    return { st, last };
+  };
+
+  it("el multiplicador sube cada 5 bajas: ×1, ×2, ×3…", () => {
+    expect(multiplierFor(0)).toBe(1);
+    expect(multiplierFor(STREAK_STEP - 1)).toBe(1);
+    expect(multiplierFor(STREAK_STEP)).toBe(2);
+    expect(multiplierFor(2 * STREAK_STEP - 1)).toBe(2);
+    expect(multiplierFor(2 * STREAK_STEP)).toBe(3);
+  });
+
+  it("la baja que cruza el múltiplo ya puntúa con el nuevo multiplicador y avisa", () => {
+    const four = chain(4, 500);
+    expect(four.last.mult).toBe(1);
+    expect(four.last.levelUp).toBe(false);
+    const five = chain(5, 500);
+    expect(five.st.count).toBe(5);
+    expect(five.last.mult).toBe(2);
+    expect(five.last.levelUp).toBe(true);
+    expect(chain(10, 500).last.mult).toBe(3);
+    expect(chain(6, 500).last.levelUp).toBe(false);
+  });
+
+  it("con exactamente 1,5 s la racha sigue; pasado ese tiempo se pierde", () => {
+    const base = registerStreakKill(NO_STREAK, 0).streak;
+    expect(streakAlive(base, STREAK_WINDOW_MS)).toBe(true);
+    expect(streakAlive(base, STREAK_WINDOW_MS + 1)).toBe(false);
+    expect(registerStreakKill(base, STREAK_WINDOW_MS).streak.count).toBe(2);
+    expect(registerStreakKill(base, STREAK_WINDOW_MS + 1).streak.count).toBe(1);
+  });
+
+  it("perder la racha devuelve el multiplicador a ×1", () => {
+    const { st } = chain(7, 400);
+    expect(multiplierFor(st.count)).toBe(2);
+    const after = registerStreakKill(st, st.lastAt + STREAK_WINDOW_MS + 500);
+    expect(after.streak.count).toBe(1);
+    expect(after.mult).toBe(1);
+  });
+
+  it("sin racha no hay racha viva", () => {
+    expect(streakAlive(NO_STREAK, 0)).toBe(false);
   });
 });

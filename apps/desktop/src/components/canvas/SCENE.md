@@ -294,9 +294,49 @@ Un click SOBRE una gaviota no baja el gancho: dispara. Piezas:
   y `gone` (invisible; reaparece a los ~7-11 s entrando desde x = ±(rx+40)).
 - `lib/hero-sfx.ts` — disparo e impacto sintetizados con WebAudio (0 assets).
   El `AudioContext` nace en el primer disparo (gesto de usuario).
-- `overlays/GullTally.tsx` — contador arriba a la derecha (silueta × N). No
-  existe en el DOM hasta la primera baja; persiste en `localStorage`
-  (`action:gulls-downed`). Escucha `gameState.onGullKill`.
+- `overlays/GullTally.tsx` — contador arriba a la derecha (silueta × N) +
+  cuenta atrás + récord. No existe en el DOM hasta la primera baja. Escucha
+  `gameState.onGullKill` y es el dueño del reloj de la ronda (ver abajo).
+
+### Ronda de 30 s y récord
+
+La primera baja arranca una cuenta atrás de `ROUND_SECONDS` (30 s). El número
+pasa a ser los PUNTOS DE ESA RONDA; al llegar a 0 se compara con el récord
+(`localStorage` `action:gulls-record`, mejor ronda) y, si se bate, aparece
+"Nuevo récord". Una baja tras el final arranca otra ronda. Lógica pura y con
+tests en `port/gull-rush.ts`.
+
+- `GameState.gullRush` (`{ active }`) lo escribe `GullTally` y lo leen las aves
+  vía la prop `rush` de `Seagulls` — sin re-renders.
+- Mientras `active`: entran 5 gaviotas EXTRA (`EXTRA_FLIGHTS`, 2 de noche),
+  escalonadas por `rushStagger`, y las abatidas reaparecen en ~2-2,9 s
+  (`rushRespawn`) en vez de 7-11 s.
+- Las extra nacen `gone` con `alive = false` (no se pueden abatir hasta que
+  entran). Al acabar la ronda las que vuelan pasan a modo `leave`: se
+  desvanecen en el sitio (mismo `fadeAt` que la caída) y vuelven a `gone`.
+- Durante la ronda, un click que no acierta a gaviota, contenedor, grúa ni
+  barco se DESCARTA en el interceptor de `GameWorld` (antes caía a la cola y
+  subía/bajaba el gancho al fallar un disparo). Para mover el gancho con el
+  ratón hay que darle a un contenedor; Espacio/E no se ven afectados.
+- **Racha y multiplicador** (`gull-rush.ts`: `registerStreakKill`, `streakAlive`,
+  `multiplierFor`, con tests): bajas con ≤ 1,5 s entre una y la siguiente
+  (`STREAK_WINDOW_MS`). Más de 1,5 s sin matar → la racha se pierde y el
+  multiplicador vuelve a ×1 (lo detecta el `tick` de 100 ms de `GullTally`).
+  Cada 5 de racha sube el multiplicador (×2 a las 5, ×3 a las 10…) y cada baja
+  vale ×N PUNTOS: el contador y el récord son de puntos, no de bajas. Al subir
+  sale un aviso central "×N / RACHA · 5 MUERTES" (banda + slam, crece con el
+  nivel) y suena `playStreakSfx(level)` (arpegio que sube de tono con el nivel).
+  Bajo el contador hay un chip de racha con una barra que se vacía en 1,5 s.
+- **Los tutoriales se apartan durante la ronda**: `GullTally` abre/cierra la
+  ronda con `gameState.setRush(bool)` (notifica a los oyentes DOM solo si
+  cambia; hook `hooks/use-gull-rush.ts` con `useSyncExternalStore`). Mientras
+  dura: el cartel del tutorial se funde y se PAUSA (sin escuchas, sin avanzar de
+  paso, sin flecha) y vuelve donde estaba al acabar; `CraneHintBar` no se pinta;
+  `GameWorld` apaga la flecha holográfica (tutorial y demo) y NO acumula el
+  reposo (disparar a gaviotas no es "tocar la grúa", si no la demo movería la
+  grúa sola a los 8 s). Las balizas de contenedor se quedan: en ronda son la
+  única forma de mover el gancho con el ratón.
+- La clave antigua `action:gulls-downed` (total acumulado) ya no se lee.
 
 ## Easter egg — bocina del barco
 

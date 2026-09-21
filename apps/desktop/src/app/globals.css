@@ -350,8 +350,69 @@ html.lenis body { height: auto; }
   35%  { transform: translateY(3px) rotate(180deg); }
   100% { transform: translateY(0) rotate(0); }
 }
+/* Ronda de caza: aviso central de inicio / fin (1 s), entrada tipo "slam" de videojuego. */
+/* Banda: se abre en vertical de golpe, aguanta y hace fade out. */
+.tally-banner {
+  animation: tally-banner 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes tally-banner {
+  0%   { opacity: 0; transform: scaleY(0.15); }
+  10%  { opacity: 1; transform: scaleY(1); }
+  72%  { opacity: 1; transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(1); }
+}
+/* Título: cae GRANDE, se estampa pasándose de escala y tiembla del impacto. */
+.tally-banner-title {
+  animation: tally-banner-title 1s linear both;
+}
+@keyframes tally-banner-title {
+  0%   { opacity: 0; transform: scale(2.8); }
+  9%   { opacity: 1; transform: scale(0.9); }
+  14%  { transform: scale(1.06) translateX(-8px); }
+  18%  { transform: scale(1) translateX(8px); }
+  22%  { transform: translateX(-5px); }
+  26%  { transform: translateX(3px); }
+  30%  { transform: translateX(0); }
+  100% { transform: translateX(0) scale(1.03); }
+}
+/* Subtítulo: entra tras el impacto, subiendo un pelín. */
+.tally-banner-sub {
+  animation: tally-banner-sub 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes tally-banner-sub {
+  0%, 18% { opacity: 0; transform: translateY(10px); }
+  34%, 100% { opacity: 1; transform: none; }
+}
+/* Racha: el multiplicador salta desde el centro, se pasa de escala y tiembla. */
+.tally-streak-mult {
+  animation: tally-streak-mult 1s linear both;
+}
+@keyframes tally-streak-mult {
+  0%   { opacity: 0; transform: scale(0.2) rotate(-8deg); }
+  9%   { opacity: 1; transform: scale(1.5) rotate(4deg); }
+  15%  { transform: scale(0.92) rotate(-3deg); }
+  21%  { transform: scale(1.08) rotate(2deg); }
+  28%  { transform: scale(1) rotate(0); }
+  100% { transform: scale(1.05) rotate(0); }
+}
+/* Ronda de caza: barra de tiempo que se vacía y reloj que parpadea al final. */
+.tally-bar {
+  animation: tally-bar linear both;
+}
+@keyframes tally-bar {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+.tally-urgent {
+  animation: tally-urgent 1s steps(2, jump-none) infinite;
+}
+@keyframes tally-urgent {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.45; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .tally-pop, .tally-bump, .tally-bird { animation: none; }
+  .tally-pop, .tally-bump, .tally-bird, .tally-urgent { animation: none; }
+  .tally-banner-title, .tally-banner-sub, .tally-streak-mult { animation: none; }
 }
 
 /* ─────────────────────────────────────────────────────────────── */

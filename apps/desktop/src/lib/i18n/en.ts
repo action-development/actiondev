@@ -115,9 +115,15 @@ export const en: Translations = {
       actionKey: "SPACE",
     },
     tally: {
-      label: "Gulls downed",
-      one: "gull",
-      many: "gulls",
+      label: "Score",
+      timeLeft: "Time left",
+      record: "Best",
+      newRecord: "New record",
+      seconds: "seconds",
+      roundStart: "GULL HUNT!",
+      roundEnd: "TIME!",
+      streak: "STREAK",
+      streakKills: "KILLS",
     },
   },
   notFound: {

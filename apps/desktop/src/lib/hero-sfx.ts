@@ -82,6 +82,22 @@ export function playHitSfx() {
   tone(ac, t + 0.05, 0.22, "sawtooth", 1010, 350, 0.06);
 }
 
+/**
+ * Subida de multiplicador de la racha: arpegio ascendente de cuatro notas
+ * (cuadrada + golpe grave). Cada nivel arranca 2 semitonos más agudo, con
+ * tope, para que cada ×N suene a "más".
+ */
+export function playStreakSfx(level: number) {
+  const ac = getContext();
+  if (!ac) return;
+  const t = ac.currentTime;
+  const base = 330 * 2 ** ((Math.min(level, 9) - 2) / 6);
+  [1, 1.25, 1.5, 2].forEach((ratio, i) => {
+    tone(ac, t + i * 0.06, 0.14, "square", base * ratio, base * ratio * 1.01, 0.09);
+  });
+  tone(ac, t, 0.16, "sine", 140, 50, 0.4);
+}
+
 let hornBusyUntil = 0;
 
 /**

@@ -115,9 +115,15 @@ export const es: Translations = {
       actionKey: "ESPACIO",
     },
     tally: {
-      label: "Gaviotas abatidas",
-      one: "gaviota",
-      many: "gaviotas",
+      label: "Puntos",
+      timeLeft: "Tiempo restante",
+      record: "Récord",
+      newRecord: "Nuevo récord",
+      seconds: "segundos",
+      roundStart: "¡RONDA DE CAZA!",
+      roundEnd: "¡TIEMPO!",
+      streak: "RACHA",
+      streakKills: "MUERTES",
     },
   },
   notFound: {

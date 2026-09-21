@@ -129,11 +129,24 @@ export interface Translations {
       /** Tecla de acción impresa bajo "BAJAR". */
       actionKey: string;
     };
-    /** Easter egg: contador de gaviotas abatidas (arriba a la derecha). */
+    /** Easter egg: ronda de caza de gaviotas (contador arriba a la derecha). */
     tally: {
       label: string;
-      one: string;
-      many: string;
+      /** Aria-label de la cuenta atrás. */
+      timeLeft: string;
+      /** Rótulo del récord de bajas en una ronda. */
+      record: string;
+      /** Aviso al batir el récord. */
+      newRecord: string;
+      /** Unidad accesible del reloj ("s"). */
+      seconds: string;
+      /** Aviso central al arrancar la cuenta atrás. */
+      roundStart: string;
+      /** Aviso central al acabarse el tiempo. */
+      roundEnd: string;
+      /** Aviso de racha: "RACHA · 5 MUERTES". */
+      streak: string;
+      streakKills: string;
     };
   };
   notFound: {

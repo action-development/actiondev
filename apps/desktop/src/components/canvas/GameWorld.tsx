@@ -296,7 +296,10 @@ export function GameWorld({
       playHornSfx();
       return true;
     }
-    return false;
+    // Ronda de caza: un click que no acierta a nada NO baja/sube el gancho (los
+    // fallos al disparar lo movían sin querer). Sólo actúa dándole a un
+    // contenedor (arriba); Espacio/E siguen funcionando.
+    return gameState.gullRush.current.active;
   };
   const handleGullHit = useCallback(() => gameState.notifyGullKill(), [gameState]);
 
@@ -516,7 +519,8 @@ export function GameWorld({
     // --- Reposo → demostración. Cualquier entrada (o un click en un
     // contenedor) cuenta como "está jugando" y apaga la flecha de la demo. ---
     const rest = idle.current;
-    if (touched || autoRequest.current) {
+    // En plena ronda de caza disparar no cuenta como tocar la grúa: sin demo en reposo.
+    if (touched || autoRequest.current || gameState.gullRush.current.active) {
       rest.t = 0;
       rest.pointing = false;
     } else if (!held.current && !auto.current && c.phase === "idle") {
@@ -867,7 +871,7 @@ export function GameWorld({
       {!showStatic && <WaterOccluder />}
       {!showStatic && <ComicClouds palette={palette} />}
       {!showStatic && <PaintedLighthouse />}
-      {showMoving && <Seagulls palette={palette} flat={!showStatic} disturbance={disturbance} targets={gullTargets} />}
+      {showMoving && <Seagulls palette={palette} flat={!showStatic} disturbance={disturbance} targets={gullTargets} rush={gameState.gullRush} />}
       {showMoving && <GullHunt ref={hunt} outline={palette.outline} onHit={handleGullHit} />}
       {/* Guía del gancho: va FUERA de <Physics> a propósito — es luz, no materia. */}
       {showMoving && <HookGuide ref={guideRef} />}

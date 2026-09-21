@@ -12,6 +12,7 @@ import {
 import {
   FADE_END, RESPAWN_MIN, fadeAt, fallOffset, type GullTarget,
 } from "./gull-hunt-logic";
+import { rushRespawn, rushStagger, type GullRush } from "./gull-rush";
 
 /**
  * Gaviotas patiamarillas del puerto de Vigo.
@@ -30,6 +31,10 @@ import {
  * desploma dando vueltas, se desvanece y al rato vuelve entrando por fuera
  * del encuadre. Un disparo (`disturbance.pulse`) espanta a las posadas.
  *
+ * Ronda de caza (`gull-rush.ts`): mientras dura la cuenta atrás de 30 s entran
+ * las gaviotas EXTRA (`EXTRA_FLIGHTS`, escalonadas) y las abatidas vuelven casi
+ * al instante. Al acabar, las extra se desvanecen en el aire (`leave`).
+ *
  * Todo por transformaciones de grupo en un `useFrame`: ni clips ni huesos.
  */
 
@@ -45,6 +50,19 @@ const FLIGHTS: Flight[] = [
   { cx: -22, cy: 7, cz: -30, rx: 16, rz: 9, speed: 0.19, phase: 4.2, scale: 1.3 },
   { cx: 30, cy: 14, cz: -45, rx: 20, rz: 10, speed: 0.14, phase: 1.3, scale: 1.45 },
   { cx: -40, cy: 16, cz: -60, rx: 22, rz: 10, speed: 0.12, phase: 3.3, scale: 1.6 },
+];
+
+/**
+ * Gaviotas EXTRA de la ronda de caza. No existen fuera de ella: nacen "gone" y
+ * entran por los laterales cuando arranca la cuenta atrás. Más cerca y más
+ * bajas que las de siempre para que haya blancos de sobra en el encuadre.
+ */
+const EXTRA_FLIGHTS: Flight[] = [
+  { cx: 4, cy: 5, cz: -9, rx: 12, rz: 5, speed: 0.26, phase: 0.7, scale: 1.1 },
+  { cx: -12, cy: 9, cz: -16, rx: 15, rz: 7, speed: 0.21, phase: 2.9, scale: 1.2 },
+  { cx: 18, cy: 6, cz: -24, rx: 16, rz: 8, speed: 0.24, phase: 5.0, scale: 1.3 },
+  { cx: -28, cy: 11, cz: -34, rx: 18, rz: 9, speed: 0.18, phase: 1.8, scale: 1.4 },
+  { cx: 24, cy: 10, cz: -38, rx: 19, rz: 9, speed: 0.16, phase: 0.2, scale: 1.5 },
 ];
 
 const WHITE = "#f7f5ee";
@@ -376,7 +394,8 @@ function GullBody({ palette, flat, refs }: { palette: PortPalette; flat: boolean
   );
 }
 
-type Mode = "perched" | "takeoff" | "cruise" | "approach" | "shot" | "gone";
+/** `leave`: extra que se desvanece en el aire al acabar la ronda. */
+type Mode = "perched" | "takeoff" | "cruise" | "approach" | "shot" | "gone" | "leave";
 
 const TAKEOFF_TIME = 0.9;
 const APPROACH_TIME = 2.2;
@@ -441,7 +460,7 @@ const _to = new THREE.Vector3();
 const _pt: PerchPoint = { x: 0, y: 0, z: 0 };
 
 function Gull({
-  flight, palette, flat, startPerch, taken, disturbance, seed, targets,
+  flight, palette, flat, startPerch, taken, disturbance, seed, targets, extra = false, rush,
 }: {
   flight: Flight;
   palette: PortPalette;
@@ -452,6 +471,9 @@ function Gull({
   disturbance: RefObject<Disturbance>;
   seed: number;
   targets?: Map<number, GullTarget>;
+  /** Gaviota de la ronda de caza: sólo existe mientras `rush.active`. */
+  extra?: boolean;
+  rush?: RefObject<GullRush>;
 }) {
   const root = useRef<THREE.Group>(null);
   const innerL = useRef<THREE.Group>(null);
@@ -466,7 +488,7 @@ function Gull({
   const legs = useRef<THREE.Group>(null);
 
   const st = useRef<GullState>({
-    mode: startPerch >= 0 ? "perched" : "cruise",
+    mode: extra ? "gone" : startPerch >= 0 ? "perched" : "cruise",
     t: 0,
     perch: startPerch,
     target: -1,
@@ -475,7 +497,7 @@ function Gull({
     restlessAt: RESTLESS_MIN + (seed % 13),
     blend: startPerch >= 0 ? 0 : 1,
     seenPulse: 0,
-    respawnAt: RESPAWN_MIN + (seed % 5),
+    respawnAt: extra ? rushStagger(seed) : RESPAWN_MIN + (seed % 5),
     scale: startPerch >= 0 ? PERCH_SCALE : flight.scale,
     scaleFrom: flight.scale,
     last: new THREE.Vector3(Number.NaN, 0, 0),
@@ -493,7 +515,7 @@ function Gull({
       id: seed,
       x: 0, y: 999, z: 0,
       radius: 0.75 * flight.scale,
-      alive: true,
+      alive: !extra,
       shoot: () => {
         const c = st.current;
         if (c.mode === "shot" || c.mode === "gone") return;
@@ -511,7 +533,7 @@ function Gull({
     };
     targets.set(seed, target);
     return () => { targets.delete(seed); };
-  }, [targets, seed, flight.scale, taken]);
+  }, [targets, seed, flight.scale, taken, extra]);
 
   useFrame((state, delta) => {
     const g = root.current;
@@ -520,7 +542,23 @@ function Gull({
     const clock = state.clock.elapsedTime;
     const c = st.current;
     const d = disturbance.current;
+    const rushing = !!rush?.current.active;
     c.t += dt;
+
+    if (extra) {
+      if (c.mode === "gone" && !rushing) {
+        // Fuera de ronda: espera, con el reloj a cero para el escalonado de la próxima.
+        c.t = 0;
+        c.respawnAt = rushStagger(seed);
+      } else if (c.mode === "cruise" && !rushing) {
+        // Acabó la cuenta atrás: se desvanece donde esté y ya no se puede abatir.
+        c.mode = "leave";
+        c.t = 0;
+        const own = targets?.get(seed);
+        if (own) own.alive = false;
+        materials.current ??= collectMaterials(g);
+      }
+    }
 
     // --- Vuelo en lemniscata: posición y tangente
     const t = clock * flight.speed + flight.phase;
@@ -602,7 +640,7 @@ function Gull({
         c.cruiseFor = CRUISE_MIN + (seed % 7);
         c.from.copy(g.position);
       }
-    } else if (c.mode === "cruise") {
+    } else if (c.mode === "cruise" || c.mode === "leave") {
       // Entra en su órbita suavemente desde donde acabó el despegue.
       c.blend = Math.min(1, c.blend + dt / 1.6);
       const b = c.blend * c.blend * (3 - 2 * c.blend);
@@ -645,12 +683,14 @@ function Gull({
       if (c.t >= FADE_END) {
         c.mode = "gone";
         c.t = 0;
+        // En plena ronda vuelve casi al instante; fuera de ella, al rato.
+        c.respawnAt = rushing ? rushRespawn(seed) : RESPAWN_MIN + (seed % 5);
         g.visible = false;
         if (materials.current) setOpacity(materials.current, 1);
       }
     } else if (c.mode === "gone") {
       // Fuera de escena. Vuelve entrando por el lateral hacia su órbita.
-      if (c.t >= c.respawnAt) {
+      if (c.t >= c.respawnAt && (!extra || rushing)) {
         const side = Math.cos(t) >= 0 ? 1 : -1;
         c.from.set(flight.cx + side * (flight.rx + 40), flight.cy + 5, flight.cz);
         g.rotation.set(0, 0, 0);
@@ -702,6 +742,17 @@ function Gull({
       }
     }
 
+    if (c.mode === "leave") {
+      if (materials.current) setOpacity(materials.current, fadeAt(c.t));
+      if (c.t >= FADE_END) {
+        c.mode = "gone";
+        c.t = 0;
+        c.respawnAt = rushStagger(seed);
+        g.visible = false;
+        if (materials.current) setOpacity(materials.current, 1);
+      }
+    }
+
     g.scale.setScalar(c.scale);
 
     if (d) c.seenPulse = d.pulse;
@@ -738,7 +789,7 @@ function Gull({
   });
 
   return (
-    <group ref={root} scale={st.current.scale}>
+    <group ref={root} scale={st.current.scale} visible={!extra}>
       <GullBody
         palette={palette}
         flat={flat}
@@ -755,6 +806,7 @@ export function Seagulls({
   flat = false,
   disturbance,
   targets,
+  rush,
 }: {
   palette: PortPalette;
   flat?: boolean;
@@ -762,11 +814,15 @@ export function Seagulls({
   disturbance?: RefObject<Disturbance>;
   /** Registro de blancos del easter egg (`GullHunt`). Sin esto no se pueden abatir. */
   targets?: Map<number, GullTarget>;
+  /** Ronda de caza en curso: trae las gaviotas extra y acorta la reaparición. */
+  rush?: RefObject<GullRush>;
 }) {
   const fallback = useRef<Disturbance>(FAR_AWAY);
   const taken = useRef(new Set<number>()).current;
   // De noche vuelan menos — solo las dos más cercanas.
-  const flights = palette.lamps > 0.9 ? FLIGHTS.slice(0, 2) : FLIGHTS;
+  const night = palette.lamps > 0.9;
+  const flights = night ? FLIGHTS.slice(0, 2) : FLIGHTS;
+  const extras = night ? EXTRA_FLIGHTS.slice(0, 2) : EXTRA_FLIGHTS;
 
   return (
     <group>
@@ -783,6 +839,22 @@ export function Seagulls({
           taken={taken}
           disturbance={disturbance ?? fallback}
           targets={targets}
+          rush={rush}
+        />
+      ))}
+      {extras.map((f, i) => (
+        <Gull
+          key={`extra-${i}`}
+          seed={100 + i * 5 + 3}
+          flight={f}
+          palette={palette}
+          flat={flat}
+          startPerch={-1}
+          taken={taken}
+          disturbance={disturbance ?? fallback}
+          targets={targets}
+          extra
+          rush={rush}
         />
       ))}
     </group>

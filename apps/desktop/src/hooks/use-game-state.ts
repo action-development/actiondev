@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useCallback } from "react";
+import type { GullRush } from "@/components/canvas/port/gull-rush";
 
 export type GameState = ReturnType<typeof useGameState>;
 
@@ -42,6 +43,10 @@ export function useGameState() {
   const onThrow         = useRef<(() => void) | null>(null);
   /** Easter egg: una gaviota abatida. Lo escucha `GullTally`. */
   const onGullKill      = useRef<(() => void) | null>(null);
+  /** Ronda de caza en curso (30 s desde la primera baja). La escribe `GullTally`, la leen las aves. */
+  const gullRush        = useRef<GullRush>({ active: false });
+  /** Oyentes DOM del cambio de `gullRush.active` (ver `use-gull-rush.ts`). */
+  const rushListeners   = useRef(new Set<(active: boolean) => void>());
 
   // --- HUD de ayuda (overlays DOM). GameWorld solo llama cuando CAMBIA algo. ---
   /** Contenedor bajo el puntero (o `null`). Lo escucha la etiqueta flotante. */
@@ -61,11 +66,6 @@ export function useGameState() {
    * del tutorial), así que es un conjunto y no un único callback.
    */
   const cargoListeners = useRef(new Set<(info: CargoInfo) => void>());
-  /**
-   * Id del contenedor que el tutorial quiere señalar con la flecha holográfica.
-   * Lo escribe el tutorial (DOM) y lo lee el bucle de juego.
-   */
-  const pointAt = useRef<string | null>(null);
 
   const setPower = useCallback((power: number, charging: boolean) => {
     powerRef.current    = power;
@@ -84,6 +84,21 @@ export function useGameState() {
 
   const notifyGullKill = useCallback(() => {
     onGullKill.current?.();
+  }, []);
+
+  /** Abre/cierra la ronda de caza y avisa a los overlays. Solo notifica si CAMBIA. */
+  const setRush = useCallback((active: boolean) => {
+    if (gullRush.current.active === active) return;
+    gullRush.current.active = active;
+    for (const fn of rushListeners.current) fn(active);
+  }, []);
+
+  const subscribeRush = useCallback((fn: (active: boolean) => void) => {
+    const set = rushListeners.current;
+    set.add(fn);
+    return () => {
+      set.delete(fn);
+    };
   }, []);
 
   const subscribeCargo = useCallback((fn: (info: CargoInfo) => void) => {
@@ -120,11 +135,13 @@ export function useGameState() {
     onHoldingUpdate,
     onThrow,
     onGullKill,
+    gullRush,
+    setRush,
+    subscribeRush,
     onHover,
     hoverTagEl,
     onHint,
     onRow,
-    pointAt,
     subscribeCargo,
     notifyCargo,
     reset,
