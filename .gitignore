@@ -5,6 +5,7 @@ node_modules
 
 # build outputs
 .next
+.next-*
 dist
 out
 build
