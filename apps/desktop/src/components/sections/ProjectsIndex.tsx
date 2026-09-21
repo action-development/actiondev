@@ -220,16 +220,10 @@ export function ProjectsIndex() {
 							)}
 						</h3>
 
-						<p className="flex items-center gap-2 max-w-md font-mono text-[11px] uppercase tracking-[0.2em] text-foreground/45">
-							<span>
-								{locale === "es"
-									? "La lista completa no cabría aquí — nuevos proyectos cada mes"
-									: "The full list wouldn't fit — new projects shipping monthly"}
-							</span>
-							<span
-								aria-hidden
-								className="inline-block h-[0.9em] w-[0.45em] animate-pulse bg-accent"
-							/>
+						<p className="max-w-md font-mono text-[11px] uppercase tracking-[0.2em] text-foreground/45">
+							{locale === "es"
+								? "La lista completa no cabría aquí — nuevos proyectos cada mes"
+								: "The full list wouldn't fit — new projects shipping monthly"}
 						</p>
 					</div>
 				</div>
