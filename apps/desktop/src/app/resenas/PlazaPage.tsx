@@ -16,15 +16,13 @@ const PlazaScene = dynamic(
 );
 
 /**
- * Loader propio de /resenas — NO reutiliza LoadingScreen.tsx (fondo oscuro,
- * pensado para el hero dark del resto del sitio). Aquí la sala es blanca a
- * propósito, así que el loader también lo es: mismo logo de marca, fondo
- * claro, sin el contador con fases de LoadingScreen (esta escena no tiene
- * el mismo coste de física/shaders que el hero, no necesita esa mecánica).
+ * Loader propio de /resenas — NO reutiliza LoadingScreen.tsx (persiana de la
+ * home, con fases). Mismo logo de marca sobre `bg-background`, sin contador:
+ * esta escena no tiene el mismo coste de física/shaders que el hero.
  */
 function PlazaLoader({ label }: { label: string }) {
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-white">
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
         <Image
           src="/logos/logo.webp"
@@ -36,7 +34,7 @@ function PlazaLoader({ label }: { label: string }) {
         />
         <p
           aria-live="polite"
-          className="font-mono text-[11px] uppercase tracking-[0.18em] text-neutral-500"
+          className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted"
         >
           {label}
         </p>
@@ -74,7 +72,7 @@ export function PlazaPage() {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-white">
+    <div className="fixed inset-0 bg-background">
       {!ready && <PlazaLoader label={t.plaza.loading} />}
 
       <PlazaScene selectedId={selectedId} onSelect={handleSelect} onReady={handleReady} />

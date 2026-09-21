@@ -51,12 +51,10 @@ export function PlazaRoom() {
 
       {/*
         Suelo sin iluminación (MeshBasicMaterial + toneMapped={false}): el
-        blanco de la textura llega al píxel tal cual. Con cualquier material
-        iluminado el blanco pasa por luz × ACES y acaba gris (#B8C4CC con el
-        toon anterior); calibrar Lambert para clavar #FFF obligaría a subir
-        tanto la luz que quemaría a los muñecos. En la referencia el suelo es
-        un "fondo de estudio" sin sombreado propio: lo único que lo modela son
-        las sombras blob de los muñecos, que se pintan encima.
+        color de la textura llega al píxel tal cual, y fondo y suelo coinciden
+        con `--background` en el horizonte. Con un material iluminado el tono
+        pasaría por luz × ACES y no casaría con el fondo del resto de la web.
+        Lo único que modela el suelo son las sombras blob de los muñecos.
 
         Sobre MeshReflectorMaterial (drei): es local, pero repinta la escena
         entera otra vez por frame para el reflejo. Descartado por coste con N

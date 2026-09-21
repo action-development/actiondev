@@ -95,7 +95,7 @@ export function ReviewCard({ selectedId, onClose }: ReviewCardProps) {
           shown ? t.plaza.dialogAriaLabel.replace("{name}", shown.name) : undefined
         }
         aria-hidden={!testimonial}
-        className="pointer-events-auto relative w-full rounded-t-2xl border border-neutral-200 bg-white p-8 md:w-[min(90vw,440px)] md:rounded-2xl"
+        className="pointer-events-auto relative w-full rounded-t-2xl border border-border bg-card p-8 md:w-[min(90vw,440px)] md:rounded-2xl"
         style={{ visibility: "hidden" }}
       >
         {shown && (
@@ -105,21 +105,21 @@ export function ReviewCard({ selectedId, onClose }: ReviewCardProps) {
               type="button"
               onClick={onClose}
               aria-label={t.plaza.closeAriaLabel}
-              className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition-colors duration-300 hover:border-neutral-900 hover:text-neutral-900"
+              className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted transition-colors duration-300 hover:border-accent hover:text-accent"
             >
               <span aria-hidden>×</span>
             </button>
 
             <header className="mb-4 flex flex-col gap-1 pr-10">
-              <span className="font-display text-lg font-semibold tracking-[-0.01em] text-neutral-900">
+              <span className="font-display text-lg font-semibold tracking-[-0.01em] text-foreground">
                 {shown.name}
               </span>
-              <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-neutral-500">
+              <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
                 {shown.project}
               </span>
             </header>
 
-            <p className="font-display max-w-[42ch] text-[1.1rem] leading-[1.5] tracking-[-0.01em] text-neutral-800">
+            <p className="font-display max-w-[42ch] text-[1.1rem] leading-[1.5] tracking-[-0.01em] text-foreground">
               &ldquo;{quote}&rdquo;
             </p>
           </>

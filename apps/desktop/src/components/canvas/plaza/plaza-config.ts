@@ -6,24 +6,28 @@
  * tipos y layout. Regla dura del proyecto: CERO assets remotos — la sala y las
  * caras se generan con `CanvasTexture` en runtime, nunca con HDR ni GLB.
  *
- * Referencia visual: las salas de personajes de Wii (plaza blanca infinita,
- * muñecos de cabeza grande y cuerpo cápsula). Copiamos el LENGUAJE visual
+ * Referencia visual: las salas de personajes de Wii (plaza infinita, muñecos
+ * de cabeza grande y cuerpo cápsula), aquí sobre el fondo oscuro del sitio. Copiamos el LENGUAJE visual
  * —proporciones, shading plano, comportamiento— nunca marcas, tipografías ni
  * assets de Nintendo.
  */
 
-/** Paleta "sala blanca". Blanco Wii literal: no usa los tokens dark del sitio. */
+/**
+ * Paleta de la sala. Mismo fondo que el resto de la web: `--background`
+ * (#080808) de globals.css, y el acento lima del sitio. Los tres tonos de cielo
+ * son iguales a propósito (fondo plano, sin degradado ni gradientes coloridos).
+ */
 export const PLAZA_PALETTE = {
-  /** Degradado del cielo/cyclorama, de arriba a abajo. */
-  skyTop: "#8FC7E8",
-  skyMid: "#CFE6F5",
-  skyBottom: "#F5F7FA",
-  /** Suelo: blanco bajo los muñecos que se funde con `skyBottom` en el horizonte. */
-  floorNear: "#FFFFFF",
+  /** Cielo/cyclorama: plano, = `--background`. */
+  skyTop: "#080808",
+  skyMid: "#080808",
+  skyBottom: "#080808",
+  /** Suelo: charco de luz tenue bajo los muñecos que se funde con `skyBottom`. */
+  floorNear: "#181818",
   /** Sombra de blob bajo cada muñeco. */
-  shadow: "#9FB4C4",
-  /** Acento de interacción (highlight del muñeco enfocado). */
-  accent: "#3FA9F5",
+  shadow: "#000000",
+  /** Acento de interacción (highlight del muñeco enfocado) = `--accent`. */
+  accent: "#c8ff00",
 } as const;
 
 /**

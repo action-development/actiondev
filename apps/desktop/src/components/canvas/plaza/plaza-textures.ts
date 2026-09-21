@@ -36,9 +36,8 @@ function fallbackTexture(color: string): THREE.CanvasTexture {
 
 /**
  * Color del horizonte: punto donde suelo, fog y cielo tienen que coincidir
- * EXACTAMENTE para que no se vea costura. Es el blanco azulado de `skyBottom`,
- * el "blanco de estudio" de la referencia (un azul más marcado desentonaba
- * frente al blanco del suelo).
+ * EXACTAMENTE para que no se vea costura. Es `skyBottom` = `--background` del
+ * sitio.
  *
  * Coincide en pantalla sin conversión porque en three 0.183 el fog se aplica
  * DESPUÉS del tone mapping y el `fogColor` se sube ya en el espacio de salida;
@@ -50,22 +49,13 @@ export const PLAZA_HORIZON = PLAZA_PALETTE.skyBottom;
 /**
  * Paradas del cielo por ELEVACIÓN (grados sobre el horizonte), no por UV.
  *
- * La cámara de la plaza mira ligeramente hacia abajo con FOV 38: en el plano
- * general solo se ven ~8° de cielo, y al enfocar un muñeco ~18°. Un degradado
- * repartido por toda la esfera (0-90°) dejaba en pantalla una franja casi
- * plana de `skyMid` que cortaba contra el suelo. Aquí el degradado vive en los
- * primeros grados: horizonte blanco → blanco luminoso → azul pastel arriba.
+ * Hoy el cielo es plano (`skyTop` = `skyBottom` = `--background`), pero se
+ * mantiene el mecanismo por paradas: si se quisiera un velo cerca del
+ * horizonte, solo hay que añadir paradas aquí.
  */
 const SKY_STOPS: ReadonlyArray<readonly [elevationDeg: number, color: string]> = [
   [-90, PLAZA_HORIZON],
-  // Por debajo del ecuador todo es horizonte: la esfera está centrada en el
-  // origen y la cámara a ~2.35 de altura, así que el ecuador se ve ~1.5° por
-  // debajo de la línea de los ojos.
   [0.5, PLAZA_HORIZON],
-  [3, "#EEF5FB"],
-  [7, "#C9E3F4"],
-  [13, "#B8DAF0"],
-  [30, "#A6D2EE"],
   [90, PLAZA_PALETTE.skyTop],
 ];
 
@@ -116,13 +106,13 @@ export function getSkyTexture(): THREE.CanvasTexture {
 }
 
 /**
- * Suelo: blanco casi puro con un degradado radial muy leve.
+ * Suelo: charco de luz tenue (`floorNear`) con degradado radial.
  *
  * Los muñecos viven en r < ~5 de un disco de r = 60, es decir, en el 6-8 %
- * central de la textura: ahí va blanco puro. Desde ahí baja MONÓTONO hasta
- * `PLAZA_HORIZON` y se queda ahí: cualquier tono más oscuro que el horizonte
+ * central de la textura: ahí va `floorNear` puro. Desde ahí baja MONÓTONO hasta
+ * `PLAZA_HORIZON` y se queda ahí: cualquier tono que se aparte del horizonte
  * en el plano medio se comprime en perspectiva junto a la línea de fuga y se
- * lee como una banda gris (probado: #EEF1F5 a r≈15-27 marcaba el horizonte).
+ * lee como una banda (mismo motivo que en la versión clara).
  */
 export function getFloorTexture(): THREE.CanvasTexture {
   if (floorTexture) return floorTexture;
@@ -146,7 +136,7 @@ export function getFloorTexture(): THREE.CanvasTexture {
   const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
   gradient.addColorStop(0, PLAZA_PALETTE.floorNear);
   gradient.addColorStop(0.06, PLAZA_PALETTE.floorNear);
-  gradient.addColorStop(0.18, "#F9FAFC");
+  gradient.addColorStop(0.18, "#101010");
   gradient.addColorStop(0.35, PLAZA_HORIZON);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, FLOOR_SIZE, FLOOR_SIZE);
