@@ -83,19 +83,17 @@ export const es: Translations = {
     ariaLabel: "Progreso de sección",
   },
   tutorial: {
-    click: "haz clic en un contenedor",
     move: "mueve la grúa",
     row: "cambia de fila",
     pickup: "engancha un contenedor",
     throw: "suéltalo en el barco",
-    manual: "o manéjala tú",
   },
   loading: {
     ariaLabel: "Porcentaje de carga",
   },
   game: {
     hud: {
-      clickToGo: "Clic",
+      clickToGo: "Clic para viajar",
       soon: "Próximamente",
       hintRow: "Vuelve a la fila del barco",
       hintCarry: "Llévalo hasta la flecha del barco",

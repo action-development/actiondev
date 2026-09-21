@@ -225,15 +225,22 @@ ref lo que se mueve a 60 fps.
 - **Hover sobre un contenedor** (o la grúa justo encima de uno: el objetivo de
   la guía del gancho, si el puntero no está sobre otro) → halo lima (`port/TargetMarker.tsx`, carcasa
   con fresnel alto) + etiqueta flotante DOM (`HoverTag`): nombre y
-  "CLIC → /ruta" o "PRÓXIMAMENTE". La etiqueta se ancla al techo del
+  "CLIC PARA VIAJAR" (i18n `game.hud.clickToGo`) o "PRÓXIMAMENTE". La etiqueta se ancla al techo del
   contenedor proyectándolo a pantalla cada frame (`gameState.hoverTagEl`, solo
   `style.transform`). Con carga colgando no hay hover: ahí el click significa
   "llévalo al barco".
-- **Tutorial con dos caminos** (`overlays/TutorialOverlay.tsx`): por defecto
-  "haz clic en un contenedor" con la flecha holográfica botando sobre PROYECTOS
-  (`gameState.pointAt`), luego "suéltalo en el barco" y una leyenda final de
-  4,5 s con los controles manuales. Si lo primero que toca son teclas o el
-  mando, cambia al camino manual (mover → fila → enganchar → soltar).
+- **Balizas de "clicable"** (`port/TargetMarker.tsx`, capa `beacons`): desde el
+  primer frame, cada contenedor con destino real (`href` que empieza por `/`)
+  lleva una carcasa holográfica lima que respira (desfasada por contenedor);
+  los de decorado (`#…`) no. Siguen al contenedor por física (mismo `cand` que
+  el hover) y se apagan con carga colgando, donde el click significa "llévalo al
+  barco". La del contenedor bajo el puntero cede su sitio al halo de hover.
+  GameWorld filtra la lista al registrar (`beaconCands`), sin trabajo por frame.
+- **Tutorial de controles** (`overlays/TutorialOverlay.tsx`): siempre mover →
+  fila → enganchar → soltar. NO enseña "haz clic en un contenedor": el clic
+  lanza la maniobra automática (engancha, lleva al barco y navega) y el usuario
+  se iba de la página sin ver los controles. El atajo del clic lo comunican las
+  balizas y la etiqueta "Clic para viajar".
 - **Con carga**: hueco fantasma en la bodega (`ShipHandle.setDrop`, caja
   holográfica del tamaño de la carga + aristas lima): tenue fuera de la fila del
   barco, medio en la fila, a tope y latiendo cuando el gancho está sobre la

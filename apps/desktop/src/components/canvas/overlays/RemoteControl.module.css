@@ -26,7 +26,7 @@
   width: var(--rc-w);
   height: var(--rc-h);
   transform-style: preserve-3d;
-  transform: rotateX(var(--rc-rx, 26deg)) rotateY(calc(-3deg + var(--rc-ry, 0deg)));
+  transform: rotateX(var(--rc-rx, 26deg)) rotateY(var(--rc-ry, 0deg));
   transition: transform var(--duration) var(--ease);
 }
 

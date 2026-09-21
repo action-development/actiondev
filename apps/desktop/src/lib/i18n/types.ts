@@ -86,15 +86,11 @@ export interface Translations {
     ariaLabel: string;
   };
   tutorial: {
-    /** Camino fácil: un click en un contenedor hace toda la maniobra. */
-    click: string;
     move: string;
     /** Eje de profundidad: cambiar de fila del muelle (▲ ▼). */
     row: string;
     pickup: string;
     throw: string;
-    /** Leyenda final del camino fácil: los controles manuales, opcionales. */
-    manual: string;
   };
   loading: {
     ariaLabel: string;

@@ -354,6 +354,8 @@ export function GameWorld({
   // --- Contenedores registrados (sin re-render: Map + lista de candidatos reutilizada) ---
   const tracked = useRef(new Map<string, Tracked>());
   const candidates = useRef<GrabCandidate[]>([]);
+  /** Candidatos con destino real (href "/…"): los que llevan baliza. Se recalcula al registrar. */
+  const beaconCands = useRef<GrabCandidate[]>([]);
 
   const handleRegister = useCallback((id: string, rb: RapierRigidBody | null) => {
     const map = tracked.current;
@@ -373,6 +375,9 @@ export function GameWorld({
       map.delete(id);
     }
     candidates.current = Array.from(map.values(), (v) => v.cand);
+    beaconCands.current = Array.from(map.values())
+      .filter((v) => v.data.href.startsWith("/"))
+      .map((v) => v.cand);
   }, []);
 
   // --- Estado de la grúa (refs: se muta a 60 fps) ---
@@ -472,7 +477,7 @@ export function GameWorld({
       if (c.phase === "lowering") c.phase = "raising";
       rowKeyHeld.current = false;
       guideRef.current?.update(c.trolleyX, c.hookY, c.gantryZ, null, groundTopAt(c.trolleyX), false);
-      markerRef.current?.update(null, null);
+      markerRef.current?.update(null, null, null);
       if (hoverId.current !== null) {
         hoverId.current = null;
         gameState.onHover.current?.(null);
@@ -833,11 +838,15 @@ export function GameWorld({
       tag.style.transform = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0)`;
     }
 
-    // Flecha que señala: la pide el tutorial (DOM) o la demostración en reposo.
+    // Flecha que señala: la demostración en reposo.
     // Nunca sobre lo que ya cuelga del gancho.
-    const pointId = gameState.pointAt.current ?? (rest.pointing ? DEMO_TARGET_ID : null);
+    // Durante la ronda de caza no hay flecha de ayuda.
+    const pointId = gameState.gullRush.current.active
+      ? null
+      : (rest.pointing ? DEMO_TARGET_ID : null);
     const pointTr = pointId && !h ? tracked.current.get(pointId) : undefined;
-    markerRef.current?.update(hover, pointTr ? pointTr.cand : null);
+    // Balizas de "esto se puede pinchar": apagadas con carga colgando.
+    markerRef.current?.update(hover, pointTr ? pointTr.cand : null, h ? null : beaconCands.current);
   });
 
   // En modo pintado lo estático ya está en la imagen: su 3D solo aporta física y oclusión.

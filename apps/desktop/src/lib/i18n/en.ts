@@ -83,19 +83,17 @@ export const en: Translations = {
     ariaLabel: "Section progress",
   },
   tutorial: {
-    click: "click a container",
     move: "move the crane",
     row: "change row",
     pickup: "hook a container",
     throw: "drop it on the ship",
-    manual: "or drive it yourself",
   },
   loading: {
     ariaLabel: "Loading percentage",
   },
   game: {
     hud: {
-      clickToGo: "Click",
+      clickToGo: "Click to travel",
       soon: "Coming soon",
       hintRow: "Back to the ship's row",
       hintCarry: "Carry it to the ship's arrow",

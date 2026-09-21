@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { CargoInfo, CraneHint, GameState } from "@/hooks/use-game-state";
 import { useT } from "@/lib/i18n";
+import { useGullRush } from "@/hooks/use-gull-rush";
 import styles from "./HeroHud.module.css";
 
 /**
@@ -47,7 +48,7 @@ export function HoverTag({ gameState }: { gameState: GameState }) {
         <div key={info.id} className={`${styles.holo} ${styles.tag}`} data-soon={isSoon(info.href)} data-testid="hover-tag">
           <span className={`${styles.display} ${styles.glow} ${styles.tagTitle}`}>{info.label}</span>
           <span className={`${styles.mono} ${styles.tagDest}`}>
-            {isSoon(info.href) ? t.game.hud.soon : `${t.game.hud.clickToGo} → ${info.href}`}
+            {isSoon(info.href) ? t.game.hud.soon : t.game.hud.clickToGo}
           </span>
         </div>
       )}
@@ -59,6 +60,8 @@ export function HoverTag({ gameState }: { gameState: GameState }) {
 export function CraneHintBar({ gameState }: { gameState: GameState }) {
   const t = useT();
   const [hint, setHint] = useState<CraneHint>(null);
+  // Durante la ronda de caza la pista se aparta; el estado sigue y vuelve al acabar.
+  const hunting = useGullRush(gameState);
 
   useEffect(() => {
     gameState.onHint.current = setHint;
@@ -79,7 +82,7 @@ export function CraneHintBar({ gameState }: { gameState: GameState }) {
       role="status"
       aria-live="polite"
     >
-      {hint && (
+      {hint && !hunting && (
         <div key={hint} className={`${styles.holo} ${styles.hint} ${styles.mono} ${styles.glow}`} data-hint={hint} data-testid="crane-hint">
           <span aria-hidden className={styles.hintIcon}>{copy[hint].icon}</span>
           {copy[hint].text}
