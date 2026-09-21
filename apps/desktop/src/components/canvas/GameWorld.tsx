@@ -39,6 +39,7 @@ import { HookGuide, type HookGuideHandle } from "./port/HookGuide";
 import { TargetMarker, type TargetMarkerHandle } from "./port/TargetMarker";
 import {
   Crane,
+  BOOM_TOP_Y,
   CRANE_START_X,
   HOOK_TOP_Y,
   SPREADER_HALF_H,
@@ -49,10 +50,13 @@ import {
 import {
   approach,
   findGrabTarget,
+  GRAB_GLIDE_SPEED,
   groundTopAt,
   HOLD_MAX_X,
   HOLD_MIN_X,
+  overlapsAny,
   pickContainerAt,
+  pickCraneAt,
   QUAY_EDGE_X,
   restingY,
   SHIP_DROP_X,
@@ -92,6 +96,9 @@ import {
 /** Rapier RigidBodyType enum values (stable — mirror of @dimforge/rapier3d-compat). */
 const RB_TYPE_DYNAMIC = 0;
 const RB_TYPE_KINEMATIC_POSITION = 2;
+/** Grupos de colisión de Rapier: todo con todo (el valor por defecto) / con nada. */
+const COLLISION_ALL = 0xffffffff;
+const COLLISION_NONE = 0;
 
 const GRAVITY = 20;
 
@@ -114,6 +121,13 @@ const KEY_TARGET_SPEED = 14;
 const GANTRY_MAX_SPEED = 6;
 const GANTRY_ACCEL = 14;
 const GANTRY_GAIN = 3.4;
+
+/**
+ * Arrastrar la grúa: en horizontal el carro sigue al puntero (con su inercia y
+ * balanceo de siempre — solo se mueve el OBJETIVO); en vertical cada
+ * `DRAG_ROW_PX` píxeles cambian de fila, arriba = alejarse como con W.
+ */
+const DRAG_ROW_PX = 90;
 
 const LOWER_SPEED = 12;
 const RAISE_SPEED = 9;
@@ -179,6 +193,8 @@ const _ndc = new THREE.Vector2();
 const ROW_PLANES = QUAY_ROWS.map((z) => new THREE.Plane(new THREE.Vector3(0, 0, 1), -z));
 /** Plano de la fila del barco: el de siempre (z = 0), para barco y gaviotas. */
 const _plane = ROW_PLANES[SHIP_ROW];
+/** Plano de la grúa: el pórtico viaja en z, así que su `constant` se reescribe al usarlo. */
+const _cranePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 const _identityQuat = { x: 0, y: 0, z: 0, w: 1 };
 
 /**
@@ -236,6 +252,8 @@ export function GameWorld({
   const cursor = useRef("");
   /** Contenedor pinchado este frame, a la espera de que lo recoja el bucle. */
   const autoRequest = useRef<string | null>(null);
+  /** Arrastre de la grúa en curso: dónde agarró el carro y de qué fila salió. */
+  const drag = useRef({ active: false, offsetX: 0, startNdcY: 0, startRow: SHIP_ROW });
   const clickIntercept = useRef<((e: MouseEvent) => boolean) | null>(null);
   clickIntercept.current = (e) => {
     if (pausedRef.current) return false;
@@ -260,6 +278,19 @@ export function GameWorld({
         return true;
       }
     }
+    // Click sobre la grúa (carro, cabina, spreader) → agarrarla para arrastrarla.
+    // Va DESPUÉS de los contenedores: si una caja tapa la zona, gana la caja.
+    {
+      const c = crane.current;
+      _cranePlane.constant = -c.gantryZ;
+      if (
+        _raycaster.ray.intersectPlane(_cranePlane, _hit) &&
+        pickCraneAt(_hit.x, _hit.y, c.trolleyX, c.trolleyX + sway.current.offset, c.hookY - SPREADER_HALF_H, BOOM_TOP_Y)
+      ) {
+        drag.current = { active: true, offsetX: c.trolleyX - _hit.x, startNdcY: _ndc.y, startRow: c.rowIndex };
+        return true;
+      }
+    }
     // Click sobre el barco → bocina de zarpar. Tampoco baja el gancho.
     if (_raycaster.ray.intersectPlane(_plane, _hit) && pickShipAt(_hit.x, _hit.y)) {
       playHornSfx();
@@ -270,6 +301,17 @@ export function GameWorld({
   const handleGullHit = useCallback(() => gameState.notifyGullKill(), [gameState]);
 
   const actions = useActionQueue(gl.domElement, clickIntercept);
+
+  // Soltar la grúa: en `window` para que valga aunque el botón se suelte fuera del canvas.
+  useEffect(() => {
+    const stop = () => { drag.current.active = false; };
+    window.addEventListener("mouseup", stop);
+    window.addEventListener("blur", stop);
+    return () => {
+      window.removeEventListener("mouseup", stop);
+      window.removeEventListener("blur", stop);
+    };
+  }, []);
 
   useEffect(() => {
     gameState.reset();
@@ -357,11 +399,22 @@ export function GameWorld({
   const idle = useRef({ t: 0, demoDone: false, pointing: false, loaded: false });
   const sway = useRef<SwayState>({ offset: 0, velocity: 0 });
   const held = useRef<Tracked | null>(null);
+  /**
+   * Desfase del contenedor agarrado respecto al spreader. Se engancha de
+   * refilón, así que al agarrar no está centrado: en vez de teletransportarlo
+   * (lo metía dentro del vecino y salía disparado) se desliza a `GRAB_GLIDE_SPEED`
+   * hasta cero. Mientras tanto va en modo `ghost` — sin colisión con nada — y
+   * solo se solidifica cuando ya está centrado y no solapa con ningún otro.
+   */
+  const grab = useRef({ dx: 0, dz: 0, ghost: false });
   const auto = useRef<AutoRun | null>(null);
 
   const release = useCallback((velX: number, counts: boolean) => {
     const h = held.current;
     if (!h) return;
+    // Soltar en modo fantasma lo dejaría atravesando el suelo.
+    h.rb.collider(0).setCollisionGroups(COLLISION_ALL);
+    grab.current.ghost = false;
     h.rb.setBodyType(RB_TYPE_DYNAMIC, true);
     h.rb.wakeUp();
     scratchRapierVec.x = velX; scratchRapierVec.y = 0; scratchRapierVec.z = 0;
@@ -412,6 +465,7 @@ export function GameWorld({
       auto.current = null;
       autoRequest.current = null;
       resetRemoteInput();
+      drag.current.active = false;
       if (c.phase === "lowering") c.phase = "raising";
       rowKeyHeld.current = false;
       guideRef.current?.update(c.trolleyX, c.hookY, c.gantryZ, null, groundTopAt(c.trolleyX), false);
@@ -455,7 +509,8 @@ export function GameWorld({
     }
 
     // Tocar los mandos manda sobre la maniobra automática.
-    const touched = left || right || action || rowDelta !== 0;
+    const dragging = drag.current.active;
+    const touched = left || right || action || rowDelta !== 0 || dragging;
     if (touched) auto.current = null;
 
     // --- Reposo → demostración. Cualquier entrada (o un click en un
@@ -480,6 +535,16 @@ export function GameWorld({
     }
     if (left || right) c.targetX += (right ? 1 : -1) * KEY_TARGET_SPEED * dt;
     if (rowDelta !== 0) c.rowIndex = clampRow(c.rowIndex + rowDelta);
+    if (dragging) {
+      // Solo se coloca el OBJETIVO: el carro llega con su inercia y el spreader
+      // se balancea, como con las teclas. La fila sale de cuánto se ha subido
+      // o bajado el puntero desde que se agarró.
+      _cranePlane.constant = -c.gantryZ;
+      _raycaster.setFromCamera(mp, camera);
+      if (_raycaster.ray.intersectPlane(_cranePlane, _hit)) c.targetX = _hit.x + drag.current.offsetX;
+      const rowSteps = Math.round(((mp.y - drag.current.startNdcY) * window.innerHeight) / 2 / DRAG_ROW_PX);
+      c.rowIndex = clampRow(drag.current.startRow + rowSteps);
+    }
 
     // --- Maniobra automática (click en un contenedor) ---
     if (autoRequest.current) {
@@ -598,6 +663,11 @@ export function GameWorld({
             tr.rb.setLinvel(scratchRapierVec, true);
             tr.rb.setAngvel(scratchRapierVec, true);
             tr.rb.setRotation(_identityQuat, true);
+            // Agarrado de refilón: conserva el desfase y sin colisión hasta centrarse.
+            grab.current.dx = tr.cand.x - hookX;
+            grab.current.dz = (tr.cand.z ?? 0) - c.gantryZ;
+            grab.current.ghost = true;
+            tr.rb.collider(0).setCollisionGroups(COLLISION_NONE);
             held.current = tr;
             gameState.thrownIds.current.delete(tr.data.id);
             gameState.setHolding(true);
@@ -666,7 +736,15 @@ export function GameWorld({
         overBox = hovered !== null;
       }
     }
-    const wantCursor = overGull ? "crosshair" : overBox ? "pointer" : "";
+    // Cabina / carro / spreader: se pueden agarrar y arrastrar.
+    let overCrane = false;
+    if (!overGull && !overBox && !dragging) {
+      _cranePlane.constant = -c.gantryZ;
+      overCrane =
+        _raycaster.ray.intersectPlane(_cranePlane, _hit) !== null &&
+        pickCraneAt(_hit.x, _hit.y, c.trolleyX, hookX, c.hookY - SPREADER_HALF_H, BOOM_TOP_Y);
+    }
+    const wantCursor = dragging ? "grabbing" : overGull ? "crosshair" : overBox ? "pointer" : overCrane ? "grab" : "";
     if (wantCursor !== cursor.current) {
       cursor.current = wantCursor;
       gl.domElement.style.cursor = wantCursor;
@@ -676,13 +754,28 @@ export function GameWorld({
 
     const h = held.current;
     if (h) {
-      scratchRapierVec.x = hookX;
+      const g = grab.current;
+      g.dx = approach(g.dx, 0, GRAB_GLIDE_SPEED * dt);
+      g.dz = approach(g.dz, 0, GRAB_GLIDE_SPEED * dt);
+      scratchRapierVec.x = hookX + g.dx;
       scratchRapierVec.y = c.hookY - SPREADER_HALF_H - CONTAINER_HALF_H - 0.02;
       // La carga viaja en la fila del pórtico. Un cuerpo cinemático IGNORA el
       // bloqueo de traslación en z, así que aquí la z sí se mueve; al soltarlo
       // vuelve a dinámico y el bloqueo lo deja clavado en esa fila.
-      scratchRapierVec.z = c.gantryZ;
+      scratchRapierVec.z = c.gantryZ + g.dz;
       h.rb.setNextKinematicTranslation(scratchRapierVec);
+      if (g.ghost && g.dx === 0 && g.dz === 0) {
+        const others: GrabCandidate[] = [];
+        for (const tr of tracked.current.values()) if (tr !== h) others.push(tr.cand);
+        const free = !overlapsAny(
+          { x: scratchRapierVec.x, y: scratchRapierVec.y, z: scratchRapierVec.z, halfW: h.cand.halfW, halfH: h.cand.halfH },
+          others,
+        );
+        if (free) {
+          h.rb.collider(0).setCollisionGroups(COLLISION_ALL);
+          g.ghost = false;
+        }
+      }
     }
 
     // Flecha de la bodega atenuada cuando la carga está fuera de la fila del

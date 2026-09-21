@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { RigidBody, CuboidCollider, type RapierRigidBody } from "@react-three/rapier";
+import { CONTAINER_HALF_D } from "./crane-logic";
 import { Outlines } from "@react-three/drei";
 import type { PortPalette } from "./time-of-day";
 import { getToonGradient, OUTLINE } from "./toon";
@@ -41,7 +42,7 @@ export interface ContainerData {
 }
 
 export const CONTAINER_HALF_H = 0.75;
-const HALF_D = 0.75;
+const HALF_D = CONTAINER_HALF_D;
 
 interface CargoContainerProps {
   data: ContainerData;

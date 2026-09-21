@@ -86,6 +86,39 @@ export function findGrabTarget<T extends GrabCandidate>(
   return best;
 }
 
+/** Semifondo (z) de un contenedor: el mismo que su collider en `CargoContainer`. */
+export const CONTAINER_HALF_D = 0.75;
+
+/**
+ * Velocidad (u/s) a la que un contenedor recién enganchado se desliza hasta
+ * quedar centrado bajo el spreader. `findGrabTarget` deja agarrar de refilón
+ * (hasta el 85% del semiancho y `GRAB_Z_TOL` en z), así que el contenedor NO
+ * está centrado al enganchar: teletransportarlo lo metía dentro del vecino y
+ * Rapier lo expulsaba a 4-5 u/s ("el contenedor sale volando").
+ */
+export const GRAB_GLIDE_SPEED = 4;
+
+/**
+ * ¿Solapa una caja (centro + semidimensiones) con alguna de `others`? Es el
+ * criterio para devolverle la colisión a un contenedor que se deslizó en modo
+ * fantasma: solo se solidifica cuando ya no hay nada dentro de él.
+ * `others` no debe incluir a la propia caja. `margin` da aire para no
+ * solidificar rozando.
+ */
+export function overlapsAny(
+  box: { x: number; y: number; z: number; halfW: number; halfH: number },
+  others: readonly GrabCandidate[],
+  margin = 0.05,
+): boolean {
+  for (const o of others) {
+    if (Math.abs(o.x - box.x) >= o.halfW + box.halfW + margin) continue;
+    if (Math.abs(o.y - box.y) >= o.halfH + box.halfH + margin) continue;
+    if (Math.abs((o.z ?? 0) - box.z) >= CONTAINER_HALF_D * 2 + margin) continue;
+    return true;
+  }
+  return false;
+}
+
 /**
  * Margen extra (unidades de mundo) alrededor de un contenedor para dar el
  * click por acertado. El público objetivo no apunta al píxel: es mejor pecar
@@ -128,6 +161,31 @@ export function pickContainerAt<T extends GrabCandidate>(
     }
   }
   return best;
+}
+
+/**
+ * Semiancho (unidades de mundo) de la zona agarrable del carro: cabina (1,85),
+ * brazos y spreader (3,4) caben dentro con un poco de aire. Generoso a propósito,
+ * igual que `PICK_SLACK`: nadie apunta al píxel a una cabina en movimiento.
+ */
+export const CRANE_GRAB_HALF_W = 2;
+
+/**
+ * ¿Cae `(x, y)` (mundo, en el plano de la grúa) sobre el tren carro + cabina +
+ * spreader? Es una COLUMNA: del fondo del spreader hasta `topY` (el techo del
+ * carro), entre el carro y el gancho — que van desfasados por el balanceo.
+ * Lo usa el interceptor de click para decidir si arrastrar la grúa.
+ */
+export function pickCraneAt(
+  x: number,
+  y: number,
+  trolleyX: number,
+  hookX: number,
+  hookBottomY: number,
+  topY: number,
+): boolean {
+  if (y < hookBottomY - PICK_SLACK || y > topY + PICK_SLACK) return false;
+  return x >= Math.min(trolleyX, hookX) - CRANE_GRAB_HALF_W && x <= Math.max(trolleyX, hookX) + CRANE_GRAB_HALF_W;
 }
 
 /**

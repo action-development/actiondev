@@ -3,7 +3,9 @@ import {
   approach,
   findGrabTarget,
   groundTopAt,
+  overlapsAny,
   pickContainerAt,
+  pickCraneAt,
   stepSway,
   HOLD_FLOOR_Y,
   QUAY_TOP_Y,
@@ -592,5 +594,46 @@ describe("pickShipAt", () => {
     expect(pickShipAt(12, -2)).toBe(false);
     expect(pickShipAt(25, -7)).toBe(false);
     expect(pickShipAt(12, -11)).toBe(false);
+  });
+});
+
+describe("pickCraneAt", () => {
+  // Carro en x=0, gancho recogido (fondo del spreader en 2.1), techo del carro en 4.975.
+  const hit = (x: number, y: number, hookX = 0) => pickCraneAt(x, y, 0, hookX, 2.1, 4.975);
+
+  it("acierta en la cabina y en el spreader", () => {
+    expect(hit(0, 3.6)).toBe(true);
+    expect(hit(1.5, 2.3)).toBe(true);
+  });
+
+  it("falla fuera de la columna en x", () => {
+    expect(hit(3, 3.6)).toBe(false);
+    expect(hit(-3, 3.6)).toBe(false);
+  });
+
+  it("falla por encima del carro o muy por debajo del spreader", () => {
+    expect(hit(0, 7)).toBe(false);
+    expect(hit(0, -2)).toBe(false);
+  });
+
+  it("la columna se ensancha hasta el gancho cuando el cable se balancea", () => {
+    expect(hit(3, 3, 1.5)).toBe(true);
+  });
+});
+
+describe("overlapsAny", () => {
+  const me = { x: 1.1, y: -5.25, z: 0, halfW: 1.3, halfH: 0.75 };
+
+  it("detecta el vecino que un contenedor descentrado pisaría", () => {
+    // Vecino a 3,2 (hueco de 0,6): centrado 1,1 hacia él se le mete dentro.
+    expect(overlapsAny(me, [rowBox("b", 3.2, -5.25, 0)])).toBe(true);
+  });
+
+  it("no solapa cuando ya ha subido por encima del vecino", () => {
+    expect(overlapsAny({ ...me, y: -3 }, [rowBox("b", 3.2, -5.25, 0)])).toBe(false);
+  });
+
+  it("ignora contenedores de otra fila", () => {
+    expect(overlapsAny(me, [rowBox("b", 3.2, -5.25, -3.2)])).toBe(false);
   });
 });

@@ -73,6 +73,32 @@ test.describe("Home page", () => {
   });
 });
 
+test.describe("Crane drag", () => {
+  test("the trolley/cabin can be grabbed and dragged", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (err) => errors.push(err.message));
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/?hora=dia");
+    await expect(page.getByTestId("hero-remote")).toBeVisible({ timeout: 30_000 });
+    await page.waitForTimeout(3500);
+
+    const canvas = page.locator("canvas").first();
+    const cursor = () => canvas.evaluate((c) => (c as HTMLElement).style.cursor);
+
+    // Sobre la cabina el cursor invita a agarrarla; mientras se arrastra, "grabbing".
+    await page.mouse.move(1040, 262);
+    await expect.poll(cursor).toBe("grab");
+    await page.mouse.down();
+    await page.mouse.move(700, 262, { steps: 10 });
+    await expect.poll(cursor).toBe("grabbing");
+    await page.mouse.up();
+    await page.mouse.move(700, 600);
+    await expect.poll(cursor).not.toBe("grabbing");
+    expect(errors).toHaveLength(0);
+  });
+});
+
 test.describe("Navigation", () => {
   test("language toggle switches locale", async ({ page }) => {
     await page.goto("/");

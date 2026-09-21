@@ -311,6 +311,13 @@ el click se ignora.
 
 ## Gotchas
 
+- **Arrastrar la grúa**: la grúa es 3D (no vídeo), así que se agarra. Un
+  `mousedown` sobre la columna carro + cabina + spreader (`pickCraneAt` en
+  `crane-logic.ts`) inicia el arrastre; el interceptor de `use-action-queue` se
+  queda con el click, así que NO baja el gancho. Prioridad de click: gaviota >
+  contenedor > grúa > barco. Horizontal: solo se mueve `targetX` (la inercia y el
+  péndulo de siempre); vertical: un paso de fila cada `DRAG_ROW_PX` (90 px), arriba
+  = alejarse. Se suelta con `mouseup`/`blur` en `window`. Cursor `grab`/`grabbing`.
 - **Clicks por cola, no por estado**: un click rápido cabe entre dos frames.
   Leer "¿botón pulsado?" frame a frame lo perdía (verificado con Playwright).
 - **Mando: nada de `transform-style: preserve-3d` en el panel frontal**. Con él,
@@ -352,3 +359,5 @@ el click se ignora.
   pirámides.
 - **`antialias: true`**: los contornos de `<Outlines>` sin MSAA hacen sierra.
 - Lógica pura testeada en `src/__tests__/canvas/port-logic.test.ts`.
+
+- **Agarrar de refilón NO teletransporta**: `findGrabTarget` engancha hasta el 85 % del semiancho, así que el contenedor no queda centrado bajo el spreader. Centrarlo de golpe lo metía dentro del vecino (huecos de 0,6) y Rapier lo expulsaba a 4-5 u/s. `GameWorld` guarda el desfase en `grab` y lo consume a `GRAB_GLIDE_SPEED`; mientras tanto el contenedor va en modo fantasma (`setCollisionGroups(0)`) y solo recupera la colisión cuando está centrado y `overlapsAny` da falso. Soltar siempre restaura los grupos (un dinámico fantasma atravesaría el suelo).
