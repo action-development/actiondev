@@ -23,7 +23,7 @@ import { getFaceTexture } from "./face-texture";
 export interface PlazaDollProps {
   spec: DollSpec;
   /** Estado de animación que decide el mundo (lo pasa el padre). */
-  state?: "idle" | "walking" | "waving" | "focused";
+  state?: "idle" | "walking" | "waving" | "focused" | "held";
   /** true cuando el puntero está encima o es el seleccionado → highlight. */
   highlighted?: boolean;
 }
@@ -39,6 +39,15 @@ const SHOE_COLOR = "#34343C";
  * de la hemisférica de la sala, que apagaba la piel hacia oliva. */
 const ROUGHNESS = 0.62;
 const SELF_LIGHT = 0.16;
+
+/** Cuánto se despega del suelo un muñeco agarrado: lo justo para que se lea
+ * "en la mano" (unidades de mundo). El arrastre no tiene eje de altura. */
+const HELD_LIFT = 0.22;
+/** Brazos agarrado: casi verticales (rad desde colgando), agitándose alrededor. */
+const HELD_ARM_BASE = -2.45;
+const HELD_ARM_SWING = 0.55;
+/** Velocidad del aleteo de brazos agarrado (rad/s). */
+const HELD_FLAP = 14;
 
 /** Separación de los brazos respecto al torso (rad), colgando casi pegados. */
 const ARM_SPLAY = 0.1;
@@ -287,7 +296,7 @@ export function PlazaDoll({ spec, state = "idle", highlighted = false }: PlazaDo
       pants: makeMat(pants),
       shoe: makeMat(SHOE_COLOR),
       hair: makeMat(spec.hairColor),
-      shadow: new THREE.MeshBasicMaterial({ color: PLAZA_PALETTE.shadow, transparent: true, opacity: 0.25, depthWrite: false }),
+      shadow: new THREE.MeshBasicMaterial({ color: PLAZA_PALETTE.shadow, transparent: true, opacity: 0.5, depthWrite: false }),
       hull: new THREE.MeshBasicMaterial({ color: PLAZA_PALETTE.accent, side: THREE.BackSide }),
     };
   }, [spec.skin, spec.shirt, spec.hairColor, pants, faceOpen]);
@@ -310,7 +319,11 @@ export function PlazaDoll({ spec, state = "idle", highlighted = false }: PlazaDo
   // Parpadeo: se intercambia el `map` de la cabeza por la variante de ojos
   // cerrados (ambas cacheadas) — sin repintar ni crear nada por frame.
   const blink = useRef({ next: 1.5 + (spec.phase % 3), t: 0, active: false });
-  const liftY = useRef(0);
+  const hoverLift = useRef(0);
+  // 0 = en el suelo, 1 = agarrado. Suavizado para que coger y soltar no den
+  // saltos: mezcla la pose de agarrado sobre la que toque por estado.
+  const heldAmt = useRef(0);
+  const shadowRef = useRef<THREE.Mesh>(null);
 
   useFrame((frameState, delta) => {
     const dt = Math.min(delta, 1 / 20);
@@ -341,9 +354,9 @@ export function PlazaDoll({ spec, state = "idle", highlighted = false }: PlazaDo
 
     // --- Lift por highlight, con lerp.
     const targetLift = highlighted ? 0.05 : 0;
-    liftY.current = THREE.MathUtils.lerp(liftY.current, targetLift, 1 - Math.pow(0.001, dt));
+    hoverLift.current = THREE.MathUtils.lerp(hoverLift.current, targetLift, 1 - Math.pow(0.001, dt));
 
-    let bodyY = liftY.current;
+    let bodyY = hoverLift.current;
     let armLAngle = Math.sin(t * 1.6) * 0.04;
     let armRAngle = -Math.sin(t * 1.6) * 0.04;
     let legLAngle = 0;
@@ -371,15 +384,49 @@ export function PlazaDoll({ spec, state = "idle", highlighted = false }: PlazaDo
       legRAngle = 0;
     }
 
+    // --- Agarrado: brazos en alto agitándose con desfase, piernas colgando y
+    // balanceo del cuerpo. Se mezcla por `heldAmt` sobre la pose de arriba.
+    heldAmt.current = THREE.MathUtils.lerp(
+      heldAmt.current,
+      state === "held" ? 1 : 0,
+      1 - Math.pow(0.0005, dt),
+    );
+    const h = heldAmt.current;
+    let armSplay = ARM_SPLAY;
+    let swayZ = 0;
+    if (h > 0.001) {
+      const flap = clock * HELD_FLAP + spec.phase;
+      armLAngle = THREE.MathUtils.lerp(armLAngle, HELD_ARM_BASE + Math.sin(flap) * HELD_ARM_SWING, h);
+      armRAngle = THREE.MathUtils.lerp(armRAngle, HELD_ARM_BASE + Math.sin(flap + 2.4) * HELD_ARM_SWING, h);
+      // Brazos en V y abriéndose/cerrándose al ritmo del aleteo.
+      armSplay += h * (0.45 + Math.sin(flap * 0.5) * 0.2);
+      legLAngle = THREE.MathUtils.lerp(legLAngle, Math.sin(flap * 0.7) * 0.4, h);
+      legRAngle = THREE.MathUtils.lerp(legRAngle, -Math.sin(flap * 0.7) * 0.4, h);
+      headTiltX = THREE.MathUtils.lerp(headTiltX, 0, h);
+      headTiltZ += Math.sin(flap * 0.5) * 0.1 * h;
+      bodyY += h * HELD_LIFT;
+      swayZ = Math.sin(clock * 5 + spec.phase) * 0.08 * h;
+    }
+    if (shadowRef.current) {
+      // La sombra se queda en el suelo: al levantarlo para llevarlo en la mano,
+      // se encoge y se aclara.
+      const air = h * HELD_LIFT;
+      shadowRef.current.scale.setScalar(1 / (1 + air * 0.5));
+      mats.shadow.opacity = 0.5 / (1 + air * 0.9);
+    }
+
     // Respiración idle: escala Y del torso desde la cintura.
     if (torsoRef.current) {
       torsoRef.current.scale.y = state === "walking" ? 1 : 1 + Math.sin(t * 1.1) * 0.015;
     }
 
-    if (bodyRef.current) bodyRef.current.position.y = bodyY;
+    if (bodyRef.current) {
+      bodyRef.current.position.y = bodyY;
+      bodyRef.current.rotation.z = swayZ;
+    }
     if (headRef.current) headRef.current.rotation.set(headTiltX, 0, headTiltZ);
-    if (armLRef.current) armLRef.current.rotation.set(armLAngle, 0, -ARM_SPLAY);
-    if (armRRef.current) armRRef.current.rotation.set(armRAngle, 0, ARM_SPLAY);
+    if (armLRef.current) armLRef.current.rotation.set(armLAngle, 0, -armSplay);
+    if (armRRef.current) armRRef.current.rotation.set(armRAngle, 0, armSplay);
     if (legLRef.current) legLRef.current.rotation.x = legLAngle;
     if (legRRef.current) legRRef.current.rotation.x = legRAngle;
   });
@@ -456,7 +503,7 @@ export function PlazaDoll({ spec, state = "idle", highlighted = false }: PlazaDo
       </group>
 
       {/* --- Sombra de contacto: disco plano, nunca shadow map real. --- */}
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={geos.shadow} material={mats.shadow} />
+      <mesh ref={shadowRef} position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={geos.shadow} material={mats.shadow} />
     </group>
   );
 }

@@ -158,10 +158,13 @@ export interface Translations {
     title: string;
     subtitle: string;
     hint: string;
+    /** Leyenda con un muñeco en la mano: los dos ejes del arrastre, lado
+     * (← →) y profundidad (↑ ↓). No hay eje de altura. */
+    hintAxisSide: string;
+    hintAxisDepth: string;
+    hintDrop: string;
     /** Plantilla con placeholder `{count}` — se interpola en PlazaHud.tsx. */
     countLabel: string;
-    back: string;
-    backAriaLabel: string;
     loading: string;
     closeAriaLabel: string;
     /** Plantilla con placeholder `{name}` — se interpola en ReviewCard.tsx. */

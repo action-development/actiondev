@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { testimonials } from "@/data/testimonials";
+import { Header } from "@/components/layout/Header";
 import { PlazaHud } from "@/components/plaza/PlazaHud";
 import { ReviewCard } from "@/components/plaza/ReviewCard";
 import { useT } from "@/lib/i18n";
@@ -47,12 +48,14 @@ function PlazaLoader({ label }: { label: string }) {
  * Client wrapper de /resenas. Controla qué muñeco está seleccionado y
  * orquesta escena 3D (canvas.PlazaScene, de otro agente) + chrome DOM (Hud +
  * ReviewCard, de este agente). Página a pantalla completa — sin
- * Lenis/SmoothScroll, no hay scroll que suavizar.
+ * Lenis/SmoothScroll, no hay scroll que suavizar. Lleva el Header global
+ * (fixed, z-50) pero no el Footer.
  */
 export function PlazaPage() {
   const t = useT();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [holding, setHolding] = useState(false);
 
   const handleReady = useCallback(() => setReady(true), []);
 
@@ -75,9 +78,16 @@ export function PlazaPage() {
     <div className="fixed inset-0 bg-background">
       {!ready && <PlazaLoader label={t.plaza.loading} />}
 
-      <PlazaScene selectedId={selectedId} onSelect={handleSelect} onReady={handleReady} />
+      <PlazaScene
+        selectedId={selectedId}
+        onSelect={handleSelect}
+        onReady={handleReady}
+        onHoldChange={setHolding}
+      />
 
-      <PlazaHud count={testimonials.length} hintVisible={selectedId === null} />
+      <Header />
+
+      <PlazaHud count={testimonials.length} hintVisible={selectedId === null} holding={holding} />
 
       <ReviewCard selectedId={selectedId} onClose={handleClose} />
     </div>

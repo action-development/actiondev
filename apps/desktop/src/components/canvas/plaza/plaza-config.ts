@@ -22,10 +22,15 @@ export const PLAZA_PALETTE = {
   skyTop: "#080808",
   skyMid: "#080808",
   skyBottom: "#080808",
-  /** Suelo: charco de luz tenue bajo los muñecos que se funde con `skyBottom`. */
-  floorNear: "#181818",
+  /** Suelo: charco de luz tenue bajo los muñecos que se funde con `skyBottom`.
+   * NO bajar más: sobre un suelo casi negro la sombra de contacto no se ve, y
+   * sin sombra no hay forma de saber dónde está un muñeco en el aire. */
+  floorNear: "#242424",
   /** Sombra de blob bajo cada muñeco. */
   shadow: "#000000",
+  /** Retícula del suelo y guías de arrastre: referencias de profundidad sobre
+   * un fondo plano. Lima muy apagado, no compite con el muñeco. */
+  guide: "#c8ff00",
   /** Acento de interacción (highlight del muñeco enfocado) = `--accent`. */
   accent: "#c8ff00",
 } as const;

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import { FLOOR_RADIUS, PLAZA_FOG } from "./plaza-config";
+import { FLOOR_RADIUS, PLAZA_FOG, PLAZA_PALETTE } from "./plaza-config";
 import { getSkyTexture, getFloorTexture, PLAZA_HORIZON } from "./plaza-textures";
 
 /**
@@ -12,6 +12,53 @@ import { getSkyTexture, getFloorTexture, PLAZA_HORIZON } from "./plaza-textures"
  * el aspecto: la cámara está casi en el centro de la esfera.
  */
 const SKY_RADIUS = 200;
+
+/**
+ * Anillos concéntricos del suelo, en unidades de mundo.
+ *
+ * El fondo es plano y la cámara va casi a ras: sin nada dibujado en el suelo,
+ * mover un muñeco "hacia arriba" (altura) y "hacia el fondo" (profundidad) se
+ * ven IGUAL en pantalla. Estos anillos dan la escala del suelo y se comprimen
+ * con la perspectiva, así que la profundidad se lee de un vistazo. Se apagan
+ * solos con la niebla, sin necesidad de un degradado en la textura.
+ */
+const GRID_RINGS = [2, 3.4, 5, 7, 9.5, 12.5, 16, 20] as const;
+/** Grosor de cada anillo (radio ±). Fino: es una referencia, no una decoración. */
+const RING_HALF_WIDTH = 0.014;
+
+function FloorGrid() {
+  const geometries = useMemo(
+    () => GRID_RINGS.map((r) => new THREE.RingGeometry(r - RING_HALF_WIDTH, r + RING_HALF_WIDTH, 128)),
+    [],
+  );
+  // Un único material para todos los anillos.
+  const material = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: PLAZA_PALETTE.guide,
+        transparent: true,
+        opacity: 0.08,
+        depthWrite: false,
+        toneMapped: false,
+      }),
+    [],
+  );
+
+  useEffect(() => {
+    return () => {
+      geometries.forEach((g) => g.dispose());
+      material.dispose();
+    };
+  }, [geometries, material]);
+
+  return (
+    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 0]}>
+      {geometries.map((geometry, i) => (
+        <mesh key={i} geometry={geometry} material={material} renderOrder={-1} />
+      ))}
+    </group>
+  );
+}
 
 export function PlazaRoom() {
   const skyTexture = useMemo(() => getSkyTexture(), []);
@@ -63,6 +110,8 @@ export function PlazaRoom() {
       <mesh geometry={floorGeometry} rotation={[-Math.PI / 2, 0, 0]}>
         <meshBasicMaterial map={floorTexture} toneMapped={false} />
       </mesh>
+
+      <FloorGrid />
 
       {/*
         Luz de "vitrina" para MeshStandardMaterial (roughness ~0.6) bajo ACES.

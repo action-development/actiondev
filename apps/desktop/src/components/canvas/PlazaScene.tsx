@@ -16,6 +16,8 @@ export interface PlazaSceneProps {
   onSelect: (id: string | null) => void;
   /** La escena ya ha pintado su primer frame. */
   onReady?: () => void;
+  /** Se está llevando un muñeco en la mano (para la pista del HUD). */
+  onHoldChange?: (holding: boolean) => void;
 }
 
 /**
@@ -28,7 +30,7 @@ export interface PlazaSceneProps {
  * y el suelo se pintan con `CanvasTexture` en runtime — es la misma regla que
  * dejó clavado el loader de la home cuando el hero usaba un HDR remoto.
  */
-export function PlazaScene({ selectedId, onSelect, onReady }: PlazaSceneProps) {
+export function PlazaScene({ selectedId, onSelect, onReady, onHoldChange }: PlazaSceneProps) {
   // Se incrementa para remontar el Canvas entero tras perder el contexto WebGL:
   // texturas, shaders y buffers ya no existen, y recrearlos a mano sale más caro
   // y más frágil que un Canvas nuevo.
@@ -70,11 +72,16 @@ export function PlazaScene({ selectedId, onSelect, onReady }: PlazaSceneProps) {
         gl={{ antialias: true, powerPreference: "high-performance" }}
         dpr={[1, 1.5]}
         camera={{ position: [0, 3.6, 11.5], fov: 38 }}
-        style={{ width: "100vw", height: "100vh" }}
+        style={{ width: "100vw", height: "100vh", touchAction: "none" }}
         onCreated={handleCreated}
       >
         <Suspense fallback={null}>
-          <PlazaWorld selectedId={selectedId} onSelect={onSelect} onReady={onReady} />
+          <PlazaWorld
+            selectedId={selectedId}
+            onSelect={onSelect}
+            onReady={onReady}
+            onHoldChange={onHoldChange}
+          />
         </Suspense>
       </Canvas>
     </div>
