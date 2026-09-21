@@ -24,8 +24,15 @@ import { Blinds, blindsDuration } from "@/components/ui/Blinds";
  *
  * El juego de la home navega por `usePageTransition().navigate(href)` con la
  * misma secuencia. Es la MISMA cortina que `LoadingScreen`: al aterrizar en `/`
- * la pantalla de carga ya está cerrada en lima cuando esta se abre, así que se
- * encadenan sin costura.
+ * en frío (primera visita de la sesión) la pantalla de carga ya está cerrada en
+ * lima cuando esta se abre, así que se encadenan sin costura. Con la escena ya
+ * cargada en la sesión, la home ni la monta y se queda con esta sola.
+ *
+ * `busy` dice si la persiana está en movimiento o cerrada. La home lo lee en su
+ * primer render para saber que ya llega TAPADA y no montar su pantalla de carga
+ * encima: dos cortinas idénticas encadenadas hacían que volver a `/` tardase
+ * ~5 s frente a los ~1,9 s de cualquier otra ruta. La escena 3D arranca detrás
+ * de esta persiana mientras se recoge, y acaba de entrar con su propio fundido.
  *
  * Se deja pasar sin animar: modificadores (cmd/ctrl/shift/alt → pestaña
  * nueva), botón no principal, `target="_blank"`, `download`, orígenes externos,

@@ -42,8 +42,24 @@ function prefetchPhysics() {
  */
 export default function HomePage() {
   const router = useRouter();
-  const { navigate } = usePageTransition();
-  const [loading, setLoading] = useState(true);
+  const { navigate, busy } = usePageTransition();
+  /**
+   * ¿Aterrizamos con la persiana de `PageTransition` ya cubriendo la pantalla?
+   * (click en un link desde otra ruta). Entonces NO se monta la pantalla de
+   * carga: sería una SEGUNDA persiana idéntica encadenada a la primera, y
+   * volver a `/` tardaba ~5 s frente a los ~1,9 s de cualquier otra ruta. La
+   * escena arranca DETRÁS de la persiana de la transición mientras se recoge
+   * (está pintada antes de que se vaya la última lama) y acaba de entrar con
+   * su propio `animate-fade-in`, así que no hace falta tapar nada más.
+   *
+   * Solo se salta con la escena ya cargada alguna vez en esta sesión: en frío
+   * hay que bajar el chunk de GameScene y los 2,2 MB de física, y para eso
+   * está la pantalla de carga con su `ready`. `busy` es `false` en SSR y en la
+   * carga directa de `/`, así que la hidratación no se desajusta (y el
+   * cortocircuito evita tocar `sessionStorage` en el servidor).
+   */
+  const [skipLoader] = useState(() => busy && !!sessionStorage.getItem(SESSION_KEY));
+  const [loading, setLoading] = useState(!skipLoader);
   const [gamePaused, setGamePaused] = useState(false);
   const [physicsActive, setPhysicsActive] = useState(false);
   const [loadingReady, setLoadingReady] = useState(false);

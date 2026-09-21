@@ -18,7 +18,11 @@ interface LoadingScreenProps {
  * progreso sigue existiendo para lectores de pantalla (`aria-live`) y para la
  * máquina de fases, pero no se pinta.
  * Es la MISMA persiana que `PageTransition` usa entre rutas: una sola pieza
- * visual para "cargar" y "cambiar de pestaña".
+ * visual para "cargar" y "cambiar de pestaña". Por eso la home solo la monta
+ * cuando llega DESTAPADA (carga directa de `/`, recarga, back/forward): si se
+ * aterriza por un link, la persiana de la transición ya está cubriendo y
+ * montar esta encima encadenaba un segundo barrido completo — ver `skipLoader`
+ * en `app/page.tsx`.
  *
  * Pure React state + a single requestAnimationFrame loop.
  *
