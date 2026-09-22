@@ -6,6 +6,8 @@ import { useGSAP } from "@gsap/react";
 import { EASING, DURATION } from "@/lib/animations";
 import { testimonials, type Testimonial } from "@/data/testimonials";
 import { useLocale, useT } from "@/lib/i18n";
+import { GoogleIcon } from "@/components/ui/GoogleIcon";
+import { StarRating } from "@/components/ui/StarRating";
 
 interface ReviewCardProps {
   /** id del testimonio seleccionado, o null si la ficha está cerrada. */
@@ -46,6 +48,15 @@ export function ReviewCard({ selectedId, onClose }: ReviewCardProps) {
     () => {
       const card = cardRef.current;
       if (!card) return;
+
+      // `useGSAP` con `dependencies` no mata los tweens del render anterior al
+      // reejecutarse (solo revierte al desmontar) — con clics rápidos entre
+      // muñecos se acumulan tweens de abrir/cerrar en danza sobre la misma
+      // tarjeta, y el último en terminar (no necesariamente el más reciente en
+      // arrancar) decide el estado final: podía quedar "abierta" aunque
+      // `selectedId` ya fuera null. Matar cualquier tween de la tarjeta antes
+      // de lanzar el siguiente garantiza que el más reciente manda siempre.
+      gsap.killTweensOf(card);
 
       if (testimonial) {
         // Guardar el foco previo para devolverlo al cerrar (accesibilidad).
@@ -95,7 +106,7 @@ export function ReviewCard({ selectedId, onClose }: ReviewCardProps) {
           shown ? t.plaza.dialogAriaLabel.replace("{name}", shown.name) : undefined
         }
         aria-hidden={!testimonial}
-        className="pointer-events-auto relative w-full rounded-t-2xl border border-border bg-card p-8 md:w-[min(90vw,440px)] md:rounded-2xl"
+        className="holo-surface holo-solid holo-corners holo-glass pointer-events-auto relative w-full p-8 md:w-[min(90vw,440px)]"
         style={{ visibility: "hidden" }}
       >
         {shown && (
@@ -105,18 +116,40 @@ export function ReviewCard({ selectedId, onClose }: ReviewCardProps) {
               type="button"
               onClick={onClose}
               aria-label={t.plaza.closeAriaLabel}
-              className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted transition-colors duration-300 hover:border-accent hover:text-accent"
+              className="holo-btn holo-btn-icon absolute right-5 top-5"
             >
               <span aria-hidden>×</span>
             </button>
 
-            <header className="mb-4 flex flex-col gap-1 pr-10">
+            <header className="mb-4 flex flex-col gap-1.5 pr-10">
               <span className="font-display text-lg font-semibold tracking-[-0.01em] text-foreground">
                 {shown.name}
               </span>
-              <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-                {shown.project}
-              </span>
+              {/* "RESEÑA DE GOOGLE" es el project de relleno para clientes sin
+                  negocio propio en la reseña — lo repetiría el badge de abajo,
+                  así que solo se pinta cuando el dato aporta algo real. */}
+              {shown.project !== "RESEÑA DE GOOGLE" && (
+                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+                  {shown.project}
+                </span>
+              )}
+              <div className="flex items-center gap-2">
+                <StarRating
+                  rating={shown.rating}
+                  className="flex items-center gap-0.5"
+                />
+                <span
+                  role="img"
+                  aria-label={t.plaza.ratingAriaLabel.replace("{rating}", String(shown.rating))}
+                  className="sr-only"
+                >
+                  {t.plaza.ratingAriaLabel.replace("{rating}", String(shown.rating))}
+                </span>
+                <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+                  <GoogleIcon className="h-3.5 w-3.5" />
+                  {t.plaza.googleSource}
+                </span>
+              </div>
             </header>
 
             <p className="font-display max-w-[42ch] text-[1.1rem] leading-[1.5] tracking-[-0.01em] text-foreground">

@@ -143,8 +143,12 @@ export interface Translations {
   plaza: {
     title: string;
     subtitle: string;
-    /** Única pista de la plaza. Llevar un muñeco NO muestra leyenda de
-     * controles: se retiró por decisión del cliente. */
+    /** Texto del enlace a la ficha de Google, abajo a la derecha del HUD. */
+    googleCta: string;
+    /** Pista de click de la placa inferior (`PlazaHint`), que se retira al
+     * abrir la primera ficha. Corta y en imperativo: se pinta en caja alta y
+     * no debe partirse en dos líneas. La plaza sigue SIN leyenda de controles
+     * de arrastre (decisión del cliente). */
     hint: string;
     /** Plantilla con placeholder `{count}` — se interpola en PlazaHud.tsx. */
     countLabel: string;
@@ -152,5 +156,10 @@ export interface Translations {
     closeAriaLabel: string;
     /** Plantilla con placeholder `{name}` — se interpola en ReviewCard.tsx. */
     dialogAriaLabel: string;
+    /** Plantilla con placeholder `{rating}` — aria-label de las estrellas en
+     * ReviewCard.tsx (el SVG de estrellas es decorativo, `aria-hidden`). */
+    ratingAriaLabel: string;
+    /** Texto junto al icono de Google en la ficha de reseña. */
+    googleSource: string;
   };
 }

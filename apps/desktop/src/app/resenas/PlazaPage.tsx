@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { testimonials } from "@/data/testimonials";
+import { PLAZA_PALETTES, currentPlazaMode, type PlazaMode } from "@/components/canvas/plaza/plaza-mode";
 import { Header } from "@/components/layout/Header";
 import { PlazaHud } from "@/components/plaza/PlazaHud";
 import { ReviewCard } from "@/components/plaza/ReviewCard";
@@ -21,9 +22,12 @@ const PlazaScene = dynamic(
  * home, con fases). Mismo logo de marca sobre `bg-background`, sin contador:
  * esta escena no tiene el mismo coste de física/shaders que el hero.
  */
-function PlazaLoader({ label }: { label: string }) {
+function PlazaLoader({ label, background }: { label: string; background: string }) {
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-background">
+    <div
+      className="fixed inset-0 z-30 flex items-center justify-center"
+      style={{ background }}
+    >
       <div className="flex flex-col items-center gap-4">
         <Image
           src="/logos/logo.webp"
@@ -51,16 +55,30 @@ function PlazaLoader({ label }: { label: string }) {
  * Lenis/SmoothScroll, no hay scroll que suavizar. Lleva el Header global
  * (fixed, z-50) pero no el Footer.
  */
+/** Nunca cambia dentro de una sesión: el modo se resuelve al cargar. */
+const subscribeNever = () => () => {};
+
 export function PlazaPage() {
   const t = useT();
+  /**
+   * Día o noche. Con `useSyncExternalStore` en vez de un `useState` +
+   * `useEffect`: el servidor no conoce la hora local del visitante, así que
+   * pinta la versión de noche y el cliente sustituye en la primera pasada, sin
+   * warning de hidratación ni `setState` dentro de un efecto.
+   */
+  const mode = useSyncExternalStore<PlazaMode>(subscribeNever, currentPlazaMode, () => "noche");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [holding, setHolding] = useState(false);
+  /** La pista de click no vuelve: con la primera ficha abierta ya está
+   * aprendido el gesto y la placa solo taparía plaza. */
+  const [hintDone, setHintDone] = useState(false);
 
   const handleReady = useCallback(() => setReady(true), []);
 
   const handleSelect = useCallback((id: string | null) => {
     setSelectedId(id);
+    if (id !== null) setHintDone(true);
   }, []);
 
   const handleClose = useCallback(() => setSelectedId(null), []);
@@ -75,21 +93,37 @@ export function PlazaPage() {
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-background">
-      {!ready && <PlazaLoader label={t.plaza.loading} />}
-
-      <PlazaScene
-        selectedId={selectedId}
-        onSelect={handleSelect}
-        onReady={handleReady}
-        onHoldChange={setHolding}
-      />
+    <div className="fixed inset-0" style={{ background: PLAZA_PALETTES[mode].skyHorizon }}>
+      {!ready && <PlazaLoader label={t.plaza.loading} background={PLAZA_PALETTES[mode].skyHorizon} />}
 
       <Header />
 
-      <PlazaHud count={testimonials.length} hintVisible={selectedId === null} holding={holding} />
+      {/*
+        La plaza es una pantalla completa sin scroll, pero sigue necesitando su
+        landmark: sin `<main id="main-content">` esta ruta no tenía destino para
+        el "saltar al contenido" del layout raíz (axe lo marcaba como skip link
+        sin destino) ni región principal que anunciar. `<main>` es un bloque sin
+        estilo propio: la escena conserva su `h-screen w-screen` y el HUD y la
+        ficha siguen anclados al viewport por su `fixed`. El Header queda FUERA,
+        que es donde va un `banner`.
+      */}
+      <main id="main-content">
+        <PlazaScene
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          onReady={handleReady}
+          onHoldChange={setHolding}
+        />
 
-      <ReviewCard selectedId={selectedId} onClose={handleClose} />
+        <PlazaHud
+          mode={mode}
+          count={testimonials.length}
+          ctaVisible={selectedId === null}
+          hintVisible={!hintDone && selectedId === null && !holding}
+        />
+
+        <ReviewCard selectedId={selectedId} onClose={handleClose} />
+      </main>
     </div>
   );
 }

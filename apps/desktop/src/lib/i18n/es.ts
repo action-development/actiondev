@@ -120,10 +120,13 @@ export const es: Translations = {
   plaza: {
     title: "La plaza de las reseñas",
     subtitle: "Cada cliente, un personaje. Cada reseña, una historia real.",
-    hint: "Haz click en un personaje para leer su reseña · mantén para arrastrarlo",
+    googleCta: "Ver reseñas en Google",
+    hint: "Haz click en un personaje",
     countLabel: "{count} reseñas",
     loading: "Preparando la plaza…",
     closeAriaLabel: "Cerrar reseña",
     dialogAriaLabel: "Reseña de {name}",
+    ratingAriaLabel: "{rating} de 5 estrellas",
+    googleSource: "Reseña de Google",
   },
 };

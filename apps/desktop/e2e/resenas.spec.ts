@@ -85,14 +85,36 @@ test.describe("Plaza de reseñas", () => {
     await expect(page.locator("canvas")).toBeVisible({ timeout: 15_000 });
   });
 
-  test("HUD shows title and review count", async ({ page }) => {
+  test("HUD keeps the h1 out of sight and shows the Google reviews link", async ({ page }) => {
     await page.goto("/resenas");
     await page.waitForLoadState("domcontentloaded");
 
-    await expect(page.getByRole("heading", { name: "La plaza de las reseñas" })).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByText(/^\d+ reseñas$/)).toBeVisible();
+    // El titular ya no se pinta (decisión del cliente), pero el h1 sigue en el
+    // DOM por SEO y lectores de pantalla: presente y recortado a 1px.
+    const h1 = page.getByRole("heading", { name: "La plaza de las reseñas" });
+    await expect(h1).toBeAttached({ timeout: 15_000 });
+    expect((await h1.boundingBox())!.width).toBeLessThan(2);
+
+    // La cabecera ya no lleva contador ni subtítulo (decisión del cliente).
+    // Abajo: la placa con la pista de click, centrada, y el enlace a la ficha.
+    const hint = page.getByTestId("plaza-hint");
+    await expect(hint).toHaveText(/haz click en un personaje/i);
+    await expect(hint).toHaveAttribute("data-visible", "true");
+
+    const google = page.getByRole("link", { name: /ver reseñas en google/i });
+    await expect(google).toBeVisible();
+    await expect(google).toHaveAttribute("href", /google\.[a-z.]+\/maps/);
+
+    // En reposo es solo la "G": la etiqueta sigue en el DOM (de ahí el nombre
+    // accesible del enlace) pero recortada a ancho 0, y se despliega al hover.
+    // Se mide el ancho del enlace, no la visibilidad del texto: Playwright da
+    // por visible un hijo con caja propia aunque un ancestro lo recorte.
+    const collapsed = (await google.boundingBox())!.width;
+    expect(collapsed).toBeLessThan(60);
+    await google.hover();
+    await expect
+      .poll(async () => (await google.boundingBox())!.width, { timeout: 5_000 })
+      .toBeGreaterThan(collapsed + 100);
   });
 
   test("back link points to home", async ({ page }) => {
@@ -121,8 +143,11 @@ test.describe("Plaza de reseñas", () => {
 
   test("a quick click on a character opens its review card", async ({ page }) => {
     // Barrer el canvas cuesta dos viajes al navegador por punto: con WebGL por
-    // software no cabe en el timeout por defecto.
-    test.setTimeout(150_000);
+    // software no cabe en el timeout por defecto. Desde que la plaza es un
+    // parque (pavimento, césped, arbolado, telón y fuente), cada frame del
+    // rasterizado por software cuesta bastante más y el barrido se acerca a
+    // los dos minutos: el presupuesto va holgado a propósito.
+    test.setTimeout(300_000);
     // `?quieto`: sin paseo ni órbita. Con la plaza viva, el muñeco que localiza
     // el barrido puede haberse apartado al pulsar (R3F solo recalcula el hover
     // cuando se mueve el puntero, así que el cursor "grab" se queda obsoleto).
@@ -146,6 +171,14 @@ test.describe("Plaza de reseñas", () => {
       }
     }
     expect(opened).toBe(true);
+
+    // Con la ficha abierta, la placa de la pista se retira — y NO vuelve al
+    // cerrarla: el gesto ya está aprendido.
+    const hint = page.getByTestId("plaza-hint");
+    await expect(hint).toHaveAttribute("data-visible", "false");
+    await page.keyboard.press("Escape");
+    await expect(page.locator('[role="dialog"]')).not.toBeVisible();
+    await expect(hint).toHaveAttribute("data-visible", "false");
   });
 
   test("holding and dragging a character grabs it instead of opening the card", async ({ page }) => {
@@ -153,8 +186,11 @@ test.describe("Plaza de reseñas", () => {
     page.on("pageerror", (err) => errors.push(err.message));
 
     // Barrer el canvas cuesta dos viajes al navegador por punto: con WebGL por
-    // software no cabe en el timeout por defecto.
-    test.setTimeout(150_000);
+    // software no cabe en el timeout por defecto. Desde que la plaza es un
+    // parque (pavimento, césped, arbolado, telón y fuente), cada frame del
+    // rasterizado por software cuesta bastante más y el barrido se acerca a
+    // los dos minutos: el presupuesto va holgado a propósito.
+    test.setTimeout(300_000);
     // `?quieto`: sin paseo ni órbita. Con la plaza viva, el muñeco que localiza
     // el barrido puede haberse apartado al pulsar (R3F solo recalcula el hover
     // cuando se mueve el puntero, así que el cursor "grab" se queda obsoleto).
@@ -172,15 +208,17 @@ test.describe("Plaza de reseñas", () => {
     const errors: string[] = [];
     page.on("pageerror", (err) => errors.push(err.message));
 
-    test.setTimeout(150_000);
+    test.setTimeout(300_000);
     await page.goto("/resenas?quieto=1");
     await waitForPlaza(page);
 
     const [x, y] = await grabDoll(page);
 
     // Llevar un muñeco NO saca leyenda de controles: se retiró por decisión
-    // del cliente y no debe volver por la puerta de atrás.
+    // del cliente y no debe volver por la puerta de atrás. La única pista es
+    // la placa de "clica en un personaje", y mientras se arrastra se retira.
     await expect(page.getByText(/de lado|más lejos o más cerca/i)).toHaveCount(0);
+    await expect(page.getByTestId("plaza-hint")).toHaveAttribute("data-visible", "false");
 
     // El eje vertical del puntero es profundidad, no altura: se mueve arriba y
     // abajo sin cambiar de modo ni soltar el agarre (antes Mayús lo conmutaba

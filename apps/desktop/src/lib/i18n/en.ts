@@ -116,10 +116,13 @@ export const en: Translations = {
   plaza: {
     title: "The reviews plaza",
     subtitle: "Every client, a character. Every review, a real story.",
-    hint: "Click on a character to read their review · hold to drag them",
+    googleCta: "See our Google reviews",
+    hint: "Click a character",
     countLabel: "{count} reviews",
     loading: "Setting up the plaza…",
     closeAriaLabel: "Close review",
     dialogAriaLabel: "Review by {name}",
+    ratingAriaLabel: "{rating} out of 5 stars",
+    googleSource: "Google review",
   },
 };
