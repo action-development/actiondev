@@ -110,7 +110,11 @@ export const es: Translations = {
       right: "Mover la grúa a la derecha",
       up: "Alejar la grúa",
       down: "Acercar la grúa",
-      hook: "Bajar el gancho o soltar el contenedor",
+      // El nombre accesible CONTIENE el texto visible del botón ("BAJAR" +
+      // la tecla impresa "ESPACIO"), como pide WCAG 2.5.3 (Label in Name):
+      // axe compara contra lo que se VE, y la tecla se ve aunque vaya
+      // `aria-hidden`. De paso, el atajo deja de ser información solo visual.
+      hook: "BAJAR ESPACIO — baja el gancho o suelta el contenedor",
       row: "FILA",
       actionKey: "ESPACIO",
     },

@@ -264,7 +264,15 @@ export function RemoteControl({ gameState }: { gameState: GameState }) {
           >
             <span className={`${styles.key} font-mono text-[10px] font-bold tracking-[0.14em]`}>
               <span className="flex flex-col items-center gap-0.5 leading-none">
-                {t.game.remote.lower}
+                {/*
+                  El espacio explícito NO es decorativo: JSX se come el salto de
+                  línea entre el rótulo y la tecla, así que el texto del botón
+                  quedaba "BAJARESPACIO" de una pieza. Con eso, el nombre
+                  accesible (`t.game.remote.hook`, que empieza justo por "BAJAR
+                  ESPACIO") no contenía el texto visible y fallaba WCAG 2.5.3.
+                  En una columna flex un espacio final no se ve.
+                */}
+                {t.game.remote.lower}{" "}
                 <span aria-hidden className="text-[6.5px] tracking-[0.12em] opacity-60">{t.game.remote.actionKey}</span>
               </span>
             </span>

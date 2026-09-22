@@ -110,7 +110,7 @@ export const en: Translations = {
       right: "Move the crane right",
       up: "Move the crane away",
       down: "Bring the crane closer",
-      hook: "Lower the hook or release the container",
+      hook: "DROP SPACE — lowers the hook or releases the container",
       row: "ROW",
       actionKey: "SPACE",
     },
