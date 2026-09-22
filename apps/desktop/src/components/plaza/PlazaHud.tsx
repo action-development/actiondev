@@ -13,26 +13,20 @@ interface PlazaHudProps {
 }
 
 /**
- * Chrome DOM de /resenas: título, contador y hint de interacción. La navegación
+ * Chrome DOM de /resenas: título y hint de interacción. La navegación
  * (incl. volver al inicio) la lleva el Header global de PlazaPage. Sobre el fondo oscuro del sitio: tokens semánticos de globals.css.
  */
-export function PlazaHud({ count, hintVisible }: PlazaHudProps) {
+export function PlazaHud({ hintVisible }: PlazaHudProps) {
   const t = useT();
 
   return (
     <div className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between px-6 pb-6 pt-28 md:px-10 md:pb-10">
-      {/* Cabecera — título + contador (bajo el Header fijo, ~84px) */}
+      {/* Cabecera — título (bajo el Header fijo, ~84px) */}
       <div className="pointer-events-auto flex items-start justify-between gap-6">
         <div>
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-            {t.plaza.countLabel.replace("{count}", String(count))}
-          </p>
-          <h1 className="font-display mt-1 text-[clamp(1.5rem,3vw,2.25rem)] font-semibold tracking-[-0.02em] text-foreground">
+          <h1 className="font-display text-[clamp(1.5rem,3vw,2.25rem)] font-semibold tracking-[-0.02em] text-foreground">
             {t.plaza.title}
           </h1>
-          <p className="mt-1 max-w-[42ch] text-sm text-muted">
-            {t.plaza.subtitle}
-          </p>
         </div>
       </div>
 
