@@ -501,7 +501,10 @@ export function GameWorld({
       return;
     }
 
-    const dt = Math.min(delta, 1 / 30);
+    // Acotado también por abajo: `accel` más adelante divide por `dt` y un
+    // `delta` de 0 (frame de reanudación, tab en segundo plano) daría NaN que
+    // acabaría escrito en un cuerpo de Rapier → panic de Rust (issue #1).
+    const dt = Math.max(Math.min(delta, 1 / 30), 1e-4);
     const k = keys.current;
 
     // --- Entrada: acción (click en canvas / Espacio / E / mando). Una por frame. ---
@@ -797,7 +800,16 @@ export function GameWorld({
       // bloqueo de traslación en z, así que aquí la z sí se mueve; al soltarlo
       // vuelve a dinámico y el bloqueo lo deja clavado en esa fila.
       scratchRapierVec.z = c.gantryZ + g.dz;
-      h.rb.setNextKinematicTranslation(scratchRapierVec);
+      // Última barrera: un NaN escrito en un cuerpo kinematic deja el WASM de
+      // Rapier "prestado" para siempre (panic `unreachable`, ver issue #1) y
+      // ya no se recupera remontando el Canvas, solo recargando la página.
+      if (
+        Number.isFinite(scratchRapierVec.x) &&
+        Number.isFinite(scratchRapierVec.y) &&
+        Number.isFinite(scratchRapierVec.z)
+      ) {
+        h.rb.setNextKinematicTranslation(scratchRapierVec);
+      }
       if (g.ghost && g.dx === 0 && g.dz === 0) {
         const others: GrabCandidate[] = [];
         for (const tr of tracked.current.values()) if (tr !== h) others.push(tr.cand);

@@ -14,6 +14,7 @@ import { AlertOverlay } from "./overlays/AlertOverlay";
 import Image from "next/image";
 import { PALETTES, resolveTimeOfDay } from "./port/time-of-day";
 import { CAMERA_FOV, PAINTED_BACKDROPS, resolveSceneMode } from "./port/painted-backdrops";
+import { RapierCrashGuard } from "./RapierCrashGuard";
 
 interface GameSceneProps {
   paused?: boolean;
@@ -112,21 +113,23 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
         {backdrop && (
           <Image src={backdrop} alt="" aria-hidden fill priority sizes="100vw" className="object-cover" />
         )}
-        <Canvas
-          key={canvasKey}
-          shadows="percentage"
-          camera={{ position: [0, -3, 28], fov: CAMERA_FOV }}
-          // antialias ON: el contorno de cómic sin MSAA se ve en dientes de sierra.
-          gl={{ antialias: true, alpha: mode === "painted", powerPreference: "high-performance" }}
-          dpr={[1, 1.5]}
-          frameloop={renderPaused ? "never" : "always"}
-          style={{ width: "100vw", height: "100vh", position: "relative" }}
-          onCreated={handleCreated}
-        >
-          <Suspense fallback={null}>
-            <GameWorld paused={paused} physicsPaused={physicsPaused} physicsActive={physicsActive} onNavigate={onNavigate} gameState={gameState} palette={palette} mode={mode} onReady={onReady} />
-          </Suspense>
-        </Canvas>
+        <RapierCrashGuard>
+          <Canvas
+            key={canvasKey}
+            shadows="percentage"
+            camera={{ position: [0, -3, 28], fov: CAMERA_FOV }}
+            // antialias ON: el contorno de cómic sin MSAA se ve en dientes de sierra.
+            gl={{ antialias: true, alpha: mode === "painted", powerPreference: "high-performance" }}
+            dpr={[1, 1.5]}
+            frameloop={renderPaused ? "never" : "always"}
+            style={{ width: "100vw", height: "100vh", position: "relative" }}
+            onCreated={handleCreated}
+          >
+            <Suspense fallback={null}>
+              <GameWorld paused={paused} physicsPaused={physicsPaused} physicsActive={physicsActive} onNavigate={onNavigate} gameState={gameState} palette={palette} mode={mode} onReady={onReady} />
+            </Suspense>
+          </Canvas>
+        </RapierCrashGuard>
       </div>
 
       {/*
