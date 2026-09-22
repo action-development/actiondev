@@ -40,7 +40,15 @@
     ".next-base/types/**/*.ts",
     ".next-base/dev/types/**/*.ts",
     ".next-dev2/types/**/*.ts",
-    ".next-dev2/dev/types/**/*.ts"
+    ".next-dev2/dev/types/**/*.ts",
+    ".next-buildcheck/types/**/*.ts",
+    ".next-buildcheck/dev/types/**/*.ts",
+    ".next-claude/types/**/*.ts",
+    ".next-claude/dev/types/**/*.ts",
+    ".next-fonttest/types/**/*.ts",
+    ".next-fonttest/dev/types/**/*.ts",
+    ".next-perf/types/**/*.ts",
+    ".next-perf/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
