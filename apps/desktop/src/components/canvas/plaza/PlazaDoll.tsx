@@ -42,7 +42,7 @@ const SELF_LIGHT = 0.16;
 
 /** Cuánto se despega del suelo un muñeco agarrado: lo justo para que se lea
  * "en la mano" (unidades de mundo). El arrastre no tiene eje de altura. */
-const HELD_LIFT = 0.22;
+const HELD_LIFT = 0.32;
 /** Brazos agarrado: casi verticales (rad desde colgando), agitándose alrededor. */
 const HELD_ARM_BASE = -2.45;
 const HELD_ARM_SWING = 0.55;
