@@ -174,7 +174,7 @@ test.describe("Projects page", () => {
     await expect.poll(opacity, { timeout: 5000 }).toBe(0);
   });
 
-  test("el índice llega cerrado y el botón abre los trabajos", async ({ page }) => {
+  test("el índice llega abierto con todos los trabajos", async ({ page }) => {
     await page.goto("/projects");
     await page.waitForLoadState("domcontentloaded");
 
@@ -185,23 +185,23 @@ test.describe("Projects page", () => {
     const section = page.locator("#projects-index");
     await expect(section).toBeVisible();
 
-    // De entrada no hay ni un trabajo a la vista: sólo el titular y el botón.
+    // De entrada ya están los 31 trabajos a la vista.
     const rows = section.locator("[data-row]");
-    expect(await rows.count()).toBe(0);
-
     const toggle = page.getByTestId("projects-index-toggle");
     await expect(toggle).toBeVisible();
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-
-    await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
     await expect(rows.first()).toBeVisible();
     expect(await rows.count()).toBeGreaterThan(20);
 
-    // Y se vuelve a cerrar.
+    // El botón sigue pudiendo recogerlos.
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(await rows.count()).toBe(0);
+
+    // Y volver a abrirlos.
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(await rows.count()).toBeGreaterThan(20);
   });
 });
 

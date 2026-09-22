@@ -17,9 +17,9 @@ const PANEL_W = 380;
 /** Separación entre el puntero y la viñeta, y el borde al que se voltea de lado. */
 const PANEL_GAP = 40;
 
-/* De entrada NO se ve ningún trabajo: sólo el titular y el botón que abre la
-   lista. El índice completo es una decisión del visitante, no un muro de 31
-   filas nada más llegar. */
+/* El índice llega ABIERTO: los 31 trabajos a la vista desde el primer
+   momento. El botón sigue existiendo para poder recogerlos, pero el estado
+   por defecto es "todo visible" (decisión del cliente). */
 
 interface ScrambleTitleProps {
 	text: string;
@@ -146,7 +146,7 @@ export function ProjectsIndex() {
 	const shown = useRef(false);
 
 	const [hovered, setHovered] = useState<Project | null>(null);
-	const [expanded, setExpanded] = useState(false);
+	const [expanded, setExpanded] = useState(true);
 	const visible = expanded ? projects : [];
 
 	useEffect(() => {
