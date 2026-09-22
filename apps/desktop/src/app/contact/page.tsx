@@ -8,7 +8,8 @@ import { BRAND, OG_IMAGE, absoluteUrl } from "@/lib/seo";
  * Server component: metadata. Los canales son client (GSAP + i18n).
  */
 export const metadata: Metadata = {
-  title: "Contacto — Action",
+  // Sin la marca: el `template` del layout raíz ya añade " — Action".
+  title: "Contacto",
   description:
     "Habla con Action, agencia de desarrollo web y de aplicaciones en Vigo. Sin formularios: escríbenos por WhatsApp al +34 614 02 74 10 o a hi@actiondev.es y te responde una persona.",
   alternates: { canonical: "/contact" },

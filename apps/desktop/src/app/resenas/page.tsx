@@ -12,7 +12,8 @@ import { PlazaPage } from "./PlazaPage";
  * independiente, no un reemplazo.
  */
 export const metadata: Metadata = {
-  title: "Reseñas de clientes — Action",
+  // Sin la marca: el `template` del layout raíz ya añade " — Action".
+  title: "Reseñas de clientes",
   description:
     "Lo que opinan nuestros clientes de Action, agencia de desarrollo web y de aplicaciones en Vigo. Reseñas reales, en una plaza 3D interactiva.",
   alternates: { canonical: "/resenas" },

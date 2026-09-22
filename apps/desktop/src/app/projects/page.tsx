@@ -10,7 +10,8 @@ import { BRAND, OG_IMAGE, absoluteUrl } from "@/lib/seo";
  * Server component: metadata + JSON-LD. Las secciones son client (GSAP).
  */
 export const metadata: Metadata = {
-  title: "Proyectos — Action",
+  // Sin la marca: el `template` del layout raíz ya añade " — Action".
+  title: "Proyectos",
   description:
     "Proyectos de desarrollo web y de aplicaciones de Action en Vigo: carrusel 3D de trabajos destacados e índice completo por categoría.",
   alternates: { canonical: "/projects" },

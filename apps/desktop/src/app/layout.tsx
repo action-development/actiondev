@@ -64,13 +64,20 @@ export const metadata: Metadata = {
     },
   },
   /*
-   * Sin `icons`: Next sirve `src/app/icon.svg` (442 B, vectorial) por
-   * convención de archivo. La declaración anterior lo pisaba con
-   * `/logos/action_globe.webp`, que son 1024×1024 y 35 KB descargados en CADA
-   * página solo para pintar 16px de pestaña. El webp sigue usándose donde sí
-   * hace falta resolución: la textura de los contenedores del hero
-   * (`canvas/port/container-textures.ts`) y el icono del manifest.
+   * Favicon = el globo de MARCA, no el `src/app/icon.svg` genérico (que Next
+   * serviría por convención de archivo si esto no estuviera): la pestaña es
+   * branding, y el símbolo dibujado a mano no es el logo.
+   *
+   * Lo que sí se corrige es el peso: se declaraba `/logos/action_globe.webp`,
+   * 1024×1024 y 35 KB descargados en CADA página para pintar 16px de pestaña.
+   * `action_globe-64.png` es el MISMO glifo reescalado a 64px (2,2 KB). El
+   * webp de 1024 sigue donde hace falta resolución: la textura de los
+   * contenedores del hero (`canvas/port/container-textures.ts`) y el icono
+   * del manifest.
    */
+  icons: {
+    icon: [{ url: "/logos/action_globe-64.png", type: "image/png", sizes: "64x64" }],
+  },
   formatDetection: {
     email: false,
     address: false,
