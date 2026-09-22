@@ -224,7 +224,7 @@ export function GullTally({ gameState }: { gameState: GameState }) {
         >
           <div className="tally-banner flex w-full flex-col items-center gap-2 bg-gradient-to-r from-transparent via-background/75 to-transparent py-5">
             <span
-              className="tally-streak-mult font-mono font-black leading-none text-accent"
+              className="tally-streak-mult font-mono font-bold leading-none text-accent"
               style={{ fontSize: `${Math.min(9, 4.5 + streakBanner.mult * 0.5)}rem` }}
             >
               ×{streakBanner.mult}
@@ -301,7 +301,7 @@ export function GullTally({ gameState }: { gameState: GameState }) {
           >
             <span className="text-foreground/55">{t.game.tally.streak}</span>
             <span className="text-foreground tabular-nums">{streak}</span>
-            <span key={`m-${mult}`} className="tally-bump text-sm font-black text-accent tabular-nums">
+            <span key={`m-${mult}`} className="tally-bump text-sm font-bold text-accent tabular-nums">
               ×{mult}
             </span>
             <span
