@@ -17,7 +17,10 @@ import type { ReactNode } from "react";
  */
 
 interface HoloButtonProps {
-  href: string;
+  /** Enlace. SIN `href` el componente es un `<button type="button">` de acción. */
+  href?: string;
+  /** Acción en la propia página (desplegar, filtrar). Sólo se usa sin `href`. */
+  onClick?: () => void;
   children: ReactNode;
   variant?: "outline" | "solid" | "quiet";
   size?: "md" | "sm";
@@ -25,16 +28,23 @@ interface HoloButtonProps {
   data?: boolean;
   className?: string;
   "aria-label"?: string;
+  "aria-expanded"?: boolean;
+  "aria-controls"?: string;
+  "data-testid"?: string;
 }
 
 export function HoloButton({
   href,
+  onClick,
   children,
   variant = "outline",
   size = "md",
   data = false,
   className = "",
   "aria-label": ariaLabel,
+  "aria-expanded": ariaExpanded,
+  "aria-controls": ariaControls,
+  "data-testid": testId,
 }: HoloButtonProps) {
   const classes = [
     "holo-btn",
@@ -51,6 +61,25 @@ export function HoloButton({
   // se pinta sobre el fondo, así que el rótulo necesita su propio contexto de
   // apilado (`.holo-btn > *` lo sube a z-index 1). Texto suelto quedaría debajo.
   const body = <span className="inline-flex items-center gap-2">{children}</span>;
+
+  // Sin destino, la chapa es un botón: mismo lenguaje para "ir a" y para
+  // "desplegar". Antes sólo sabía ser enlace y cada acción de página se
+  // escribía su propio botón a mano, que es justo lo que este archivo evita.
+  if (!href) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={classes}
+        aria-label={ariaLabel}
+        aria-expanded={ariaExpanded}
+        aria-controls={ariaControls}
+        data-testid={testId}
+      >
+        {body}
+      </button>
+    );
+  }
 
   // `mailto:`, `tel:` y enlaces externos no pasan por el router.
   const isInternal = href.startsWith("/");

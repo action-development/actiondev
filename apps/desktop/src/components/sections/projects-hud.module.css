@@ -110,21 +110,47 @@
   border-radius: 2px;
   background: var(--hud-dark);
 }
-.panelCaption {
-  display: flex;
+/* ── Índice: dos calles ────────────────────────────────────────── */
+/*                                                                 */
+/*  nombre │ tipo                                                  */
+/*                                                                 */
+/*  La viñeta del proyecto apuntado NO vive en la rejilla: va en   */
+/*  `fixed` siguiendo al cursor, así que la fila no le reserva     */
+/*  hueco. Hubo una calle central vacía para ella y se retiró con  */
+/*  el cambio.                                                     */
+/*                                                                 */
+/*  Sin `display` aquí a propósito: los CSS modules entran SIN     */
+/*  capa y le ganarían a las utilidades de Tailwind (que viven en  */
+/*  @layer utilities). El `grid` lo pone el JSX.                   */
+.lanes {
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 2px 0;
-  color: var(--hud-ink);
-  font-family: var(--font-display), sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  column-gap: 1.5rem;
+}
+@media (min-width: 1024px) {
+  .lanes {
+    column-gap: 2.5rem;
+  }
 }
 
 /* ── Fila del índice ───────────────────────────────────────────── */
+/* Sin filete de separación: las filas se separan por el aire que les da
+   el `py`, y la única regla que aparece es la lima de la fila apuntada.
+   La clase sigue siendo el marcador que usa el apagado de abajo. */
 .row {
-  border-bottom: 2px solid rgba(241, 234, 214, 0.1);
+  border-bottom: 0;
+}
+
+/* Apuntar la lista apaga el resto: el ojo va a la fila y a su viñeta.
+   El apagado se aplica a los HIJOS y no a la fila porque la opacidad de
+   la fila es de GSAP (reveal de entrada) y una transición CSS encima la
+   arrastraría frame a frame. */
+.index .row > * {
+  transition: opacity var(--duration) var(--ease);
+}
+.index:hover .row > * {
+  opacity: 0.5;
+}
+.index .row:hover > * {
+  opacity: 1;
 }
