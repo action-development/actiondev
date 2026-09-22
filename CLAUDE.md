@@ -170,7 +170,7 @@ src/
 - **Tailwind CSS v4** con `@theme inline` para design tokens
 - Dark-mode FIRST (fondo `#0a0a0a`, texto `#ededed`)
 - Accent color: `#c8ff00` (lima eléctrico)
-- Muted: `#888888`, Border: `#222222`
+- Muted: `#7e7e7e`, Border: `#1c1c1c`. **`--muted` no baja de `#7e7e7e`**: es el suelo que cumple AA (4,5:1) sobre las TRES superficies del sistema —`--background` 4,93, `--card` 4,72, `--card-hover` 4,54—, y `.micro-label` son 11px. Con el `#767676` anterior fallaban las tres (4,41 / 4,22 / 4,06) y arrastraban 36 nodos en `/legal`, `/[landing]`, `/servicios` y `/contact`.
 - CSS custom properties en `:root` para colores base
 - Transición global: `cubic-bezier(0.16, 1, 0.3, 1)` (var `--transition-smooth`)
 - **NO** usar clases de color arbitrarias — siempre tokens semánticos: `text-foreground`, `text-muted`, `text-accent`, `bg-background`, `border-border`
@@ -347,6 +347,37 @@ pnpm build         → exitoso
 ## [ACCESIBILIDAD] Auditoría UI
 
 **`web-design-guidelines`** — invocar al revisar UI existente. Verifica: contraste WCAG AA (4.5:1), targets táctiles, `alt` en imágenes, `aria-label` en botones sin texto visible. Canvas 3D: añadir `role="img"` + `aria-label` descriptivo.
+
+**Medir, no estimar.** No hay Chrome en esta máquina, solo Brave: Lighthouse necesita
+`CHROME_PATH="$HOME/Library/Caches/ms-playwright/chromium-<v>/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"`.
+La categoría *accessibility* es axe-core y vale contra el dev server; la de *performance* NO
+— hay que medirla contra `NEXT_DIST_DIR=.next-perf pnpm build` + `pnpm start` (y borrar el
+dist al acabar: Next añade su ruta a `include` de `tsconfig.json` y ya hay seis muertas ahí).
+Referencia de septiembre de 2026, build de producción, preset desktop: **a11y / best-practices /
+SEO = 100 en las siete rutas**; rendimiento 100 salvo la home (90, LCP 1,9 s — la paga el hero 3D).
+Si algo baja de ahí, es una regresión.
+
+**Reglas que el auditor da por hechas:**
+
+| Regla | Por qué |
+|---|---|
+| **`<main id="main-content">` en TODA ruta nueva** | Es el destino del "saltar al contenido" de `app/layout.tsx`. Sin él axe marca *skip link not focusable* — pasó en `/servicios`, `/[landing]` y `/resenas` |
+| **GSAP respeta `prefers-reduced-motion` desde `lib/gsap-config.ts`** | `globalTimeline.timeScale(200)`. La media query de `globals.css` solo alcanza al CSS, y los reveals son GSAP con estilos en línea. Deja el estado FINAL aplicado, así que nada se queda en `opacity: 0`. No desactivar tweens a mano |
+| **Nombre accesible ⊇ texto visible** (WCAG 2.5.3) | axe compara contra lo que se VE, y `aria-hidden` NO exime: cuenta igual. De ahí que la telemetría salga fuera del `<a>` del logo y que `t.game.remote.hook` empiece por "BAJAR ESPACIO" |
+| **Selectores de e2e por `data-testid`, no por `aria-label`** | El sitio es bilingüe: el `aria-label` cambia con el idioma. La cápsula del Header es `data-testid="main-nav"` |
+| **Nada de `font-weight` > 700 ni `font-black`** | Space Grotesk tope 700 → el navegador sintetiza la negrita |
+| **Logos por `next/image`, nunca `<img>` crudo** | `logo.webp` son 1563×625 / 68 KB; en el Header se pintan 20px. En crudo iban los 68 KB en cada página |
+
+**Hipótesis descartadas** (medidas, no ciertas — no volver a "optimizarlas"): el peso 300 de
+Space Grotesk no cuesta nada (es fuente VARIABLE, next/font sirve un solo woff2 de 22 KB para
+300-700); y el grano de película (`body::before`, `mix-blend-mode: overlay`) no tiene coste
+medible en los FPS del hero — la varianza entre pasadas iguales supera la diferencia entre
+tenerlo y quitarlo.
+
+**Abierto, no arreglado:** por debajo de `md` el Header se queda SOLO con el logo (enlaces,
+idioma y CTA son `hidden md:*`) y no hay menú alternativo. El middleware solo manda `/` a la
+zona mobile, así que un móvil en `/contact`, `/projects`, `/resenas` o `/legal/*` se queda sin
+navegación. Pide decisión de producto, no es un parche.
 
 ---
 
