@@ -223,7 +223,7 @@ Componente de botón: `ui/HoloButton.tsx` (elige `<Link>` o `<a>` según el `hre
 | Ruta | Página | Contenido |
 |------|--------|-----------|
 | `/` | Home | Pantalla de inicio "rollo videojuego": SOLO el hero "La Grúa" a viewport completo (`h-[100dvh]`), sin scroll, sin Lenis, sin footer. Cargar un contenedor en el barco → wipe radial → `router.push` a su ruta |
-| `/projects` | Proyectos | Antigua sección `#projects` de la home tal cual (`Projects` carrusel 3D + `ProjectsIndex`), dentro de `SectionPage` |
+| `/projects` | Proyectos | Antigua sección `#projects` de la home (`Projects` carrusel 3D + `ProjectsIndex`), dentro de `SectionPage`. El índice es una lista de CUATRO calles con viñeta anclada a la fila — ver nota abajo |
 | `/contact` | Contacto | **Sin formulario** (decisión del cliente): titular + dos tarjetas de canal — WhatsApp y email — y los chips "pregunta a la IA". **Calma deliberada** (`.calm-surface`, no `.holo-surface`): el visitante viene a coger un teléfono, y el brillo resta confianza. Ver nota abajo |
 | `/reviews` | Reviews | Redirect a `/resenas` (la sección `Testimonials` de la home se retiró; el componente sigue en `sections/` sin ruta, por si se reutiliza) |
 | `/resenas` | Plaza de reseñas | Parque 3D inspirado en **Castrelos (Vigo)**, con versión de **día y de noche**: un muñeco procedural por testimonio; click → cámara enfoca + ficha. Es la entrada "Reseñas" del nav |
@@ -238,6 +238,19 @@ Componente de botón: `ui/HoloButton.tsx` (elige `<Link>` o `<a>` según el `hre
 | `/desarrollo-de-aplicaciones-pontevedra` | Landing SEO | ídem |
 | `/desarrollo-web-pontevedra` | Landing SEO | ídem |
 | `/desarrollo-de-aplicaciones-galicia` | Landing SEO | ídem |
+
+**Índice de proyectos** (`sections/ProjectsIndex.tsx` + `projects-hud.module.css`): lista **de borde a borde** (fuera del `container-editorial`, con `px-6 md:px-12`) de dos calles — **nombre │ tipo** — y SIN filetes de separación: a las filas las separa el aire de su `py`, y la única regla que aparece es la lima de la apuntada. Titular y botón van centrados sobre ella; en el titular sólo la PRIMERA palabra va en lima (`Todo` / `Every`).
+
+**De entrada NO se ve ningún trabajo** (decisión del cliente): sólo el titular y, debajo, el botón que abre los 31. Es `ui/HoloButton` en variante `quiet` y SIN `href`, que es su modo `<button>` — se añadió para esto, y cualquier acción de página debe salir de ahí en vez de escribirse a mano. Lleva `aria-expanded` + `aria-controls` y `data-testid="projects-index-toggle"` (los selectores de e2e no pueden ir por rótulo: la web es bilingüe).
+
+La **viñeta** del proyecto apuntado sigue al CURSOR, en `fixed` y fuera de la sección (`hidden md:block`). Cinco cosas que no son adorno:
+- **El nodo que anima GSAP sólo lleva la posición del puntero.** El desplazamiento respecto a él (`-translate-y-1/2` + `marginLeft`) va en un HIJO: GSAP tiene que ser el único dueño de ese transform (ERR-001). Cerca del borde derecho ese `marginLeft` cambia de signo y la viñeta se voltea de lado, o se saldría de pantalla.
+- **Con la viñeta apagada, el `mousemove` la PLANTA** (`gsap.set`) en vez de animarla; si no, al encenderse volaba desde la esquina.
+- **El apagado va en la LISTA, no en cada fila.** Entre dos filas contiguas el `mouseleave` de una llega antes que el `mouseenter` de la otra: apagar ahí hacía parpadear la viñeta en cada salto. Las filas sólo notifican la entrada.
+- **La lista entra con su propio tween AL ABRIRSE**, no por scroll: cuando la sección aparece no hay ninguna fila que revelar. Y al cerrar se devuelve la vista al arranque con `getLenis().scrollTo`, o el visitante se queda mirando el pie de una lista que acaba de encogerse.
+- **El dim del resto se aplica a los HIJOS de la fila, no a la fila.** La opacidad de la fila es de GSAP y una transición CSS encima la arrastra frame a frame (ERR-001).
+
+Se probaron y se retiraron, por este orden: seis trabajos de muestra antes del botón, la columna del AÑO, la lista entera monocroma en lima, la calle central vacía que anclaba la viñeta a la fila, los filetes entre filas y la coda «Esto es una selección.» — **no reponer nada de eso**. Metadatos en `--muted`, que es el suelo AA del sistema; por debajo de `lg` la fila sigue siendo nombre + tipo y la viñeta no se monta.
 
 **Contacto** (`sections/Contact.tsx`): cero formulario y cero backend. Dos tarjetas (`[data-channel="whatsapp"|"email"]`, iconos locales en `icons/channel-icons.tsx`) que son enlaces `wa.me` y `mailto:` con el mensaje ya redactado (`buildWhatsappUrl` / `buildMailtoUrl` en `data/socials.ts`, texto en `t.contact.intro`): el visitante lo lee y lo edita en SU app antes de enviar. Lenguaje visual del sitio — `rounded-2xl border-border bg-card`, icono en `bg-accent/10 text-accent`, micro-label mono y el dato real como protagonista. El cliente fue retirando por minimalismo, en este orden: subtítulo, párrafo de transparencia, franja de reseñas ★5,0, línea bajo el titular y separador sobre los chips de IA — **no reponer nada de eso**. También se descartó la variante brutalista (tarjetas `aspect-square` sin radio): dejaba un hueco muerto en el centro y no casaba con la web.
 
