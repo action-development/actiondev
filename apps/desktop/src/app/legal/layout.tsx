@@ -37,7 +37,7 @@ export default function LegalLayout({
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="text-muted transition-colors hover:text-accent"
+                    className="link-sweep text-muted hover:text-accent"
                   >
                     {item.label}
                   </Link>
@@ -59,7 +59,7 @@ export default function LegalLayout({
             {LEGAL_ENTITY.name} · CIF {LEGAL_ENTITY.taxId}
           </p>
           <p>
-            <a href={`mailto:${BUSINESS.email}`} className="hover:text-accent">
+            <a href={`mailto:${BUSINESS.email}`} className="link-sweep hover:text-accent">
               {BUSINESS.email}
             </a>{" "}
             · {BUSINESS.phoneDisplay}

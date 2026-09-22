@@ -30,7 +30,6 @@ export function LegalDocHeader({ eyebrow, title, lede }: LegalDocHeaderProps) {
           {UPDATED_FORMATTER.format(new Date(`${LEGAL_UPDATED}T00:00:00Z`))}
         </time>
       </p>
-      <div className="hairline my-12" />
     </header>
   );
 }

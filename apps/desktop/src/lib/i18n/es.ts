@@ -7,6 +7,8 @@ export const es: Translations = {
     reviews: "Reseñas",
     contact: "Contacto",
     cta: "Hablemos",
+    ariaLabel: "Navegación principal",
+    brandHome: "Action — Inicio",
   },
   hero: {
     label: "Agencia Digital",

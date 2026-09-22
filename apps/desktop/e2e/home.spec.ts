@@ -77,7 +77,11 @@ test("header is visible and has navigation links", async ({ page }) => {
 	await page.goto("/?hora=atardecer");
 	await waitForPage(page);
 
-	const header = page.locator("header, nav[aria-label='Main navigation']").first();
+	// La persiana de carga cubre la franja superior: sin esperar a que se retire,
+	// la captura sale lima en vez de enseñar el header.
+	await expect(page.getByTestId("loading-screen")).toHaveCount(0, { timeout: 30_000 });
+
+	const header = page.locator('header, [data-testid="main-nav"]').first();
 	await expect(header).toBeVisible();
 
 	// Logo

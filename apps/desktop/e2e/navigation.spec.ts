@@ -28,7 +28,7 @@ test("header nav links scroll to correct sections", async ({ page }) => {
 	await waitForPage(page);
 
 	// Recopilar todos los links de navegación del header
-	const navLinks = page.locator("nav[aria-label='Main navigation'] a");
+	const navLinks = page.locator('[data-testid="main-nav"] a');
 	const count = await navLinks.count();
 	expect(count).toBeGreaterThan(0);
 });

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { landings } from "@/data/landings";
+import { HoloButton } from "@/components/ui/HoloButton";
+import { HoloBar } from "@/components/layout/HoloBar";
 import { BUSINESS, OG_IMAGE, absoluteUrl } from "@/lib/seo";
 
 /**
@@ -60,24 +62,9 @@ export default function ServiciosPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <header className="border-b border-border">
-        <div className="container-editorial flex items-center justify-between py-5">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="h-2 w-2 rounded-full bg-accent" aria-hidden />
-            <span className="font-display text-lg font-bold tracking-tight text-foreground">
-              Action
-            </span>
-          </Link>
-          <a
-            href={BUSINESS.whatsappUrl}
-            className="rounded-full border border-border px-4 py-2 font-mono text-xs uppercase tracking-widest text-foreground transition-colors hover:border-accent hover:text-accent"
-          >
-            {BUSINESS.phoneDisplay}
-          </a>
-        </div>
-      </header>
+      <HoloBar phone={BUSINESS.phoneDisplay} phoneHref={BUSINESS.whatsappUrl} />
 
-      <main className="container-editorial pb-24">
+      <main id="main-content" className="container-editorial pb-24">
         <div className="pt-12 md:pt-16">
           <p className="micro-label">
             Vigo · Pontevedra · Galicia
@@ -93,15 +80,13 @@ export default function ServiciosPage() {
           </p>
         </div>
 
-        <div className="hairline my-16" />
-
-        <nav aria-label="Servicios por zona">
+        <nav aria-label="Servicios por zona" className="mt-16">
           <ul className="grid gap-4 md:grid-cols-2">
             {landings.map((landing) => (
               <li key={landing.slug}>
                 <Link
                   href={`/${landing.slug}`}
-                  className="group block h-full rounded-lg border border-border bg-card p-8 transition-colors hover:border-accent"
+                  className="holo-surface holo-corners holo-link group h-full p-8"
                 >
                   <h2 className="text-xl font-semibold text-foreground transition-colors group-hover:text-accent">
                     {landing.h1}
@@ -109,8 +94,8 @@ export default function ServiciosPage() {
                   <p className="mt-3 text-[0.95rem] leading-relaxed text-muted">
                     {landing.metaDescription}
                   </p>
-                  <span className="mt-5 inline-block font-mono text-xs uppercase tracking-widest text-accent">
-                    Ver servicio →
+                  <span className="micro-label micro-label-accent mt-5 inline-block">
+                    Ver servicio
                   </span>
                 </Link>
               </li>
@@ -120,7 +105,7 @@ export default function ServiciosPage() {
 
         <section
           aria-label="Contacto"
-          className="mt-20 rounded-lg border border-border bg-card p-8 text-center md:p-14"
+          className="holo-surface holo-corners mt-20 p-8 text-center md:p-14"
         >
           <h2 className="display-m text-foreground">¿Hablamos de tu proyecto?</h2>
           <p className="lede mx-auto mt-4">
@@ -128,18 +113,12 @@ export default function ServiciosPage() {
             con el equipo que desarrolla.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <a
-              href={BUSINESS.whatsappUrl}
-              className="rounded-full bg-accent px-7 py-3.5 font-medium text-background transition-transform hover:scale-105"
-            >
+            <HoloButton href={BUSINESS.whatsappUrl} variant="solid">
               Hablar por WhatsApp
-            </a>
-            <a
-              href={`mailto:${BUSINESS.email}`}
-              className="rounded-full border border-border px-7 py-3.5 font-medium text-foreground transition-colors hover:border-accent"
-            >
+            </HoloButton>
+            <HoloButton href={`mailto:${BUSINESS.email}`} data>
               {BUSINESS.email}
-            </a>
+            </HoloButton>
           </div>
         </section>
       </main>
@@ -151,7 +130,7 @@ export default function ServiciosPage() {
             {BUSINESS.address.locality}, {BUSINESS.address.region}
           </p>
           <p>
-            <a href={`mailto:${BUSINESS.email}`} className="hover:text-accent">
+            <a href={`mailto:${BUSINESS.email}`} className="link-sweep hover:text-accent">
               {BUSINESS.email}
             </a>{" "}
             · {BUSINESS.phoneDisplay}

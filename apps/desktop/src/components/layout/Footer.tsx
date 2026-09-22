@@ -52,18 +52,6 @@ export function Footer() {
           },
         });
       }
-
-      gsap.from("[data-anim='rule']", {
-        scaleX: 0,
-        transformOrigin: "left",
-        duration: 0.9,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: footerRef.current,
-          start: "top 85%",
-          once: true,
-        },
-      });
     },
     { scope: footerRef }
   );
@@ -74,8 +62,6 @@ export function Footer() {
       role="contentinfo"
       className="relative"
     >
-      <div data-anim="rule" className="hairline" />
-
       <div className="container-editorial pt-24 pb-10">
         {/* ── Column grid: sitemap / social / legal ── */}
         <div className="grid gap-12 sm:grid-cols-3">
@@ -85,7 +71,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-foreground/80 transition-colors duration-[var(--duration)] [transition-timing-function:var(--ease)] hover:text-accent"
+                    className="link-sweep text-foreground/80 hover:text-accent"
                   >
                     {link.label}
                   </Link>
@@ -104,13 +90,16 @@ export function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`${s.name} — ${s.handle}`}
-                    className="group inline-flex items-baseline gap-2 text-foreground/80 transition-colors duration-[var(--duration)] [transition-timing-function:var(--ease)] hover:text-accent"
+                    className="link-sweep group inline-flex items-baseline gap-2 text-foreground/80 hover:text-accent"
                   >
                     <span>{s.name}</span>
                     <span aria-hidden className="text-muted text-[12px]">{s.handle}</span>
+                    {/* Una flecha que apunta arriba-derecha se mueve arriba y a
+                        la derecha, como la del CTA del Header. Antes solo iba
+                        en horizontal: el mismo glifo con dos gramáticas. */}
                     <span
                       aria-hidden
-                      className="text-muted transition-transform duration-[var(--duration)] [transition-timing-function:var(--ease)] group-hover:translate-x-1 group-hover:text-accent"
+                      className="text-muted transition-[transform,color] duration-[var(--duration)] [transition-timing-function:var(--ease)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent"
                     >
                       ↗
                     </span>
@@ -127,7 +116,7 @@ export function Footer() {
                 <li key={l.key}>
                   <Link
                     href={l.href}
-                    className="text-foreground/80 transition-colors duration-[var(--duration)] [transition-timing-function:var(--ease)] hover:text-accent"
+                    className="link-sweep text-foreground/80 hover:text-accent"
                   >
                     {l.key === "notice" && t.footer.legalNotice}
                     {l.key === "privacy" && t.footer.legalPrivacy}
@@ -143,7 +132,7 @@ export function Footer() {
         {/* ── Bottom bar ── */}
         <div
           data-anim="reveal"
-          className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-[var(--hairline)] pt-6 font-mono text-[10px] uppercase tracking-[0.22em] text-muted"
+          className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-[10px] uppercase tracking-[0.22em] text-muted"
         >
           <span>&copy; {year} Action</span>
           <span aria-hidden>·</span>

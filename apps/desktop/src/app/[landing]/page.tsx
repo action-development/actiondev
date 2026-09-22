@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLanding, landings } from "@/data/landings";
 import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
+import { HoloButton } from "@/components/ui/HoloButton";
+import { HoloBar } from "@/components/layout/HoloBar";
 
 /**
  * Landing pages SEO locales (/desarrollo-de-aplicaciones-vigo, …).
@@ -114,37 +116,23 @@ export default async function LandingPage({ params }: LandingPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd(landing)) }}
       />
 
-      {/* Top bar mínima — no reutiliza el Header animado de la home */}
-      <header className="border-b border-border">
-        <div className="container-editorial flex items-center justify-between py-5">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="h-2 w-2 rounded-full bg-accent" aria-hidden />
-            <span className="font-display text-lg font-bold tracking-tight text-foreground">
-              Action
-            </span>
-          </Link>
-          <a
-            href={BUSINESS.whatsappUrl}
-            className="rounded-full border border-border px-4 py-2 font-mono text-xs uppercase tracking-widest text-foreground transition-colors hover:border-accent hover:text-accent"
-          >
-            {BUSINESS.phoneDisplay}
-          </a>
-        </div>
-      </header>
+      {/* Misma proyección que el Header de la home, pero estática: esta página
+          es server component puro y tiene que pintar al instante. */}
+      <HoloBar phone={BUSINESS.phoneDisplay} phoneHref={BUSINESS.whatsappUrl} />
 
-      <main className="pb-24">
+      <main id="main-content" className="pb-24">
         <article className="container-editorial">
           {/* Breadcrumb */}
           <nav aria-label="Migas de pan" className="pt-10">
             <ol className="flex flex-wrap items-center gap-2 font-mono text-xs uppercase tracking-widest text-muted">
               <li>
-                <Link href="/" className="transition-colors hover:text-accent">
+                <Link href="/" className="link-sweep hover:text-accent">
                   Inicio
                 </Link>
               </li>
               <li aria-hidden>/</li>
               <li>
-                <Link href="/servicios" className="transition-colors hover:text-accent">
+                <Link href="/servicios" className="link-sweep hover:text-accent">
                   Servicios
                 </Link>
               </li>
@@ -179,10 +167,8 @@ export default async function LandingPage({ params }: LandingPageProps) {
             </ul>
           </div>
 
-          <div className="hairline my-16" />
-
           {/* Servicios */}
-          <section aria-labelledby="ofertas">
+          <section aria-labelledby="ofertas" className="mt-16">
             <h2 id="ofertas" className="display-m text-foreground">
               {landing.offersTitle}
             </h2>
@@ -190,7 +176,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
               {landing.offers.map((offer) => (
                 <div
                   key={offer.title}
-                  className="rounded-lg border border-border bg-card p-7"
+                  className="holo-surface holo-corners p-7"
                 >
                   <h3 className="text-lg font-semibold text-foreground">
                     {offer.title}
@@ -213,9 +199,9 @@ export default async function LandingPage({ params }: LandingPageProps) {
                 {landing.process.map((step) => (
                   <li
                     key={step.title}
-                    className="rounded-lg border border-border p-6"
+                    className="holo-surface holo-corners p-6"
                   >
-                    <h3 className="font-mono text-sm uppercase tracking-widest text-accent">
+                    <h3 className="micro-label micro-label-accent">
                       {step.title}
                     </h3>
                     <p className="mt-3 text-sm leading-relaxed text-muted">
@@ -229,15 +215,15 @@ export default async function LandingPage({ params }: LandingPageProps) {
 
           {/* Prueba local */}
           <section aria-label="Clientes y resultados" className="mt-20">
-            <blockquote className="rounded-lg border border-border bg-card p-8 md:p-10">
+            <blockquote className="holo-surface holo-corners p-8 md:p-10">
               <p className="prose-body text-lg">{landing.proof}</p>
               <a
                 href={BUSINESS.mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-5 inline-block font-mono text-xs uppercase tracking-widest text-accent transition-colors hover:text-foreground"
+                className="link-sweep micro-label micro-label-accent mt-5 inline-block hover:text-foreground"
               >
-                Ver reseñas en Google Maps →
+                Ver reseñas en Google Maps
               </a>
             </blockquote>
           </section>
@@ -251,14 +237,14 @@ export default async function LandingPage({ params }: LandingPageProps) {
               {landing.faqs.map((faq) => (
                 <details
                   key={faq.q}
-                  className="group rounded-lg border border-border bg-card"
+                  className="disclosure holo-surface holo-corners group"
                 >
                   <summary className="cursor-pointer list-none p-6 font-medium text-foreground transition-colors hover:text-accent [&::-webkit-details-marker]:hidden">
                     <span className="flex items-start justify-between gap-4">
                       {faq.q}
                       <span
                         aria-hidden
-                        className="text-accent transition-transform group-open:rotate-45"
+                        className="shrink-0 text-accent transition-transform group-open:rotate-45"
                       >
                         +
                       </span>
@@ -273,7 +259,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
           {/* CTA */}
           <section
             aria-label="Contacto"
-            className="mt-20 rounded-lg border border-border bg-card p-8 text-center md:p-14"
+            className="holo-surface holo-corners mt-20 p-8 text-center md:p-14"
           >
             <h2 className="display-m text-foreground">
               Cuéntanos tu proyecto
@@ -283,18 +269,12 @@ export default async function LandingPage({ params }: LandingPageProps) {
               compromiso y sin letra pequeña.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <a
-                href={BUSINESS.whatsappUrl}
-                className="rounded-full bg-accent px-7 py-3.5 font-medium text-background transition-transform hover:scale-105"
-              >
+              <HoloButton href={BUSINESS.whatsappUrl} variant="solid">
                 Hablar por WhatsApp
-              </a>
-              <a
-                href={`mailto:${BUSINESS.email}`}
-                className="rounded-full border border-border px-7 py-3.5 font-medium text-foreground transition-colors hover:border-accent"
-              >
+              </HoloButton>
+              <HoloButton href={`mailto:${BUSINESS.email}`} data>
                 {BUSINESS.email}
-              </a>
+              </HoloButton>
             </div>
             <p className="mt-6 font-mono text-xs uppercase tracking-widest text-muted">
               {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
@@ -308,21 +288,15 @@ export default async function LandingPage({ params }: LandingPageProps) {
             <ul className="mt-5 flex flex-wrap gap-3">
               {landing.related.map((rel) => (
                 <li key={rel.slug}>
-                  <Link
-                    href={`/${rel.slug}`}
-                    className="inline-block rounded-full border border-border px-5 py-2.5 text-sm text-foreground transition-colors hover:border-accent hover:text-accent"
-                  >
+                  <HoloButton href={`/${rel.slug}`} size="sm">
                     {rel.label}
-                  </Link>
+                  </HoloButton>
                 </li>
               ))}
               <li>
-                <Link
-                  href="/servicios"
-                  className="inline-block rounded-full border border-border px-5 py-2.5 text-sm text-muted transition-colors hover:border-accent hover:text-accent"
-                >
+                <HoloButton href="/servicios" size="sm">
                   Todos los servicios
-                </Link>
+                </HoloButton>
               </li>
             </ul>
           </nav>
@@ -336,7 +310,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
             {BUSINESS.address.locality}, {BUSINESS.address.region}
           </p>
           <p>
-            <a href={`mailto:${BUSINESS.email}`} className="hover:text-accent">
+            <a href={`mailto:${BUSINESS.email}`} className="link-sweep hover:text-accent">
               {BUSINESS.email}
             </a>{" "}
             · {BUSINESS.phoneDisplay}

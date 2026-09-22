@@ -60,14 +60,14 @@ export function LegalEntityCard() {
 
         <dt>Correo electrónico</dt>
         <dd>
-          <a href={`mailto:${BUSINESS.email}`} className="hover:text-accent">
+          <a href={`mailto:${BUSINESS.email}`} className="link-sweep hover:text-accent">
             {BUSINESS.email}
           </a>
         </dd>
 
         <dt>Teléfono</dt>
         <dd>
-          <a href={`tel:${BUSINESS.phoneE164}`} className="hover:text-accent">
+          <a href={`tel:${BUSINESS.phoneE164}`} className="link-sweep hover:text-accent">
             {BUSINESS.phoneDisplay}
           </a>
         </dd>

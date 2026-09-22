@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navigation } from "@/data/navigation";
@@ -79,10 +80,11 @@ function useHideOnScroll(): boolean {
 }
 
 /**
- * Header "holograma": un panel proyectado a todo el ancho con el mismo lenguaje
- * que la flecha holográfica del barco (`port/Ship.tsx`): lima translúcido,
- * borde fresnel, barrido que sube, parpadeo y doble imagen. Sin degradado en
- * la home: se proyecta sobre el cielo pintado. Geometría en `Header.module.css`.
+ * Header "holograma": una cápsula proyectada, centrada arriba y ajustada a su
+ * contenido (no ocupa el ancho de la pantalla), con el mismo lenguaje que la
+ * flecha holográfica del barco (`port/Ship.tsx`): lima translúcido, borde
+ * fresnel, barrido que sube, parpadeo y doble imagen. Sin degradado en la
+ * home: se proyecta sobre el cielo pintado. Geometría en `Header.module.css`.
  */
 export function Header() {
   const pathname = usePathname();
@@ -124,35 +126,58 @@ export function Header() {
       {pathname !== "/" && (
         <div
           aria-hidden
-          className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-background to-transparent"
+          className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-background to-transparent"
         />
       )}
 
       <nav
-        aria-label="Main navigation"
-        className={`${styles.panel} relative mx-6 mt-5 pointer-events-auto`}
+        aria-label={t.nav.ariaLabel}
+        data-testid="main-nav"
+        className={`${styles.panel} relative mx-auto mt-3 w-fit max-w-[calc(100%-1.5rem)] pointer-events-auto`}
       >
         <span aria-hidden className={`${styles.corner} ${styles.tl}`} />
         <span aria-hidden className={`${styles.corner} ${styles.tr}`} />
         <span aria-hidden className={`${styles.corner} ${styles.bl}`} />
         <span aria-hidden className={`${styles.corner} ${styles.br}`} />
 
-        {/* Marca + telemetría: pantalla de a bordo */}
-        <Link
-          href="/"
-          aria-label="Action — Home"
-          className={styles.brand}
-          onClick={handleLogoClick}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logos/logo.webp" alt="Action Development" className={styles.logo} />
+        {/*
+          Marca + telemetría: pantalla de a bordo.
+
+          La telemetría va FUERA del `<a>`, y no dentro como antes. Un reloj no
+          es la etiqueta de un enlace "ir al inicio": iba `aria-hidden`, pero
+          axe compara el nombre accesible con lo que se VE dentro del elemento,
+          así que "VIGO 42.24°N … 12:34 · dia" contaba como etiqueta visible y
+          el enlace fallaba WCAG 2.5.3 (Label in Name). Sacándola, el enlace se
+          llama por su `aria-label` y su zona de click se limita al logo, que es
+          lo único que de verdad lleva al inicio. El `div.brand` conserva la
+          geometría (mismo flex, mismo gap de 10px).
+        */}
+        <div className={styles.brand}>
+          <Link
+            href="/"
+            aria-label={t.nav.brandHome}
+            className={styles.brandLink}
+            onClick={handleLogoClick}
+          >
+            {/*
+              20px de alto sobre un original de 1563×625: en crudo eran 68 KB en
+              CADA página (y Next lo precargaba). Por `next/image` baja el
+              tamaño servido y las dimensiones explícitas evitan el reflow.
+            */}
+            <Image
+              src="/logos/logo.webp"
+              alt=""
+              width={50}
+              height={20}
+              priority
+              className={styles.logo}
+            />
+          </Link>
           <span aria-hidden className={`${styles.divider} hidden lg:block`} />
-          <span aria-hidden className={`${styles.telemetry} ${styles.glow} hidden lg:flex`}>
-            <span className={styles.status}>
-              <span className={styles.led} />
-              <span>
-                VIGO · <b>{COORDS}</b>
-              </span>
+          <span aria-hidden className={`${styles.telemetry} ${styles.glow} hidden lg:inline-flex`}>
+            <span className={styles.led} />
+            <span>
+              VIGO<b className="hidden 2xl:inline"> {COORDS}</b> ·
             </span>
             <span>
               {telemetry ? (
@@ -167,7 +192,7 @@ export function Header() {
               <span className={styles.cursor} />
             </span>
           </span>
-        </Link>
+        </div>
 
         <span aria-hidden className={`${styles.divider} hidden md:block`} />
 
@@ -197,8 +222,10 @@ export function Header() {
           type="button"
           onClick={() => setLocale(locale === "en" ? "es" : "en")}
           aria-label={locale === "es" ? "Switch to English" : "Cambiar a español"}
-          className={`${styles.switch} hidden md:inline-flex`}
+          data-lang={locale}
+          className={`${styles.switch} hidden md:inline-grid`}
         >
+          <span aria-hidden className={styles.thumb} />
           <span className={styles.seg} data-on={locale === "es"}>ES</span>
           <span className={styles.seg} data-on={locale === "en"}>EN</span>
         </button>

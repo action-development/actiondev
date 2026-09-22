@@ -7,6 +7,10 @@ export interface Translations {
     reviews: string;
     contact: string;
     cta: string;
+    /** Nombre accesible del `<nav>` del Header. */
+    ariaLabel: string;
+    /** Nombre accesible del enlace del logo (la telemetría no lo nombra). */
+    brandHome: string;
   };
   hero: {
     label: string;

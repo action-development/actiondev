@@ -7,7 +7,8 @@
 /*   • Color:  dark-first. Accent lime used in ≤ 3 moments per     */
 /*     page (brand dot, active state, CTA signal).                 */
 /*   • Radius: 4px atomic. md=8, lg=16, pill=∞. Nothing else.      */
-/*   • Shadow: none. Dark UI uses hairlines (rgba white ≤0.08).    */
+/*   • Shadow: sin sombras difusas. La UI es FÍSICA: contorno de   */
+/*     tinta + canto duro (`0 4px 0`). Hairlines solo para reglas. */
 /*   • Motion: one curve, two durations. No bespoke easings.       */
 /*   • Type:   Space Grotesk y nada más. Una sola familia para      */
 /*     display, cuerpo y etiquetas: el contraste lo dan peso, caja  */
@@ -35,6 +36,16 @@
      inyectada en el `<html>`). Fallback de sistema solo para el instante
      antes de que `next/font` hidrate esa variable. */
   --font-primary: var(--font-space-grotesk), "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* ── Holograma ──────────────────────────────────────────────────
+     El lenguaje del hero: el Header, el HUD de la grúa y la flecha sobre
+     la bodega del barco (`port/Ship.tsx`, HOLO_FRAG) son la MISMA
+     proyección. Estas variables lo sacan del `Header.module.css` para
+     que lo use toda la web. */
+  --holo-edge:  #eaffb0;                  /* borde fresnel, más claro que el lima */
+  --holo-dim:   rgba(200, 255, 0, 0.10);  /* relleno del estado activo */
+  --holo-glass: rgba(8, 8, 8, 0.30);      /* cristal bajo el proyector */
+  --holo-line:  rgba(234, 255, 176, 0.30);/* contorno */
 
   /* Radius scale — do not introduce other values. */
   --radius-sm:   4px;
@@ -171,6 +182,8 @@ body {
   color:       var(--muted);
 }
 
+.micro-label-accent { color: var(--accent); }
+
 /* Acento del titular sin recurrir al italic + color. Con una sola familia el
    contraste lo dan caja alta + tracking + cuerpo menor, no otra tipografía. */
 .accent-word {
@@ -182,6 +195,408 @@ body {
   color:       var(--accent);
   vertical-align: 0.05em; /* optical baseline compensation */
   white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  HOLOGRAMA — primitivas compartidas                             */
+/*                                                                 */
+/*  La estética del hero disponible en todo el sitio. Regla única:  */
+/*  la UI no está impresa sobre la página, está PROYECTADA sobre    */
+/*  ella. De ahí todo lo demás:                                     */
+/*                                                                 */
+/*   • ESQUINAS VIVAS. Un proyector no redondea: `border-radius: 0` */
+/*     en todo lo interactivo. El radio queda para pilotos y        */
+/*     medallones (círculos completos), nunca para botones.         */
+/*   • Contorno fresnel (`--holo-edge`), más claro que el relleno.  */
+/*   • Barrido de franjas que SUBEN, igual que en el shader         */
+/*     (`fract(vY*5 - t)`), y parpadeo con tartamudeo.              */
+/*   • Doble imagen desfasada: la interferencia del proyector.      */
+/*   • Corchetes en las esquinas: la retícula que encuadra.         */
+/*                                                                 */
+/*  Fuente original: `layout/Header.module.css`. Los módulos del    */
+/*  hero conservan su copia porque animan piezas propias; esto es   */
+/*  para el resto de la web.                                        */
+/* ─────────────────────────────────────────────────────────────── */
+
+@keyframes holo-scan {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to   { background-position: 0 -8px, 0 0, 0 0; }
+}
+/* Parpadeo leve con dos tartamudeos por ciclo. */
+@keyframes holo-flicker {
+  0%, 100% { opacity: 1; }
+  41%      { opacity: 0.94; }
+  42%      { opacity: 1; }
+  77%      { opacity: 0.96; }
+  78%      { opacity: 1; }
+}
+
+/*
+ * Van en `@layer components` A PROPÓSITO.
+ *
+ * Sin capa, estas reglas son CSS sin capa y ganan a TODA utilidad de Tailwind
+ * (las utilidades viven en `@layer utilities`, y cualquier declaración fuera de
+ * capas vence a cualquier declaración dentro de una). Eso ya rompió tres cosas
+ * durante este barrido: `.holo-link{display:block}` se comía el `flex` de la
+ * tarjeta de contacto, `.holo-btn{position:relative}` se comía el `absolute`
+ * del botón de cerrar de la ficha de reseña, y `.micro-label{color}` se comía
+ * `text-accent`. Dentro de `components`, la utilidad manda siempre y el
+ * componente es sólo el punto de partida — que es como se espera que funcione.
+ */
+@layer components {
+  /* ── Superficie proyectada ────────────────────────────────────── */
+  /* NO fija el color del texto: una tarjeta de contenido necesita
+     `--foreground` legible dentro del marco. El tinte lima se pide aparte
+     con `.holo-tint`.
+     Quieta por defecto, y a propósito. El barrido anima `background-position`,
+     que REPINTA el elemento en cada frame: en el Header es un nodo, pero una
+     rejilla de diez tarjetas repintando a 60 fps se nota. Las franjas están
+     igualmente ahí (es lo que hace que lea como proyección); lo que se pide
+     aparte, y sólo para el chrome, es que se muevan (`.holo-live`).
+     `.holo-glass` añade el desenfoque de fondo, que sólo tiene sentido cuando
+     hay algo detrás — sobre un fondo sólido es coste sin efecto. */
+  .holo-surface {
+    position: relative;
+    border: 1px solid var(--holo-line);
+    border-radius: 0;
+    background:
+      repeating-linear-gradient(to top, rgba(200, 255, 0, 0.035) 0 3px, transparent 3px 8px),
+      linear-gradient(to bottom, rgba(200, 255, 0, 0.055), rgba(200, 255, 0, 0.018) 30%, rgba(200, 255, 0, 0.018) 70%, rgba(200, 255, 0, 0.055)),
+      var(--holo-glass);
+    background-size: 100% 8px, 100% 100%, 100% 100%;
+    box-shadow:
+      inset 0 0 0 1px rgba(200, 255, 0, 0.06),
+      inset 0 0 10px rgba(200, 255, 0, 0.04),
+      0 0 8px rgba(200, 255, 0, 0.07);
+  }
+  /* Proyector encendido: barrido + parpadeo. Sólo para el chrome. */
+  .holo-live {
+    animation:
+      holo-scan 2.2s linear infinite,
+      holo-flicker 7s steps(1, end) infinite;
+  }
+  /* Cristal: sólo si hay algo detrás (canvas 3D, imagen). */
+  .holo-glass {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  /* Respaldo opaco. La proyección da por supuesto un fondo oscuro detrás: sobre
+     el cielo claro de la plaza de día (`plaza-mode.ts`, `skyHorizon: #d3e2ee`)
+     el cristal al 30 % deja un lavado pálido y el texto `--foreground` encima no
+     se lee. Esto conserva TODO el lenguaje —franjas, fresnel, corchetes— y sólo
+     cierra el fondo, para superficies que llevan texto largo sobre algo claro. */
+  .holo-solid {
+    background:
+      repeating-linear-gradient(to top, rgba(200, 255, 0, 0.035) 0 3px, transparent 3px 8px),
+      linear-gradient(to bottom, rgba(200, 255, 0, 0.055), rgba(200, 255, 0, 0.018) 30%, rgba(200, 255, 0, 0.018) 70%, rgba(200, 255, 0, 0.055)),
+      rgba(8, 8, 8, 0.94);
+    background-size: 100% 8px, 100% 100%, 100% 100%;
+  }
+
+  /* Doble imagen: el mismo contorno desplazado. */
+  .holo-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translate(2px, -1px);
+    border: 1px solid rgba(200, 255, 0, 0.11);
+    pointer-events: none;
+  }
+
+  /* Texto proyectado. */
+  .holo-tint {
+    color: var(--accent);
+    text-shadow:
+      0 0 6px rgba(200, 255, 0, 0.22),
+      1px 1px 0 rgba(200, 255, 0, 0.12);
+  }
+
+  /* ── Corchetes de esquina ─────────────────────────────────────── */
+  /* Ocho degradados en UN pseudoelemento en lugar de cuatro <span>: el
+     Header los pinta con nodos porque los necesita por separado, pero una
+     tarjeta de contenido no debe cargar con cuatro hijos decorativos. */
+  .holo-corners::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    pointer-events: none;
+    --b: linear-gradient(var(--holo-edge), var(--holo-edge));
+    background:
+      var(--b) 0 0 / 9px 1.25px no-repeat,
+      var(--b) 0 0 / 1.25px 9px no-repeat,
+      var(--b) 100% 0 / 9px 1.25px no-repeat,
+      var(--b) 100% 0 / 1.25px 9px no-repeat,
+      var(--b) 0 100% / 9px 1.25px no-repeat,
+      var(--b) 0 100% / 1.25px 9px no-repeat,
+      var(--b) 100% 100% / 9px 1.25px no-repeat,
+      var(--b) 100% 100% / 1.25px 9px no-repeat;
+    filter: drop-shadow(0 0 3px rgba(200, 255, 0, 0.3));
+  }
+
+  /* Superficie que además es un enlace: el proyector la enfoca al apuntarla. */
+  .holo-link {
+    /* Un `<Link>` de Next es un `<a>`, y un `<a>` es inline: sin esto la
+       tarjeta no envuelve a sus hijos y la caja se desploma detrás del texto.
+       Puede convivir con `flex`/`grid` porque estas primitivas viven en
+       `@layer components` y cualquier utilidad de Tailwind las pisa. */
+    display: block;
+    transition:
+      border-color var(--duration) var(--ease),
+      box-shadow var(--duration) var(--ease),
+      transform var(--duration) var(--ease);
+  }
+  .holo-link:hover,
+  .holo-link:focus-visible {
+    border-color: var(--holo-edge);
+    box-shadow:
+      inset 0 0 0 1px rgba(200, 255, 0, 0.12),
+      inset 0 0 14px rgba(200, 255, 0, 0.07),
+      0 0 16px rgba(200, 255, 0, 0.16);
+    transform: translateY(-2px);
+  }
+  /* Al pulsar, la tarjeta se POSA: deshace la elevación del hover en vez de
+     hundirse por debajo del plano. Rápido y con la curva seca — el acuse de
+     recibo de un clic llega tarde con los 320ms del hover. */
+  .holo-link:active {
+    transform: translateY(0);
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-snap);
+  }
+  .holo-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* ── Botón: chapa física, canto duro ──────────────────────────── */
+  /* Mismo lenguaje que la chapa de categoría del carrusel de `/projects`
+     (`projects-hud.module.css` → `.tag`): contorno grueso, relleno plano,
+     sombra SIN difuminar y desplazada — nunca blur/glow. Es el botón único
+     del sitio (/servicios, las landings, /contact, el 404), así que un
+     solo cambio le da esta identidad a todos los CTA de la web. Contorno
+     y sombra van en `--accent`, no en tinta oscura: sobre el fondo casi
+     negro del sitio una sombra oscura se funde con el fondo y pierde el
+     canto; en lima se ve en cualquier página. Al presionar, la chapa
+     "se hunde" hacia su sombra — como un botón físico, no un halo que
+     se enciende. */
+  .holo-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px; /* objetivo táctil WCAG 2.5.8 */
+    padding: 0 18px;
+    border: 2px solid var(--accent);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    box-shadow: 4px 4px 0 0 var(--accent);
+    color: var(--accent);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    cursor: pointer;
+    transition:
+      color var(--duration) var(--ease),
+      box-shadow var(--duration) var(--ease),
+      transform var(--duration-fast) var(--ease-snap);
+  }
+  /* El relleno. `transform` en vez de `width`: no relayoutea el texto. */
+  .holo-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform var(--duration-slow) var(--ease);
+  }
+  /* Cualquier hijo va POR ENCIMA del relleno. */
+  .holo-btn > * { position: relative; z-index: 1; }
+  .holo-btn:hover,
+  .holo-btn:focus-visible {
+    color: var(--background);
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 0 var(--accent);
+  }
+  .holo-btn:hover::after,
+  .holo-btn:focus-visible::after { transform: scaleX(1); }
+  /* Pulsado: la chapa cede del todo hacia su sombra. Sin esto un clic no
+     acusa nada hasta que la página cambia — y en `mailto:`/`wa.me`, donde
+     lo que se abre es otra aplicación, no cambia nada en absoluto. */
+  .holo-btn:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0 0 0 0 var(--accent);
+  }
+  .holo-btn:focus-visible { outline: 2px solid var(--foreground); outline-offset: 3px; }
+  /* Sólido de salida: la acción principal ya está materializada — chapa ya
+     rellena, contorno oscuro (lee sobre el lima), sombra en `--foreground`
+     para que siga visible aunque el relleno ya sea lima. */
+  .holo-btn-solid {
+    border-color: var(--background);
+    background: var(--accent);
+    box-shadow: 4px 4px 0 0 var(--foreground);
+    color: var(--background);
+  }
+  .holo-btn-solid:hover,
+  .holo-btn-solid:focus-visible { box-shadow: 2px 2px 0 0 var(--foreground); }
+  .holo-btn-solid:active { box-shadow: 0 0 0 0 var(--foreground); }
+  .holo-btn-solid::after { display: none; }
+  .holo-btn-sm {
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 0.625rem;
+    box-shadow: 3px 3px 0 0 var(--accent);
+  }
+  .holo-btn-sm:hover, .holo-btn-sm:focus-visible { box-shadow: 1px 1px 0 0 var(--accent); }
+  .holo-btn-sm:active { box-shadow: 0 0 0 0 var(--accent); }
+  /* Botón de sólo icono (cerrar, etc.): cuadrado exacto, sin padding lateral. */
+  .holo-btn-icon {
+    min-height: 0;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    font-size: 0.875rem;
+  }
+  /* Botón que lleva un DATO (correo, teléfono): se lee tal cual. */
+  .holo-btn-data {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  /* ── Chapa en reposo ───────────────────────────────────────────── */
+  /* Misma familia que `.holo-btn` — contorno grueso + sombra dura
+     desplazada, sin blur — pero apagada: sombra en `--border`, no en
+     accent, para que la tarjeta no compita por atención. `/contact` es
+     exactamente eso: el visitante viene a coger un teléfono, no a que
+     le impresionen (por eso también se descartó la variante `aspect-square`
+     sin radio — dejaba un hueco muerto en el centro; esta conserva la fila
+     icono+texto+flecha, solo cambia el contorno). Al apuntar, la sombra
+     pasa a accent y al pulsar la chapa cede hacia ella, como el botón. */
+  .calm-surface {
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--card);
+    box-shadow: 3px 3px 0 0 var(--border);
+    transition:
+      border-color var(--duration) var(--ease),
+      background var(--duration) var(--ease),
+      box-shadow var(--duration) var(--ease),
+      transform var(--duration-fast) var(--ease-snap);
+  }
+  .calm-surface:hover {
+    border-color: var(--accent);
+    background: var(--card-hover);
+    box-shadow: 1px 1px 0 0 var(--accent);
+    transform: translate(2px, 2px);
+  }
+  .calm-surface:active { box-shadow: 0 0 0 0 var(--accent); transform: translate(3px, 3px); }
+  .calm-surface:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* Botón tranquilo: sin relleno que barre, sin halo. */
+  .holo-btn-quiet {
+    border-color: var(--border);
+    background: transparent;
+    box-shadow: none;
+    color: color-mix(in srgb, var(--foreground) 78%, transparent);
+  }
+  .holo-btn-quiet::after { display: none; }
+  .holo-btn-quiet:hover,
+  .holo-btn-quiet:focus-visible {
+    border-color: var(--accent);
+    background: transparent;
+    box-shadow: none;
+    color: var(--accent);
+    text-shadow: none;
+  }
+
+  /* ── Enlace de texto ──────────────────────────────────────────── */
+  /* Un pie de página, unas migas de pan o una ficha de datos no llevan botón:
+     llevan texto que resulta ser un enlace. Hasta ahora eso era un
+     `hover:text-accent` suelto y, en cinco sitios, SIN transición: el color
+     saltaba de golpe, fuera del sistema de una curva y dos duraciones.
+     El gesto es el mismo que el relleno del botón —barre desde la izquierda—
+     pero reducido a un filete de 1px, que es todo lo que un enlace de texto
+     necesita para declararse. `scaleX` y no `width`: no relayoutea.
+     El color NO se fija aquí: `text-*` de Tailwind vive en `@layer utilities` y
+     pisaría cualquier `:hover` declarado en `components` — el estado lo sigue
+     poniendo `hover:text-accent` en el JSX, que es la convención del resto del
+     árbol. Esta primitiva aporta el filete y la curva. */
+  .link-sweep {
+    position: relative;
+    transition: color var(--duration) var(--ease);
+  }
+  .link-sweep::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform var(--duration) var(--ease);
+  }
+  .link-sweep:hover::after,
+  .link-sweep:focus-visible::after { transform: scaleX(1); }
+
+  /* ── Desplegable ──────────────────────────────────────────────── */
+  /* Las FAQ de las landings. Un `<details>` abre de golpe: el bloque de texto
+     aparece ya colocado y el ojo tiene que volver a buscar dónde estaba. Esto
+     lo hace crecer, que es la única forma de enseñar QUÉ ha cambiado.
+     `::details-content` + `interpolate-size` es lo que permite animar hasta
+     `auto` sin medir con JS — y estas páginas son server components puros, así
+     que JS no es una opción. Donde el navegador no lo soporta, la regla entera
+     se descarta y queda la apertura seca de hoy: se degrada al estado actual,
+     no a uno roto. */
+  .disclosure {
+    interpolate-size: allow-keywords;
+  }
+  .disclosure::details-content {
+    block-size: 0;
+    overflow: clip;
+    opacity: 0;
+    transition:
+      block-size var(--duration) var(--ease),
+      opacity var(--duration) var(--ease),
+      content-visibility var(--duration) allow-discrete;
+  }
+  .disclosure[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+
+  /* ── Piloto ───────────────────────────────────────────────────── */
+  .holo-led {
+    width: 5px;
+    height: 5px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--holo-edge);
+    box-shadow: 0 0 5px rgba(200, 255, 0, 0.45);
+    animation: holo-pulse 2s ease-in-out infinite;
+  }
+  @keyframes holo-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .holo-live, .holo-led { animation: none; }
+    .holo-btn, .holo-btn::after, .holo-link { transition: none; }
+    .holo-link:hover { transform: none; }
+    /* El acuse de recibo del clic se conserva —es información, no adorno—
+       pero llega sin recorrido: el cambio de estado, no el viaje. */
+    .link-sweep, .link-sweep::after, .calm-surface { transition: none; }
+    .link-sweep::after { transform: scaleX(1); opacity: 0; }
+    .link-sweep:hover::after,
+    .link-sweep:focus-visible::after { opacity: 1; }
+    .disclosure::details-content { transition: none; }
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────── */

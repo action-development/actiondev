@@ -5,17 +5,24 @@
 /*  barco (`port/Ship.tsx`, HOLO_FRAG): lima aditivo translúcido,  */
 /*  borde fresnel más claro (#eaffb0), líneas de barrido que       */
 /*  suben, parpadeo de proyector con tartamudeo y doble imagen     */
-/*  desfasada. Un único panel proyectado a todo el ancho.          */
+/*  desfasada.                                                     */
+/*                                                                 */
+/*  El panel NO ocupa el ancho de la pantalla: es una cápsula que  */
+/*  se ajusta a su contenido y queda centrada arriba (44px de      */
+/*  alto). Menos superficie = menos intrusión sobre el cielo       */
+/*  pintado de la home y sobre el contenido de las demás páginas,  */
+/*  y la franja superior del canvas queda libre para los clicks    */
+/*  del juego.                                                     */
 /* ─────────────────────────────────────────────────────────────── */
 /* Contenedor fijo: se esconde hacia arriba al bajar y vuelve al subir. Se
-   desplaza 8rem (panel 64 + margen 20 + fundido de 112 fuera de la home) para
+   desplaza 6rem (panel 44 + margen 12 + fundido de 80 fuera de la home) para
    que no asome ni el degradado. `focus-within` lo mantiene visible al navegar
    con teclado. */
 .shell {
   transition: transform var(--duration-slow) var(--ease);
   will-change: transform;
 }
-.shell[data-hidden="true"]:not(:focus-within) { transform: translateY(-8rem); }
+.shell[data-hidden="true"]:not(:focus-within) { transform: translateY(-6rem); }
 
 .panel {
   --holo:      var(--accent);
@@ -24,22 +31,22 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 28px;
-  height: 64px;
-  padding: 0 22px;
+  gap: 14px;
+  height: 44px;
+  padding: 0 12px;
   color: var(--holo);
-  border: 1px solid rgba(234, 255, 176, 0.38);
+  border: 1px solid rgba(234, 255, 176, 0.30);
   background:
     /* Barrido: franjas que suben, como en el shader (fract(vY*5 - t)). */
-    repeating-linear-gradient(to top, rgba(200, 255, 0, 0.045) 0 3px, transparent 3px 8px),
+    repeating-linear-gradient(to top, rgba(200, 255, 0, 0.035) 0 3px, transparent 3px 8px),
     /* Interior translúcido: más denso cerca de los bordes (fresnel). */
-    linear-gradient(to bottom, rgba(200, 255, 0, 0.07), rgba(200, 255, 0, 0.025) 30%, rgba(200, 255, 0, 0.025) 70%, rgba(200, 255, 0, 0.07)),
-    rgba(8, 8, 8, 0.34);
+    linear-gradient(to bottom, rgba(200, 255, 0, 0.055), rgba(200, 255, 0, 0.018) 30%, rgba(200, 255, 0, 0.018) 70%, rgba(200, 255, 0, 0.055)),
+    rgba(8, 8, 8, 0.30);
   background-size: 100% 8px, 100% 100%, 100% 100%;
   box-shadow:
-    inset 0 0 0 1px rgba(200, 255, 0, 0.08),
-    inset 0 0 14px rgba(200, 255, 0, 0.05),
-    0 0 10px rgba(200, 255, 0, 0.10);
+    inset 0 0 0 1px rgba(200, 255, 0, 0.06),
+    inset 0 0 10px rgba(200, 255, 0, 0.04),
+    0 0 8px rgba(200, 255, 0, 0.07);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation:
@@ -52,18 +59,18 @@
   position: absolute;
   inset: 0;
   transform: translate(2px, -1px);
-  border: 1px solid rgba(200, 255, 0, 0.14);
+  border: 1px solid rgba(200, 255, 0, 0.11);
   pointer-events: none;
 }
 /* Haz del proyector: el borde inferior se difumina hacia abajo. */
 .panel::after {
   content: "";
   position: absolute;
-  left: 6%;
-  right: 6%;
+  left: 8%;
+  right: 8%;
   top: 100%;
-  height: 18px;
-  background: linear-gradient(to bottom, rgba(200, 255, 0, 0.10), transparent);
+  height: 12px;
+  background: linear-gradient(to bottom, rgba(200, 255, 0, 0.07), transparent);
   pointer-events: none;
 }
 @keyframes holo-scan {
@@ -82,11 +89,11 @@
 /* Corchetes de las esquinas, en el color del borde fresnel. */
 .corner {
   position: absolute;
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid var(--holo-edge);
+  width: 8px;
+  height: 8px;
+  border: 1.25px solid var(--holo-edge);
   pointer-events: none;
-  filter: drop-shadow(0 0 3px rgba(200, 255, 0, 0.35));
+  filter: drop-shadow(0 0 3px rgba(200, 255, 0, 0.3));
 }
 .tl { top: -2px; left: -2px;  border-right: 0; border-bottom: 0; }
 .tr { top: -2px; right: -2px; border-left: 0;  border-bottom: 0; }
@@ -96,60 +103,71 @@
 /* Texto proyectado: brillo + doble imagen desfasada. */
 .glow {
   text-shadow:
-    0 0 6px rgba(200, 255, 0, 0.25),
-    1px 1px 0 rgba(200, 255, 0, 0.14);
+    0 0 6px rgba(200, 255, 0, 0.22),
+    1px 1px 0 rgba(200, 255, 0, 0.12);
 }
 
 .divider {
   width: 1px;
-  height: 34px;
-  background: linear-gradient(to bottom, transparent, rgba(234, 255, 176, 0.4), transparent);
+  height: 20px;
+  background: linear-gradient(to bottom, transparent, rgba(234, 255, 176, 0.35), transparent);
 }
 
 /* ── Marca + telemetría ───────────────────────────────────────── */
+/* Contenedor, NO enlace: la telemetría va aquí al lado del logo pero fuera
+   del `<a>` (ver el comentario en Header.tsx — WCAG 2.5.3). Misma geometría
+   que antes, para que la cápsula no cambie de ancho. */
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   height: 100%;
 }
-.brand:focus-visible { outline: 2px solid var(--holo-edge); outline-offset: 4px; }
+/* El enlace al inicio: ahora solo envuelve el logo. */
+.brandLink {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+}
+.brandLink:focus-visible { outline: 2px solid var(--holo-edge); outline-offset: 3px; }
 .logo {
-  height: 26px;
+  height: 20px;
   width: auto;
   /* Logo proyectado en lima: invertido y teñido con el color del holograma. */
   filter: invert(1) sepia(0.6) saturate(3) hue-rotate(35deg) brightness(1.05);
   opacity: 0.9;
+  transition: opacity var(--duration) var(--ease);
 }
+/* La marca es un enlace y era lo único del panel que no acusaba el puntero. */
+.brandLink:hover .logo { opacity: 1; }
+/* Una sola línea (antes dos): la altura del panel la marca el contenido más
+   alto, y dos filas de mono obligaban a 64px. Las coordenadas solo aparecen
+   cuando sobra ancho (2xl). */
 .telemetry {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-family: var(--font-mono), monospace;
   font-size: 9px;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   line-height: 1;
-  color: rgba(234, 255, 176, 0.8);
+  color: rgba(234, 255, 176, 0.75);
   white-space: nowrap;
 }
 .telemetry b {
   font-weight: 700;
   color: var(--holo);
 }
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
 .led {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--holo-edge);
-  box-shadow: 0 0 5px rgba(200, 255, 0, 0.5);
+  box-shadow: 0 0 5px rgba(200, 255, 0, 0.45);
   animation: holo-pulse 2s ease-in-out infinite;
+  flex: none;
 }
 @keyframes holo-pulse {
   0%, 100% { opacity: 1; }
@@ -157,9 +175,9 @@
 }
 .cursor {
   display: inline-block;
-  width: 5px;
-  height: 9px;
-  margin-left: 3px;
+  width: 4px;
+  height: 8px;
+  margin-left: 2px;
   background: var(--holo);
   box-shadow: none;
   vertical-align: -1px;
@@ -169,13 +187,12 @@
   50% { opacity: 0; }
 }
 
-/* ── Navegación: índice + etiqueta, retícula proyectada ───────── */
+/* ── Navegación: etiqueta con retícula proyectada ─────────────── */
 .nav {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  flex: 1;
+  gap: 2px;
   height: 100%;
 }
 .link {
@@ -183,12 +200,12 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  height: 36px;
-  padding: 0 18px;
+  height: 28px;
+  padding: 0 11px;
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   color: rgba(234, 255, 176, 0.78);
   transition: color var(--duration) var(--ease), background var(--duration) var(--ease), text-shadow var(--duration) var(--ease);
@@ -198,21 +215,21 @@
 .link::after {
   content: "";
   position: absolute;
-  top: 5px;
-  bottom: 5px;
-  width: 7px;
-  border: 1.5px solid var(--holo-edge);
-  filter: drop-shadow(0 0 3px rgba(200, 255, 0, 0.4));
+  top: 4px;
+  bottom: 4px;
+  width: 5px;
+  border: 1.25px solid var(--holo-edge);
+  filter: drop-shadow(0 0 3px rgba(200, 255, 0, 0.35));
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease), transform var(--duration) var(--ease);
 }
-.link::before { left: 0;  border-right: 0; transform: translateX(-8px); }
-.link::after  { right: 0; border-left: 0;  transform: translateX(8px); }
+.link::before { left: 0;  border-right: 0; transform: translateX(-6px); }
+.link::after  { right: 0; border-left: 0;  transform: translateX(6px); }
 .link:hover,
 .link:focus-visible,
 .link[aria-current="page"] {
   color: var(--holo-edge);
-  text-shadow: 0 0 6px rgba(200, 255, 0, 0.35), 1px 1px 0 rgba(200, 255, 0, 0.15);
+  text-shadow: 0 0 6px rgba(200, 255, 0, 0.3), 1px 1px 0 rgba(200, 255, 0, 0.12);
 }
 .link:hover::before, .link:hover::after,
 .link:focus-visible::before, .link:focus-visible::after,
@@ -226,54 +243,69 @@
 .link:focus-visible { outline: none; }
 
 /* ── Idioma: segmentado proyectado ────────────────────────────── */
+/* El bloque lima es UNO y se desliza. Antes cada segmento pintaba su propio
+   fondo y el cambio era un salto: el idioma aparecía ya cambiado, sin enseñar
+   de dónde venía. Rejilla de dos columnas iguales para que el pulgar mida
+   exactamente un segmento sin tener que medir el texto. */
 .switch {
-  display: inline-flex;
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid rgba(234, 255, 176, 0.45);
+  padding: 1px;
+  border: 1px solid rgba(234, 255, 176, 0.4);
   background: none;
   cursor: pointer;
 }
 .switch:focus-visible { outline: 2px solid var(--holo-edge); outline-offset: 3px; }
+/* `inset` se mide contra la caja de relleno, así que el 1px de padding deja al
+   pulgar justo sobre la primera columna; `50% - 1px` descuenta ese padding. */
+.thumb {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 1px;
+  width: calc(50% - 1px);
+  background: var(--holo);
+  box-shadow: 0 0 6px rgba(200, 255, 0, 0.25);
+  transition: transform var(--duration) var(--ease);
+}
+.switch[data-lang="en"] .thumb { transform: translateX(100%); }
 .seg {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 28px;
-  padding: 0 10px;
+  height: 20px;
+  padding: 0 7px;
   font-family: var(--font-mono), monospace;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   color: rgba(234, 255, 176, 0.6);
-  transition: color var(--duration) var(--ease), background var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+  transition: color var(--duration) var(--ease);
 }
-.seg[data-on="true"] {
-  background: var(--holo);
-  color: var(--background);
-  box-shadow: 0 0 6px rgba(200, 255, 0, 0.3);
-}
+.seg[data-on="true"] { color: var(--background); }
 
 /* ── CTA: prompt proyectado, se solidifica al apuntar ─────────── */
 .cta {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  height: 40px;
-  padding: 0 18px;
+  gap: 7px;
+  height: 28px;
+  padding: 0 12px;
   border: 1px solid var(--holo-edge);
   background: var(--holo-dim);
-  box-shadow: 0 0 8px rgba(200, 255, 0, 0.18), inset 0 0 8px rgba(200, 255, 0, 0.08);
+  box-shadow: 0 0 6px rgba(200, 255, 0, 0.14), inset 0 0 6px rgba(200, 255, 0, 0.06);
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--holo-edge);
   overflow: hidden;
-  transition: color var(--duration) var(--ease), box-shadow var(--duration) var(--ease), text-shadow var(--duration) var(--ease);
+  transition: color var(--duration) var(--ease), box-shadow var(--duration) var(--ease), text-shadow var(--duration) var(--ease), transform var(--duration-fast) var(--ease-snap);
 }
 .cta > span { position: relative; z-index: 1; }
 /* Relleno que barre de izquierda a derecha: el holograma se vuelve sólido. */
@@ -290,17 +322,18 @@
 .cta:focus-visible {
   color: var(--background);
   text-shadow: none;
-  box-shadow: 0 0 14px rgba(200, 255, 0, 0.35);
+  box-shadow: 0 0 12px rgba(200, 255, 0, 0.3);
 }
 .cta:hover .fill,
 .cta:focus-visible .fill { transform: scaleX(1); }
 .cta:hover .cursor,
 .cta:focus-visible .cursor { background: var(--background); box-shadow: none; }
+.cta:active { transform: translateY(1px); box-shadow: 0 0 6px rgba(200, 255, 0, 0.18); }
 .cta:focus-visible { outline: 2px solid var(--foreground); outline-offset: 3px; }
 .arrow { transition: transform var(--duration) var(--ease); }
 .cta:hover .arrow { transform: translate(2px, -2px); }
 
 @media (prefers-reduced-motion: reduce) {
   .panel, .led, .cursor { animation: none; }
-  .shell, .link::before, .link::after, .fill, .arrow, .seg, .link, .cta { transition: none; }
+  .shell, .link::before, .link::after, .fill, .arrow, .seg, .link, .cta, .thumb, .logo { transition: none; }
 }
