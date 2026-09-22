@@ -476,23 +476,28 @@ export function PlazaDoll({ spec, state = "idle", highlighted = false }: PlazaDo
   /**
    * El muñeco PROYECTA sombra, pero no la recibe.
    *
-   * Se marca recorriendo `bodyRef` en vez de poner `castShadow` en cada una
-   * de las ~20 mallas (cabeza, nariz, pelo, torso, cuatro extremidades con
-   * tres piezas cada una): así no se olvida ninguna al tocar el muñeco. Se
-   * queda fuera lo que cuelga de `rootRef` pero no del cuerpo — el disco de
-   * sombra de contacto, que proyectaría su propia silueta sobre el suelo — y
-   * el bocadillo, que es un `Sprite` y no un `Mesh`. Las cáscaras de resalte
-   * (`visible={highlighted}`) tampoco molestan: three no mete en el shadow
-   * map lo que está invisible.
+   * Y proyecta SOLO cabeza y torso, no las cuatro extremidades. El mapa de
+   * sombra es un segundo pase completo de la escena por frame, así que cada
+   * malla marcada se paga dos veces: con las ~25 del muñeco entero, veinte
+   * muñecos metían ~500 draw calls extra por frame. Cabeza + torso son nueve
+   * y dan la misma silueta en el suelo — a esta escala la sombra de un brazo
+   * cabe dentro de la del cuerpo.
+   *
+   * Se marca recorriendo los dos grupos, no malla a malla, para no olvidarse
+   * ninguna al tocar el muñeco. El bocadillo es un `Sprite` y no un `Mesh`,
+   * así que se excluye solo; las cáscaras de resalte (`visible={highlighted}`)
+   * tampoco molestan, porque three no mete en el mapa lo que está invisible.
    *
    * Sin `receiveShadow`: un muñeco de 1 unidad con la cabeza redonda recoge
    * sobre todo su propia sombra, y el acné que eso saca en la nuca cuesta más
    * de lo que aporta.
    */
   useEffect(() => {
-    bodyRef.current?.traverse((object) => {
-      if ((object as THREE.Mesh).isMesh) object.castShadow = true;
-    });
+    for (const root of [headRef.current, torsoRef.current]) {
+      root?.traverse((object) => {
+        if ((object as THREE.Mesh).isMesh) object.castShadow = true;
+      });
+    }
   }, []);
 
   const head = DOLL.head;

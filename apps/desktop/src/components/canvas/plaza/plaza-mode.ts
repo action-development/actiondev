@@ -123,7 +123,7 @@ export const PLAZA_PALETTES: Record<PlazaMode, PlazaModePalette> = {
     backdropTint: "#ffffff",
     treelineTint: "#ffffff",
     lampsOn: false,
-    sunShadow: { ground: 0.34, objects: 0.55 },
+    sunShadow: { ground: 0.44, objects: 0.6 },
     guideOpacity: 0.07,
     // Las sombras proyectadas ya anclan las piezas al suelo: el disco de
     // contacto pasa de ser el ancla a ser el oclusión de contacto que la
@@ -161,7 +161,7 @@ export const PLAZA_PALETTES: Record<PlazaMode, PlazaModePalette> = {
     backdropTint: "#9d9d9d",
     treelineTint: "#4f5a52",
     lampsOn: true,
-    sunShadow: { ground: 0.2, objects: 0.32 },
+    sunShadow: { ground: 0.28, objects: 0.36 },
     guideOpacity: 0.055,
     shadowOpacity: 0.3,
   },

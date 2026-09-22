@@ -68,12 +68,17 @@ const GRASS = { inner: 8.55, outer: FLOOR_RADIUS } as const;
  * la MISMA dirección: se ve igual, y ahora la ortográfica cubre el parque
  * entero.
  *
- * `EXTENT` es la mitad del lado de esa ortográfica. Cubre justo el arbolado;
- * más ancha solo reparte los mismos téxeles en más metros (a 19 y 2048 salen
- * ~1,9 cm por téxel, que es lo que hace que el borde de una sombra de banco se
- * lea afilado y no como una mancha).
+ * `extent` es la mitad del lado de esa ortográfica y `map` el lado del mapa:
+ * juntos deciden cuántos téxeles toca cada metro (a 14 y 1024 salen ~2,7 cm) y,
+ * sobre todo, cuánto cuesta. El mapa es el segundo pase completo de la escena
+ * en cada frame, así que no es un parámetro de calidad: es la mitad del
+ * presupuesto. A 2048 y 19 la plaza bajaba a la mitad de fps y el borde extra
+ * no se veía — el desenfoque de `shadow-radius` se lo come igualmente.
+ *
+ * A 14 quedan fuera las copas del arbolado 3D (r = 16.8). No se pierde nada
+ * visible: su sombra caía en la pradera lejana, ya medio comida por la niebla.
  */
-const SUN = { distance: 60, extent: 19, map: 2048 } as const;
+const SUN = { distance: 60, extent: 14, map: 1024 } as const;
 
 /** Misma dirección que la luz de la paleta, pero a `SUN.distance` del centro. */
 function sunPosition([x, y, z]: readonly [number, number, number]): [number, number, number] {
@@ -397,7 +402,7 @@ export function PlazaRoom({ mode, still = false }: { mode: PlazaMode; still?: bo
         shadow-intensity={palette.sunShadow.objects}
         // Ensancha el muestreo PCF: el borde de la sombra de un banco pasa de
         // escalón de píxel a filo blando, que es lo que pide una escena mate.
-        shadow-radius={2.5}
+        shadow-radius={1.5}
       />
       <directionalLight color={palette.fill.color} position={[-5, 5, -6]} intensity={palette.fill.intensity} />
     </group>
