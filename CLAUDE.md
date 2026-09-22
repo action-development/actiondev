@@ -288,7 +288,8 @@ Componente nav: `layout/Header.tsx` + `Header.module.css` = **cápsula holográf
 ## [SEO] Metadata
 
 - **Idioma indexable: español** (decisión de negocio — el mercado objetivo es Vigo/Galicia). `lang="es"`, metadata en ES en ambas apps. EN disponible vía toggle client-side (desktop) o Accept-Language (mobile).
-- Título: `"Action — Desarrollo de Aplicaciones y Webs en Vigo"` (home), `"[Page] — Action"` (subpages)
+- Título: `"Action — Desarrollo de Aplicaciones y Webs en Vigo"` (home), `"[Page] — Action"` (subpages). El `template` del layout raíz YA añade `" — Action"`: el `title` de una página va **sin marca**, o la pestaña acaba en "Contacto — Action — Action" (pasó en `/contact`, `/projects` y `/resenas`). El `openGraph.title` sí la lleva escrita — ahí el template no se aplica.
+- **Favicon = el globo de marca** (`/logos/action_globe-64.png`, 2,2 KB, declarado en `icons` de `layout.tsx`). Pisa a propósito el `src/app/icon.svg` de convención, que es un símbolo dibujado a mano y NO el logo. Lo que no se repone es el webp de 1024×1024: eran 35 KB descargados en cada página para pintar 16px de pestaña.
 - Dominio canónico: `https://actiondev.es`
 - Fuente de verdad SEO: `apps/desktop/src/lib/seo.ts`. **NAP compartido** (dirección C/ Colón 20, teléfono, geo): `packages/shared/src/seo.ts` (`BUSINESS`) — debe coincidir SIEMPRE con la ficha de Google Business Profile.
 - **Titularidad legal**: `LEGAL_ENTITY` en `packages/shared/src/seo.ts`. "Action / Action Development" es una MARCA; la persona jurídica es **Alcasi Systems, S.L.** (CIF B72910664, domicilio social en Marín, Reg. Mercantil de Pontevedra). `BUSINESS.legalName` lleva la denominación social real y `BUSINESS.displayName` el nombre de marca largo para usos visuales (OG image). No volver a poner un nombre de marketing en `legalName` — el JSON-LD emite `legalName` + `vatID` para que un organismo público pueda cruzar el proveedor con el Registro Mercantil.
