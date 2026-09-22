@@ -32,33 +32,15 @@ export interface Translations {
     visionaries: string;
   };
   contact: {
-    headline1: string;
-    headline2: string;
+    headline: string;
     accent: string;
-    subtitle: string;
+    whatsappLabel: string;
     emailLabel: string;
+    emailSubject: string;
+    /** Mensaje ya redactado que se abre en WhatsApp o en el cliente de correo. */
+    intro: string;
     askAI: string;
     aiPrompt: string;
-    nameLabel: string;
-    namePlaceholder: string;
-    phoneLabel: string;
-    phonePlaceholder: string;
-    emailFieldLabel: string;
-    emailPlaceholder: string;
-    websiteLabel: string;
-    websitePlaceholder: string;
-    projectLabel: string;
-    projectPlaceholder: string;
-    required: string;
-    submit: string;
-    submitOpening: string;
-    submitSuccess: string;
-    submitSuccessHint: string;
-    submitError: string;
-    formAriaLabel: string;
-    honeypotLabel: string;
-    whatsappIntro: string;
-    whatsappFallbackName: string;
   };
   footer: {
     available: string;

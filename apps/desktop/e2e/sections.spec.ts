@@ -24,19 +24,14 @@ test("projects section renders", async ({ page }) => {
 	});
 });
 
-test("contact section has form fields", async ({ page }) => {
+test("contact section shows both channels", async ({ page }) => {
 	await page.goto("/contact");
 	await waitForPage(page);
-	// Scroll hasta el campo para que ScrollTrigger GSAP (start: "top 92%") se dispare
-	await page.evaluate(() => {
-		document.getElementById("contact-name")?.scrollIntoView({ behavior: "instant", block: "center" });
-	});
 	await page.waitForTimeout(1000); // GSAP settle
 
-	// Campos en DOM (pueden tener opacity GSAP pero existen)
-	await expect(page.locator("#contact-name")).toBeAttached();
-	await expect(page.locator("#contact-email")).toBeAttached();
-	await expect(page.locator("#contact-description")).toBeAttached();
+	// En DOM (pueden tener opacity GSAP pero existen)
+	await expect(page.locator('[data-channel="whatsapp"]')).toBeAttached();
+	await expect(page.locator('[data-channel="email"]')).toBeAttached();
 
 	await expect(page).toHaveScreenshot("contact-section.png", {
 		animations: "disabled",

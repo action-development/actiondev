@@ -28,3 +28,8 @@ export const SOCIALS: readonly Social[] = [
 export function buildWhatsappUrl(message: string): string {
   return `https://wa.me/${CONTACT.whatsappE164}?text=${encodeURIComponent(message)}`;
 }
+
+export function buildMailtoUrl(subject: string, body: string): string {
+  const query = `subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return `mailto:${CONTACT.email}?${query}`;
+}

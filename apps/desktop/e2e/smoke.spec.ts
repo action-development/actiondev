@@ -24,7 +24,7 @@ test.describe("Home page", () => {
     await page.goto("/");
     await page.waitForLoadState("domcontentloaded");
     await expect(page.getByRole("banner")).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator('nav[aria-label="Main navigation"]')).toBeVisible();
+    await expect(page.getByTestId("main-nav")).toBeVisible();
   });
 
   test("gull tally easter egg stays hidden until a gull is shot", async ({ page }) => {
@@ -192,15 +192,20 @@ test.describe("Projects page", () => {
 });
 
 test.describe("Contact page", () => {
-  test("loads and renders form", async ({ page }) => {
+  test("offers WhatsApp and email as direct links", async ({ page }) => {
     await page.goto("/contact");
     await page.waitForLoadState("domcontentloaded");
     await expect(page).toHaveURL(/\/contact$/);
 
-    const form = page.locator('form[aria-label]');
-    await expect(form).toBeVisible();
-    await expect(page.locator("#contact-name")).toBeVisible();
-    await expect(page.locator("#contact-email")).toBeVisible();
+    // No hay backend: ambos canales son enlaces que abren la app del visitante
+    // con el mensaje ya redactado. Si vuelve a aparecer un <form>, es un bug.
+    await expect(page.locator("form")).toHaveCount(0);
+
+    const whatsapp = page.locator('[data-channel="whatsapp"]');
+    await expect(whatsapp).toHaveAttribute("href", /^https:\/\/wa\.me\/\d+\?text=.+/);
+
+    const email = page.locator('[data-channel="email"]');
+    await expect(email).toHaveAttribute("href", /^mailto:[^@]+@[^?]+\?subject=.+&body=.+/);
   });
 });
 

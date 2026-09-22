@@ -5,12 +5,12 @@ import { BRAND, OG_IMAGE, absoluteUrl } from "@/lib/seo";
 
 /**
  * /contact — antigua sección #contact de la home, movida a su propia ruta.
- * Server component: metadata. El formulario es client (GSAP + WhatsApp).
+ * Server component: metadata. Los canales son client (GSAP + i18n).
  */
 export const metadata: Metadata = {
   title: "Contacto — Action",
   description:
-    "Cuéntanos tu proyecto. Action, agencia de desarrollo web y de aplicaciones en Vigo: escríbenos y te respondemos por WhatsApp.",
+    "Habla con Action, agencia de desarrollo web y de aplicaciones en Vigo. Sin formularios: escríbenos por WhatsApp al +34 614 02 74 10 o a hi@actiondev.es y te responde una persona.",
   alternates: { canonical: "/contact" },
   openGraph: {
     type: "website",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     url: absoluteUrl("/contact"),
     siteName: BRAND.name,
     title: "Contacto — Action",
-    description: "Cuéntanos tu proyecto y te respondemos por WhatsApp.",
+    description: "Sin formularios: WhatsApp o email directo, y te responde una persona.",
     images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
   },
 };
@@ -26,7 +26,9 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <SectionPage>
-      <div id="contact" className="pt-12">
+      {/* Sin padding extra: la sección ya mide 100dvh, y sumarlo dejaría
+          asomar el footer antes de hacer scroll. */}
+      <div id="contact">
         <Contact />
       </div>
     </SectionPage>
