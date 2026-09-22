@@ -3,11 +3,12 @@ import { test, expect, type Page } from "@playwright/test";
 // Smoke tests de /resenas — sin regresión visual (el WebGL de la plaza tarda
 // en estabilizar; snapshots se añaden aparte). Mismo patrón que smoke.spec.ts.
 
-/** Espera a que la plaza esté lista: su loader propio se retira en `onReady`
- * (primer frame pintado), así que es una señal real, no un tiempo fijo. */
+/** Espera a que la plaza esté lista: el telón (la persiana del sitio) se
+ * recoge en `onReady` (primer frame pintado), así que es una señal real, no un
+ * tiempo fijo. Por `data-testid` y no por rótulo: la web es bilingüe. */
 async function waitForPlaza(page: Page) {
   await expect(page.locator("canvas")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText("Preparando la plaza…")).toBeHidden({ timeout: 20_000 });
+  await expect(page.getByTestId("plaza-curtain")).toBeHidden({ timeout: 20_000 });
   // Pop-in de los muñecos (0,6 s) + primera pose.
   await page.waitForTimeout(1200);
 }
