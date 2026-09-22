@@ -29,6 +29,9 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem("locale");
     if (saved === "en" || saved === "es") {
+      // Tiene que ser en un efecto: el servidor no ve `localStorage`, así que
+      // leerlo en el inicializador de `useState` desajustaría la hidratación.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocaleState(saved);
       document.documentElement.lang = saved;
     }
