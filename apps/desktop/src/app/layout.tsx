@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { geistSans, geistMono, syne } from "@/lib/fonts";
+import { Space_Grotesk } from "next/font/google";
 import { BRAND, SITE_URL, SOCIAL, OG_IMAGE } from "@/lib/seo";
 import { StructuredData } from "@/components/seo/StructuredData";
 import { LocaleProvider } from "@/lib/i18n";
 import { PageTransition } from "@/components/animations/PageTransition";
 import "./globals.css";
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -56,9 +63,14 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  icons: {
-    icon: [{ url: "/logos/action_globe.webp", type: "image/webp" }],
-  },
+  /*
+   * Sin `icons`: Next sirve `src/app/icon.svg` (442 B, vectorial) por
+   * convención de archivo. La declaración anterior lo pisaba con
+   * `/logos/action_globe.webp`, que son 1024×1024 y 35 KB descargados en CADA
+   * página solo para pintar 16px de pestaña. El webp sigue usándose donde sí
+   * hace falta resolución: la textura de los contenedores del hero
+   * (`canvas/port/container-textures.ts`) y el icono del manifest.
+   */
   formatDetection: {
     email: false,
     address: false,
@@ -82,16 +94,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // Space Grotesk autoalojada vía `next/font/google`: se sirve desde el propio
+    // dominio (sin llamada a Google en runtime) y con `display: swap`, así que no
+    // reintroduce el FOUT que motivó ir a Helvetica en su día.
     <html
       lang={BRAND.language}
-      className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} h-full antialiased`}
+      className={`h-full antialiased ${spaceGrotesk.variable}`}
     >
       <body className="min-h-full flex flex-col bg-black">
+        {/*
+          Salto al contenido. El texto va en ESPAÑOL fijo y no por `useT()`:
+          este layout es server component y el documento es `lang="es"` — un
+          rótulo en inglés dentro de un documento declarado en español se lee
+          con la voz equivocada. El destino `#main-content` tiene que existir
+          en TODAS las rutas (ver `[PÁGINAS]` de CLAUDE.md): sin `<main
+          id="main-content">` el enlace no enfoca nada y axe lo marca como
+          "skip link not focusable". Sin `rounded`: esquinas vivas.
+        */}
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[9999] focus:rounded focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-mono focus:text-background focus:outline-none"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[9999] focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-mono focus:text-background focus:outline-none"
         >
-          Skip to content
+          Saltar al contenido
         </a>
         <LocaleProvider>
           <StructuredData kind="organization" />

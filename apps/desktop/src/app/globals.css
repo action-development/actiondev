@@ -9,8 +9,11 @@
 /*   • Radius: 4px atomic. md=8, lg=16, pill=∞. Nothing else.      */
 /*   • Shadow: none. Dark UI uses hairlines (rgba white ≤0.08).    */
 /*   • Motion: one curve, two durations. No bespoke easings.       */
-/*   • Type:   Poppins everywhere — display (700) / body (400/500) /   */
-/*     Poppins labels (500). No other fonts.        */
+/*   • Type:   Space Grotesk y nada más. Una sola familia para      */
+/*     display, cuerpo y etiquetas: el contraste lo dan peso, caja  */
+/*     y tracking, no una segunda tipografía. Autoalojada vía       */
+/*     next/font/google (layout.tsx): cero llamadas a Google en     */
+/*     runtime, `display: swap`.                                    */
 /* ─────────────────────────────────────────────────────────────── */
 
 :root {
@@ -26,6 +29,12 @@
   --border:     #1c1c1c;
   --card:       #0f0f0f;
   --card-hover: #141414;
+
+  /* Tipografía — UNA familia. Space Grotesk, autoalojada por
+     `next/font/google` en layout.tsx (variable `--font-space-grotesk`
+     inyectada en el `<html>`). Fallback de sistema solo para el instante
+     antes de que `next/font` hidrate esa variable. */
+  --font-primary: var(--font-space-grotesk), "Helvetica Neue", Helvetica, Arial, sans-serif;
 
   /* Radius scale — do not introduce other values. */
   --radius-sm:   4px;
@@ -68,9 +77,15 @@
   --color-card:       var(--card);
   --color-card-hover: var(--card-hover);
 
-  --font-sans:    var(--font-geist-sans);
-  --font-mono:    var(--font-geist-mono);
-  --font-display: var(--font-syne);
+  /*
+   * Los tres roles históricos (`font-sans` / `font-mono` / `font-display`)
+   * apuntan a la MISMA pila. Se conservan los nombres porque hay ~75 usos en
+   * el árbol, pero ya no hay tres familias: `font-mono` significa "etiqueta
+   * troquelada" (caja alta + tracking), no otra tipografía.
+   */
+  --font-sans:    var(--font-primary);
+  --font-mono:    var(--font-primary);
+  --font-display: var(--font-primary);
 
   /*
    * Radius scale — collapse Tailwind defaults to our atomic values.
@@ -100,7 +115,7 @@
 body {
   background: var(--background);
   color:      var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-primary);
   font-weight: 400;
   font-size:   17px;
   line-height: 1.55;
@@ -108,7 +123,7 @@ body {
 }
 
 .display-xl {
-  font-family: var(--font-display), sans-serif;
+  font-family: var(--font-primary);
   font-weight: 700;
   font-size:   clamp(2.75rem, 8vw, 7rem);
   line-height: 0.94;
@@ -116,7 +131,7 @@ body {
 }
 
 .display-l {
-  font-family: var(--font-display), sans-serif;
+  font-family: var(--font-primary);
   font-weight: 700;
   font-size:   clamp(2rem, 5.5vw, 5rem);
   line-height: 0.98;
@@ -124,7 +139,7 @@ body {
 }
 
 .display-m {
-  font-family: var(--font-display), sans-serif;
+  font-family: var(--font-primary);
   font-weight: 600;
   font-size:   clamp(1.5rem, 3vw, 2.5rem);
   line-height: 1.08;
@@ -132,8 +147,8 @@ body {
 }
 
 .lede {
-  font-family: var(--font-sans), sans-serif;
-  font-weight: 300;
+  font-family: var(--font-primary);
+  font-weight: 400;
   font-size:   clamp(1rem, 1.4vw, 1.2rem);
   line-height: 1.55;
   letter-spacing: -0.005em;
@@ -147,7 +162,7 @@ body {
 }
 
 .micro-label {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-primary);
   font-weight: 600;
   font-size:   0.6875rem; /* 11px */
   line-height: 1;
@@ -156,9 +171,10 @@ body {
   color:       var(--muted);
 }
 
-/* Replaces the *italic + color* headline cliché with a family contrast. */
+/* Acento del titular sin recurrir al italic + color. Con una sola familia el
+   contraste lo dan caja alta + tracking + cuerpo menor, no otra tipografía. */
 .accent-word {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-primary);
   font-weight: 600;
   font-size:   0.78em;
   letter-spacing: 0.02em;
@@ -184,7 +200,7 @@ body {
 }
 
 .legal-prose h2 {
-  font-family: var(--font-display), sans-serif;
+  font-family: var(--font-primary);
   font-weight: 600;
   font-size: 1.35rem;
   line-height: 1.2;
@@ -245,7 +261,7 @@ body {
 }
 
 .legal-data dt {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-primary);
   font-weight: 600;
   font-size: 0.6875rem;
   line-height: 1.5;
