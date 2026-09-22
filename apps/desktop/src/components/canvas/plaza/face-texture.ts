@@ -35,7 +35,10 @@ const BROW_DY = -22.5;
 const MOUTH_DY = 17;
 const BLUSH_DY = 6;
 
-const INK = "#1d1a1c";
+/** Negro de cómic: ojos, cejas y todo contorno entintado de la plaza
+ * (también el bocadillo de `plaza-textures.ts`). No es #000: el negro puro
+ * sobre estos colores planos se lee como agujero. */
+export const INK = "#1d1a1c";
 const BROW = "#2b2018";
 
 /** Cache de módulo: la textura de una cara nunca cambia entre renders. */

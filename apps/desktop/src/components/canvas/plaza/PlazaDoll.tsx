@@ -5,6 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { DOLL, PLAZA_PALETTE, seededRandom, type DollSpec, type HairStyle } from "./plaza-config";
 import { getFaceTexture } from "./face-texture";
+import { getGlowTexture, getSpeechBubbleTexture } from "./plaza-textures";
 
 /**
  * Muñeco de la plaza de reseñas ("Wii-plaza"): cabezón + cuerpo tipo bolo,
@@ -23,7 +24,7 @@ import { getFaceTexture } from "./face-texture";
 export interface PlazaDollProps {
   spec: DollSpec;
   /** Estado de animación que decide el mundo (lo pasa el padre). */
-  state?: "idle" | "walking" | "waving" | "focused" | "held";
+  state?: "idle" | "walking" | "waving" | "focused" | "held" | "talking";
   /** true cuando el puntero está encima o es el seleccionado → highlight. */
   highlighted?: boolean;
 }
@@ -48,6 +49,16 @@ const HELD_ARM_BASE = -2.45;
 const HELD_ARM_SWING = 0.55;
 /** Velocidad del aleteo de brazos agarrado (rad/s). */
 const HELD_FLAP = 14;
+
+/** Altura local (desde la cintura) del bocadillo de "hablando", justo sobre
+ * la cabeza — la punta de la cola (ver `getSpeechBubbleTexture`) debe casi
+ * tocar el pelo. Con más margen que este, la cámara en vaivén de la plaza
+ * (nunca de frente del todo) proyecta ese hueco vertical inclinado y la cola
+ * parece apuntar a un lado en vez de a la cabeza — el mismo salto que hace
+ * que las verticales "converjan" en una foto con la cámara inclinada. */
+const BUBBLE_Y = DOLL.head.y + DOLL.head.radius * DOLL.head.scale[1] + 0.12;
+/** Escala base del sprite del bocadillo (unidades de mundo). */
+const BUBBLE_SCALE = 0.4;
 
 /** Separación de los brazos respecto al torso (rad), colgando casi pegados. */
 const ARM_SPLAY = 0.1;
@@ -121,7 +132,7 @@ function buildGeos() {
     hand: new THREE.SphereGeometry(DOLL.hand.radius * 0.85, 24, 16),
     leg: new THREE.CapsuleGeometry(DOLL.leg.radius, DOLL.leg.length, 8, 20),
     foot: new THREE.SphereGeometry(DOLL.foot.radius, 24, 16),
-    shadow: new THREE.CircleGeometry(DOLL.shadowRadius, 32),
+    shadow: new THREE.CircleGeometry(DOLL.shadowRadius * 1.45, 32),
   };
 }
 
@@ -296,8 +307,25 @@ export function PlazaDoll({ spec, state = "idle", highlighted = false }: PlazaDo
       pants: makeMat(pants),
       shoe: makeMat(SHOE_COLOR),
       hair: makeMat(spec.hairColor),
-      shadow: new THREE.MeshBasicMaterial({ color: PLAZA_PALETTE.shadow, transparent: true, opacity: 0.5, depthWrite: false }),
+      // Sombra de contacto con BORDE DIFUSO: el disco plano de antes se leía
+      // como un agujero recortado en cuanto el pavimento dejó de ser casi
+      // negro. Es la textura radial del mobiliario teñida de negro — misma
+      // caída, mismo lenguaje.
+      shadow: new THREE.MeshBasicMaterial({
+        map: getGlowTexture(),
+        color: PLAZA_PALETTE.shadow,
+        transparent: true,
+        opacity: 0.62,
+        depthWrite: false,
+      }),
       hull: new THREE.MeshBasicMaterial({ color: PLAZA_PALETTE.accent, side: THREE.BackSide }),
+      bubble: new THREE.SpriteMaterial({
+        map: getSpeechBubbleTexture(),
+        transparent: true,
+        opacity: 0,
+        depthTest: false,
+        toneMapped: false,
+      }),
     };
   }, [spec.skin, spec.shirt, spec.hairColor, pants, faceOpen]);
 
@@ -324,6 +352,10 @@ export function PlazaDoll({ spec, state = "idle", highlighted = false }: PlazaDo
   // saltos: mezcla la pose de agarrado sobre la que toque por estado.
   const heldAmt = useRef(0);
   const shadowRef = useRef<THREE.Mesh>(null);
+  // 0 = sin bocadillo, 1 = charlando. Suavizado igual que `heldAmt`, para que
+  // el icono aparezca/desaparezca con un fundido en vez de un salto.
+  const talkAmt = useRef(0);
+  const bubbleRef = useRef<THREE.Sprite>(null);
 
   useFrame((frameState, delta) => {
     const dt = Math.min(delta, 1 / 20);
@@ -412,8 +444,18 @@ export function PlazaDoll({ spec, state = "idle", highlighted = false }: PlazaDo
       // se encoge y se aclara.
       const air = h * HELD_LIFT;
       shadowRef.current.scale.setScalar(1 / (1 + air * 0.5));
-      mats.shadow.opacity = 0.5 / (1 + air * 0.9);
+      mats.shadow.opacity = 0.62 / (1 + air * 0.9);
     }
+
+    // --- Bocadillo de "hablando": fundido de opacidad/escala + rebote suave.
+    talkAmt.current = THREE.MathUtils.lerp(talkAmt.current, state === "talking" ? 1 : 0, 1 - Math.pow(0.001, dt));
+    const talk = talkAmt.current;
+    if (bubbleRef.current) {
+      bubbleRef.current.visible = talk > 0.01;
+      bubbleRef.current.position.y = BUBBLE_Y + Math.sin(t * 3) * 0.04 * talk;
+      bubbleRef.current.scale.setScalar(BUBBLE_SCALE * (0.7 + 0.3 * talk));
+    }
+    mats.bubble.opacity = talk;
 
     // Respiración idle: escala Y del torso desde la cintura.
     if (torsoRef.current) {
@@ -430,6 +472,28 @@ export function PlazaDoll({ spec, state = "idle", highlighted = false }: PlazaDo
     if (legLRef.current) legLRef.current.rotation.x = legLAngle;
     if (legRRef.current) legRRef.current.rotation.x = legRAngle;
   });
+
+  /**
+   * El muñeco PROYECTA sombra, pero no la recibe.
+   *
+   * Se marca recorriendo `bodyRef` en vez de poner `castShadow` en cada una
+   * de las ~20 mallas (cabeza, nariz, pelo, torso, cuatro extremidades con
+   * tres piezas cada una): así no se olvida ninguna al tocar el muñeco. Se
+   * queda fuera lo que cuelga de `rootRef` pero no del cuerpo — el disco de
+   * sombra de contacto, que proyectaría su propia silueta sobre el suelo — y
+   * el bocadillo, que es un `Sprite` y no un `Mesh`. Las cáscaras de resalte
+   * (`visible={highlighted}`) tampoco molestan: three no mete en el shadow
+   * map lo que está invisible.
+   *
+   * Sin `receiveShadow`: un muñeco de 1 unidad con la cabeza redonda recoge
+   * sobre todo su propia sombra, y el acné que eso saca en la nuca cuesta más
+   * de lo que aporta.
+   */
+  useEffect(() => {
+    bodyRef.current?.traverse((object) => {
+      if ((object as THREE.Mesh).isMesh) object.castShadow = true;
+    });
+  }, []);
 
   const head = DOLL.head;
   const leg = DOLL.leg;
@@ -500,6 +564,10 @@ export function PlazaDoll({ spec, state = "idle", highlighted = false }: PlazaDo
             groupRef={side < 0 ? legLRef : legRRef}
           />
         ))}
+
+        {/* --- Bocadillo de "hablando": sprite (billboard automático), oculto
+            salvo mientras `state === "talking"`. --- */}
+        <sprite ref={bubbleRef} position={[0, BUBBLE_Y, 0]} scale={BUBBLE_SCALE} material={mats.bubble} visible={false} />
       </group>
 
       {/* --- Sombra de contacto: disco plano, nunca shadow map real. --- */}

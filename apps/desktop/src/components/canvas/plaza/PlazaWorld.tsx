@@ -7,10 +7,13 @@ import * as THREE from "three";
 import { testimonials } from "@/data/testimonials";
 import { PlazaRoom } from "./PlazaRoom";
 import { PlazaDoll } from "./PlazaDoll";
-import { buildDolls, type DollSpec } from "./plaza-config";
+import { FOUNTAIN_KEEP_OUT, PLAZA_FRONT_ANGLE, buildDolls, type DollSpec } from "./plaza-config";
 import { clampDepth } from "./drag-depth";
+import type { PlazaMode } from "./plaza-mode";
 
 interface PlazaWorldProps {
+  /** Día o noche: lo resuelve la página y baja hasta la sala y el mobiliario. */
+  mode: PlazaMode;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onReady?: () => void;
@@ -31,7 +34,31 @@ interface DollRuntime {
   facing: number;
   /** Segundos que quedan del estado actual. */
   timer: number;
-  state: "idle" | "walking" | "waving" | "held";
+  state: "idle" | "walking" | "waving" | "held" | "talking";
+  /** Índice en `runtime` del muñeco con el que está charlando (solo con
+   * `state === "talking"`). */
+  talkPartner: number | null;
+}
+
+/** Distancia máxima entre dos muñecos "idle" para poder engancharse a
+ * charlar: más allá se leería como hablar solos al aire. */
+const TALK_RADIUS = 3.2;
+
+/** Busca, entre los muñecos libres y quietos, el más cercano a `dolls[index]`
+ * dentro de `TALK_RADIUS`. Devuelve -1 si no hay ninguno disponible. */
+function findTalkPartner(dolls: DollRuntime[], index: number): number {
+  const doll = dolls[index];
+  let best = -1;
+  let bestDist = TALK_RADIUS;
+  for (let j = 0; j < dolls.length; j++) {
+    if (j === index || dolls[j].state !== "idle") continue;
+    const dist = doll.pos.distanceTo(dolls[j].pos);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = j;
+    }
+  }
+  return best;
 }
 
 /** Velocidad de paseo, unidades/segundo. Lento a propósito: es una plaza, no una carrera. */
@@ -102,9 +129,32 @@ function pointerOnGrabPlane(camera: THREE.Camera, ndc: THREE.Vector2, point: THR
   return _ray.ray.intersectPlane(_plane, _hit);
 }
 
-/** Cámara en reposo: órbita lenta alrededor del centro de la plaza. */
-const ORBIT = { radius: 11.5, height: 3.6, speed: 0.04, lookAt: 0.7 } as const;
-/** Cámara enfocando a un muñeco: se planta delante de él, a su altura. */
+/**
+ * Cámara en reposo: VAIVÉN lento delante del parque, no una órbita completa.
+ *
+ * Antes daba la vuelta entera (360°). Se acotó a un arco corto centrado
+ * enfrente del telón (`PLAZA_FRONT_ANGLE` + 180°) por dos razones:
+ * - Da igual sensación de espacio. El parallax entre fuente, muñecos, farolas
+ *   y arbolado es lo que hace que la escena se lea como un sitio y no como una
+ *   foto, y eso ya lo da un vaivén de ±22°.
+ * - Permite decorar el fondo. Con la cámara dando la vuelta hay que resolver
+ *   los 360° en 3D; acotada, el horizonte que se ve es siempre el mismo arco y
+ *   ahí sí cabe un telón pintado (ver `PlazaBackdrop`).
+ *
+ * `period` es el ciclo completo de ida y vuelta, en segundos. Largo a
+ * propósito: tiene que leerse como una respiración, no como un barrido.
+ */
+const ORBIT = {
+  radius: 11.5,
+  height: 3.6,
+  lookAt: 0.7,
+  /** Centro del vaivén: enfrente del telón. */
+  center: PLAZA_FRONT_ANGLE + Math.PI,
+  /** Amplitud a cada lado, en radianes (±22°). */
+  sweep: 0.384,
+  period: 46,
+} as const;
+/** Cámara enfocando a un muñeco: se planta a un lado de él, a su altura. */
 const FOCUS = { distance: 3.4, height: 1.15, lookAt: 0.74, offset: 0.78 } as const;
 
 /**
@@ -123,10 +173,13 @@ function shortestAngle(from: number, to: number): number {
   return ((((to - from) % (Math.PI * 2)) + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
 }
 
-export function PlazaWorld({ selectedId, onSelect, onReady, onHoldChange }: PlazaWorldProps) {
+export function PlazaWorld({ mode, selectedId, onSelect, onReady, onHoldChange }: PlazaWorldProps) {
   const { camera, gl } = useThree();
 
-  const specs = useMemo(() => buildDolls(testimonials.map((t) => t.id)), []);
+  const specs = useMemo(
+    () => buildDolls(testimonials.map((t) => ({ id: t.id, gender: t.gender }))),
+    []
+  );
 
   /**
    * `?quieto` — congela el paseo de los muñecos y la órbita de la cámara.
@@ -140,6 +193,21 @@ export function PlazaWorld({ selectedId, onSelect, onReady, onHoldChange }: Plaz
     [],
   );
 
+  /**
+   * `?angulo=<grados>` — ángulo desde el que se congela la órbita (0 = eje +X,
+   * 90 = de frente). Solo tiene sentido junto a `?quieto`, que es lo que la
+   * detiene. Sirve para mirar la plaza desde donde haga falta sin esperar a
+   * que la órbita pase por ahí: revisar el mobiliario de un lado, o cubrir
+   * varios ángulos en regresión visual con capturas deterministas.
+   */
+  const startAngle = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const raw = new URLSearchParams(window.location.search).get("angulo");
+    if (raw === null) return null;
+    const deg = Number(raw);
+    return Number.isFinite(deg) ? THREE.MathUtils.degToRad(deg) : null;
+  }, []);
+
   // Estado vivo: se crea una vez y se muta en `useFrame`. Meterlo en useState
   // provocaría un render por frame y por muñeco.
   const runtime = useRef<DollRuntime[]>(
@@ -151,6 +219,7 @@ export function PlazaWorld({ selectedId, onSelect, onReady, onHoldChange }: Plaz
       facing: spec.facing,
       timer: 1 + spec.phase,
       state: "idle" as const,
+      talkPartner: null,
     })),
   );
 
@@ -169,7 +238,10 @@ export function PlazaWorld({ selectedId, onSelect, onReady, onHoldChange }: Plaz
 
   // Ángulo de la órbita en reposo. Se acumula en vez de derivarse del reloj
   // para poder congelarlo al enfocar y reanudar sin salto.
-  const orbitAngle = useRef(Math.PI * 0.5);
+  const orbitAngle = useRef(startAngle ?? ORBIT.center);
+  /** Fase del vaivén. Se guarda aparte del ángulo para poder retomarlo sin
+   * salto después de cerrar una ficha. */
+  const sweepPhase = useRef(0);
   const readyFired = useRef(false);
 
   // Vectores de trabajo reutilizados: sin `new` dentro del bucle de render.
@@ -318,6 +390,18 @@ export function PlazaWorld({ selectedId, onSelect, onReady, onHoldChange }: Plaz
       }
       const isHeld = dr?.active === true && dr.index === i;
 
+      // Si el compañero de charla dejó de charlar (lo agarraron, se
+      // seleccionó o ya cumplió su propio timer) sin que a este le tocara
+      // procesarlo en el mismo frame, cortar la charla aquí — si no, se queda
+      // mirando y con el bocadillo puesto sin nadie delante.
+      if (d.state === "talking" && !isHeld && !isSelected) {
+        const partner = d.talkPartner !== null ? dolls[d.talkPartner] : null;
+        if (!partner || partner.state !== "talking" || partner.talkPartner !== i) {
+          d.state = "idle";
+          d.talkPartner = null;
+        }
+      }
+
       if (isHeld) {
         // Sigue al puntero por el plano horizontal que pasa por el punto
         // agarrado: izquierda/derecha = lado, arriba/abajo = profundidad. No
@@ -343,6 +427,7 @@ export function PlazaWorld({ selectedId, onSelect, onReady, onHoldChange }: Plaz
         }
         d.target.copy(d.pos);
         d.state = "held";
+        d.talkPartner = null;
       } else if (d.state === "held") {
         // Soltado justo donde estaba: ese sitio pasa a ser su nueva "casa".
         d.home.copy(d.pos);
@@ -353,25 +438,52 @@ export function PlazaWorld({ selectedId, onSelect, onReady, onHoldChange }: Plaz
         // El seleccionado deja de pasear y vuelve a su sitio para la ficha.
         d.target.copy(d.home);
         d.state = "idle";
+        d.talkPartner = null;
       } else if (!still) {
         d.timer -= dt;
         if (d.timer <= 0) {
           // Reparto de comportamientos: la mayoría del tiempo quietos, algún
-          // paseo corto y saludos ocasionales. Demasiado movimiento y la plaza
+          // paseo corto, saludos ocasionales y, si hay algún vecino libre
+          // cerca, una charla entre los dos. Demasiado movimiento y la plaza
           // se lee como un hormiguero.
           const roll = Math.random();
-          if (roll < 0.45) {
+          if (roll < 0.4) {
             d.state = "idle";
             d.timer = 2 + Math.random() * 3;
-          } else if (roll < 0.85) {
+          } else if (roll < 0.75) {
             d.state = "walking";
             d.timer = 3 + Math.random() * 3;
             const a = Math.random() * Math.PI * 2;
             const r = Math.random() * WANDER_RADIUS;
             d.target.set(d.home.x + Math.cos(a) * r, d.home.y + Math.sin(a) * r);
-          } else {
+            // Nadie pasea por dentro de la fuente: el destino se empuja fuera
+            // del pilón por el lado por el que iba.
+            const dist = d.target.length();
+            if (dist < FOUNTAIN_KEEP_OUT) {
+              if (dist < 1e-4) d.target.set(FOUNTAIN_KEEP_OUT, 0);
+              else d.target.multiplyScalar(FOUNTAIN_KEEP_OUT / dist);
+            }
+          } else if (roll < 0.94) {
             d.state = "waving";
             d.timer = 1.6 + Math.random();
+          } else {
+            const partnerIndex = findTalkPartner(dolls, i);
+            if (partnerIndex !== -1) {
+              const duration = 3 + Math.random() * 2.5;
+              d.state = "talking";
+              d.timer = duration;
+              d.talkPartner = partnerIndex;
+              d.target.copy(d.pos);
+              const partner = dolls[partnerIndex];
+              partner.state = "talking";
+              partner.timer = duration;
+              partner.talkPartner = i;
+              partner.target.copy(partner.pos);
+            } else {
+              // Sin nadie cerca con quien charlar: se queda en un saludo.
+              d.state = "waving";
+              d.timer = 1.6 + Math.random();
+            }
           }
         }
       }
@@ -387,10 +499,17 @@ export function PlazaWorld({ selectedId, onSelect, onReady, onHoldChange }: Plaz
         d.facing += shortestAngle(d.facing, Math.atan2(dx, dz)) * Math.min(1, 6 * dt);
       } else {
         if (d.state === "walking") d.state = "idle";
-        // Parado: mira a la cámara, como los personajes de la referencia cuando
-        // notan el puntero.
-        const toCam = Math.atan2(camera.position.x - d.pos.x, camera.position.z - d.pos.y);
-        d.facing += shortestAngle(d.facing, toCam) * Math.min(1, 2.5 * dt);
+        const partner = d.state === "talking" && d.talkPartner !== null ? dolls[d.talkPartner] : null;
+        if (partner) {
+          // Charlando: se miran entre ellos, no a la cámara.
+          const toPartner = Math.atan2(partner.pos.x - d.pos.x, partner.pos.y - d.pos.y);
+          d.facing += shortestAngle(d.facing, toPartner) * Math.min(1, 3 * dt);
+        } else {
+          // Parado: mira a la cámara, como los personajes de la referencia
+          // cuando notan el puntero.
+          const toCam = Math.atan2(camera.position.x - d.pos.x, camera.position.z - d.pos.y);
+          d.facing += shortestAngle(d.facing, toCam) * Math.min(1, 2.5 * dt);
+        }
       }
 
       group.position.set(d.pos.x, 0, d.pos.y);
@@ -405,29 +524,37 @@ export function PlazaWorld({ selectedId, onSelect, onReady, onHoldChange }: Plaz
     const selected = selectedId ? dolls.find((d) => d.spec.id === selectedId) : undefined;
 
     if (selected) {
-      // Plantada delante del muñeco, en la línea que va del centro hacia él,
-      // para que nunca quede otro muñeco tapando al protagonista.
-      const len = Math.hypot(selected.pos.x, selected.pos.y) || 1;
+      // Plantada SIEMPRE por el lado abierto de la plaza (el de la cámara en
+      // reposo), no en la línea centro-muñeco: así la ficha siempre se lee con
+      // el parque pintado de fondo y nunca contra el lado sin decorar. El
+      // muñeco seleccionado gira hacia la cámara, así que se le sigue viendo
+      // la cara desde cualquier sitio en el que esté.
+      const fx = Math.cos(ORBIT.center);
+      const fz = Math.sin(ORBIT.center);
       camTarget.current.set(
-        selected.pos.x + (selected.pos.x / len) * FOCUS.distance,
+        selected.pos.x + fx * FOCUS.distance,
         FOCUS.height,
-        selected.pos.y + (selected.pos.y / len) * FOCUS.distance,
+        selected.pos.y + fz * FOCUS.distance,
       );
       // La cámara mira a un punto a la DERECHA del muñeco (vector derecho de
-      // la vista, que va hacia el centro): el personaje queda en el tercio
-      // izquierdo y la ficha, anclada a la derecha, no lo tapa.
-      const rx = selected.pos.y / len;
-      const rz = -selected.pos.x / len;
+      // la vista): el personaje queda en el tercio izquierdo y la ficha,
+      // anclada a la derecha, no lo tapa.
       lookTarget.current.set(
-        selected.pos.x + rx * FOCUS.offset,
+        selected.pos.x + fz * FOCUS.offset,
         FOCUS.lookAt,
-        selected.pos.y + rz * FOCUS.offset,
+        selected.pos.y - fx * FOCUS.offset,
       );
-      // Se recoloca el ángulo de órbita para reanudar desde donde quedó la
-      // cámara al cerrar la ficha, sin latigazo.
+      // Se recoloca el vaivén para reanudar desde donde quedó la cámara al
+      // cerrar la ficha, sin latigazo.
       orbitAngle.current = Math.atan2(camTarget.current.z, camTarget.current.x);
+      sweepPhase.current = Math.asin(
+        THREE.MathUtils.clamp(shortestAngle(ORBIT.center, orbitAngle.current) / ORBIT.sweep, -1, 1),
+      );
     } else {
-      if (!still) orbitAngle.current += ORBIT.speed * dt;
+      if (!still) {
+        sweepPhase.current += ((Math.PI * 2) / ORBIT.period) * dt;
+        orbitAngle.current = ORBIT.center + Math.sin(sweepPhase.current) * ORBIT.sweep;
+      }
       camTarget.current.set(
         Math.cos(orbitAngle.current) * ORBIT.radius,
         ORBIT.height,
@@ -462,7 +589,7 @@ export function PlazaWorld({ selectedId, onSelect, onReady, onHoldChange }: Plaz
 
   return (
     <>
-      <PlazaRoom />
+      <PlazaRoom mode={mode} still={still} />
 
       {/* Suelo invisible que captura el click "al vacío" para cerrar la ficha. */}
       <mesh

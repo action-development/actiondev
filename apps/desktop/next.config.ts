@@ -51,6 +51,19 @@ const nextConfig: NextConfig = {
         source: "/3d_models/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
+      // Fondos pintados del hero y del horizonte de la plaza. Llevan versión en
+      // el nombre (`port-dia-v1.webp`), así que son inmutables. Importa sobre
+      // todo `/plaza/*`: esas texturas las baja Three.js con su propio
+      // TextureLoader, NO pasan por `next/image`, así que sin esta cabecera
+      // cada visita las revalidaba contra el servidor.
+      {
+        source: "/hero/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
+        source: "/plaza/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
       // Project assets — may update without filename change; 1 day + 7 day SWR
       {
         source: "/projects/:path*",
