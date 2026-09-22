@@ -101,13 +101,14 @@ imageMat.dispose();
 darkMat.dispose();
 cardBaseMat.dispose();
 borderMat.dispose();
-overlayMat.map?.dispose();
-overlayMat.dispose();
+inkMat.dispose();
 ```
 
-**Shared geometry** (`sharedPlaneGeo`, `sharedImgGeo`, `sharedEdgesGeo`, `sharedHitAreaMat`) is module-level and never disposed — it is reused across all cards.
+`overlayMat` (the label) has a **cleanup effect of its own**, keyed on the material. It is the only one that can be recreated while the card is alive — see the font repaint below — and putting it in the cleanup above would make a repaint dispose the image texture too, which does live for the whole card.
 
-If you add a new material to `Card3D`, add it to the cleanup effect. If you add a new shared geometry/material at module level, it never needs disposal.
+**Shared geometry** (`sharedPlaneGeo`, `sharedImgGeo`, `sharedEdgesGeo`, `sharedFrameGeo`, `sharedLabelGeo`, `sharedHitAreaMat`) is created once in `CarouselScene` and shared by every card; it is disposed when the scene unmounts.
+
+If you add a new material to `Card3D`, add it to the cleanup effect. If you add a shared geometry/material to `CarouselScene`, add it to that scene's cleanup.
 
 ---
 
@@ -125,7 +126,53 @@ If you add a new material to `Card3D`, add it to the cleanup effect. If you add 
 
 Category + title are pre-rendered to a `THREE.CanvasTexture` via `createOverlayTexture()` — no troika/drei `Text` component. This avoids the SDF font loading overhead.
 
-The canvas uses `dpr=1` (not `window.devicePixelRatio`) to keep texture size small. If text looks blurry on retina, change `const dpr = 1` to `window.devicePixelRatio`, but profile the texture memory cost first.
+**Resolution — where the sharpness comes from.** The texture covers only the text block (title + tag), not the whole image plane, and it is drawn at `min(devicePixelRatio, 2) × FRONT_MAG` texels per world unit:
+
+```ts
+FRONT_MAG = CAM_Z / (CAM_Z - RADIUS)   // ≈ 1.69
+```
+
+The fov is set so that one world unit = one CSS pixel **at z = 0**, but the facing card sits at `RADIUS` in front of that plane, so it is magnified ≈ 1.69×. Miss that factor and the label is stretched on screen (this is what used to make it look blurry — it was drawn at plain `dpr` over the full plane: ~0.6 texel per screen pixel, and ~1.3 MB per card almost all of it transparent). Everything inside the function is expressed in world units; `ctx.scale()` applies the density.
+
+`createOverlayTexture()` returns the texture **plus the block's size and centre in world units**. The mesh is a shared 1×1 plane scaled to that block and parked at the bottom-left corner of the image.
+
+**`renderOrder` is mandatory on the front stack.** three.js sorts transparent objects by the distance of each object's *centre*. The label is not centred on the card, so on an angled card its centre falls farther away than the image's and it gets painted *under* the image. `renderOrder` 1→5 (image, arrival veil, hover dim, label, hit area) pins the order by hand.
+
+**Late fonts.** The texture is painted once. If Space Grotesk hasn't loaded yet the label would keep the system font forever, so `Card3D` checks `document.fonts` (only the first family in `--font-space-grotesk`, or the check always passes) and bumps `fontGen` on `document.fonts.ready` to repaint.
+
+---
+
+## Arrival veil
+
+```ts
+VEIL_ALPHA = 0.32        // darkening at the very top edge of the image
+VEIL_STOP = 0.5          // the gradient dies at mid-card
+VEIL_RANGE_DEG = 55      // angle from dead-on over which the veil dissolves
+VEIL_ENTRY_DEG = 10      // wheel rotation over which it dissolves for card 0
+```
+
+The top half of a card arrives slightly dimmed and gains its opacity back as the card
+swings to face the camera, so every card "lands" with the scroll instead of just being
+there — the carousel reads as one connected run rather than a stack of stills.
+
+The gradient lives in a **shared** `CanvasTexture` (`createVeilTexture()`, one column of
+texels stretched across the plane, `flipY` default → canvas row 0 is the *top* of the
+card). Only its strength is per-card, and it rides on the material's `opacity`:
+
+```ts
+veil = max(absFacing / VEIL_RANGE_DEG, 1 - rotation / VEIL_ENTRY_DEG)   // both clamped 0→1
+veilMat.opacity = veil * VEIL_ALPHA * imgOpacity * fade
+```
+
+Two things worth keeping:
+
+- **The entry term exists because card 0 is already dead-on at scroll 0** (`absFacing = 0`),
+  so the angle alone would never veil the first card the visitor sees. The first few degrees
+  of wheel rotation cover it.
+- **No lerp of its own.** It is a pure function of `rotation`, so a stopped scroll needs no
+  extra frames under `frameloop="demand"`, and one scroll position always renders the same
+  pixels (e2e snapshots). It is multiplied by `imgOpacity` so it veils the *photo* and not
+  the paper of the panel while the image is still fading in.
 
 ---
 
@@ -150,7 +197,7 @@ The carousel auto-sizes — adding more cards extends the cylinder vertically. T
 ## Known limitations / gotchas
 
 - **No SSR** — `Carousel3D` must be loaded with `dynamic({ ssr: false })` because it uses `document.createElement` at module level (canvas textures).
-- **`dpr={1}` is intentional** — the carousel spans the full viewport. DPR=2 doubles GPU memory for all card textures.
+- **`dpr={[1, 2]}`** — the canvas renders at the screen's real density (same idea as the rest of the site, which caps at 1.5). It used to be pinned at `1` plus a `gl.setPixelRatio(1)`, which on retina meant the browser upscaled the whole canvas ×2: text and ink edges were soft. The cap only affects the framebuffer, **not** card texture memory. Measured on an M4 with a continuous scroll through the carousel: avg 13.34 ms both at dpr 1 and dpr 2, p95 14.8 → 14.6 ms, zero frames over 20 ms — the carousel is bound by scroll/JS work, not fill rate. Re-measure before raising it further.
 - **`antialias: false`** — also intentional for performance. The slight aliasing is masked by the dark background.
 - **Video textures require `needsUpdate = true` every frame** — already handled in `useFrame`. If you add a new video anywhere, follow the same pattern.
 - **`flat` prop on Canvas** — disables tone mapping. Required for correct colour reproduction of card images. Do not remove.

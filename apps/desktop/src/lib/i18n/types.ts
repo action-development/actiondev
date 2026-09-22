@@ -24,7 +24,6 @@ export interface Translations {
     into: string;
     accent: string;
     loading: string;
-    columnLabel: string;
     cargoTag: string;
   };
   testimonials: {

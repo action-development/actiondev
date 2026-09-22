@@ -31,6 +31,9 @@ const CARGO_DROP = VIEWPORT_HALF + 1;
 const CARGO_FADE_START = 0.9;
 // Fracción inicial del scroll del carrusel en la que el contenedor aparece fundiendo (0 → 1).
 const CARGO_FADE_IN = 0.04;
+// Opacidad con la que la card asoma por abajo, antes de que el sticky se fije arriba. Crece
+// hasta 1 a lo largo de esa subida: la tarjeta "llega" con el scroll en vez de estar ya puesta.
+const ENTRY_OPACITY_FROM = 0.6;
 
 function CarouselLoading() {
 	const t = useT();
@@ -64,28 +67,6 @@ const TOTAL_Y = (NUM - 1) * Y_STEP;
 
 // --- Sub-components ─────────────────────────────────────────────────────────
 
-function CentralColumn({ textRef, label }: { textRef: RefObject<HTMLSpanElement | null>; label: string }) {
-	return (
-		<div className="pointer-events-none absolute inset-0 flex select-none items-center justify-center overflow-hidden">
-			<div className="relative flex h-screen items-start justify-center" style={{ perspective: "800px" }}>
-				<span
-					ref={textRef}
-					className="block font-mono font-bold leading-[0.75] tracking-[-0.05em] text-foreground/[0.12] will-change-transform"
-					style={{
-						writingMode: "vertical-rl",
-						textOrientation: "mixed",
-						fontSize: "clamp(18rem, 40vh, 45rem)",
-						transform: "rotateY(-12deg) rotateX(3deg) translateY(10%)",
-						transformStyle: "preserve-3d",
-					}}
-				>
-					{label}
-				</span>
-			</div>
-		</div>
-	);
-}
-
 /** Placa de contenedor con el nombre del proyecto a la vista, flanqueada por flechas de tinta. */
 function ProjectIndicator({ nameRef }: { nameRef: RefObject<HTMLSpanElement | null> }) {
 	return (
@@ -108,19 +89,21 @@ export function Projects() {
 	const line1Ref         = useRef<HTMLSpanElement>(null);
 	const line2Ref         = useRef<HTMLSpanElement>(null);
 	const indicatorRef     = useRef<HTMLSpanElement>(null);
-	const columnTextRef    = useRef<HTMLSpanElement>(null);
+	const carouselWrapRef  = useRef<HTMLDivElement>(null);
 
 	// Single cube state — progress drives the slow yaw, yOffset drives the vertical drop
 	const cubeRef        = useRef({ progress: 0, yOffset: 0 });
 	const cubeWrapperRef = useRef<HTMLDivElement>(null);
 
-	// Carousel state
-	const scrollRef      = useRef({ rotation: 0, y: 0 });
+	// Carousel state — `entry` (0 → 1) es la subida de la sección ANTES de fijarse el sticky.
+	const scrollRef      = useRef({ rotation: 0, y: 0, entry: 0 });
 
 	const lastIndexRef   = useRef(0);
 
 	// Portal target — only available after mount (client-only)
 	const [mounted, setMounted] = useState(false);
+	// Portal client-only: no hay forma de saber en SSR que ya hay `document`.
+	// eslint-disable-next-line react-hooks/set-state-in-effect
 	useEffect(() => setMounted(true), []);
 
 	/**
@@ -191,8 +174,8 @@ export function Projects() {
 					scrub: 0.3,
 				},
 			});
-			tl.to(line1Ref.current, { xPercent: -120, opacity: 0, ease: "power2.in" }, 0);
-			tl.to(line2Ref.current, { xPercent: 120, opacity: 0, ease: "power2.in" }, 0);
+			tl.to(line1Ref.current, { xPercent: -45, opacity: 0, ease: "power2.in" }, 0);
+			tl.to(line2Ref.current, { xPercent: 45, opacity: 0, ease: "power2.in" }, 0);
 		}, hero);
 
 		return () => ctx.revert();
@@ -208,6 +191,37 @@ export function Projects() {
 		if (indicator) indicator.textContent = projects[0].title;
 
 		const ctx = gsap.context(() => {
+			/**
+			 * Entrada de la sección: el tramo que el trigger del carrusel NO cubre.
+			 *
+			 * Aquel arranca en "top top" y a progress 0 la primera card ya está centrada,
+			 * así que mientras la tarjeta sube desde abajo no había nada que animar. Este
+			 * va de "asoma por abajo" a "sticky fijado": la card entra más apagada y gana
+			 * opacidad con el scroll. `entry` viaja al canvas para que el velo del canto
+			 * alto se disuelva con la misma subida (ver `carousel-3d.tsx`).
+			 *
+			 * `onRefresh` deja el valor correcto al cargar ya dentro o pasada la sección;
+			 * `onLeave`/`onLeaveBack` lo fijan fuera de rango, donde `onUpdate` no llega.
+			 */
+			const applyEntry = (progress: number) => {
+				scrollRef.current.entry = progress;
+				const wrap = carouselWrapRef.current;
+				if (wrap) {
+					wrap.style.opacity = String(ENTRY_OPACITY_FROM + (1 - ENTRY_OPACITY_FROM) * progress);
+				}
+			};
+
+			ScrollTrigger.create({
+				trigger: section,
+				start: "top bottom",
+				end: "top top",
+				scrub: true,
+				onUpdate: (self) => applyEntry(self.progress),
+				onRefresh: (self) => applyEntry(self.progress),
+				onLeave: () => applyEntry(1),
+				onLeaveBack: () => applyEntry(0),
+			});
+
 			ScrollTrigger.create({
 				trigger: section,
 				start: "top top",
@@ -243,19 +257,6 @@ export function Projects() {
 					}
 				},
 			});
-
-			if (columnTextRef.current) {
-				gsap.to(columnTextRef.current, {
-					yPercent: -85,
-					ease: "none",
-					scrollTrigger: {
-						trigger: section,
-						start: "top top",
-						end: "bottom bottom",
-						scrub: 1,
-					},
-				});
-			}
 		});
 
 		return () => ctx.revert();
@@ -319,12 +320,17 @@ export function Projects() {
 					<div className="sticky top-0 h-screen overflow-hidden">
 						<CardBackgroundPreview />
 
-						<CentralColumn textRef={columnTextRef} label={t.projects.columnLabel} />
-						{carouselNear ? (
-							<Carousel3D projects={projects} scrollRef={scrollRef} locale={locale} />
-						) : (
-							<CarouselLoading />
-						)}
+						<div
+							ref={carouselWrapRef}
+							className="absolute inset-0 z-[5]"
+							style={{ opacity: ENTRY_OPACITY_FROM }}
+						>
+							{carouselNear ? (
+								<Carousel3D projects={projects} scrollRef={scrollRef} locale={locale} />
+							) : (
+								<CarouselLoading />
+							)}
+						</div>
 						<ProjectIndicator nameRef={indicatorRef} />
 					</div>
 				</section>

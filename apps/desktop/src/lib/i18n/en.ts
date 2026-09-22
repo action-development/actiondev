@@ -22,7 +22,6 @@ export const en: Translations = {
     into: "into",
     accent: "sales",
     loading: "Loading projects…",
-    columnLabel: "PROJECTS",
     cargoTag: "Cargo",
   },
   testimonials: {

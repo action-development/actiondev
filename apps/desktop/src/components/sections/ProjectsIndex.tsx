@@ -115,9 +115,12 @@ function ProjectRow({ project, locale, onHover }: ProjectRowProps) {
 				{category}
 			</span>
 
+			{/* `scaleX` y no `width`: animar el ancho obliga al navegador a
+			    recalcular la caja en cada frame de las 20 filas. El trazo es el
+			    mismo, el coste no. */}
 			<span
 				aria-hidden
-				className="pointer-events-none absolute -bottom-0.5 left-0 h-0.5 w-0 bg-accent transition-[width] duration-500 ease-out group-hover:w-full"
+				className="pointer-events-none absolute -bottom-0.5 left-0 h-0.5 w-full origin-left scale-x-0 bg-accent transition-transform duration-500 ease-out group-hover:scale-x-100"
 			/>
 		</Tag>
 	);
@@ -206,7 +209,7 @@ export function ProjectsIndex() {
 
 					<div
 						data-end-coda
-						className="mt-20 flex flex-col items-center gap-7 text-center md:mt-28"
+						className="mt-20 flex flex-col items-center text-center md:mt-28"
 					>
 						<h3 className="display-l max-w-3xl text-foreground/90">
 							{locale === "es" ? (
@@ -219,12 +222,6 @@ export function ProjectsIndex() {
 								</>
 							)}
 						</h3>
-
-						<p className="max-w-md font-mono text-[11px] uppercase tracking-[0.2em] text-foreground/45">
-							{locale === "es"
-								? "La lista completa no cabría aquí — nuevos proyectos cada mes"
-								: "The full list wouldn't fit — new projects shipping monthly"}
-						</p>
 					</div>
 				</div>
 			</section>
