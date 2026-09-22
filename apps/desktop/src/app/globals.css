@@ -18,7 +18,11 @@
   --background: #080808;
   --foreground: #ededed;
   --accent:     #c8ff00;
-  --muted:      #767676;
+  /* AA sobre las TRES superficies del sistema, no solo sobre `--background`:
+     #767676 daba 4,41:1 sobre el fondo, 4,22 sobre `--card` y 4,06 sobre
+     `--card-hover` — por debajo del 4,5:1 de WCAG AA, y `.micro-label` son
+     11px. #7e7e7e sube a 4,93 / 4,72 / 4,54. No bajar de aquí. */
+  --muted:      #7e7e7e;
   --border:     #1c1c1c;
   --card:       #0f0f0f;
   --card-hover: #141414;
