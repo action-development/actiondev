@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import type { GameState } from "@/hooks/use-game-state";
 import { useT } from "@/lib/i18n";
 import { useGullRush } from "@/hooks/use-gull-rush";
+import { ControlSign, type SignKey } from "@/components/ui/ControlSign";
 import styles from "./TutorialOverlay.module.css";
 
 /**
@@ -16,7 +17,7 @@ type Trigger = "pickup" | "move" | "row" | "throw";
 
 type TutorialStep = {
   /** Teclas dibujadas como tapas físicas (mismo lenguaje que el mando RC). */
-  keys: { label: string; accent?: boolean }[];
+  keys: SignKey[];
   action: string;
   trigger: Trigger;
 };
@@ -133,17 +134,8 @@ export function TutorialOverlay({ gameState }: TutorialOverlayProps) {
             transition: "opacity var(--duration-fast) var(--ease)",
           }}
         >
-          <div className={styles.sign} data-testid="tutorial-sign" key={step}>
-            <div className={styles.keys} aria-hidden>
-              {current.keys.map((k, i) => (
-                <span key={i} className={`${styles.cap} ${k.accent ? styles.accent : ""}`}>
-                  {k.label}
-                </span>
-              ))}
-            </div>
-            <span aria-hidden className={styles.divider} />
-            <span className={styles.action}>{current.action}</span>
-          </div>
+          {/* `key={step}`: remonta el cartel para que vuelva a caer del cielo. */}
+          <ControlSign key={step} keys={current.keys} action={current.action} testId="tutorial-sign" />
           <div className={styles.leds} aria-hidden>
             {steps.map((_, i) => (
               <span key={i} className={styles.led} data-on={i <= step} data-current={i === step} />
