@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import type { BlogPost } from "@actiondev/shared";
 import { BlockEditor } from "./BlockEditor";
@@ -81,7 +82,13 @@ export function PostForm({ post }: { post?: BlogPost }) {
   return (
     <div className="flex flex-col gap-14">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+        <Link
+          href="/posts"
+          className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground"
+        >
+          ← Volver a artículos
+        </Link>
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
           {post ? "Editar artículo" : "Nuevo artículo"}
         </h1>
         <p className="mt-2 text-sm text-muted">
