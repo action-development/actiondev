@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLanding, landings } from "@/data/landings";
+import { testimonials } from "@/data/testimonials";
 import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { HoloBar } from "@/components/layout/HoloBar";
@@ -33,8 +34,13 @@ export async function generateMetadata({
   const landing = getLanding(slug);
   if (!landing) return {};
 
+  const ogUrl = `${OG_IMAGE.url}?title=${encodeURIComponent(landing.h1)}`;
+
   return {
-    title: landing.title,
+    // `absolute`: landing.title ya es un título SEO autoconclusivo ("X | Y"),
+    // sin el `title.template` del layout raíz — con él se sumaban dos
+    // separadores distintos ("X | Y — Action").
+    title: { absolute: landing.title },
     description: landing.metaDescription,
     alternates: { canonical: `/${landing.slug}` },
     openGraph: {
@@ -44,7 +50,13 @@ export async function generateMetadata({
       siteName: "Action",
       title: landing.title,
       description: landing.metaDescription,
-      images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+      images: [{ url: ogUrl, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: landing.title,
+      description: landing.metaDescription,
+      images: [ogUrl],
     },
   };
 }
@@ -64,6 +76,7 @@ function buildJsonLd(landing: NonNullable<ReturnType<typeof getLanding>>) {
       },
       {
         "@type": "Service",
+        "@id": absoluteUrl(`/${landing.slug}#service`),
         name: landing.serviceName,
         description: landing.metaDescription,
         url: absoluteUrl(`/${landing.slug}`),
@@ -160,7 +173,12 @@ export default async function LandingPage({ params }: LandingPageProps) {
             {/* Franja de confianza */}
             <ul className="mt-10 flex flex-wrap gap-x-8 gap-y-3 font-mono text-xs uppercase tracking-widest text-muted">
               <li>
-                <span className="text-accent">★ 5,0</span> · 20 reseñas en Google
+                <span className="text-accent">
+                  ★ {(testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length)
+                    .toFixed(1)
+                    .replace(".", ",")}
+                </span>{" "}
+                · {testimonials.length} reseñas en Google
               </li>
               <li>Respuesta en 24 horas</li>
               <li>Equipo senior · Sin subcontratas</li>

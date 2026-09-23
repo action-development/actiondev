@@ -5,6 +5,7 @@ export const en: Translations = {
     home: "Home",
     work: "Work",
     reviews: "Reviews",
+    blog: "Blog",
     contact: "Contact",
     cta: "Let's talk",
     ariaLabel: "Main navigation",
@@ -18,9 +19,9 @@ export const en: Translations = {
     sub: "Strategy, design, and development for brands that refuse to blend in.",
   },
   projects: {
-    transform: "Transform your ideas",
-    into: "into",
-    accent: "sales",
+    transform: "Development",
+    into: "tailored",
+    accent: "to your projects",
     loading: "Loading projects…",
     cargoTag: "Cargo",
   },
@@ -29,8 +30,9 @@ export const en: Translations = {
     visionaries: "visionaries",
   },
   contact: {
-    headline: "Let's talk",
-    accent: "today",
+    headline: "Message us",
+    accent: "directly",
+    subtitle: "No strings attached",
     whatsappLabel: "WhatsApp",
     emailLabel: "Email",
     emailSubject: "New project",
@@ -38,6 +40,11 @@ export const en: Translations = {
     askAI: "Ask AI about us",
     aiPrompt:
       "I want to understand what Action.dev is and what they do. They are a digital agency specializing in design and development, immersive web experiences with Three.js and React, brand identity, and growth services like SEO and CRO. Summarise their capabilities, notable work, and what makes them different: https://actiondev.es/",
+    callbackLabel: "Prefer we reach out to you?",
+    callbackPlaceholder: "Your phone number",
+    callbackNotesPlaceholder: "Call or text? Any time that works best? Tell us anything else (optional)",
+    callbackCta: "Send",
+    callbackSuccess: "Thank you! We'll be in touch within 24h.",
   },
   footer: {
     available: "Available for '26",
@@ -51,6 +58,7 @@ export const en: Translations = {
     legalPrivacy: "Privacy",
     legalTerms: "Terms",
     legalCookies: "Cookies",
+    cookiePreferences: "Cookie preferences",
     madeIn: "Designed & built in Vigo, ES",
     rights: "All rights reserved",
     brandDisclaimer:
@@ -60,6 +68,7 @@ export const en: Translations = {
     hero: "Hero",
     work: "Work",
     reviews: "Reviews",
+    blog: "Blog",
     contact: "Contact",
     goTo: "Go to",
     ariaLabel: "Section progress",
@@ -111,6 +120,14 @@ export const en: Translations = {
   notFound: {
     subtitle: "The page you're looking for doesn't exist — or never did.",
     cta: "Back to home",
+  },
+  cookieConsent: {
+    message:
+      "We use analytics cookies to understand how the site is used. They only run if you accept them.",
+    linkLabel: "Cookie policy",
+    accept: "Accept",
+    reject: "Reject",
+    ariaLabel: "Cookie consent",
   },
   plaza: {
     title: "The reviews plaza",

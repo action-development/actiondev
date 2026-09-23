@@ -1,13 +1,15 @@
 /**
  * Seed one-off: inserta los 3 posts placeholder (antes en
- * apps/desktop/src/data/posts.ts, ya eliminado) en la tabla `posts` de
- * Supabase con status "published". Usa la service_role key — solo aquí,
- * nunca en runtime de ninguna app — porque RLS bloquea la escritura a
- * cualquier cliente que no sea el usuario autenticado del admin.
+ * apps/desktop/src/data/posts.ts, ya eliminado) en la colección `posts` de
+ * Firestore con status "published". Usa el Admin SDK — solo aquí, nunca en
+ * runtime de ninguna app — con las credenciales de usuario de `firebase
+ * login` (mismo patrón que `apps/admin/src/lib/firebase/admin.ts`) o, en
+ * CI, las tres env vars de una cuenta de servicio.
  *
- * Uso: SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx tsx scripts/seed-blog-posts.ts
+ * Uso: npx tsx scripts/seed-blog-posts.ts
  */
-import { createClient } from "@supabase/supabase-js";
+import { applicationDefault, cert, initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import type { BlogPost } from "../packages/shared/src/blog";
 
 const posts: Omit<BlogPost, "id">[] = [
@@ -165,33 +167,28 @@ const posts: Omit<BlogPost, "id">[] = [
 ];
 
 async function main() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    console.error("Faltan SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY en el entorno.");
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  if (!projectId) {
+    console.error("Falta FIREBASE_PROJECT_ID en el entorno.");
     process.exit(1);
   }
 
-  const supabase = createClient(url, key);
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+  const app = initializeApp({
+    projectId,
+    credential:
+      clientEmail && privateKey ? cert({ projectId, clientEmail, privateKey }) : applicationDefault(),
+  });
+  const db = getFirestore(app);
 
   for (const post of posts) {
-    const { error } = await supabase.from("posts").insert({
-      slug: post.slug,
-      title: post.title,
-      meta_description: post.metaDescription,
-      category: post.category,
-      date: post.date,
-      reading_time: post.readingTime,
-      h1: post.h1,
-      excerpt: post.excerpt,
-      content: post.content,
-      status: post.status,
-    });
-
-    if (error) {
-      console.error(`✗ ${post.slug}: ${error.message}`);
-    } else {
+    try {
+      await db.collection("posts").add(post);
       console.log(`✓ ${post.slug}`);
+    } catch (err) {
+      console.error(`✗ ${post.slug}: ${(err as Error).message}`);
     }
   }
 }

@@ -3,7 +3,20 @@ import { BRAND, BUSINESS } from "@/lib/seo";
 
 export const runtime = "edge";
 
-export function GET() {
+const DEFAULT_TITLE = "Desarrollo de aplicaciones y webs en Vigo.";
+
+function splitHeadline(title: string): [string, string] {
+  const words = title.trim().split(/\s+/);
+  const mid = Math.ceil(words.length / 2);
+  return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
+}
+
+export function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const title = searchParams.get("title") || DEFAULT_TITLE;
+  const [line1, line2] = splitHeadline(title);
+  const fontSize = title.length > 40 ? "64px" : "88px";
+
   return new ImageResponse(
     (
       <div
@@ -73,7 +86,7 @@ export function GET() {
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div
             style={{
-              fontSize: "88px",
+              fontSize,
               fontWeight: 700,
               lineHeight: 0.92,
               letterSpacing: "-0.04em",
@@ -82,9 +95,8 @@ export function GET() {
               flexDirection: "column",
             }}
           >
-            <span>Desarrollo de</span>
-            <span>aplicaciones y webs</span>
-            <span style={{ color: "#c8ff00" }}>en Vigo.</span>
+            <span>{line1}</span>
+            <span style={{ color: "#c8ff00" }}>{line2}</span>
           </div>
         </div>
 

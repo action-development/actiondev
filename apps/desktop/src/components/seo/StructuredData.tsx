@@ -30,12 +30,9 @@ export function StructuredData({ kind }: StructuredDataProps) {
 function buildSchema(kind: SchemaKind): object | null {
   switch (kind) {
     case "organization": {
-      const sameAs = [
-        SOCIAL.twitter && `https://twitter.com/${SOCIAL.twitter.replace(/^@/, "")}`,
-        SOCIAL.instagram && `https://instagram.com/${SOCIAL.instagram}`,
-        SOCIAL.linkedin && `https://linkedin.com/company/${SOCIAL.linkedin}`,
-        SOCIAL.github && `https://github.com/${SOCIAL.github}`,
-      ].filter(Boolean) as string[];
+      const sameAs = [SOCIAL.twitter, SOCIAL.instagram, SOCIAL.linkedin, SOCIAL.github].filter(
+        Boolean
+      ) as string[];
 
       return {
         "@context": "https://schema.org",
@@ -160,13 +157,15 @@ function buildSchema(kind: SchemaKind): object | null {
     case "reviews": {
       const reviewCount = testimonials.length;
       if (reviewCount === 0) return null;
+      const averageRating =
+        testimonials.reduce((sum, t) => sum + t.rating, 0) / reviewCount;
       return {
         "@context": "https://schema.org",
         "@type": "Organization",
         "@id": absoluteUrl("#organization"),
         aggregateRating: {
           "@type": "AggregateRating",
-          ratingValue: "5",
+          ratingValue: averageRating.toFixed(1),
           reviewCount,
           bestRating: "5",
           worstRating: "1",
@@ -182,7 +181,7 @@ function buildSchema(kind: SchemaKind): object | null {
           },
           reviewRating: {
             "@type": "Rating",
-            ratingValue: "5",
+            ratingValue: String(t.rating),
             bestRating: "5",
             worstRating: "1",
           },

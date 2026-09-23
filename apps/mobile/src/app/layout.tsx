@@ -5,6 +5,8 @@ import { detectLocale } from "@/lib/i18n";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import { I18nProvider } from "@/lib/i18n/context";
 import { StructuredData } from "@/components/StructuredData";
+import { GoogleTagManager } from "@/components/analytics/GoogleTagManager";
+import { CookieConsent } from "@/components/CookieConsent";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -60,7 +62,7 @@ export async function generateMetadata(): Promise<Metadata> {
       },
     },
     icons: {
-      icon: [{ url: "/logos/action_globe.webp", type: "image/webp" }],
+      icon: [{ url: "/logos/action_globe-64.png", sizes: "64x64", type: "image/png" }],
     },
     alternates: {
       // La zona mobile se sirve bajo actiondev.es vía rewrite del middleware
@@ -84,8 +86,12 @@ export default async function RootLayout({
         <meta name="theme-color" content="#ffffff" id="theme-color-meta" />
       </head>
       <body className={inter.className} style={{ background: "white" }}>
+        <GoogleTagManager />
         <StructuredData />
-        <I18nProvider locale={locale}>{children}</I18nProvider>
+        <I18nProvider locale={locale}>
+          {children}
+          <CookieConsent />
+        </I18nProvider>
       </body>
     </html>
   );

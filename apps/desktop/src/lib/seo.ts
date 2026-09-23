@@ -29,7 +29,7 @@ export {
  * Fecha de última revisión de los documentos legales (ISO).
  * Actualizar SIEMPRE que se toque el contenido de /legal/*.
  */
-export const LEGAL_UPDATED = "2026-09-14";
+export const LEGAL_UPDATED = "2026-09-23";
 
 export const SITE_URL = BUSINESS.domain;
 
@@ -51,6 +51,7 @@ export const BRAND = {
     "diseño de páginas web Vigo",
     "desarrollo de aplicaciones Pontevedra",
     "desarrollo web Pontevedra",
+    "diseño web Pontevedra",
     "desarrollo de aplicaciones Galicia",
     "agencia desarrollo web Galicia",
   ],
@@ -62,27 +63,25 @@ export const BRAND = {
   region: BUSINESS.address.region,
   contactEmail: BUSINESS.email,
   whatsappE164: "34614027410",
-  services: [
-    "Desarrollo de aplicaciones móviles (iOS y Android)",
-    "Desarrollo web a medida",
-    "Diseño web premium",
-    "Experiencias 3D interactivas",
-    "Interfaces de producto y SaaS",
-    "Estrategia y diseño",
-  ],
+  services: BUSINESS.services,
 } as const;
 
-interface SocialHandles {
+/**
+ * URLs completas (no handles). `instagram`/`linkedin` derivan de
+ * `BUSINESS.social` (shared) para que desktop y mobile no diverjan;
+ * `twitter`/`github` no existen en shared porque hoy no hay cuenta activa.
+ */
+interface SocialUrls {
   twitter: string;
   instagram: string;
   linkedin: string;
   github: string;
 }
 
-export const SOCIAL: SocialHandles = {
+export const SOCIAL: SocialUrls = {
   twitter: "",
-  instagram: "action.dev",
-  linkedin: "action-development",
+  instagram: BUSINESS.social.instagram,
+  linkedin: BUSINESS.social.linkedin,
   github: "",
 };
 

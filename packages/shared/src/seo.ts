@@ -41,6 +41,15 @@ export const BUSINESS = {
     instagram: "https://instagram.com/action.dev",
     linkedin: "https://linkedin.com/company/action-development",
   },
+  /** Catálogo de servicios — usado por el `hasOfferCatalog` del JSON-LD en desktop y mobile. */
+  services: [
+    "Desarrollo de aplicaciones móviles (iOS y Android)",
+    "Desarrollo web a medida",
+    "Diseño web premium",
+    "Experiencias 3D interactivas",
+    "Interfaces de producto y SaaS",
+    "Estrategia y diseño",
+  ],
 } as const;
 
 /**

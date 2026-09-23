@@ -110,20 +110,21 @@
   border-radius: 2px;
   background: var(--hud-dark);
 }
-/* ── Índice: dos calles ────────────────────────────────────────── */
+/* ── Índice: tres calles ───────────────────────────────────────── */
 /*                                                                 */
-/*  nombre │ tipo                                                  */
+/*  nombre │ tipo │ ver más                                        */
 /*                                                                 */
 /*  La viñeta del proyecto apuntado NO vive en la rejilla: va en   */
 /*  `fixed` siguiendo al cursor, así que la fila no le reserva     */
 /*  hueco. Hubo una calle central vacía para ella y se retiró con  */
-/*  el cambio.                                                     */
+/*  el cambio. La tercera calle es solo para el hint "ver más",    */
+/*  que antes vivía pegado al título y ahora va al borde derecho.  */
 /*                                                                 */
 /*  Sin `display` aquí a propósito: los CSS modules entran SIN     */
 /*  capa y le ganarían a las utilidades de Tailwind (que viven en  */
 /*  @layer utilities). El `grid` lo pone el JSX.                   */
 .lanes {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   column-gap: 1.5rem;
 }
@@ -152,5 +153,17 @@
   opacity: 0.5;
 }
 .index .row:hover > * {
+  opacity: 1;
+}
+
+/* El hint "ver más" no sigue el atenuado genérico de arriba: fuera de capa
+   `.index:hover .row > *` (0.5) gana siempre a las utilidades de Tailwind
+   (`opacity-0` / `group-hover:opacity-100`), así que se quedaba visible a
+   media luz en TODAS las filas en cuanto se apuntaba la lista. Con más
+   especificidad que esa regla queda oculto salvo en la fila apuntada. */
+.index .row > .hint {
+  opacity: 0;
+}
+.index .row:hover > .hint {
   opacity: 1;
 }

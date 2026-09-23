@@ -80,6 +80,22 @@ const schema = {
         { "@type": "AdministrativeArea", name: "Galicia" },
         { "@type": "Country", name: "ES" },
       ],
+      hasOfferCatalog: {
+        "@type": "OfferCatalog",
+        name: `${BUSINESS.name} Services`,
+        itemListElement: BUSINESS.services.map((service, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "Offer",
+            itemOffered: {
+              "@type": "Service",
+              name: service,
+              provider: { "@id": ORG_ID },
+            },
+          },
+        })),
+      },
       provider: { "@id": ORG_ID },
     },
   ],

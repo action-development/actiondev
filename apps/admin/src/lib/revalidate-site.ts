@@ -1,6 +1,6 @@
 /**
  * Avisa a `apps/desktop` para que invalide `/blog` y `/blog/[slug]` justo
- * después de escribir en Supabase — así un post publicado aparece sin
+ * después de escribir en Firestore — así un post publicado aparece sin
  * esperar al `revalidate` por tiempo ni a un redeploy. Si falla (red, sitio
  * caído), no interrumpe el guardado: el `revalidate` por tiempo de
  * `apps/desktop` es la red de seguridad.

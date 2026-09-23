@@ -6,18 +6,26 @@ import { BUSINESS, LEGAL_ENTITY, OG_IMAGE, absoluteUrl } from "@/lib/seo";
 /**
  * Política de cookies.
  *
- * Este sitio NO instala cookies. Usa dos claves de almacenamiento local
- * (`locale` en localStorage, `action-loaded` en sessionStorage), ambas
- * técnicas y exentas de consentimiento. Si algún día se añade analítica,
- * este documento y un banner de consentimiento pasan a ser obligatorios.
+ * Este sitio usa Google Tag Manager (`components/analytics/GoogleTagManager.tsx`,
+ * ambas apps) para cargar herramientas de analítica — SOLO tras consentimiento
+ * explícito vía el banner (`ui/CookieConsent.tsx` en desktop,
+ * `components/CookieConsent.tsx` en mobile). Sin aceptar, GTM no se carga y no
+ * se instala ninguna cookie de analítica. La decisión se guarda en
+ * `localStorage["action-cookie-consent"]` (`@actiondev/shared` → `analytics.ts`),
+ * compartida entre desktop y mobile.
  *
- * Fuentes en código: `lib/i18n/index.tsx` y `app/page.tsx`.
+ * Además del banner, el sitio usa dos claves de almacenamiento técnico exentas
+ * de consentimiento: `locale` en localStorage, `action-loaded` en
+ * sessionStorage.
+ *
+ * Fuentes en código: `lib/i18n/index.tsx`, `app/page.tsx`,
+ * `components/analytics/GoogleTagManager.tsx`, `packages/shared/src/analytics.ts`.
  */
 
 export const metadata: Metadata = {
   title: "Política de cookies",
   description:
-    "Política de cookies de actiondev.es. Este sitio no instala cookies de seguimiento ni usa herramientas de analítica. Titular: Alcasi Systems, S.L. (CIF B72910664).",
+    "Política de cookies de actiondev.es. Usamos Google Tag Manager para analítica, solo tras tu consentimiento. Titular: Alcasi Systems, S.L. (CIF B72910664).",
   alternates: { canonical: "/legal/cookies" },
   openGraph: {
     type: "website",
@@ -26,7 +34,7 @@ export const metadata: Metadata = {
     siteName: BUSINESS.name,
     title: "Política de cookies — Action",
     description:
-      "actiondev.es no instala cookies de seguimiento ni analítica. Qué almacenamiento técnico usa y por qué.",
+      "actiondev.es solo instala cookies de analítica si las aceptas en el banner. Qué cookies usa y cómo cambiar tu decisión.",
     images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
   },
 };
@@ -68,7 +76,7 @@ export default function CookiesPage() {
       <LegalDocHeader
         eyebrow="Legal · LSSI art. 22.2"
         title="Política de cookies"
-        lede="Este sitio no instala cookies. Sin analítica, sin píxeles, sin publicidad. Solo dos claves de almacenamiento local estrictamente técnicas — por eso no verás ningún banner de consentimiento."
+        lede="Este sitio no instala ninguna cookie de analítica hasta que la aceptas en el banner. Puedes cambiar tu decisión en cualquier momento desde el pie de página."
       />
 
       <div className="legal-prose">
@@ -90,24 +98,73 @@ export default function CookiesPage() {
 
         <h2>3. Cookies que usa este sitio</h2>
         <p>
-          <strong>Ninguna.</strong> actiondev.es no instala cookies propias ni de
-          terceros. En concreto, y a fecha de la última revisión de este
-          documento, el sitio <strong>no</strong> utiliza:
+          actiondev.es usa <strong>Google Tag Manager</strong> (contenedor{" "}
+          <code>GTM-PF295VK8</code>) para cargar herramientas de analítica —{" "}
+          <strong>solo si aceptas el banner de cookies</strong>. Mientras no
+          aceptas, el script de Google Tag Manager no se carga y no se instala
+          ninguna cookie de analítica.
         </p>
+        <p>Si aceptas, pueden instalarse cookies como:</p>
         <ul>
-          <li>Google Analytics ni ninguna otra herramienta de analítica.</li>
-          <li>Píxeles de seguimiento publicitario (Meta, LinkedIn, Google Ads).</li>
-          <li>Cookies de personalización o de perfilado.</li>
-          <li>Mapas de calor o grabación de sesiones.</li>
+          <li>
+            <strong>
+              <code>_ga</code>, <code>_ga_*</code>
+            </strong>{" "}
+            (Google Analytics) — distinguen visitantes únicos y sesiones.
+            Persisten hasta 2 años.
+          </li>
+          <li>
+            <strong>
+              <code>_gid</code>
+            </strong>{" "}
+            (Google Analytics) — distingue visitantes. Persiste 24 horas.
+          </li>
         </ul>
         <p>
+          Estas cookies son de <strong>terceros</strong> (Google Ireland
+          Limited) y su finalidad es exclusivamente <strong>estadística</strong>
+          : entender qué páginas se visitan y cómo. No usamos píxeles de
+          publicidad (Meta, LinkedIn, Google Ads), cookies de perfilado ni
+          mapas de calor o grabación de sesiones.
+        </p>
+        {/* Texto SIN la palabra "privacidad": el enlace "Privacidad" del pie
+            (Footer.tsx) se busca por nombre accesible en e2e con
+            `getByRole('link', { name: 'Privacidad' })`, sin `exact: true` —
+            un segundo enlace cuyo nombre CONTENGA esa palabra rompe el
+            selector con "strict mode violation" (dos coincidencias). */}
+        <p>
+          Más información sobre cómo trata tus datos Google en{" "}
+          <a
+            href="https://policies.google.com/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            policies.google.com/privacy
+          </a>
+          .
+        </p>
+        <p>
           Las tipografías se sirven autoalojadas desde nuestro propio dominio
-          mediante <code>next/font</code>, por lo que el navegador{" "}
-          <strong>no realiza peticiones a servidores de Google</strong> al cargar
-          la web.
+          mediante <code>next/font</code>, por lo que cargarlas{" "}
+          <strong>no</strong> genera peticiones a servidores de Google.
         </p>
 
-        <h2>4. Almacenamiento local técnico</h2>
+        <h2>4. Cómo gestionar tu consentimiento</h2>
+        <p>
+          Al entrar por primera vez verás un banner con dos opciones,{" "}
+          <strong>Aceptar</strong> y <strong>Rechazar</strong>. Tu decisión se
+          guarda en el almacenamiento local del navegador (
+          <code>localStorage</code>, clave{" "}
+          <code>action-cookie-consent</code>) y no vuelve a preguntarse hasta
+          que la borres o la cambies.
+        </p>
+        <p>
+          Para cambiar tu decisión en cualquier momento, usa el enlace{" "}
+          <strong>«Preferencias de cookies»</strong> del pie de página: vuelve
+          a mostrar el banner sin recargar la web.
+        </p>
+
+        <h2>5. Almacenamiento local técnico</h2>
         <p>
           El sitio sí guarda dos valores en el almacenamiento del navegador. No
           son cookies (no se envían al servidor en cada petición), son técnicos y
@@ -132,7 +189,7 @@ export default function CookiesPage() {
           </li>
         </ul>
 
-        <h2>5. Servicios de terceros</h2>
+        <h2>6. Servicios de terceros</h2>
         <p>
           Si utilizas el formulario de contacto, al enviarlo se abre{" "}
           <strong>WhatsApp</strong> en una pestaña nueva. A partir de ese
@@ -146,21 +203,22 @@ export default function CookiesPage() {
           en tu navegador.
         </p>
 
-        <h2>6. Cómo controlar el almacenamiento</h2>
+        <h2>7. Cómo controlar el almacenamiento y las cookies</h2>
         <p>
-          Puedes borrar el almacenamiento local de este sitio desde los ajustes
-          de tu navegador (normalmente en «Privacidad y seguridad» → «Datos de
-          sitios»), o navegar en modo incógnito. Hacerlo solo implica que el
-          sitio olvidará tu idioma preferido y volverá a mostrar la pantalla de
-          carga.
+          Además del enlace «Preferencias de cookies» del pie de página, puedes
+          borrar el almacenamiento y las cookies de este sitio desde los
+          ajustes de tu navegador (normalmente en «Privacidad y seguridad» →
+          «Datos de sitios»), o navegar en modo incógnito. Borrar el
+          almacenamiento hace que el sitio olvide tu idioma preferido, tu
+          decisión de cookies (volverá a preguntarse) y vuelva a mostrar la
+          pantalla de carga.
         </p>
 
-        <h2>7. Cambios</h2>
+        <h2>8. Cambios</h2>
         <p>
-          Si en el futuro se incorpora analítica o cualquier tecnología que
-          requiera consentimiento, se implementará un mecanismo de consentimiento
-          previo y se actualizará este documento antes de activarla. La fecha de
-          última revisión figura al inicio.
+          Si en el futuro se incorpora otra tecnología que requiera
+          consentimiento, se actualizará este documento antes de activarla. La
+          fecha de última revisión figura al inicio.
         </p>
         <p>
           Dudas sobre esta política:{" "}

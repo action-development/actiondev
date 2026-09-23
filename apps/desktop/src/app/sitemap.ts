@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { LEGAL_UPDATED, SITE_URL } from "@/lib/seo";
 import { landings } from "@/data/landings";
 import { getPosts } from "@/lib/blog";
+import { projects } from "@/data/projects";
 
 const CORE_LANDING = "desarrollo-de-aplicaciones-vigo";
 
@@ -82,9 +83,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  const projectEntries: MetadataRoute.Sitemap = projects.map((p) => ({
+    url: `${SITE_URL}/projects/${p.slug}`,
+    lastModified: CONTENT_UPDATED,
+    changeFrequency: "yearly",
+    priority: 0.5,
+  }));
+
   // Las URLs de portfolios de clientes (dominios externos) NO van en el
   // sitemap: un sitemap solo debe listar URLs del propio host, o Search
   // Console las marca como cross-domain y las ignora. Siguen enlazadas
   // como salientes desde las project cards, solo no aquí.
-  return [...home, ...landingEntries, ...postEntries, ...legal];
+  return [...home, ...landingEntries, ...postEntries, ...projectEntries, ...legal];
 }

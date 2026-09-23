@@ -8,7 +8,7 @@ import { Header } from "@/components/layout/Header";
 
 /**
  * Artículo de blog (/blog/[slug]) — server component, data-driven desde
- * Supabase (tabla `posts`, gestionada desde `apps/admin`). Lleva el mismo
+ * Firestore (colección `posts`, gestionada desde `apps/admin`). Lleva el mismo
  * `Header` que el resto del sitio (nav unificada); el cuerpo sigue
  * deliberadamente al margen del lenguaje holográfico — ver `.post-prose`
  * (globals.css).

@@ -5,6 +5,7 @@ export const es: Translations = {
     home: "Inicio",
     work: "Trabajo",
     reviews: "Reseñas",
+    blog: "Blog",
     contact: "Contacto",
     cta: "Hablemos",
     ariaLabel: "Navegación principal",
@@ -18,9 +19,9 @@ export const es: Translations = {
     sub: "Estrategia, diseño y desarrollo para marcas que se niegan a pasar desapercibidas.",
   },
   projects: {
-    transform: "Transforma tus ideas",
-    into: "en",
-    accent: "ventas",
+    transform: "Desarrollo",
+    into: "a medida",
+    accent: "para tus proyectos",
     loading: "Cargando proyectos…",
     cargoTag: "Carga",
   },
@@ -29,8 +30,9 @@ export const es: Translations = {
     visionaries: "visionarios",
   },
   contact: {
-    headline: "Hablamos",
-    accent: "hoy",
+    headline: "Escríbenos",
+    accent: "directamente",
+    subtitle: "Sin compromiso",
     whatsappLabel: "WhatsApp",
     emailLabel: "Email",
     emailSubject: "Proyecto nuevo",
@@ -38,6 +40,12 @@ export const es: Translations = {
     askAI: "Pregunta a la IA sobre nosotros",
     aiPrompt:
       "Quiero entender qué es Action.dev y a qué se dedican. Son una agencia digital especializada en diseño y desarrollo, experiencias web inmersivas con Three.js y React, identidad de marca y servicios de crecimiento como SEO y CRO. Resume sus capacidades, trabajos destacados y qué les hace diferentes. Responde en español: https://actiondev.es/",
+    callbackLabel: "¿Prefieres que te contactemos?",
+    callbackPlaceholder: "Tu teléfono",
+    callbackNotesPlaceholder:
+      "¿Llamada o mensaje? ¿Algún horario mejor para llamarte? Cuéntanos lo que quieras (opcional)",
+    callbackCta: "Enviar",
+    callbackSuccess: "¡Gracias! Te contactaremos en menos de 24h.",
   },
   footer: {
     available: "Disponible para el '26",
@@ -51,6 +59,7 @@ export const es: Translations = {
     legalPrivacy: "Privacidad",
     legalTerms: "Términos",
     legalCookies: "Cookies",
+    cookiePreferences: "Preferencias de cookies",
     madeIn: "Diseñado y desarrollado en Vigo, ES",
     rights: "Todos los derechos reservados",
     brandDisclaimer:
@@ -60,6 +69,7 @@ export const es: Translations = {
     hero: "Inicio",
     work: "Trabajo",
     reviews: "Reseñas",
+    blog: "Blog",
     contact: "Contacto",
     goTo: "Ir a",
     ariaLabel: "Progreso de sección",
@@ -115,6 +125,14 @@ export const es: Translations = {
   notFound: {
     subtitle: "La página que buscas no existe — o nunca existió.",
     cta: "Volver al inicio",
+  },
+  cookieConsent: {
+    message:
+      "Usamos cookies de analítica para entender cómo se usa el sitio. Solo se activan si las aceptas.",
+    linkLabel: "Política de cookies",
+    accept: "Aceptar",
+    reject: "Rechazar",
+    ariaLabel: "Consentimiento de cookies",
   },
   plaza: {
     title: "La plaza de las reseñas",

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "@/lib/gsap-config";
 import { projects, type Project } from "@/data/projects";
@@ -87,33 +88,20 @@ interface ProjectRowProps {
 
 function ProjectRow({ project, locale, onEnter }: ProjectRowProps) {
 	const [hovered, setHovered] = useState(false);
-	const isPlaceholder = project.url === "#";
 	const category = locale === "es" ? project.categoryEs ?? project.category : project.category;
 	const niche = locale === "es" ? project.nicheEs ?? project.niche : project.niche;
 	const meta = niche ? `${category} · ${niche}` : category;
 
-	const Tag = isPlaceholder ? "div" : "a";
-	const linkProps = isPlaceholder
-		? {}
-		: { href: project.url, target: "_blank", rel: "noopener noreferrer" };
+	const rowClassName = [
+		hud.row,
+		hud.lanes,
+		"group relative grid cursor-pointer py-6 md:py-7",
+	].join(" ");
 
-	return (
-		<Tag
-			{...linkProps}
-			data-row
-			className={[
-				hud.row,
-				hud.lanes,
-				"group relative grid py-6 md:py-7",
-				isPlaceholder ? "cursor-default" : "cursor-pointer",
-			].join(" ")}
-			onMouseEnter={() => {
-				setHovered(true);
-				onEnter(project);
-			}}
-			onMouseLeave={() => setHovered(false)}
-			aria-label={`${project.title} — ${meta}`}
-		>
+	const hintLabel = locale === "es" ? "Ver más ↗" : "View more ↗";
+
+	const row = (
+		<>
 			<ScrambleTitle
 				text={project.title}
 				active={hovered}
@@ -124,6 +112,15 @@ function ProjectRow({ project, locale, onEnter }: ProjectRowProps) {
 				{meta}
 			</span>
 
+			{/* Sin esto la fila no se leía como clicable: la única pista era el
+			    filete que barre por debajo, y quedaba por descubrir al azar.
+			    La opacidad la controla `hud.hint` (ver el CSS del módulo) — las
+			    utilidades de Tailwind aquí perderían contra el atenuado de la
+			    lista, que vive fuera de capa. */}
+			<span className={`${hud.hint} micro-label micro-label-accent hidden shrink-0 translate-x-1 text-right transition-transform duration-300 group-hover:translate-x-0 md:inline-block`}>
+				{hintLabel}
+			</span>
+
 			{/* `scaleX` y no `width`: animar el ancho obliga al navegador a
 			    recalcular la caja en cada frame de las 31 filas. El trazo es el
 			    mismo, el coste no. */}
@@ -131,7 +128,23 @@ function ProjectRow({ project, locale, onEnter }: ProjectRowProps) {
 				aria-hidden
 				className="pointer-events-none absolute -bottom-0.5 left-0 h-0.5 w-full origin-left scale-x-0 bg-accent transition-transform duration-500 ease-out group-hover:scale-x-100"
 			/>
-		</Tag>
+		</>
+	);
+
+	return (
+		<Link
+			href={`/projects/${project.slug}`}
+			data-row
+			className={rowClassName}
+			onMouseEnter={() => {
+				setHovered(true);
+				onEnter(project);
+			}}
+			onMouseLeave={() => setHovered(false)}
+			aria-label={`${project.title} — ${meta}`}
+		>
+			{row}
+		</Link>
 	);
 }
 

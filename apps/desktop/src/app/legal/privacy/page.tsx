@@ -13,9 +13,11 @@ import {
  * Política de privacidad (RGPD + LOPDGDD).
  *
  * Describe el tratamiento REAL del sitio: el formulario de contacto no envía
- * datos a ningún servidor propio — compone un mensaje y abre WhatsApp. No hay
- * analítica ni base de datos. Mantener este documento alineado con
- * `components/sections/Contact.tsx` si eso cambia.
+ * datos a ningún servidor propio — compone un mensaje y abre WhatsApp. Hay
+ * analítica (Google Tag Manager, solo tras consentimiento — ver
+ * `/legal/cookies`) pero no base de datos propia de analítica. Mantener este
+ * documento alineado con `components/sections/Contact.tsx` y
+ * `components/analytics/GoogleTagManager.tsx` si eso cambia.
  */
 
 export const metadata: Metadata = {
@@ -72,7 +74,7 @@ export default function PrivacyPage() {
       <LegalDocHeader
         eyebrow="Legal · RGPD"
         title="Política de privacidad"
-        lede={`Responsable del tratamiento: ${LEGAL_ENTITY.name}, titular de la marca ${BUSINESS.alternateName}. Este sitio no tiene base de datos ni analítica: recogemos lo mínimo para responderte y nada más.`}
+        lede={`Responsable del tratamiento: ${LEGAL_ENTITY.name}, titular de la marca ${BUSINESS.alternateName}. Recogemos lo mínimo para responderte; la analítica del sitio solo se activa si la aceptas.`}
       />
 
       <div className="legal-prose">
@@ -147,13 +149,21 @@ export default function PrivacyPage() {
           de contacto.
         </p>
 
-        <h3>2.4. Datos técnicos de navegación</h3>
+        <h3>2.4. Datos técnicos de navegación y analítica</h3>
         <p>
-          El sitio no usa analítica ni cookies propias de seguimiento. El
-          proveedor de alojamiento registra datos técnicos de acceso (dirección
-          IP, agente de usuario, fecha y hora) en sus logs de servidor, por
-          seguridad y estabilidad del servicio. Ver la{" "}
-          <Link href="/legal/cookies">política de cookies</Link>.
+          El proveedor de alojamiento registra datos técnicos de acceso
+          (dirección IP, agente de usuario, fecha y hora) en sus logs de
+          servidor, por seguridad y estabilidad del servicio.
+        </p>
+        <p>
+          Además, si aceptas el banner de cookies, tratamos datos de uso del
+          sitio (páginas visitadas, procedencia, dispositivo, ubicación
+          aproximada) a través de <strong>Google Tag Manager</strong> y las
+          herramientas de analítica que cargue (típicamente Google Analytics),
+          de forma agregada y estadística — no identificamos a personas
+          individuales a partir de esos datos. Ver la{" "}
+          <Link href="/legal/cookies">política de cookies</Link> para el
+          detalle de cookies y cómo retirar el consentimiento.
         </p>
 
         <h2>3. Finalidades y base legal</h2>
@@ -181,6 +191,12 @@ export default function PrivacyPage() {
             <strong>Publicar un proyecto en el portfolio</strong> — base legal:
             consentimiento expreso del cliente (art. 6.1.a RGPD), revocable en
             cualquier momento.
+          </li>
+          <li>
+            <strong>Analítica de uso del sitio</strong> (Google Tag Manager /
+            Google Analytics) — base legal: consentimiento expreso mediante el
+            banner de cookies (art. 6.1.a RGPD), revocable en cualquier
+            momento desde «Preferencias de cookies» en el pie de página.
           </li>
         </ul>
         <p>
@@ -237,6 +253,14 @@ export default function PrivacyPage() {
             <code>next/font</code>, por lo que{" "}
             <strong>no se realizan peticiones del navegador a Google</strong> al
             cargar la web.
+          </li>
+          <li>
+            <strong>Google Ireland Limited</strong> (Google Tag Manager /
+            Google Analytics) — solo si aceptas el banner de cookies. Trata
+            datos de uso del sitio conforme a su propia política de
+            privacidad; puede transferir datos a EE. UU. amparado en las
+            cláusulas contractuales tipo de la Comisión Europea. Ver la{" "}
+            <Link href="/legal/cookies">política de cookies</Link>.
           </li>
         </ul>
         <p>

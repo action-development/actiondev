@@ -13,13 +13,10 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: BRAND.language,
     orientation: "portrait-primary",
     icons: [
-      // Replace with real 192×192 and 512×512 PNGs when available.
       // /favicon.ico does not exist in public — referencing it caused a 404.
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-      // 1024×1024 de verdad: declararlo como 192×192 hacía que el navegador
-      // lo eligiera para ese hueco y luego reescalara un archivo 28 veces
-      // mayor del necesario.
-      { src: "/logos/action_globe.webp", sizes: "1024x1024", type: "image/webp" },
+      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
     ],
   };
 }

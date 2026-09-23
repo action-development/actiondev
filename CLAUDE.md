@@ -92,7 +92,7 @@
 | `@actiondev/mobile` | `apps/mobile` | Web mobile (Next.js 15) | 3000 |
 | `@actiondev/shared` | `packages/shared` | Data compartida (proyectos, blog) entre desktop, mobile y admin | — |
 | `@actiondev/pablo` | `apps/pablo` | Web personal en `pablo.actiondev.es` (proyecto Vercel propio, light-first, mobile-first) | 3002 |
-| `@actiondev/admin` | `apps/admin` | Panel interno de gestión del blog (Supabase Auth, un solo usuario). App separada con deploy propio — cero impacto en el bundle/rendimiento del sitio público. Estética minimalista blanco y negro, SIN el lenguaje holográfico de desktop. Ver `[BACKEND]` | 3003 |
+| `@actiondev/admin` | `apps/admin` | Panel interno de gestión del blog (Firebase Auth, un solo usuario). App separada con deploy propio — cero impacto en el bundle/rendimiento del sitio público. Estética minimalista blanco y negro, SIN el lenguaje holográfico de desktop. Ver `[BACKEND]` | 3003 |
 
 **Tono:** Premium, minimalista, dark-mode first, tipografía bold, animaciones fluidas, experiencias 3D inmersivas.
 
@@ -225,6 +225,7 @@ Componente de botón: `ui/HoloButton.tsx` (elige `<Link>` o `<a>` según el `hre
 |------|--------|-----------|
 | `/` | Home | Pantalla de inicio "rollo videojuego": SOLO el hero "La Grúa" a viewport completo (`h-[100dvh]`), sin scroll, sin Lenis, sin footer. Cargar un contenedor en el barco → wipe radial → `router.push` a su ruta |
 | `/projects` | Proyectos | Antigua sección `#projects` de la home (`Projects` carrusel 3D + `ProjectsIndex`), dentro de `SectionPage`. El índice es una lista de CUATRO calles con viñeta anclada a la fila — ver nota abajo |
+| `/projects/[slug]` | Ficha de proyecto | Caso de estudio individual: hero a todo el ancho (vídeo si `project.video`, si no `project.image`) y debajo "Qué nos pidieron" / "Qué conseguimos" a dos columnas. Server component, FUERA del lenguaje holográfico a propósito (misma familia que `/blog/[slug]`: es para leer, no el juego de la home) — NO usa `SectionPage`. `brief`/`result` (+ `Es`) son opcionales en `Project` (`packages/shared/src/projects.ts`); sin contenido real cae en el placeholder genérico de `page.tsx`, pendiente de redactar caso a caso. Todas las filas del índice enlazan aquí, tengan o no `url` de cliente real (`"#"` si no la tiene); si `project.url !== "#"`, la ficha muestra un enlace "Ver web" (`target="_blank"`) hacia esa URL — el índice ya NO saca al visitante directamente al site del cliente |
 | `/contact` | Contacto | **Sin formulario** (decisión del cliente): titular + dos tarjetas de canal — WhatsApp y email — y los chips "pregunta a la IA". **Calma deliberada** (`.calm-surface`, no `.holo-surface`): el visitante viene a coger un teléfono, y el brillo resta confianza. Ver nota abajo |
 | `/reviews` | Reviews | Redirect a `/resenas` (la sección `Testimonials` de la home se retiró; el componente sigue en `sections/` sin ruta, por si se reutiliza) |
 | `/resenas` | Plaza de reseñas | Parque 3D inspirado en **Castrelos (Vigo)**, con versión de **día y de noche**: un muñeco procedural por testimonio; click → cámara enfoca + ficha. Es la entrada "Reseñas" del nav |
@@ -232,12 +233,13 @@ Componente de botón: `ui/HoloButton.tsx` (elige `<Link>` o `<a>` según el `hre
 | `/legal/aviso-legal` | Aviso legal | Titularidad LSSI art. 10 — Alcasi Systems, S.L. **`/legal/*` queda FUERA del lenguaje holográfico** (decisión del cliente): son documentos para leer y verificar, no escaparate |
 | `/legal/privacy` | Privacidad | RGPD/LOPDGDD |
 | `/legal/terms` | Términos | Condiciones de contratación + sector público |
-| `/legal/cookies` | Cookies | Sin cookies; solo almacenamiento técnico |
+| `/legal/cookies` | Cookies | GTM detrás de consentimiento (banner global) + almacenamiento técnico — ver `[SECURITY]` |
 | `/desarrollo-de-aplicaciones-vigo` | Landing SEO | Keyword núcleo — máxima prioridad |
 | `/desarrollo-web-vigo` | Landing SEO | Data en `src/data/landings.ts` |
 | `/diseno-web-vigo` | Landing SEO | ídem |
 | `/desarrollo-de-aplicaciones-pontevedra` | Landing SEO | ídem |
 | `/desarrollo-web-pontevedra` | Landing SEO | ídem |
+| `/diseno-web-pontevedra` | Landing SEO | ídem |
 | `/desarrollo-de-aplicaciones-galicia` | Landing SEO | ídem |
 
 **Índice de proyectos** (`sections/ProjectsIndex.tsx` + `projects-hud.module.css`): lista **de borde a borde** (fuera del `container-editorial`, con `px-6 md:px-12`) de dos calles — **nombre │ tipo** — y SIN filetes de separación: a las filas las separa el aire de su `py`, y la única regla que aparece es la lima de la apuntada. Titular y botón van centrados sobre ella; en el titular sólo la PRIMERA palabra va en lima (`Todo` / `Every`).
@@ -294,37 +296,41 @@ Componente nav: `layout/Header.tsx` + `Header.module.css` = **cápsula holográf
 - Dominio canónico: `https://actiondev.es`
 - Fuente de verdad SEO: `apps/desktop/src/lib/seo.ts`. **NAP compartido** (dirección C/ Colón 20, teléfono, geo): `packages/shared/src/seo.ts` (`BUSINESS`) — debe coincidir SIEMPRE con la ficha de Google Business Profile.
 - **Titularidad legal**: `LEGAL_ENTITY` en `packages/shared/src/seo.ts`. "Action / Action Development" es una MARCA; la persona jurídica es **Alcasi Systems, S.L.** (CIF B72910664, domicilio social en Marín, Reg. Mercantil de Pontevedra). `BUSINESS.legalName` lleva la denominación social real y `BUSINESS.displayName` el nombre de marca largo para usos visuales (OG image). No volver a poner un nombre de marketing en `legalName` — el JSON-LD emite `legalName` + `vatID` para que un organismo público pueda cruzar el proveedor con el Registro Mercantil.
-- **Páginas legales** en `/legal/*` (desktop): ver `[PÁGINAS]`. Al tocar su contenido, actualizar `LEGAL_UPDATED` en `src/lib/seo.ts`. La política de cookies y la de privacidad describen el comportamiento REAL del sitio (sin analítica, formulario que abre WhatsApp sin servidor) — si se añade analítica, hay que actualizarlas Y añadir banner de consentimiento.
+- **Páginas legales** en `/legal/*` (desktop): ver `[PÁGINAS]`. Al tocar su contenido, actualizar `LEGAL_UPDATED` en `src/lib/seo.ts`. La política de cookies y la de privacidad describen el comportamiento REAL del sitio (formulario que abre WhatsApp sin servidor, analítica vía Google Tag Manager detrás de consentimiento — ver `[SECURITY]`) — al añadir un tag nuevo dentro del contenedor GTM, actualizarlas de nuevo.
 - Infraestructura: `sitemap.ts`, `robots.ts` (whitelist crawlers LLM), `manifest.ts`, `public/llms.txt` (AEO), OG image dinámica en `/api/og`.
 - Structured data: `components/seo/StructuredData.tsx` (desktop) y `components/StructuredData.tsx` (mobile) — Organization + ProfessionalService con NAP/geo idénticos y mismos `@id`. Las landings añaden Service + FAQPage + BreadcrumbList.
-- **Mobile-first indexing**: Google indexa la zona mobile para `/`. Cualquier cambio SEO en desktop debe replicarse en mobile (metadata + JSON-LD).
-- Pendiente: favicon.ico real + PNGs 192/512 para manifest.
+- **Mobile-first indexing**: Google indexa la zona mobile SOLO para `/` (`middleware.ts` solo reescribe esa ruta en dispositivo móvil); `/resenas`, `/projects`, `/contact`, landings y legales sirven SIEMPRE el código de desktop, en cualquier dispositivo. Por eso el JSON-LD `reviews`/`projects` (que vive en esas rutas) no hace falta replicarlo en `apps/mobile/src/components/StructuredData.tsx` — solo Organization/WebSite/ProfessionalService, que sí son los que monta la home en ambas zonas. Cualquier cambio a ESOS tres schemas (o al NAP/`hasOfferCatalog` que llevan) sí debe replicarse en mobile.
+- Iconos PWA del manifest: `/icons/icon-192.png` y `/icons/icon-512.png` (generados desde `/logos/action_globe.webp`, `apps/desktop/public/icons/`). Pendiente: favicon.ico real y una variante `purpose: "maskable"` con zona de seguridad (los actuales son `purpose: "any"`).
+- `apps/desktop/src/app/api/og/route.tsx` acepta `?title=` (usado por `[landing]/page.tsx` con `landing.h1`) para que cada landing tenga su propia imagen OG en vez de compartir la genérica de home.
 
 ---
 
 ## [BACKEND] API y base de datos
 
-- **Blog en Supabase** — única pieza con backend real. El resto sigue siendo datos estáticos en `src/data/`.
-  - Tabla `posts` (proyecto Supabase compartido entre `apps/admin` y `apps/desktop`): `id`, `slug` (único), `title`, `meta_description`, `category`, `date`, `reading_time`, `h1`, `excerpt`, `content` (`jsonb`, array de `BlogContentBlock`), `status` (`draft` | `published`), `created_at`, `updated_at`. Migración SQL en `supabase/migrations/`.
-  - **RLS activo**: lectura pública (`anon`) solo `status = 'published'` — la usa `apps/desktop`. Lectura/escritura completa para `authenticated` restringida además por email en la policy — allowlist a nivel de base de datos, no solo de código.
-  - Tipos compartidos `BlogPost` / `BlogContentBlock` en `packages/shared/src/blog.ts` — misma fuente para `apps/admin` y `apps/desktop`, no duplicar.
-  - `apps/admin` (puerto 3003): panel de gestión. Login con Supabase Auth (`src/lib/supabase/{client,server}.ts`), un único usuario, sin auto-registro. CRUD de posts vía server actions (`src/app/(protected)/posts/actions.ts`), respetando RLS con la sesión real — **nunca** `service_role` en runtime.
-  - `apps/desktop`: lee posts publicados vía `src/lib/blog.ts` (`getPosts`/`getPost`, solo `@supabase/supabase-js`, sin sesión). `/blog` y `/blog/[slug]` llevan `revalidate = 3600` como red de seguridad; la publicación instantánea la dispara el webhook `POST /api/revalidate` (secreto compartido `REVALIDATE_SECRET`), llamado por las server actions de `apps/admin` tras cada guardado. `dynamicParams` es `true` (default) en `/blog/[slug]` — un slug nuevo se sirve on-demand aunque el webhook falle.
-  - Seed de los 3 posts placeholder originales: `scripts/seed-blog-posts.ts` (usa `service_role key`, solo local, un único uso).
-- **Contacto sin formulario, por decisión de producto** (ver `[PÁGINAS]` → `/contact`): no hay nada que enviar a un servidor, así que la web no finge tenerlo. No reintroducir formulario ni conectar Resend/SendGrid/API route sin que el cliente lo pida.
-- No hay más base de datos ni auth fuera del blog.
+- **Blog + leads en Firebase** (proyecto `action-dev-1a531`) — única pieza con backend real. El resto sigue siendo datos estáticos en `src/data/`.
+  - **Firestore, no SQL**: colecciones `posts` y `leads`, documentos camelCase que calcan directamente `BlogPost`/`Lead` de `packages/shared` (sin capa de conversión snake_case — el `id` es el ID del documento, no un campo). Reglas de seguridad en `firestore.rules` (raíz del monorepo), desplegadas con `firebase deploy --only firestore`.
+  - `posts`: lectura pública (`get`/`list`) solo si `status == 'published'` — la usa `apps/desktop`. Lectura/escritura completa solo si `request.auth.token.email == 'hi@actiondev.es'` — allowlist a nivel de regla, no solo de código.
+  - `leads`: `create` público sin sesión (el propio visitante escribe su lead) — nunca puede leer ni tocar los existentes. Lectura/escritura completa con el mismo allowlist de email que `posts`.
+  - Tipos compartidos `BlogPost`/`BlogContentBlock` (`packages/shared/src/blog.ts`) y `Lead` (`packages/shared/src/leads.ts`) — misma fuente para `apps/admin` y `apps/desktop`, no duplicar.
+  - `apps/desktop`: SDK web de Firebase (`src/lib/firebase/client.ts`, solo `NEXT_PUBLIC_*`, sin sesión — las reglas ya limitan lo que puede hacer). `src/lib/blog.ts` (`getPosts`/`getPost`) lee `posts` directo; `src/lib/callback-request.ts` (`Contact.tsx`) hace `addDoc` en `leads`. `/blog` y `/blog/[slug]` llevan `revalidate = 3600` como red de seguridad; la publicación instantánea la dispara el webhook `POST /api/revalidate` (secreto compartido `REVALIDATE_SECRET`), llamado por las server actions de `apps/admin` tras cada guardado. `dynamicParams` es `true` (default) en `/blog/[slug]` — un slug nuevo se sirve on-demand aunque el webhook falle.
+  - `apps/admin` (puerto 3003): panel de gestión, **Admin SDK** (`src/lib/firebase/admin.ts`), nunca el navegador. En local usa las credenciales de usuario de `firebase login` (`applicationDefault()`); en producción, una cuenta de servicio propia vía `FIREBASE_CLIENT_EMAIL`/`FIREBASE_PRIVATE_KEY`. Como el Admin SDK **ignora** `firestore.rules`, la única puerta es `requireSessionUser()`/`getSessionUser()` (`src/lib/firebase/session.ts`) — verifica la cookie de sesión contra el mismo allowlist de email. CRUD de posts vía server actions (`src/app/(protected)/posts/actions.ts`).
+  - **Login: Firebase Auth solo puede firmar con email/password desde el navegador**, no desde una server action — `src/app/login/page.tsx` es un client component que llama `signInWithEmailAndPassword` con el SDK web y canjea el `idToken` resultante por una cookie de sesión httpOnly en `POST /api/session` (`src/app/api/session/route.ts`, verificada con el Admin SDK — `createSessionCookie`/`verifySessionCookie`). Un único usuario en Firebase Auth (`hi@actiondev.es`), sin auto-registro — coincide con el allowlist de `firestore.rules` y de `lib/firebase/session.ts`; si cambia el email, actualizar los dos sitios.
+  - Seed de los 3 posts placeholder originales: `scripts/seed-blog-posts.ts` (Admin SDK, mismo patrón de credenciales que `apps/admin`, solo local, un único uso).
+- **Contacto sin formulario de proyecto, por decisión de producto** (ver `[PÁGINAS]` → `/contact`): no hay formulario de "cuéntanos tu proyecto" ni backend genérico de contacto — la única excepción es el campo de teléfono de "llámame tú" de arriba. No reintroducir un formulario más amplio ni conectar Resend/SendGrid/API route sin que el cliente lo pida.
+- No hay más base de datos ni auth fuera del blog y los leads.
 
 ---
 
 ## [SECURITY] Seguridad
 
 - **Variables de entorno** (`.env.local`, nunca commiteado — `.env.example` sí, sin valores reales):
-  - `apps/desktop`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `REVALIDATE_SECRET`.
-  - `apps/admin`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DESKTOP_SITE_URL`, `REVALIDATE_SECRET`.
-  - `service_role key` de Supabase: **NUNCA** en el runtime de ninguna app. Solo en `scripts/seed-blog-posts.ts`, ejecutado a mano y en local.
-- Sin formulario de contacto público → sin superficie de spam: no hacen falta rate limiting ni honeypot ahí. `apps/admin` sí necesita su login protegido (Supabase Auth, un único usuario, sin auto-registro) por ser superficie de escritura.
+  - `apps/desktop`: `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `REVALIDATE_SECRET`.
+  - `apps/admin`: los mismos tres `NEXT_PUBLIC_FIREBASE_*` (firman el login en el navegador) + `FIREBASE_PROJECT_ID`/`FIREBASE_CLIENT_EMAIL`/`FIREBASE_PRIVATE_KEY` (Admin SDK, solo en producción — en local basta `firebase login`) + `DESKTOP_SITE_URL`, `REVALIDATE_SECRET`.
+  - Cuenta de servicio de Firebase (`FIREBASE_CLIENT_EMAIL`/`FIREBASE_PRIVATE_KEY`): **NUNCA** en `apps/desktop`, solo en el runtime de `apps/admin` (Admin SDK) y en `scripts/seed-blog-posts.ts`.
+- Sin formulario de contacto público → sin superficie de spam: no hacen falta rate limiting ni honeypot ahí. `apps/admin` sí necesita su login protegido (Firebase Auth, un único usuario, sin auto-registro) por ser superficie de escritura.
 - `apps/admin` fuera de índice: `robots.ts` con `disallow: "/"` + `X-Robots-Tag: noindex, nofollow` en todas las respuestas (`next.config.ts`).
 - Three.js assets: servir desde `/public`, no desde CDN externo sin verificar.
+- **Google Tag Manager (`GTM-PF295VK8`) — SIEMPRE detrás de consentimiento.** `components/analytics/GoogleTagManager.tsx` (desktop y mobile, idéntico salvo el doc comment) no renderiza nada — ni el `<script>` ni el `<noscript>`— hasta que hay una decisión `"granted"` guardada. Consentimiento gestionado por `packages/shared/src/analytics.ts` (`GTM_ID`, `CONSENT_STORAGE_KEY = "action-cookie-consent"`, `readStoredConsent`/`storeConsent`/`resetConsent`), leído/escrito en `localStorage` y compartido entre ambas apps. El banner (`ui/CookieConsent.tsx` en desktop, `components/CookieConsent.tsx` en mobile) es la única superficie que llama `storeConsent`; el enlace «Preferencias de cookies» del Footer llama `resetConsent()` para reabrirlo sin recargar. **No** pegar el snippet de Google literal en el `<head>` — eso instalaría cookies antes de que el visitante decida (LSSI art. 22.2). Al añadir un tag nuevo dentro del contenedor (Ads, Meta Pixel...), actualizar `/legal/cookies` y `LEGAL_UPDATED` en `lib/seo.ts` — ver `[PÁGINAS]`.
 
 **Pendiente:** —
 
@@ -442,7 +448,7 @@ navegación. Pide decisión de producto, no es un parche.
 | Three.js / R3F scenes, materials, hooks | `r3f-best-practices` |
 
 ### MCPs — uso eficiente
-- Supabase: agrupar queries con `Promise.all([...])` cuando sean independientes. Nunca secuencial si no hay dependencia.
+- Firebase (Firestore): agrupar lecturas con `Promise.all([...])` cuando sean independientes. Nunca secuencial si no hay dependencia.
 - No usar `mcp__magic__*` para UI — usar skill `frontend-design`.
 - No usar `mcp__ide__getDiagnostics` por defecto — solo si hay un error concreto que diagnosticar.
 

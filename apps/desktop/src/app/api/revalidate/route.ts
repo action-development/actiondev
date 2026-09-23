@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 /**
  * Webhook llamado por `apps/admin` justo después de escribir un post en
- * Supabase, para que aparezca en `/blog` sin esperar al `revalidate` por
+ * Firestore, para que aparezca en `/blog` sin esperar al `revalidate` por
  * tiempo ni a un redeploy. `revalidate` por tiempo en las páginas del blog
  * es la red de seguridad si esta llamada falla.
  */

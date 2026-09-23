@@ -1,52 +1,11 @@
 import type { BlogPost } from "@actiondev/shared";
+import type { DocumentSnapshot } from "firebase-admin/firestore";
 
-/** Fila cruda de la tabla `posts` en Supabase — snake_case de la migración. */
-export interface PostRow {
-  id: string;
-  slug: string;
-  title: string;
-  meta_description: string;
-  category: string;
-  date: string;
-  reading_time: number;
-  h1: string;
-  excerpt: string;
-  content: BlogPost["content"];
-  status: BlogPost["status"];
-}
-
-export function rowToPost(row: PostRow): BlogPost {
-  return {
-    id: row.id,
-    slug: row.slug,
-    title: row.title,
-    metaDescription: row.meta_description,
-    category: row.category,
-    date: row.date,
-    readingTime: row.reading_time,
-    h1: row.h1,
-    excerpt: row.excerpt,
-    content: row.content,
-    status: row.status,
-  };
-}
-
-/** Payload de escritura (sin `id`, que lo genera la base de datos). */
+/** Payload de escritura (sin `id`, que lo genera Firestore). */
 export type PostWriteInput = Omit<BlogPost, "id">;
 
-export function postToRow(post: PostWriteInput) {
-  return {
-    slug: post.slug,
-    title: post.title,
-    meta_description: post.metaDescription,
-    category: post.category,
-    date: post.date,
-    reading_time: post.readingTime,
-    h1: post.h1,
-    excerpt: post.excerpt,
-    content: post.content,
-    status: post.status,
-  };
+export function postFromDoc(doc: DocumentSnapshot): BlogPost {
+  return { id: doc.id, ...(doc.data() as PostWriteInput) };
 }
 
 export function slugify(title: string): string {

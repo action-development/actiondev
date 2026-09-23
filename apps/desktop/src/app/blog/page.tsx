@@ -5,8 +5,8 @@ import { Header } from "@/components/layout/Header";
 import { BUSINESS, OG_IMAGE, absoluteUrl } from "@/lib/seo";
 
 /**
- * Índice del blog — server component, data-driven desde Supabase (tabla
- * `posts`, gestionada desde `apps/admin`). Lleva el mismo `Header` que el
+ * Índice del blog — server component, data-driven desde Firestore
+ * (colección `posts`, gestionada desde `apps/admin`). Lleva el mismo `Header` que el
  * resto del sitio (nav unificada); el cuerpo sigue deliberadamente al
  * margen del lenguaje holográfico — ver `.post-prose` (globals.css).
  *

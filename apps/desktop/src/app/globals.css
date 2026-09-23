@@ -184,6 +184,12 @@ body {
 
 .micro-label-accent { color: var(--accent); }
 
+.micro-label-loud {
+  font-size:   0.9375rem; /* 15px */
+  font-weight: 700;
+  color:       var(--foreground);
+}
+
 /* Acento del titular sin recurrir al italic + color. Con una sola familia el
    contraste lo dan caja alta + tracking + cuerpo menor, no otra tipografía. */
 .accent-word {
@@ -695,6 +701,80 @@ body {
   .legal-data dl { grid-template-columns: minmax(0, 1fr); gap: 0.25rem; }
   .legal-data dd { margin-bottom: 0.9rem; }
 }
+
+/* ─────────────────────────────────────────────────────────────── */
+/*  POST PROSE — long-form reading (/blog/[slug])                  */
+/*                                                                 */
+/*  Mismo patrón que `.legal-prose` (selectores por etiqueta, sin   */
+/*  `@layer`, para que gane a las utilidades igual que ahí), pero    */
+/*  el blog es la ÚNICA zona del sitio fuera del lenguaje            */
+/*  holográfico a propósito: sin lima, sin caja alta agresiva — solo */
+/*  tipografía normal y el gris del sistema, para que se lea como    */
+/*  un artículo y no como una interfaz.                              */
+/* ─────────────────────────────────────────────────────────────── */
+
+.post-prose {
+  max-width: 68ch;
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
+}
+
+.post-prose h2 {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 1.625rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+  margin-top: 4.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.post-prose h3 {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  color: var(--foreground);
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+}
+
+.post-prose p { margin-bottom: 1.85rem; }
+
+.post-prose ul {
+  margin-bottom: 1.85rem;
+  padding-left: 1.35rem;
+  list-style: disc;
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
+}
+
+.post-prose li { margin-bottom: 0.85rem; }
+
+.post-prose blockquote {
+  margin: 3rem 0;
+  padding-left: 1.5rem;
+  border-left: 2px solid var(--border);
+  font-size: 1.2rem;
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--foreground) 92%, transparent);
+}
+
+.post-prose strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.post-prose a {
+  color: var(--foreground);
+  text-underline-offset: 3px;
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  transition: text-decoration-color var(--duration) var(--ease);
+}
+
+.post-prose a:hover { text-decoration-color: var(--foreground); }
 
 /* ─────────────────────────────────────────────────────────────── */
 /*  LAYOUT PRIMITIVES                                              */

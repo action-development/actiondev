@@ -5,6 +5,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { ScrollInvalidator, onCanvasCreated } from "@/lib/r3f-utils";
 import * as THREE from "three";
 import type { Project } from "@/data/projects";
+import { usePageTransition } from "@/components/animations/PageTransition";
 
 /**
  * Frame-rate independent exponential lerp.
@@ -120,6 +121,12 @@ const TAG_SHADOW = 2;      // desplazamiento de la sombra dura de tinta
 const TITLE_FONT = 13;
 const TITLE_GAP = 8;       // base del título por encima del canto alto de la chapa
 const TITLE_STROKE = 3.5;
+const HINT_FONT = 8;
+const HINT_STROKE = 2;
+const HINT_BOX_PAD_X = 14;    // relleno horizontal del texto dentro de la caja
+const HINT_BOX_PAD_Y = 9;
+const HINT_BOX_RADIUS = 3;
+const HINT_BOX_ALPHA = 0.62;  // relleno de la caja por debajo del 100% — dentro se sigue leyendo la card
 
 interface OverlayLabel {
 	texture: THREE.CanvasTexture;
@@ -216,6 +223,68 @@ function createOverlayTexture(category: string, title: string): OverlayLabel {
 }
 
 /**
+ * Pista de clicabilidad ("VER MÁS ↗"), pre-pintada aparte del rótulo — vive
+ * CENTRADA sobre la imagen, dentro de una caja de tinta semitransparente
+ * (`HINT_BOX_ALPHA` < 1: se sigue leyendo la card debajo), con el mismo
+ * rotulado de cómic (contorno de tinta + relleno papel) para el texto.
+ */
+function createHintTexture(hint: string): OverlayLabel {
+	const ss = Math.min(window.devicePixelRatio || 1, MAX_DPR) * FRONT_MAG;
+	const canvas = document.createElement("canvas");
+	const ctx = canvas.getContext("2d")!;
+	const family = displayFontFamily();
+	const half = HINT_STROKE / 2;
+
+	ctx.font = `700 ${HINT_FONT}px ${family}`;
+	ctx.letterSpacing = "0.5px";
+	const textM = ctx.measureText(hint);
+	const textH = textM.actualBoundingBoxAscent + textM.actualBoundingBoxDescent;
+
+	const boxW = textM.width + HINT_BOX_PAD_X * 2;
+	const boxH = textH + HINT_BOX_PAD_Y * 2;
+	const w = boxW + half * 2;
+	const h = boxH + half * 2;
+	const baseline = half + HINT_BOX_PAD_Y + textM.actualBoundingBoxAscent;
+
+	canvas.width = Math.ceil(w * ss);
+	canvas.height = Math.ceil(h * ss);
+	ctx.scale(canvas.width / w, canvas.height / h);
+
+	// Caja: relleno de tinta por debajo del 100% de opacidad + canto papel.
+	ctx.fillStyle = `rgba(26, 20, 16, ${HINT_BOX_ALPHA})`;
+	roundRect(ctx, half, half, boxW, boxH, HINT_BOX_RADIUS);
+	ctx.fill();
+	ctx.lineWidth = 1.25;
+	ctx.strokeStyle = PAPER;
+	ctx.stroke();
+
+	ctx.font = `700 ${HINT_FONT}px ${family}`;
+	ctx.letterSpacing = "0.5px";
+	ctx.textBaseline = "alphabetic";
+	ctx.lineJoin = "round";
+	ctx.lineWidth = HINT_STROKE;
+	ctx.strokeStyle = INK;
+	ctx.strokeText(hint, half + HINT_BOX_PAD_X, baseline);
+	ctx.fillStyle = PAPER;
+	ctx.fillText(hint, half + HINT_BOX_PAD_X, baseline);
+
+	const texture = new THREE.CanvasTexture(canvas);
+	texture.minFilter = THREE.LinearFilter;
+	texture.magFilter = THREE.LinearFilter;
+	texture.generateMipmaps = false;
+	texture.colorSpace = THREE.SRGBColorSpace;
+
+	return {
+		texture,
+		width: w,
+		height: h,
+		// Centrada sobre el plano de la imagen.
+		x: 0,
+		y: 0,
+	};
+}
+
+/**
  * Degradado del velo (negro → transparente) para el canto alto de la imagen.
  *
  * Una sola columna de téxeles: el degradado es vertical y la textura se estira a lo
@@ -259,6 +328,7 @@ interface ScrollState {
 function Card3D({
 	project,
 	categoryLabel,
+	hintLabel,
 	index,
 	scrollRef,
 	sharedPlaneGeo,
@@ -268,9 +338,11 @@ function Card3D({
 	sharedLabelGeo,
 	sharedHitAreaMat,
 	sharedVeilTex,
+	onOpen,
 }: {
 	project: Project;
 	categoryLabel: string;
+	hintLabel: string;
 	index: number;
 	scrollRef: React.RefObject<ScrollState>;
 	sharedPlaneGeo: THREE.PlaneGeometry;
@@ -280,6 +352,7 @@ function Card3D({
 	sharedLabelGeo: THREE.PlaneGeometry;
 	sharedHitAreaMat: THREE.MeshBasicMaterial;
 	sharedVeilTex: THREE.CanvasTexture;
+	onOpen: (project: Project) => void;
 }) {
 	const groupRef = useRef<THREE.Group>(null);
 	const frontGroupRef = useRef<THREE.Group>(null);
@@ -360,6 +433,26 @@ function Card3D({
 		[label]
 	);
 
+	// Pista de clicabilidad, esquina inferior derecha — textura y material
+	// aparte del rótulo (título+categoría, inferior izquierda).
+	const hintRef = useRef<THREE.Mesh>(null);
+	const hint = useMemo(
+		() => createHintTexture(hintLabel),
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[hintLabel, fontGen]
+	);
+	const hintMat = useMemo(
+		() =>
+			new THREE.MeshBasicMaterial({
+				map: hint.texture,
+				transparent: true,
+				opacity: 0,
+				side: THREE.FrontSide,
+				depthWrite: false,
+			}),
+		[hint]
+	);
+
 	const { invalidate } = useThree();
 	const textureLoaded = useRef(false);
 	const cancelledRef = useRef(false);
@@ -434,6 +527,14 @@ function Card3D({
 			overlayMat.dispose();
 		};
 	}, [overlayMat, invalidate]);
+
+	useEffect(() => {
+		invalidate();
+		return () => {
+			hintMat.map?.dispose();
+			hintMat.dispose();
+		};
+	}, [hintMat, invalidate]);
 
 	useFrame((_, delta) => {
 		if (!groupRef.current || !scrollRef.current) return;
@@ -513,6 +614,11 @@ function Card3D({
 				overlayRef.current.visible = hoverOpacity.current > 0.01;
 			}
 
+			hintMat.opacity = hoverOpacity.current * fade;
+			if (hintRef.current) {
+				hintRef.current.visible = hoverOpacity.current > 0.01;
+			}
+
 			darkMat.opacity = hoverOpacity.current * 0.45 * fade;
 			darkMat.visible = darkMat.opacity > 0.01;
 
@@ -530,6 +636,7 @@ function Card3D({
 			}
 		} else {
 			if (overlayRef.current) overlayRef.current.visible = false;
+			if (hintRef.current) hintRef.current.visible = false;
 			darkMat.opacity = 0;
 			darkMat.visible = false;
 			hoverOpacity.current = 0;
@@ -571,6 +678,16 @@ function Card3D({
 					material={overlayMat}
 					visible={false}
 				/>
+				{/* Pista de clicabilidad, centrada sobre la imagen. */}
+				<mesh
+					ref={hintRef}
+					geometry={sharedLabelGeo}
+					position={[hint.x, hint.y, 3]}
+					scale={[hint.width, hint.height, 1]}
+					renderOrder={4}
+					material={hintMat}
+					visible={false}
+				/>
 
 				{/* biome-ignore lint/a11y/noStaticElementInteractions: Three.js mesh, not DOM */}
 				<mesh
@@ -578,11 +695,7 @@ function Card3D({
 					position={[0, 0, 4]}
 					renderOrder={5}
 					material={sharedHitAreaMat}
-					onClick={() => {
-						// No hay página de detalle: la card abre la web real del cliente en
-						// pestaña nueva. Un `url: "#"` es un proyecto sin web pública todavía.
-						if (project.url !== "#") window.open(project.url, "_blank", "noopener,noreferrer");
-					}}
+					onClick={() => onOpen(project)}
 					onPointerEnter={() => {
 						hoveredRef.current = true;
 						document.body.style.cursor = "pointer";
@@ -615,10 +728,12 @@ function CarouselScene({
 	projects,
 	scrollRef,
 	locale,
+	onOpen,
 }: {
 	projects: Project[];
 	scrollRef: React.RefObject<ScrollState>;
 	locale: string;
+	onOpen: (project: Project) => void;
 }) {
 	const groupRef = useRef<THREE.Group>(null);
 	const lastRotation = useRef(0);
@@ -689,11 +804,13 @@ function CarouselScene({
 				const categoryLabel = locale === "es"
 					? (project.categoryEs ?? project.category)
 					: project.category;
+				const hintLabel = locale === "es" ? "VER MÁS ↗" : "VIEW MORE ↗";
 				return (
 					<Card3D
 						key={project.id}
 						project={project}
 						categoryLabel={categoryLabel}
+						hintLabel={hintLabel}
 						index={i}
 						scrollRef={scrollRef}
 						sharedPlaneGeo={sharedPlaneGeo}
@@ -703,6 +820,7 @@ function CarouselScene({
 						sharedLabelGeo={sharedLabelGeo}
 						sharedHitAreaMat={sharedHitAreaMat}
 						sharedVeilTex={sharedVeilTex}
+						onOpen={onOpen}
 					/>
 				);
 			})}
@@ -724,6 +842,17 @@ export function Carousel3D({
 	locale?: string;
 }) {
 	const containerRef = useRef<HTMLDivElement>(null);
+	const { navigate } = usePageTransition();
+
+	// La card siempre abre la ficha interna (`/projects/[slug]`), tenga o no
+	// `url` de cliente: esa web real se enlaza desde la propia ficha ("Ver
+	// web ↗"), no desde el click de la card.
+	const onOpen = useCallback(
+		(project: Project) => {
+			navigate(`/projects/${project.slug}`);
+		},
+		[navigate]
+	);
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -770,7 +899,7 @@ export function Carousel3D({
 			>
 				<ScrollInvalidator />
 				<Suspense fallback={null}>
-					<CarouselScene projects={projects} scrollRef={scrollRef} locale={locale} />
+					<CarouselScene projects={projects} scrollRef={scrollRef} locale={locale} onOpen={onOpen} />
 				</Suspense>
 			</Canvas>
 		</div>

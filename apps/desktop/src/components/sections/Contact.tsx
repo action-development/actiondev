@@ -1,14 +1,15 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "@/lib/gsap-config";
 import { buildAiAssistants } from "@/data/ai-assistants";
 import { CONTACT, buildMailtoUrl, buildWhatsappUrl } from "@/data/socials";
+import { requestCallback } from "@/lib/callback-request";
 import { BUSINESS } from "@/lib/seo";
 import { AccentWord } from "@/components/ui/AccentWord";
 import { HoloButton } from "@/components/ui/HoloButton";
-import { MailIcon, WhatsappIcon } from "@/components/icons/channel-icons";
+import { MailIcon, PhoneIcon, WhatsappIcon } from "@/components/icons/channel-icons";
 import { useLocale, useT } from "@/lib/i18n";
 
 /**
@@ -20,6 +21,20 @@ export function Contact() {
   const t = useT();
   const { locale } = useLocale();
   const sectionRef = useRef<HTMLElement>(null);
+  const callbackPhoneRef = useRef<HTMLInputElement>(null);
+  const [callbackPhone, setCallbackPhone] = useState("");
+  const [callbackNotes, setCallbackNotes] = useState("");
+  const [callbackSubmitted, setCallbackSubmitted] = useState(false);
+
+  const trimmedCallbackPhone = callbackPhone.trim();
+
+  const handleCallbackSubmit = () => {
+    if (!trimmedCallbackPhone || callbackSubmitted) return;
+    requestCallback(trimmedCallbackPhone, callbackNotes.trim()).catch((error) => {
+      console.error("[contact] no se pudo guardar el lead:", error);
+    });
+    setCallbackSubmitted(true);
+  };
 
   const channels = [
     {
@@ -65,6 +80,9 @@ export function Contact() {
           <h2 id="contact-title" data-anim="heading" className="display-l">
             {t.contact.headline} <AccentWord>{t.contact.accent}</AccentWord>
           </h2>
+          <p data-anim="heading" className="mt-3 text-xs text-muted">
+            {t.contact.subtitle}
+          </p>
         </div>
 
         {/* ── Dos puertas, mismo peso visual: el dato real es todo el contenido ── */}
@@ -98,6 +116,77 @@ export function Contact() {
             </li>
           ))}
         </ul>
+
+        {/* Puerta menor: dejar un teléfono para que le llamen a él, en vez de
+            escribir. Una sola pieza —icono + input, sin tarjeta separada de
+            botón— con el pie en texto suelto, sin caja. */}
+        <form
+          data-anim="channel"
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleCallbackSubmit();
+          }}
+          className="mx-auto mt-6 w-72"
+        >
+          {/* Toda la fila enfoca el input al clicar, no solo su rectángulo
+              interior: el cursor de texto y el hover de `.calm-surface` (ya
+              heredado) son lo que la delata como campo, no botón. */}
+          <div
+            className="calm-surface flex cursor-text items-center gap-2 px-3 py-2"
+            onClick={() => callbackPhoneRef.current?.focus()}
+          >
+            <PhoneIcon className="h-3.5 w-3.5 shrink-0 text-accent" />
+            <label htmlFor="contact-callback-phone" className="sr-only">
+              {t.contact.callbackPlaceholder}
+            </label>
+            {/* Rectángulo propio dentro de la caja: sin él, icono + texto se
+                leía como una fila más, no como un campo en el que se escribe. */}
+            <input
+              ref={callbackPhoneRef}
+              id="contact-callback-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={callbackPhone}
+              disabled={callbackSubmitted}
+              onChange={(event) => setCallbackPhone(event.target.value)}
+              placeholder={t.contact.callbackPlaceholder}
+              className="w-full border border-border bg-transparent px-2 py-1 text-xs text-foreground outline-none transition-colors duration-[var(--duration)] [transition-timing-function:var(--ease)] placeholder:text-muted focus:border-accent disabled:opacity-40"
+            />
+          </div>
+
+          {/* Notas y botón de enviar solo aparecen al empezar a escribir el
+              teléfono: pedirlos desde el principio (vacíos) competía
+              visualmente con el input real. */}
+          {trimmedCallbackPhone && !callbackSubmitted && (
+            <div className="animate-fade-in">
+              <div className="mt-2">
+                <label htmlFor="contact-callback-notes" className="sr-only">
+                  {t.contact.callbackNotesPlaceholder}
+                </label>
+                <textarea
+                  id="contact-callback-notes"
+                  value={callbackNotes}
+                  onChange={(event) => setCallbackNotes(event.target.value)}
+                  placeholder={t.contact.callbackNotesPlaceholder}
+                  rows={3}
+                  className="w-full resize-none border border-border bg-transparent px-3 py-2 text-xs text-foreground outline-none transition-colors duration-[var(--duration)] [transition-timing-function:var(--ease)] placeholder:text-muted focus:border-accent"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="calm-surface mt-2 w-full px-3 py-2 text-center text-xs font-semibold text-foreground transition-opacity duration-[var(--duration)] [transition-timing-function:var(--ease)]"
+              >
+                {t.contact.callbackCta}
+              </button>
+            </div>
+          )}
+
+          <p className="mt-2 text-center text-xs text-muted">
+            {callbackSubmitted ? t.contact.callbackSuccess : t.contact.callbackLabel}
+          </p>
+        </form>
 
         <div
           data-anim="ai"

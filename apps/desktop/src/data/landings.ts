@@ -40,6 +40,66 @@ export interface Landing {
 
 export const landings: Landing[] = [
   {
+    slug: "diseno-web-pontevedra",
+    serviceName: "Diseño web en Pontevedra",
+    areaServed: ["Pontevedra", "Vigo", "Galicia"],
+    title: "Diseño Web en Pontevedra | Webs Premium para tu Negocio",
+    metaDescription:
+      "Estudio de diseño web para empresas de Pontevedra y las Rías Baixas. Identidad propia, animaciones y experiencias 3D, sin plantillas. ★ 5,0 en Google.",
+    h1: "Diseño web en Pontevedra",
+    intro: [
+      "En Pontevedra la mayoría de webs de empresa se parecen entre sí: misma plantilla, mismo tono, cero diferenciación. Diseñamos webs con identidad propia para negocios de la provincia que quieren que su presencia digital se note tanto como su producto o su servicio.",
+      "Trabajamos desde Vigo, a 25 minutos de la capital, con el mismo equipo que diseña y programa: lo que apruebas en el prototipo es exactamente lo que se publica, sin traducción perdida entre un diseñador externo y quien luego construye la web.",
+    ],
+    offersTitle: "Cómo trabajamos el diseño",
+    offers: [
+      {
+        title: "Dirección de arte digital",
+        text: "Sistema visual completo — tipografía, color, retícula y tono — coherente con tu marca o construido desde cero si todavía no la tienes definida.",
+      },
+      {
+        title: "Diseño UX orientado a conversión",
+        text: "Arquitectura de la información pensada para tu cliente real de Pontevedra: que llegue sin fricción al formulario, la reserva o la ficha de producto.",
+      },
+      {
+        title: "Animación y experiencias 3D",
+        text: "Motion design con GSAP y, cuando el proyecto lo pide, escenas 3D interactivas con Three.js — el detalle que hace que una web se recuerde.",
+      },
+      {
+        title: "Diseño + desarrollo bajo el mismo techo",
+        text: "Sin intermediarios entre quien diseña y quien programa: menos reuniones de traspaso, menos versiones perdidas, entregas más rápidas.",
+      },
+    ],
+    proof:
+      "Diseñamos para negocios de la provincia de Pontevedra y del área de Vigo — hostelería, salud, formación, industria y marcas personales. 5,0 de media en 20 reseñas de Google avalan el trabajo.",
+    faqs: [
+      {
+        q: "¿Atendéis presencialmente en Pontevedra?",
+        a: "Sí. Nuestra oficina está en Vigo (Rúa Colón, 20), a unos 25 minutos de Pontevedra capital, y nos desplazamos para las reuniones clave del proyecto — kickoff y entrega del diseño.",
+      },
+      {
+        q: "¿Qué diferencia hay entre diseño web y desarrollo web?",
+        a: "El diseño define cómo se ve y se usa la web (interfaz, marca, experiencia); el desarrollo la construye en código. Hacemos ambas cosas con el mismo equipo, así que no hay pérdida de matices entre lo que se diseña y lo que se publica.",
+      },
+      {
+        q: "Ya tengo web. ¿Podéis rediseñarla?",
+        a: "Sí, es de lo que más hacemos. Auditamos la web actual, conservamos lo que funciona — URLs, posicionamiento, contenido — y rediseñamos lo que te está frenando.",
+      },
+      {
+        q: "¿El diseño incluye versión móvil?",
+        a: "Siempre, y la diseñamos primero: la mayoría de tus visitas llegarán desde el móvil, así que el diseño de escritorio parte del móvil y no al revés.",
+      },
+    ],
+    related: [
+      { slug: "desarrollo-web-pontevedra", label: "Desarrollo web en Pontevedra" },
+      { slug: "diseno-web-vigo", label: "Diseño web en Vigo" },
+      {
+        slug: "desarrollo-de-aplicaciones-pontevedra",
+        label: "Desarrollo de aplicaciones en Pontevedra",
+      },
+    ],
+  },
+  {
     slug: "desarrollo-de-aplicaciones-vigo",
     serviceName: "Desarrollo de aplicaciones en Vigo",
     areaServed: ["Vigo", "Pontevedra", "Galicia"],
@@ -246,7 +306,7 @@ export const landings: Landing[] = [
         slug: "desarrollo-de-aplicaciones-vigo",
         label: "Desarrollo de aplicaciones en Vigo",
       },
-      { slug: "desarrollo-web-pontevedra", label: "Desarrollo web en Pontevedra" },
+      { slug: "diseno-web-pontevedra", label: "Diseño web en Pontevedra" },
     ],
   },
   {
@@ -306,10 +366,7 @@ export const landings: Landing[] = [
         label: "Desarrollo de aplicaciones en Vigo",
       },
       { slug: "desarrollo-web-pontevedra", label: "Desarrollo web en Pontevedra" },
-      {
-        slug: "desarrollo-de-aplicaciones-galicia",
-        label: "Desarrollo de aplicaciones en Galicia",
-      },
+      { slug: "diseno-web-pontevedra", label: "Diseño web en Pontevedra" },
     ],
   },
   {
@@ -364,7 +421,7 @@ export const landings: Landing[] = [
       },
     ],
     related: [
-      { slug: "desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
+      { slug: "diseno-web-pontevedra", label: "Diseño web en Pontevedra" },
       {
         slug: "desarrollo-de-aplicaciones-pontevedra",
         label: "Desarrollo de aplicaciones en Pontevedra",

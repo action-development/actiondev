@@ -4,6 +4,8 @@ import { BRAND, SITE_URL, SOCIAL, OG_IMAGE } from "@/lib/seo";
 import { StructuredData } from "@/components/seo/StructuredData";
 import { LocaleProvider } from "@/lib/i18n";
 import { PageTransition } from "@/components/animations/PageTransition";
+import { GoogleTagManager } from "@/components/analytics/GoogleTagManager";
+import { CookieConsent } from "@/components/ui/CookieConsent";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -109,6 +111,7 @@ export default function RootLayout({
       className={`h-full antialiased ${spaceGrotesk.variable}`}
     >
       <body className="min-h-full flex flex-col bg-black">
+        <GoogleTagManager />
         {/*
           Salto al contenido. El texto va en ESPAÑOL fijo y no por `useT()`:
           este layout es server component y el documento es `lang="es"` — un
@@ -129,6 +132,7 @@ export default function RootLayout({
           <StructuredData kind="website" />
           <StructuredData kind="services" />
           <PageTransition>{children}</PageTransition>
+          <CookieConsent />
         </LocaleProvider>
       </body>
     </html>

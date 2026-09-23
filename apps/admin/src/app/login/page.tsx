@@ -1,10 +1,47 @@
 "use client";
 
-import { useActionState } from "react";
-import { login } from "./actions";
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { getFirebaseAuth } from "@/lib/firebase/client";
 
 export default function LoginPage() {
-  const [error, formAction, pending] = useActionState(login, undefined);
+  const router = useRouter();
+  const [error, setError] = useState<string>();
+  const [pending, setPending] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError(undefined);
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+
+    try {
+      const credential = await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
+      const idToken = await credential.user.getIdToken();
+
+      const response = await fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error ?? "No se pudo iniciar sesión.");
+      }
+
+      router.push("/posts");
+      router.refresh();
+    } catch {
+      setError("Email o contraseña incorrectos.");
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <main className="flex min-h-dvh items-center justify-center px-6">
@@ -16,7 +53,7 @@ export default function LoginPage() {
           Acceso al panel de gestión del blog.
         </p>
 
-        <form action={formAction} className="mt-10 flex flex-col gap-5">
+        <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-5">
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium text-foreground">Email</span>
             <input

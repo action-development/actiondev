@@ -1,29 +1,16 @@
 import Link from "next/link";
 import type { BlogPost } from "@actiondev/shared";
-import { createClient } from "@/lib/supabase/server";
-import { rowToPost, type PostRow } from "@/lib/posts";
-import { isDevBypass } from "@/lib/dev-bypass-auth";
-import { fakeListPosts } from "@/lib/dev-fake-posts";
+import { adminDb } from "@/lib/firebase/admin";
+import { postFromDoc } from "@/lib/posts";
 
 export default async function PostsPage() {
-  // ⚠️ Bypass temporal mientras Supabase no está conectado — ver
-  // lib/dev-bypass-auth.ts y lib/dev-fake-posts.ts. Quitar al conectar Supabase real.
-  if (await isDevBypass()) {
-    return <PostsList posts={fakeListPosts()} />;
-  }
+  const snapshot = await adminDb().collection("posts").orderBy("date", "desc").get();
+  const posts: BlogPost[] = snapshot.docs.map(postFromDoc);
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("posts")
-    .select("*")
-    .order("date", { ascending: false });
-
-  const posts: BlogPost[] = error ? [] : (data as PostRow[]).map(rowToPost);
-  return <PostsList posts={posts} error={error?.message} />;
+  return <PostsList posts={posts} />;
 }
 
-function PostsList({ posts, error }: { posts: BlogPost[]; error?: string }) {
-
+function PostsList({ posts }: { posts: BlogPost[] }) {
   return (
     <div className="flex flex-col gap-10">
       <div className="flex items-center justify-between">
@@ -43,11 +30,7 @@ function PostsList({ posts, error }: { posts: BlogPost[]; error?: string }) {
         </Link>
       </div>
 
-      {error && (
-        <p className="text-sm text-danger">No se pudieron cargar los artículos: {error}</p>
-      )}
-
-      {!error && posts.length === 0 && (
+      {posts.length === 0 && (
         <p className="rounded-[var(--radius-md)] border border-dashed border-border p-8 text-center text-sm text-muted">
           Todavía no hay artículos. Pulsa &quot;+ Escribir artículo&quot; para crear el primero.
         </p>

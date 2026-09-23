@@ -7,6 +7,7 @@ import { gsap } from "@/lib/gsap-config";
 import { useT } from "@/lib/i18n";
 import { SOCIALS } from "@/data/socials";
 import { BUSINESS, LEGAL_ENTITY } from "@/lib/seo";
+import { resetConsent } from "@actiondev/shared";
 
 const LEGAL_LINKS = [
   { key: "notice", href: "/legal/aviso-legal" },
@@ -32,6 +33,7 @@ export function Footer() {
     { label: t.scroll.hero, href: "/" },
     { label: t.scroll.work, href: "/projects" },
     { label: t.scroll.reviews, href: "/resenas" },
+    { label: t.scroll.blog, href: "/blog" },
     { label: t.scroll.contact, href: "/contact" },
   ];
 
@@ -125,6 +127,16 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <button
+                  type="button"
+                  onClick={resetConsent}
+                  className="link-sweep text-foreground/80 hover:text-accent"
+                  data-testid="cookie-preferences-link"
+                >
+                  {t.footer.cookiePreferences}
+                </button>
+              </li>
             </ul>
           </nav>
         </div>

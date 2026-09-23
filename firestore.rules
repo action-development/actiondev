@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /posts/{postId} {
+      allow get, list: if resource.data.status == 'published';
+      allow read, write: if request.auth != null && request.auth.token.email == 'hi@actiondev.es';
+    }
+    match /leads/{leadId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null && request.auth.token.email == 'hi@actiondev.es';
+    }
+  }
+}

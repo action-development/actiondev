@@ -12,6 +12,24 @@ export function WhatsappIcon({ className }: { className?: string }) {
   );
 }
 
+export function PhoneIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      focusable="false"
+    >
+      <path d="M6.6 10.8c1.2 2.4 3.2 4.4 5.6 5.6l1.9-1.9c.24-.24.6-.32.9-.2 1 .34 2.07.52 3.16.52.5 0 .9.4.9.9v3.14c0 .5-.4.9-.9.9C9.66 19.66 4.34 14.34 4.34 5.9c0-.5.4-.9.9-.9H8.4c.5 0 .9.4.9.9 0 1.1.18 2.15.52 3.14.11.3.03.67-.2.9L7.7 10.9" />
+    </svg>
+  );
+}
+
 export function MailIcon({ className }: { className?: string }) {
   return (
     <svg

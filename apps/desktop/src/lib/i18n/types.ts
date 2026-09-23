@@ -5,6 +5,7 @@ export interface Translations {
     home: string;
     work: string;
     reviews: string;
+    blog: string;
     contact: string;
     cta: string;
     /** Nombre accesible del `<nav>` del Header. */
@@ -33,6 +34,8 @@ export interface Translations {
   contact: {
     headline: string;
     accent: string;
+    /** Aclaración en pequeño bajo el titular: sin compromiso al escribir. */
+    subtitle: string;
     whatsappLabel: string;
     emailLabel: string;
     emailSubject: string;
@@ -40,6 +43,14 @@ export interface Translations {
     intro: string;
     askAI: string;
     aiPrompt: string;
+    /** Disclosure "¿Prefieres que te contactemos?" — deja un teléfono para que le llamen. */
+    callbackLabel: string;
+    callbackPlaceholder: string;
+    /** Placeholder de la nota opcional que aparece al empezar a escribir el teléfono. */
+    callbackNotesPlaceholder: string;
+    callbackCta: string;
+    /** Confirmación tras enviar el lead a Firestore. */
+    callbackSuccess: string;
   };
   footer: {
     available: string;
@@ -53,6 +64,8 @@ export interface Translations {
     legalPrivacy: string;
     legalTerms: string;
     legalCookies: string;
+    /** Reabre el banner de consentimiento (`ui/CookieConsent.tsx`) para cambiar la decisión. */
+    cookiePreferences: string;
     madeIn: string;
     rights: string;
     /**
@@ -66,6 +79,7 @@ export interface Translations {
     hero: string;
     work: string;
     reviews: string;
+    blog: string;
     contact: string;
     goTo: string;
     ariaLabel: string;
@@ -137,6 +151,15 @@ export interface Translations {
   notFound: {
     subtitle: string;
     cta: string;
+  };
+  /** Banner de consentimiento (`ui/CookieConsent.tsx`), condición para cargar GTM. */
+  cookieConsent: {
+    message: string;
+    linkLabel: string;
+    accept: string;
+    reject: string;
+    /** Nombre accesible del banner (`role="dialog"`). */
+    ariaLabel: string;
   };
   /** Sala 3D de reseñas — /resenas ("plaza de personajes"). */
   plaza: {

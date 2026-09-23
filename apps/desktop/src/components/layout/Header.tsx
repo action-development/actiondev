@@ -112,6 +112,7 @@ export function Header() {
     Home: t.nav.home,
     Work: t.nav.work,
     Reviews: t.nav.reviews,
+    Blog: t.nav.blog,
     Contact: t.nav.contact,
   };
 
@@ -221,7 +222,9 @@ export function Header() {
         <button
           type="button"
           onClick={() => setLocale(locale === "en" ? "es" : "en")}
-          aria-label={locale === "es" ? "Switch to English" : "Cambiar a español"}
+          aria-label={
+            locale === "es" ? "ES / EN — Switch to English" : "ES / EN — Cambiar a español"
+          }
           data-lang={locale}
           className={`${styles.switch} hidden md:inline-grid`}
         >

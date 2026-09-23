@@ -52,6 +52,14 @@ export const dictionaries = {
       subtitle: "The page you're looking for doesn't exist — or never did.",
       cta: "Back to home",
     },
+    cookieConsent: {
+      message:
+        "We use analytics cookies to understand how the site is used. They only run if you accept them.",
+      linkLabel: "Cookie policy",
+      accept: "Accept",
+      reject: "Reject",
+      ariaLabel: "Cookie consent",
+    },
     endPanel: {
       title1: "Want to know",
       title2: "what we do?",
@@ -199,6 +207,14 @@ export const dictionaries = {
     notFound: {
       subtitle: "La página que buscas no existe — o nunca existió.",
       cta: "Volver al inicio",
+    },
+    cookieConsent: {
+      message:
+        "Usamos cookies de analítica para entender cómo se usa el sitio. Solo se activan si las aceptas.",
+      linkLabel: "Política de cookies",
+      accept: "Aceptar",
+      reject: "Rechazar",
+      ariaLabel: "Consentimiento de cookies",
     },
     endPanel: {
       title1: "¿Quieres saber",

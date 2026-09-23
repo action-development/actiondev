@@ -305,8 +305,14 @@ export function Projects() {
 							))}
 						</span>
 						<span ref={line2Ref} className="block will-change-transform">
-							<span data-word className="inline-block" style={{ marginRight: "0.25em" }}>{t.projects.into}</span>
-							<span data-word className="inline-block"><AccentWord>{t.projects.accent}</AccentWord></span>
+							<span data-word className="inline-block" style={{ marginRight: "0.25em" }}>
+								<AccentWord>{t.projects.into}</AccentWord>
+							</span>
+							{t.projects.accent.split(" ").map((word, i) => (
+								<span key={i} data-word className="inline-block" style={{ marginRight: "0.25em" }}>
+									{word}
+								</span>
+							))}
 						</span>
 					</h2>
 				</div>
