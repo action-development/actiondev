@@ -95,22 +95,36 @@ function buildJsonLd(post: NonNullable<Awaited<ReturnType<typeof getPost>>>) {
   };
 }
 
+/** `**texto**` → `<strong>` — el único énfasis inline que soporta el editor del admin. */
+function renderInline(text: string) {
+  return text
+    .split(/(\*\*[^*]+\*\*)/g)
+    .filter(Boolean)
+    .map((part, i) =>
+      part.startsWith("**") && part.endsWith("**") ? (
+        <strong key={i}>{part.slice(2, -2)}</strong>
+      ) : (
+        <span key={i}>{part}</span>
+      ),
+    );
+}
+
 function renderBlock(block: BlogContentBlock, index: number) {
   switch (block.type) {
     case "heading":
       return <h2 key={index}>{block.text}</h2>;
     case "paragraph":
-      return <p key={index}>{block.text}</p>;
+      return <p key={index}>{renderInline(block.text)}</p>;
     case "list":
       return (
         <ul key={index}>
           {block.items.map((item) => (
-            <li key={item.slice(0, 24)}>{item}</li>
+            <li key={item.slice(0, 24)}>{renderInline(item)}</li>
           ))}
         </ul>
       );
     case "quote":
-      return <blockquote key={index}>{block.text}</blockquote>;
+      return <blockquote key={index}>{renderInline(block.text)}</blockquote>;
   }
 }
 
@@ -128,29 +142,35 @@ export default async function BlogPostPage({ params }: PostPageProps) {
 
       <Header />
 
+      <Link
+        href="/blog"
+        aria-label="Volver al blog"
+        className="group fixed left-4 top-4 z-40 flex h-11 w-11 items-center justify-center text-muted transition-colors duration-[var(--duration)] ease-[var(--ease)] hover:text-foreground md:left-6 md:top-5"
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden
+          className="-translate-x-0 transition-transform duration-[var(--duration)] ease-[var(--ease)] group-hover:-translate-x-1"
+        >
+          <path
+            d="M17 10H3M3 10L9 4M3 10L9 16"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </Link>
+
       <main id="main-content" className="pb-32">
         <article className="container-editorial">
           {/* Columna centrada en la página — ver nota igual en `/blog`. */}
           <div className="mx-auto max-w-3xl">
-            {/* Breadcrumb */}
-            <nav aria-label="Migas de pan" className="pt-14">
-              <ol className="flex flex-wrap items-center gap-2 text-sm text-muted">
-                <li>
-                  <Link href="/" className="hover:text-foreground">
-                    Inicio
-                  </Link>
-                </li>
-                <li aria-hidden>/</li>
-                <li>
-                  <Link href="/blog" className="hover:text-foreground">
-                    Blog
-                  </Link>
-                </li>
-              </ol>
-            </nav>
-
             {/* Hero */}
-            <div className="pt-10 md:pt-14">
+            <div className="pt-20 md:pt-24">
               <p className="text-sm text-muted">
                 {post.category} · {post.readingTime} min de lectura
               </p>

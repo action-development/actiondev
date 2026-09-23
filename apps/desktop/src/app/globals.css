@@ -723,11 +723,11 @@ body {
 .post-prose h2 {
   font-family: var(--font-primary);
   font-weight: 600;
-  font-size: 1.625rem;
-  line-height: 1.3;
+  font-size: 2rem;
+  line-height: 1.25;
   letter-spacing: -0.01em;
   color: var(--foreground);
-  margin-top: 4.5rem;
+  margin-top: 6rem;
   margin-bottom: 1.5rem;
 }
 
@@ -743,22 +743,42 @@ body {
 
 .post-prose p { margin-bottom: 1.85rem; }
 
+/* Entradilla — el primer párrafo del artículo, más grande y más claro
+   que el resto: es el patrón de "lede" de un sitio periodístico, marca
+   el tono antes de que empiece el cuerpo normal. */
+.post-prose > p:first-of-type {
+  font-size: 1.3rem;
+  line-height: 1.65;
+  color: var(--foreground);
+}
+
 .post-prose ul {
-  margin-bottom: 1.85rem;
+  margin-bottom: 2.25rem;
   padding-left: 1.35rem;
   list-style: disc;
   color: color-mix(in srgb, var(--foreground) 88%, transparent);
 }
 
-.post-prose li { margin-bottom: 0.85rem; }
+.post-prose li { margin-bottom: 1rem; }
+.post-prose li::marker { color: var(--muted); }
 
 .post-prose blockquote {
-  margin: 3rem 0;
-  padding-left: 1.5rem;
+  margin: 3.5rem 0;
+  padding-left: 1.75rem;
   border-left: 2px solid var(--border);
-  font-size: 1.2rem;
-  line-height: 1.65;
-  color: color-mix(in srgb, var(--foreground) 92%, transparent);
+  font-size: 1.35rem;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--foreground);
+}
+
+.post-prose blockquote::before {
+  content: "“";
+  display: block;
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+  color: var(--border);
 }
 
 .post-prose strong {
