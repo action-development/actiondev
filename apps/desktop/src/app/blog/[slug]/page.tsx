@@ -145,11 +145,11 @@ export default async function BlogPostPage({ params }: PostPageProps) {
       <Link
         href="/blog"
         aria-label="Volver al blog"
-        className="group fixed left-4 top-4 z-40 flex h-11 w-11 items-center justify-center text-muted transition-colors duration-[var(--duration)] ease-[var(--ease)] hover:text-foreground md:left-6 md:top-5"
+        className="group fixed left-4 top-4 z-40 flex h-11 w-11 items-center justify-center text-foreground transition-colors duration-[var(--duration)] ease-[var(--ease)] hover:text-accent md:left-6 md:top-5"
       >
         <svg
-          width="20"
-          height="20"
+          width="26"
+          height="26"
           viewBox="0 0 20 20"
           fill="none"
           aria-hidden
@@ -158,7 +158,7 @@ export default async function BlogPostPage({ params }: PostPageProps) {
           <path
             d="M17 10H3M3 10L9 4M3 10L9 16"
             stroke="currentColor"
-            strokeWidth="1.5"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
