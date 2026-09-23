@@ -89,6 +89,8 @@ function ProjectRow({ project, locale, onEnter }: ProjectRowProps) {
 	const [hovered, setHovered] = useState(false);
 	const isPlaceholder = project.url === "#";
 	const category = locale === "es" ? project.categoryEs ?? project.category : project.category;
+	const niche = locale === "es" ? project.nicheEs ?? project.niche : project.niche;
+	const meta = niche ? `${category} · ${niche}` : category;
 
 	const Tag = isPlaceholder ? "div" : "a";
 	const linkProps = isPlaceholder
@@ -110,7 +112,7 @@ function ProjectRow({ project, locale, onEnter }: ProjectRowProps) {
 				onEnter(project);
 			}}
 			onMouseLeave={() => setHovered(false)}
-			aria-label={`${project.title} — ${category}`}
+			aria-label={`${project.title} — ${meta}`}
 		>
 			<ScrambleTitle
 				text={project.title}
@@ -119,7 +121,7 @@ function ProjectRow({ project, locale, onEnter }: ProjectRowProps) {
 			/>
 
 			<span className="shrink-0 text-right font-mono text-[0.9375rem] uppercase tracking-[0.1em] text-muted transition-colors duration-300 group-hover:text-foreground">
-				{category}
+				{meta}
 			</span>
 
 			{/* `scaleX` y no `width`: animar el ancho obliga al navegador a
