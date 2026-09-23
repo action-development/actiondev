@@ -9,6 +9,12 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
+
+  function handlePasswordKeyEvent(event: React.KeyboardEvent<HTMLInputElement>) {
+    setCapsLockOn(event.getModifierState("CapsLock"));
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -67,13 +73,45 @@ export default function LoginPage() {
 
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium text-foreground">Contraseña</span>
-            <input
-              type="password"
-              name="password"
-              required
-              autoComplete="current-password"
-              className="rounded-[var(--radius-sm)] border border-border bg-background px-4 py-2.5 text-foreground outline-none focus:border-foreground"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                required
+                autoComplete="current-password"
+                onKeyDown={handlePasswordKeyEvent}
+                onKeyUp={handlePasswordKeyEvent}
+                className="w-full rounded-[var(--radius-sm)] border border-border bg-background px-4 py-2.5 pr-11 text-foreground outline-none focus:border-foreground"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-pressed={showPassword}
+                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted transition-colors hover:text-foreground"
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M3 3l18 18" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            {capsLockOn && (
+              <span className="flex items-center gap-1.5 text-xs text-muted">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 3l8 7h-5v7H9v-7H4l8-7Z" />
+                </svg>
+                Bloq Mayús activado
+              </span>
+            )}
           </label>
 
           {error && <p className="text-sm text-danger">{error}</p>}
