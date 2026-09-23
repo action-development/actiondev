@@ -73,13 +73,8 @@ export default async function BlogPage() {
             `max-w-3xl` en toda la página. */}
         <div className="px-6 pt-24 text-center md:px-12 md:pt-36">
           <h1 className="mx-auto max-w-[26ch] text-5xl font-semibold leading-[1.08] tracking-tight text-foreground md:text-7xl">
-            Ideas y guías sobre desarrollo y diseño digital
+            Nuestro Blog
           </h1>
-          <p className="mx-auto mt-8 max-w-[60ch] text-lg leading-relaxed text-muted">
-            Notas prácticas de un equipo que desarrolla a diario en Vigo: apps,
-            webs, SEO y las decisiones que de verdad mueven el resultado de un
-            proyecto digital.
-          </p>
         </div>
 
         {/* Columna de lectura: `container-editorial` + mismo `max-w-3xl` que
