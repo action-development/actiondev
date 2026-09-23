@@ -118,6 +118,29 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
       <Header />
 
+      <Link
+        href="/projects"
+        aria-label="Volver a proyectos"
+        className="group fixed left-4 top-4 z-40 flex h-11 w-11 items-center justify-center text-muted transition-colors duration-[var(--duration)] ease-[var(--ease)] hover:text-foreground md:left-6 md:top-5"
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden
+          className="-translate-x-0 transition-transform duration-[var(--duration)] ease-[var(--ease)] group-hover:-translate-x-1"
+        >
+          <path
+            d="M17 10H3M3 10L9 4M3 10L9 16"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </Link>
+
       <main id="main-content" className="pb-32">
         <article className="container-editorial">
           <div className="mx-auto max-w-3xl">
