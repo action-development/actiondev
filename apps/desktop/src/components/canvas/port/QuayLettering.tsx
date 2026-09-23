@@ -24,8 +24,8 @@ import { LABEL_FONT, loadLabelFont } from "./container-textures";
  * van MUY alargadas en z (cap de 3-4 unidades para 0.3-0.4 de ancho): vistas
  * desde la cámara recuperan una proporción normal, igual que en las pistas.
  *
- * Texturas de canvas, 0 assets de red; fuente = la misma Poppins local de los
- * contenedores (`loadLabelFont`), fuera del `<Suspense>` del hero: hasta que
+ * Texturas de canvas, 0 assets de red; fuente = la misma Space Grotesk local
+ * de los contenedores (`loadLabelFont`), fuera del `<Suspense>` del hero: hasta que
  * llega, los planos son transparentes.
  */
 

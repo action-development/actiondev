@@ -76,7 +76,7 @@ function finish(canvas: HTMLCanvasElement) {
  * -------------------------------------------------------------------------*/
 
 export const LABEL_FONT = "PortStencil";
-const LABEL_FONT_URL = "/fonts/Poppins-Bold-subset.ttf";
+const LABEL_FONT_URL = "/fonts/SpaceGrotesk-Bold-subset.ttf";
 /** Tinta negra de la rotulación. */
 const LABEL_INK = "rgba(26,20,16,0.92)";
 /** Alternativa clara: mismo hueso que el código BIC, para bases muy oscuras. */
@@ -91,11 +91,12 @@ const LABEL_SX_MAX = 1.35;
 let labelFontPromise: Promise<boolean> | null = null;
 
 /**
- * Fuente local de la rotulación (subset Latin-1 de 13,9 KB, la misma que usaba
- * el `<Text>` de drei). Se registra UNA vez por sesión con la FontFace API y se
- * comparte entre contenedores: es un fichero de `public/`, vive fuera del
- * `<Suspense>` del hero y nunca retrasa la pantalla de carga. Hasta que
- * resuelve, el costado se pinta SIN letras y se repinta al llegar.
+ * Fuente local de la rotulación (subset Latin-1 de Space Grotesk Bold,
+ * ~15 KB, misma tipografía que el resto del sitio). Se registra UNA vez por
+ * sesión con la FontFace API y se comparte entre contenedores: es un fichero
+ * de `public/`, vive fuera del `<Suspense>` del hero y nunca retrasa la
+ * pantalla de carga. Hasta que resuelve, el costado se pinta SIN letras y se
+ * repinta al llegar.
  */
 export function loadLabelFont() {
   if (labelFontPromise) return labelFontPromise;
