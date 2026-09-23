@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/*
+ * Panel interno, no sitio público: sistema propio, sin heredar tokens ni
+ * primitivas holográficas de `apps/desktop`. Blanco y negro, sin color de
+ * marca — la única prioridad es legibilidad: jerarquía tipográfica clara
+ * y espaciado generoso.
+ */
+
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  /* #6b6b6b da 5,7:1 sobre #ffffff — AA holgado para texto de 14px. */
+  --muted: #6b6b6b;
+  --border: #e5e5e5;
+  --surface: #fafafa;
+  --danger: #b91c1c;
+
+  --font-primary: -apple-system, "Segoe UI", system-ui, sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-surface: var(--surface);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-primary);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-primary);
+}

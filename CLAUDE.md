@@ -90,8 +90,9 @@
 |-----|------|-------------|------------|
 | `@actiondev/desktop` | `apps/desktop` | Web desktop-only (este CLAUDE.md) | 3001 |
 | `@actiondev/mobile` | `apps/mobile` | Web mobile (Next.js 15) | 3000 |
-| `@actiondev/shared` | `packages/shared` | Data compartida (proyectos) entre desktop y mobile | — |
+| `@actiondev/shared` | `packages/shared` | Data compartida (proyectos, blog) entre desktop, mobile y admin | — |
 | `@actiondev/pablo` | `apps/pablo` | Web personal en `pablo.actiondev.es` (proyecto Vercel propio, light-first, mobile-first) | 3002 |
+| `@actiondev/admin` | `apps/admin` | Panel interno de gestión del blog (Supabase Auth, un solo usuario). App separada con deploy propio — cero impacto en el bundle/rendimiento del sitio público. Estética minimalista blanco y negro, SIN el lenguaje holográfico de desktop. Ver `[BACKEND]` | 3003 |
 
 **Tono:** Premium, minimalista, dark-mode first, tipografía bold, animaciones fluidas, experiencias 3D inmersivas.
 
@@ -303,16 +304,26 @@ Componente nav: `layout/Header.tsx` + `Header.module.css` = **cápsula holográf
 
 ## [BACKEND] API y base de datos
 
-- Sin backend por ahora. Datos estáticos en `src/data/`.
+- **Blog en Supabase** — única pieza con backend real. El resto sigue siendo datos estáticos en `src/data/`.
+  - Tabla `posts` (proyecto Supabase compartido entre `apps/admin` y `apps/desktop`): `id`, `slug` (único), `title`, `meta_description`, `category`, `date`, `reading_time`, `h1`, `excerpt`, `content` (`jsonb`, array de `BlogContentBlock`), `status` (`draft` | `published`), `created_at`, `updated_at`. Migración SQL en `supabase/migrations/`.
+  - **RLS activo**: lectura pública (`anon`) solo `status = 'published'` — la usa `apps/desktop`. Lectura/escritura completa para `authenticated` restringida además por email en la policy — allowlist a nivel de base de datos, no solo de código.
+  - Tipos compartidos `BlogPost` / `BlogContentBlock` en `packages/shared/src/blog.ts` — misma fuente para `apps/admin` y `apps/desktop`, no duplicar.
+  - `apps/admin` (puerto 3003): panel de gestión. Login con Supabase Auth (`src/lib/supabase/{client,server}.ts`), un único usuario, sin auto-registro. CRUD de posts vía server actions (`src/app/(protected)/posts/actions.ts`), respetando RLS con la sesión real — **nunca** `service_role` en runtime.
+  - `apps/desktop`: lee posts publicados vía `src/lib/blog.ts` (`getPosts`/`getPost`, solo `@supabase/supabase-js`, sin sesión). `/blog` y `/blog/[slug]` llevan `revalidate = 3600` como red de seguridad; la publicación instantánea la dispara el webhook `POST /api/revalidate` (secreto compartido `REVALIDATE_SECRET`), llamado por las server actions de `apps/admin` tras cada guardado. `dynamicParams` es `true` (default) en `/blog/[slug]` — un slug nuevo se sirve on-demand aunque el webhook falle.
+  - Seed de los 3 posts placeholder originales: `scripts/seed-blog-posts.ts` (usa `service_role key`, solo local, un único uso).
 - **Contacto sin formulario, por decisión de producto** (ver `[PÁGINAS]` → `/contact`): no hay nada que enviar a un servidor, así que la web no finge tenerlo. No reintroducir formulario ni conectar Resend/SendGrid/API route sin que el cliente lo pida.
-- No hay base de datos. No hay auth.
+- No hay más base de datos ni auth fuera del blog.
 
 ---
 
 ## [SECURITY] Seguridad
 
-- No hay `.env` todavía. Cuando se añada, **NUNCA** commitear archivos `.env`.
-- Sin formulario de contacto → sin superficie de spam: no hacen falta rate limiting ni honeypot. Si algún día vuelve un formulario, hay que reponer ambos.
+- **Variables de entorno** (`.env.local`, nunca commiteado — `.env.example` sí, sin valores reales):
+  - `apps/desktop`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `REVALIDATE_SECRET`.
+  - `apps/admin`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DESKTOP_SITE_URL`, `REVALIDATE_SECRET`.
+  - `service_role key` de Supabase: **NUNCA** en el runtime de ninguna app. Solo en `scripts/seed-blog-posts.ts`, ejecutado a mano y en local.
+- Sin formulario de contacto público → sin superficie de spam: no hacen falta rate limiting ni honeypot ahí. `apps/admin` sí necesita su login protegido (Supabase Auth, un único usuario, sin auto-registro) por ser superficie de escritura.
+- `apps/admin` fuera de índice: `robots.ts` con `disallow: "/"` + `X-Robots-Tag: noindex, nofollow` en todas las respuestas (`next.config.ts`).
 - Three.js assets: servir desde `/public`, no desde CDN externo sin verificar.
 
 **Pendiente:** —
@@ -325,8 +336,10 @@ Componente nav: `layout/Header.tsx` + `Header.module.css` = **cápsula holográf
 
 - Plataforma: pendiente de definir (Vercel recomendado para Next.js)
 - Entornos: pendiente
-- Comandos monorepo: `turbo dev` (ambas apps), `turbo build` (ambas apps)
+- Comandos monorepo: `turbo dev` (todas las apps), `turbo build` (todas las apps)
 - Comandos desktop solo: `pnpm --filter @actiondev/desktop dev`, `pnpm --filter @actiondev/desktop build`
+- Comandos admin solo: `pnpm --filter @actiondev/admin dev`, `pnpm --filter @actiondev/admin build`
+- `apps/admin` se despliega como proyecto Vercel propio (mismo patrón que `apps/pablo`) — deploy independiente del sitio público, para que un fallo o un pico de tráfico del admin no afecte a `apps/desktop`.
 
 ---
 
