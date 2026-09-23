@@ -62,7 +62,7 @@ export function Footer() {
       role="contentinfo"
       className="relative"
     >
-      <div className="container-editorial pt-24 pb-10">
+      <div className="pt-24 pb-10 px-6 md:px-12">
         {/* ── Column grid: sitemap / social / legal ── */}
         <div className="grid gap-12 sm:grid-cols-3">
           <nav data-anim="reveal" aria-label={t.footer.sitemapTitle} className="flex flex-col gap-5">
