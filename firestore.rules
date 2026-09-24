@@ -45,11 +45,62 @@ service cloud.firestore {
         allow create: if request.auth != null &&
           request.resource.data.authorEmail == request.auth.token.email &&
           request.resource.data.authorRole == request.auth.token.role &&
+          request.resource.data.text is string &&
+          request.resource.data.text.size() > 0 &&
+          request.resource.data.text.size() <= 4000 &&
+          request.resource.data.createdAt == request.time &&
           (isAdmin() ||
            (isClient() &&
             get(/databases/$(database)/documents/clientProjects/$(projectId)).data.clientId == request.auth.token.clientId));
         // Mensajes inmutables: ni admin edita/borra un mensaje ya enviado.
         allow update, delete: if false;
+      }
+
+      // Feedback del cliente (bugs, cambios, mejoras). Inmutable una vez enviado.
+      match /feedback/{feedbackId} {
+        allow read: if isAdmin() ||
+          (isClient() &&
+           get(/databases/$(database)/documents/clientProjects/$(projectId)).data.clientId == request.auth.token.clientId);
+        allow create: if request.auth != null &&
+          request.resource.data.authorEmail == request.auth.token.email &&
+          request.resource.data.authorRole == request.auth.token.role &&
+          request.resource.data.type in ['bug', 'implementation', 'design', 'content', 'other'] &&
+          request.resource.data.text is string &&
+          request.resource.data.text.size() > 0 &&
+          request.resource.data.text.size() <= 4000 &&
+          request.resource.data.createdAt == request.time &&
+          (isAdmin() ||
+           (isClient() &&
+            get(/databases/$(database)/documents/clientProjects/$(projectId)).data.clientId == request.auth.token.clientId));
+        allow update, delete: if false;
+      }
+
+      // Documentos del proyecto (portal). El binario vive en Storage
+      // (projects/{projectId}/documents/**, ver storage.rules); aquí solo los
+      // metadatos. El nombre del objeto en Storage empieza por el id de este doc.
+      match /documents/{docId} {
+        allow read: if isAdmin() ||
+          (isClient() &&
+           get(/databases/$(database)/documents/clientProjects/$(projectId)).data.clientId == request.auth.token.clientId);
+        allow create: if request.auth != null &&
+          request.resource.data.uploadedByEmail == request.auth.token.email &&
+          request.resource.data.uploadedByRole == request.auth.token.role &&
+          request.resource.data.name is string &&
+          request.resource.data.name.size() > 0 &&
+          request.resource.data.name.size() <= 255 &&
+          request.resource.data.size is number &&
+          request.resource.data.size <= 26214400 &&
+          request.resource.data.storagePath.matches('projects/' + projectId + '/documents/' + docId + '-.*') &&
+          request.resource.data.createdAt == request.time &&
+          (isAdmin() ||
+           (isClient() &&
+            get(/databases/$(database)/documents/clientProjects/$(projectId)).data.clientId == request.auth.token.clientId));
+        // Los metadatos son inmutables; borra un admin o el propio autor cliente.
+        allow update: if false;
+        allow delete: if isAdmin() ||
+          (isClient() &&
+           resource.data.uploadedByEmail == request.auth.token.email &&
+           get(/databases/$(database)/documents/clientProjects/$(projectId)).data.clientId == request.auth.token.clientId);
       }
     }
   }

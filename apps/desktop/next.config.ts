@@ -21,6 +21,15 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,
   },
+  // /admin es la app `@actiondev/admin` (basePath "/admin"), proxeada para
+  // que viva en el mismo dominio. En producción, ADMIN_URL = su deploy en Vercel.
+  async rewrites() {
+    const admin = process.env.ADMIN_URL || "http://localhost:3003";
+    return [
+      { source: "/admin", destination: `${admin}/admin` },
+      { source: "/admin/:path*", destination: `${admin}/admin/:path*` },
+    ];
+  },
   async headers() {
     return [
       {

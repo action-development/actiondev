@@ -161,15 +161,15 @@ export function Header() {
             onClick={handleLogoClick}
           >
             {/*
-              20px de alto sobre un original de 1563×625: en crudo eran 68 KB en
+              30px de alto sobre un original de 1563×625: en crudo eran 68 KB en
               CADA página (y Next lo precargaba). Por `next/image` baja el
               tamaño servido y las dimensiones explícitas evitan el reflow.
             */}
             <Image
               src="/logos/logo.webp"
               alt=""
-              width={50}
-              height={20}
+              width={75}
+              height={30}
               priority
               className={styles.logo}
             />

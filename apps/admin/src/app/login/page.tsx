@@ -29,7 +29,7 @@ export default function LoginPage() {
       const credential = await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
       const idToken = await credential.user.getIdToken();
 
-      const response = await fetch("/api/session", {
+      const response = await fetch("/admin/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),

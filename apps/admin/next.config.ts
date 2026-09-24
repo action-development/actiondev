@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Se sirve en actiondev.es/admin: desktop proxea /admin/* hacia esta app.
+  basePath: "/admin",
   poweredByHeader: false,
   compress: true,
   async headers() {

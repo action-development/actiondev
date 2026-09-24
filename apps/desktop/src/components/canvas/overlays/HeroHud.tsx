@@ -18,7 +18,7 @@ import styles from "./HeroHud.module.css";
 
 const TOAST_MS = 2200;
 
-/** `true` si el destino todavía no tiene página ("#equipo", "#galicia"…). */
+/** `true` si el destino todavía no tiene página ("#alcasi", "#galicia"…). */
 function isSoon(href: string) {
   return !href.startsWith("/");
 }

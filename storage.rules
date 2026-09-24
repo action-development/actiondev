@@ -1,0 +1,37 @@
+rules_version = '2';
+
+// Archivos del portal de clientes: projects/{projectId}/documents/{docId}-{nombre}.
+// El acceso se decide con el rol (custom claim) y el dueño del proyecto en
+// Firestore; los metadatos están en clientProjects/{projectId}/documents/{docId}
+// (ver firestore.rules). Todo lo demás sigue denegado.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == 'admin';
+    }
+    function ownsProject(projectId) {
+      return request.auth != null &&
+        request.auth.token.role == 'client' &&
+        firestore.get(/databases/(default)/documents/clientProjects/$(projectId)).data.clientId
+          == request.auth.token.clientId;
+    }
+
+    match /projects/{projectId}/documents/{file} {
+      allow read: if isAdmin() || ownsProject(projectId);
+      // Solo altas nuevas (el id del doc hace único cada path), máx. 25 MB.
+      allow create: if (isAdmin() || ownsProject(projectId)) &&
+        request.resource.size <= 25 * 1024 * 1024;
+      allow update: if false;
+      // Borra un admin o el cliente que subió el archivo (el prefijo del nombre
+      // es el id del doc, cuyos metadatos siguen existiendo al borrar el objeto).
+      allow delete: if isAdmin() ||
+        (ownsProject(projectId) &&
+         firestore.get(/databases/(default)/documents/clientProjects/$(projectId)/documents/$(file.split('-')[0])).data.uploadedByEmail
+           == request.auth.token.email);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -227,6 +227,15 @@ export function Projects() {
 				start: "top top",
 				end: "bottom bottom",
 				scrub: 1,
+				// Sin esto el scroll deja el ángulo en cualquier valor fraccionario: la
+				// card frontal se queda a medio giro y el marco de papel se ve en
+				// perspectiva (trapezoidal) en vez de recto. Encaja al soltar en el
+				// múltiplo de ANGLE_STEP más cercano — un paso de progreso por card.
+				snap: {
+					snapTo: 1 / (NUM - 1),
+					duration: { min: 0.2, max: 0.6 },
+					ease: "power1.inOut",
+				},
 				onUpdate: (self) => {
 					const progress = self.progress;
 					const rotation = progress * TOTAL_ROTATION;

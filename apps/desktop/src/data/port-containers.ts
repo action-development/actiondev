@@ -40,7 +40,7 @@ export const PORT_CONTAINERS: (ContainerData & { spawnX: number; tier: number; r
   // --- Zona "ATENCIÓN AL CLIENTE" (x de -4.2 a 4.3) ---
   { id: "testimonials", labelKey: "reviews", href: "/resenas",  color: "#ff4f8b", halfW: 1.3, spawnX: -2.6, tier: 0, row: 0 },
   { id: "contact",      labelKey: "contact", href: "/contact",   color: "#ff7a1a", halfW: 1.3, spawnX: 2.2,  tier: 0, row: 0 },
-  { id: "team",         label: "EQUIPO",     href: "#equipo",   color: "#4fd1ff", halfW: 1.3, spawnX: -0.2, tier: 0, row: SHIP_ROW },
+  { id: "blog",         label: "BLOG",       href: "/blog",      color: "#4fd1ff", halfW: 1.3, spawnX: -0.2, tier: 0, row: SHIP_ROW },
   // Decorado jugable: se pueden enganchar, pero "#..." no navega.
   { id: "d-alcasi",     label: "ALCASI",     href: "#alcasi",   color: "#8a6bd1", halfW: 2.0, spawnX: -1.6, tier: 0, row: 2 },
   { id: "d-vigo",       label: "VIGO",       href: "#vigo",     color: "#1f8a70", halfW: 1.3, spawnX: 3.0,  tier: 0, row: 2 },

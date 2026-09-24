@@ -62,7 +62,7 @@ export const PERCHES: Perch[] = [
   { kind: "container", id: "testimonials", dx: -0.3, facing: 1 },
   { kind: "container", id: "p-fase", dx: 0.2, facing: 1 },
   { kind: "container", id: "d-vigo", dx: -0.25, facing: -1 },
-  { kind: "container", id: "team", dx: 0.3, facing: 1 },
+  { kind: "container", id: "blog", dx: 0.3, facing: 1 },
 ];
 
 export interface Disturbance {

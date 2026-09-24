@@ -188,7 +188,7 @@ que las sombras de los contenedores caigan hacia delante-izquierda como en el di
 - Contenedor soltado (`thrownIds`) que entra en el sensor de bodega →
   `gameState.notifyCargo()` (aviso "RUMBO A …") + bocina (`playHornSfx`) y
   navega tras 900 ms (`page.tsx`: pantalla de carga + `router.push` a la ruta del
-  `href`). Un `href` "#..." (destino aún sin página: EQUIPO, GALICIA, ALCASI,
+  `href`). Un `href` "#..." (destino aún sin página: GALICIA, ALCASI,
   VIGO) se sigue pudiendo cargar, pero solo avisa "PRÓXIMAMENTE", sin bocina ni
   navegación. `gatedIds` evita doble disparo; sale de la bodega → se libera.
 - Contenedor por debajo de y = -11 (a la ría) → reaparece en su `spawnX` y su
