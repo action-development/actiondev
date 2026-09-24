@@ -111,7 +111,7 @@ function WordDisplay({
 
   if (idle && fx.mode === "letter") {
     return (
-      <h1 key={wordIndex} className={`${base} flex justify-center`}>
+      <p key={wordIndex} className={`${base} flex justify-center`}>
         {word.split("").map((char, i) => (
           <span
             key={i}
@@ -121,14 +121,14 @@ function WordDisplay({
             {char === " " ? "\u00A0" : char}
           </span>
         ))}
-      </h1>
+      </p>
     );
   }
 
   return (
-    <h1 key={wordIndex} className={`${base} ${idle ? fx.class : ""}`}>
+    <p key={wordIndex} className={`${base} ${idle ? fx.class : ""}`}>
       {word}
-    </h1>
+    </p>
   );
 }
 

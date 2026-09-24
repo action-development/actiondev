@@ -260,8 +260,21 @@ test.describe("SEO landing pages", () => {
       "desarrollo-de-aplicaciones-pontevedra",
       "desarrollo-web-pontevedra",
       "desarrollo-de-aplicaciones-galicia",
+      "tienda-online-vigo",
+      "agencia-desarrollo-web-galicia",
     ]) {
       await expect(page.locator(`a[href="/${slug}"]`).first()).toBeVisible();
+    }
+  });
+
+  test("home exposes an indexable h1 and links to every landing", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
+
+    await expect(page.locator("h1")).toHaveCount(1);
+    await expect(page.locator("h1")).toContainText("Vigo");
+    for (const slug of ["servicios", "tienda-online-vigo", "desarrollo-de-aplicaciones-vigo"]) {
+      await expect(page.locator(`main a[href="/${slug}"]`)).toHaveCount(1);
     }
   });
 

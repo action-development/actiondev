@@ -5,6 +5,7 @@ import { detectLocale } from "@/lib/i18n";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import { I18nProvider } from "@/lib/i18n/context";
 import { StructuredData } from "@/components/StructuredData";
+import { SeoIntro } from "@/components/SeoIntro";
 import { GoogleTagManager } from "@/components/analytics/GoogleTagManager";
 import { CookieConsent } from "@/components/CookieConsent";
 
@@ -89,6 +90,10 @@ export default async function RootLayout({
         <GoogleTagManager />
         <StructuredData />
         <I18nProvider locale={locale}>
+          <SeoIntro
+            title={dictionaries[locale].metadata.title}
+            description={dictionaries[locale].metadata.description}
+          />
           {children}
           <CookieConsent />
         </I18nProvider>

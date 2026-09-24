@@ -112,3 +112,20 @@ export const OFFICE_ADDRESS_LINE = [
 
 /** Datos registrales en una línea, formato habitual de aviso legal. */
 export const REGISTRY_LINE = `${LEGAL_ENTITY.registry.office}, Tomo ${LEGAL_ENTITY.registry.volume}, Folio ${LEGAL_ENTITY.registry.folio}, Sección ${LEGAL_ENTITY.registry.section}, Hoja ${LEGAL_ENTITY.registry.sheet}`;
+
+/**
+ * Landings SEO locales (slug + rótulo) para el bloque indexable de la home de
+ * la zona mobile, que no puede importar `apps/desktop/src/data/landings.ts`.
+ * Mantener en sincronía con ese archivo al añadir/quitar una landing.
+ */
+export const SERVICE_LANDINGS = [
+  { slug: "desarrollo-de-aplicaciones-vigo", label: "Desarrollo de aplicaciones en Vigo" },
+  { slug: "desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
+  { slug: "diseno-web-vigo", label: "Diseño web en Vigo" },
+  { slug: "tienda-online-vigo", label: "Tiendas online en Vigo" },
+  { slug: "desarrollo-de-aplicaciones-pontevedra", label: "Desarrollo de aplicaciones en Pontevedra" },
+  { slug: "desarrollo-web-pontevedra", label: "Desarrollo web en Pontevedra" },
+  { slug: "diseno-web-pontevedra", label: "Diseño web en Pontevedra" },
+  { slug: "desarrollo-de-aplicaciones-galicia", label: "Desarrollo de aplicaciones en Galicia" },
+  { slug: "agencia-desarrollo-web-galicia", label: "Agencia de desarrollo web en Galicia" },
+] as const;

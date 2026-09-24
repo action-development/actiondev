@@ -43,7 +43,7 @@ export const landings: Landing[] = [
     slug: "diseno-web-pontevedra",
     serviceName: "Diseño web en Pontevedra",
     areaServed: ["Pontevedra", "Vigo", "Galicia"],
-    title: "Diseño Web en Pontevedra | Webs Premium para tu Negocio",
+    title: "Diseño de Páginas Web en Pontevedra | Webs Premium",
     metaDescription:
       "Estudio de diseño web para empresas de Pontevedra y las Rías Baixas. Identidad propia, animaciones y experiencias 3D, sin plantillas. ★ 5,0 en Google.",
     h1: "Diseño web en Pontevedra",
@@ -247,13 +247,18 @@ export const landings: Landing[] = [
         label: "Desarrollo de aplicaciones en Vigo",
       },
       { slug: "desarrollo-web-pontevedra", label: "Desarrollo web en Pontevedra" },
+      { slug: "tienda-online-vigo", label: "Tiendas online en Vigo" },
+      {
+        slug: "agencia-desarrollo-web-galicia",
+        label: "Agencia de desarrollo web en Galicia",
+      },
     ],
   },
   {
     slug: "diseno-web-vigo",
     serviceName: "Diseño web en Vigo",
     areaServed: ["Vigo", "Pontevedra", "Galicia"],
-    title: "Diseño Web en Vigo | Webs Premium que Venden",
+    title: "Diseño de Páginas Web en Vigo | Webs Premium que Venden",
     metaDescription:
       "Estudio de diseño web en Vigo. Webs premium con identidad propia, animaciones y experiencias 3D. Diseño orientado a conversión para empresas de Galicia. ★ 5,0 en Google.",
     h1: "Diseño web en Vigo",
@@ -490,6 +495,157 @@ export const landings: Landing[] = [
         label: "Desarrollo de aplicaciones en Pontevedra",
       },
       { slug: "desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
+      {
+        slug: "agencia-desarrollo-web-galicia",
+        label: "Agencia de desarrollo web en Galicia",
+      },
+    ],
+  },
+  {
+    slug: "tienda-online-vigo",
+    serviceName: "Tiendas online en Vigo",
+    areaServed: ["Vigo", "Pontevedra", "Galicia"],
+    title: "Tiendas Online en Vigo | Diseño y Desarrollo de Ecommerce",
+    metaDescription:
+      "Creamos tiendas online a medida en Vigo: Shopify o desarrollo propio con Next.js, pagos con Redsys, Bizum y Stripe e integración con tu ERP. ★ 5,0 en Google.",
+    h1: "Tiendas online en Vigo",
+    intro: [
+      "Una tienda online no es una web con un carrito: es un canal de venta que tiene que cargar rápido, cobrar sin fricción y hablar con el resto de tu negocio — stock, facturación, logística. Diseñamos y desarrollamos ecommerce para empresas de Vigo y su área que quieren vender más allá de su escaparate.",
+      "Hacemos las dos cosas y te decimos cuál te conviene: Shopify cuando el catálogo es estándar y quieres salir cuanto antes, desarrollo propio cuando necesitas reglas de precio, integraciones o una experiencia que una plantilla no da. El mismo equipo diseña, programa y conecta la tienda con tus sistemas.",
+    ],
+    offersTitle: "Qué incluye una tienda online con nosotros",
+    offers: [
+      {
+        title: "Shopify o desarrollo a medida",
+        text: "Shopify cuando compensa por plazo y coste; Next.js con backend propio cuando el negocio pide algo que la plataforma no permite. Sin casarnos con una tecnología: la elegimos con tu caso delante.",
+      },
+      {
+        title: "Pagos que convierten",
+        text: "Pasarelas españolas y europeas — Redsys, Bizum, Stripe —, con un proceso de compra corto, pensado para móvil, que es desde donde compra la mayoría.",
+      },
+      {
+        title: "Conexión con tu ERP y tu logística",
+        text: "Stock, pedidos y facturas sincronizados con el sistema que ya usas, sin duplicar datos a mano ni vender lo que no tienes. Middleware propio cuando no existe conector.",
+      },
+      {
+        title: "Migración desde otra plataforma",
+        text: "Si ya vendes online y tu tienda se ha quedado pequeña o es imposible de mantener, migramos catálogo, clientes y pedidos conservando URLs y posicionamiento.",
+      },
+      {
+        title: "SEO técnico de serie",
+        text: "Fichas de producto con datos estructurados, sitemap, metadatos y rendimiento cuidado: la base para que Google entienda tu catálogo desde el primer día.",
+      },
+    ],
+    process: [
+      {
+        title: "1. Análisis",
+        text: "Catálogo, canales de venta, sistemas existentes y objetivos. Salimos con la plataforma recomendada y un presupuesto cerrado.",
+      },
+      {
+        title: "2. Diseño",
+        text: "Prototipo navegable de la tienda — home, categoría, ficha y compra — que validas antes de programar.",
+      },
+      {
+        title: "3. Desarrollo e integración",
+        text: "Construcción, pasarelas de pago y conexión con tu ERP, con entregas parciales que puedes probar.",
+      },
+      {
+        title: "4. Lanzamiento y soporte",
+        text: "Publicación, pruebas de pedidos reales y mantenimiento posterior: actualizaciones, mejoras y soporte directo.",
+      },
+    ],
+    proof:
+      "Trabajamos con negocios de hostelería, salud, formación, ocio e industria de Vigo y su área, y montamos las integraciones que hagan falta entre la web y los sistemas de cada uno. Nuestra ficha de Google tiene 20 reseñas con 5,0 de media.",
+    faqs: [
+      {
+        q: "¿Cuánto cuesta una tienda online en Vigo?",
+        a: "Depende de la plataforma, el tamaño del catálogo y las integraciones: una tienda sobre Shopify y un ecommerce a medida conectado a un ERP no juegan en la misma liga. Cuéntanos qué vendes y cómo, y en 24 horas te enviamos un presupuesto cerrado y sin compromiso.",
+      },
+      {
+        q: "¿Shopify o una tienda a medida?",
+        a: "Shopify es la mejor opción cuando el catálogo y el proceso de venta son estándar: sales antes y con menos coste. A medida compensa cuando necesitas reglas de precios propias, integraciones profundas o una experiencia de compra diferencial. Te lo evaluamos en la primera reunión, y si Shopify basta, te lo diremos.",
+      },
+      {
+        q: "¿Cuánto tarda en estar online?",
+        a: "Un ecommerce suele estar en producción entre 1 y 3 meses, según catálogo e integraciones. En la fase de análisis te damos un calendario con hitos verificables.",
+      },
+      {
+        q: "¿Podéis conectar la tienda con mi ERP o mi sistema de gestión?",
+        a: "Sí. Desarrollamos sincronizadores de stock, pedidos y facturación entre la tienda y tu sistema, incluso cuando no hay conector oficial.",
+      },
+      {
+        q: "Ya tengo tienda online. ¿Podéis migrarla?",
+        a: "Sí. Migramos catálogo, clientes y pedidos a una plataforma moderna conservando URLs y posicionamiento, para que el cambio no te cueste ventas.",
+      },
+    ],
+    related: [
+      { slug: "desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
+      { slug: "diseno-web-vigo", label: "Diseño web en Vigo" },
+      { slug: "desarrollo-web-pontevedra", label: "Desarrollo web en Pontevedra" },
+    ],
+  },
+  {
+    slug: "agencia-desarrollo-web-galicia",
+    serviceName: "Agencia de desarrollo web en Galicia",
+    areaServed: ["Galicia", "Vigo", "Pontevedra", "A Coruña", "Santiago de Compostela"],
+    title: "Agencia de Desarrollo Web en Galicia | Webs a Medida",
+    metaDescription:
+      "Agencia de desarrollo web en Galicia con sede en Vigo: webs corporativas, tiendas online y aplicaciones web a medida para empresas de Vigo, Pontevedra, A Coruña y Santiago. ★ 5,0.",
+    h1: "Agencia de desarrollo web en Galicia",
+    intro: [
+      "Action es una agencia de desarrollo web con sede en Vigo que trabaja con empresas de toda Galicia: Vigo, Pontevedra, A Coruña, Santiago de Compostela, Ourense y Lugo. Construimos webs corporativas, tiendas online y aplicaciones web a medida, sin plantillas.",
+      "Elegir agencia es elegir con quién vas a hablar los próximos años. Aquí hablas con quien diseña y programa tu web, no con un gestor de cuentas que traduce entre tú y un equipo que no conoces. Y como estamos en la misma comunidad y franja horaria, las reuniones son ágiles y, cuando hace falta, presenciales.",
+    ],
+    offersTitle: "Qué hace una agencia web como la nuestra",
+    offers: [
+      {
+        title: "Webs corporativas a medida",
+        text: "La web de tu empresa como herramienta comercial: mensaje claro, diseño con identidad propia y rendimiento que Google mide y premia.",
+      },
+      {
+        title: "Tiendas online y aplicaciones web",
+        text: "Ecommerce, portales de cliente, paneles internos y plataformas a medida, con backend e integraciones con tus sistemas.",
+      },
+      {
+        title: "Diseño y desarrollo en el mismo equipo",
+        text: "Lo que apruebas en el prototipo es lo que se publica: sin traspasos entre diseñador externo y programador.",
+      },
+      {
+        title: "Mantenimiento y evolución",
+        text: "Planes de mantenimiento con actualizaciones, copias de seguridad y soporte directo por WhatsApp o email, sin permanencias.",
+      },
+    ],
+    proof:
+      "Nuestro porfolio cruza sectores — salud, formación, hostelería, ocio nocturno, industria y marcas personales — de Vigo a O Porriño. 20 reseñas de 5 estrellas en Google avalan el método.",
+    faqs: [
+      {
+        q: "¿Cómo elijo una agencia de desarrollo web en Galicia?",
+        a: "Fíjate en tres cosas: que puedas ver trabajo real y reseñas verificables, que hables directamente con quien construye tu web y que el presupuesto sea cerrado y detallado. Es exactamente como trabajamos, y puedes comprobarlo en nuestro porfolio y en la ficha de Google.",
+      },
+      {
+        q: "¿Trabajáis con empresas de A Coruña, Santiago, Ourense o Lugo?",
+        a: "Sí. El proyecto avanza en remoto con demos periódicas y nos desplazamos para las reuniones clave. Tener al equipo en la misma comunidad y franja horaria facilita mucho el día a día.",
+      },
+      {
+        q: "¿Qué diferencia hay entre una agencia y un freelance?",
+        a: "Un equipo cubre diseño, desarrollo, backend y mantenimiento sin depender de una sola persona, y el proyecto no se detiene si alguien falta. Un freelance puede encajar en webs muy pequeñas; para algo que sea parte del negocio, un equipo da más continuidad.",
+      },
+      {
+        q: "¿Cuánto cuesta una web a medida?",
+        a: "Depende del alcance: una web corporativa y una plataforma con usuarios y pagos no se parecen. No damos tarifas genéricas; analizamos tu caso y te enviamos un presupuesto detallado en 24 horas, sin compromiso.",
+      },
+      {
+        q: "¿Os encargáis también del mantenimiento?",
+        a: "Sí. Ofrecemos planes con actualizaciones, copias de seguridad, cambios de contenido y soporte directo, sin permanencias.",
+      },
+    ],
+    related: [
+      { slug: "desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
+      { slug: "tienda-online-vigo", label: "Tiendas online en Vigo" },
+      {
+        slug: "desarrollo-de-aplicaciones-galicia",
+        label: "Desarrollo de aplicaciones en Galicia",
+      },
     ],
   },
 ];

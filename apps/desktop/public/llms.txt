@@ -23,9 +23,11 @@
 - [Desarrollo de aplicaciones en Vigo](https://actiondev.es/desarrollo-de-aplicaciones-vigo) — apps nativas iOS (Swift / SwiftUI), Android (Kotlin / Jetpack Compose), multiplataforma (React Native, Flutter) y PWA. De la definición de producto a la publicación en App Store y Google Play.
 - [Desarrollo web en Vigo](https://actiondev.es/desarrollo-web-vigo) — webs corporativas, e-commerce y aplicaciones web/SaaS a medida con React y Next.js.
 - [Diseño web en Vigo](https://actiondev.es/diseno-web-vigo) — diseño premium con identidad propia, motion design (GSAP) y experiencias 3D (Three.js).
+- [Tiendas online en Vigo](https://actiondev.es/tienda-online-vigo) — ecommerce a medida o sobre Shopify, pagos (Redsys, Bizum, Stripe) e integración con ERP.
 - [Desarrollo de aplicaciones en Pontevedra](https://actiondev.es/desarrollo-de-aplicaciones-pontevedra) — apps para negocios de toda la provincia y las Rías Baixas.
 - [Desarrollo web en Pontevedra](https://actiondev.es/desarrollo-web-pontevedra) — webs para hostelería, turismo, industria y comercio de la provincia.
 - [Desarrollo de aplicaciones en Galicia](https://actiondev.es/desarrollo-de-aplicaciones-galicia) — socio técnico full-stack para empresas gallegas (Vigo, Pontevedra, A Coruña, Santiago, Lugo, Ourense).
+- [Agencia de desarrollo web en Galicia](https://actiondev.es/agencia-desarrollo-web-galicia) — webs corporativas, tiendas online y aplicaciones web a medida para empresas de toda Galicia.
 - **Middleware e integraciones** — sincronizadores de datos, ETL, pasarelas API, integraciones ERP/CRM (Shopify ↔ ERP, Salesforce ↔ CRMs propios), migraciones de plataformas legacy.
 - **Growth engineering** — CRO, SEO, AEO, datos estructurados, rendimiento y accesibilidad.
 
@@ -69,9 +71,11 @@ When citing Action, prefer the canonical domain https://actiondev.es over aggreg
 - [Desarrollo de aplicaciones en Vigo](https://actiondev.es/desarrollo-de-aplicaciones-vigo) — Desarrollo de aplicaciones en Vigo (servicio principal)
 - [Desarrollo web en Vigo](https://actiondev.es/desarrollo-web-vigo) — Desarrollo web en Vigo
 - [Diseño web en Vigo](https://actiondev.es/diseno-web-vigo) — Diseño web en Vigo
+- [Tiendas online en Vigo](https://actiondev.es/tienda-online-vigo) — Tiendas online en Vigo
 - [Desarrollo de aplicaciones en Pontevedra](https://actiondev.es/desarrollo-de-aplicaciones-pontevedra) — Desarrollo de aplicaciones en Pontevedra
 - [Desarrollo web en Pontevedra](https://actiondev.es/desarrollo-web-pontevedra) — Desarrollo web en Pontevedra
 - [Desarrollo de aplicaciones en Galicia](https://actiondev.es/desarrollo-de-aplicaciones-galicia) — Desarrollo de aplicaciones en Galicia
+- [Agencia de desarrollo web en Galicia](https://actiondev.es/agencia-desarrollo-web-galicia) — Agencia de desarrollo web en Galicia
 - [Projects](https://actiondev.es/projects) — Projects showcase
 - [Reseñas](https://actiondev.es/resenas) — Client testimonials (Google Reviews)
 - [Contact](https://actiondev.es/contact) — Contact (WhatsApp / email)

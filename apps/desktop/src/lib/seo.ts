@@ -49,6 +49,7 @@ export const BRAND = {
     "desarrollo web Vigo",
     "diseño web Vigo",
     "diseño de páginas web Vigo",
+    "tienda online Vigo",
     "desarrollo de aplicaciones Pontevedra",
     "desarrollo web Pontevedra",
     "diseño web Pontevedra",

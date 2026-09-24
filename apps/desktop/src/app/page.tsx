@@ -1,12 +1,15 @@
 "use client";
 
 import { useRef, useCallback, useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Header } from "@/components/layout/Header";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { usePageTransition } from "@/components/animations/PageTransition";
 import { PORT_CONTAINERS } from "@/data/port-containers";
+import { landings } from "@/data/landings";
+import { BRAND } from "@/lib/seo";
 
 const GameScene = dynamic(
   () => import("@/components/canvas/GameScene").then((m) => m.GameScene),
@@ -168,6 +171,29 @@ export default function HomePage() {
       <Header />
 
       <main id="main-content">
+        {/*
+          Texto indexable de la home. El hero es un canvas: sin esto la URL con
+          más autoridad del sitio no tiene <h1> ni un solo enlace a los
+          servicios. En español fijo (documento `lang="es"`, como el "Saltar al
+          contenido"). El <nav> solo se ve al recibir foco de teclado —
+          `focus-within`— para que Tab no caiga en enlaces invisibles.
+        */}
+        <div className="sr-only focus-within:not-sr-only focus-within:absolute focus-within:left-4 focus-within:top-20 focus-within:z-50 focus-within:border focus-within:border-border focus-within:bg-background focus-within:p-4">
+          <h1>{BRAND.tagline}</h1>
+          <p>{BRAND.shortDescription}</p>
+          <nav aria-label="Servicios">
+            <ul>
+              <li>
+                <Link href="/servicios">Servicios</Link>
+              </li>
+              {landings.map((l) => (
+                <li key={l.slug}>
+                  <Link href={`/${l.slug}`}>{l.serviceName}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
         <section
           ref={homeRef}
           id="home"

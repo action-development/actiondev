@@ -161,7 +161,7 @@ export default function AboutExperience({ progress }: { progress: number }) {
         className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"
         style={{ opacity: titleOpacity }}
       >
-        <h1 className="text-6xl font-bold text-black">{t.about.title}</h1>
+        <h2 className="text-6xl font-bold text-black">{t.about.title}</h2>
         {progress < 0.02 && (
           <div className="mt-6 flex flex-col items-center gap-2">
             <span className="text-sm font-medium tracking-wider text-black/30 uppercase">{t.about.scrollHint}</span>

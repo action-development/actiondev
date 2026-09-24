@@ -95,18 +95,30 @@ function buildJsonLd(post: NonNullable<Awaited<ReturnType<typeof getPost>>>) {
   };
 }
 
-/** `**texto**` → `<strong>` — el único énfasis inline que soporta el editor del admin. */
+/**
+ * Inline del cuerpo: `**negrita**` y `[texto](/ruta)`. Los enlaces internos
+ * (`/…`) van por `next/link` y llevan el subrayado del sistema (`link-sweep`);
+ * cualquier otro destino se pinta como texto, no como enlace: el contenido lo
+ * escribe el panel y no debe poder sacar al lector del sitio sin más.
+ */
 function renderInline(text: string) {
   return text
-    .split(/(\*\*[^*]+\*\*)/g)
+    .split(/(\*\*[^*]+\*\*|\[[^\]]+\]\(\/(?!\/)[^)\s]*\))/g)
     .filter(Boolean)
-    .map((part, i) =>
-      part.startsWith("**") && part.endsWith("**") ? (
-        <strong key={i}>{part.slice(2, -2)}</strong>
-      ) : (
-        <span key={i}>{part}</span>
-      ),
-    );
+    .map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={i}>{part.slice(2, -2)}</strong>;
+      }
+      const link = /^\[([^\]]+)\]\((\/(?!\/)[^)\s]*)\)$/.exec(part);
+      if (link) {
+        return (
+          <Link key={i} href={link[2]} className="link-sweep hover:text-accent">
+            {link[1]}
+          </Link>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
 }
 
 function renderBlock(block: BlogContentBlock, index: number) {
