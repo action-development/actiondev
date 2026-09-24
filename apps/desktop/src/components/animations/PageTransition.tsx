@@ -51,9 +51,16 @@ const STUCK_TIMEOUT_MS = 4000;
 const currentLocation = () =>
   window.location.pathname + window.location.search + window.location.hash;
 
+interface NavigateOptions {
+  /** La pantalla YA es la persiana cerrada (lo que ha pintado el llamante es
+   * idéntico): se pone cerrada sin animar y solo se anima la apertura. La usa
+   * la puerta de /projects, cuya sala de neón acaba en una pared de lamas. */
+  covered?: boolean;
+}
+
 interface PageTransitionApi {
   /** Navega a `href` (ruta interna que empiece por "/") con la persiana. */
-  navigate: (href: string) => void;
+  navigate: (href: string, options?: NavigateOptions) => void;
   /** `true` mientras la persiana está en movimiento o cerrada. */
   busy: boolean;
 }
@@ -70,6 +77,8 @@ export function usePageTransition(): PageTransitionApi {
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("idle");
+  /** Cierre sin transición (`covered`). Se apaga al abrir: la apertura se anima siempre. */
+  const [instant, setInstant] = useState(false);
   const phaseRef = useRef<Phase>("idle");
   const timers = useRef<number[]>([]);
 
@@ -88,7 +97,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   }, []);
 
   const navigate = useCallback(
-    (href: string) => {
+    (href: string, options?: NavigateOptions) => {
       if (phaseRef.current !== "idle") return;
       if (!href.startsWith("/")) return;
 
@@ -101,13 +110,19 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
       }
 
       const from = currentLocation();
+      const closeMs = options?.covered ? 0 : blindsDuration();
       router.prefetch(href);
-      setPhaseSync("closing");
-
-      later(() => {
+      if (options?.covered) {
+        setInstant(true);
         setPhaseSync("closed");
         router.push(href);
-      }, blindsDuration());
+      } else {
+        setPhaseSync("closing");
+        later(() => {
+          setPhaseSync("closed");
+          router.push(href);
+        }, closeMs);
+      }
 
       // Abrir en cuanto la URL cambie (ruta nueva, o un redirect del servidor
       // como `/projects` → `/#projects`). Se mira `location` y no `usePathname`
@@ -119,13 +134,14 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         const moved = currentLocation() !== from;
         const stuck = performance.now() - startedAt > STUCK_TIMEOUT_MS;
         if (moved || stuck) {
+          setInstant(false);
           setPhaseSync("opening");
           later(() => setPhaseSync("idle"), blindsDuration());
           return;
         }
         later(poll, 50);
       };
-      later(poll, blindsDuration());
+      later(poll, closeMs);
     },
     [router, setPhaseSync, later]
   );
@@ -170,7 +186,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         className="fixed inset-0 z-[100]"
         style={{ pointerEvents: active ? "auto" : "none" }}
       >
-        <Blinds closed={closed} />
+        <Blinds closed={closed} instant={instant} />
       </div>
     </PageTransitionContext.Provider>
   );

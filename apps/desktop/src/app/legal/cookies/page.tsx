@@ -166,7 +166,7 @@ export default function CookiesPage() {
 
         <h2>5. Almacenamiento local técnico</h2>
         <p>
-          El sitio sí guarda dos valores en el almacenamiento del navegador. No
+          El sitio sí guarda cuatro valores en el almacenamiento del navegador. No
           son cookies (no se envían al servidor en cada petición), son técnicos y
           están exentos de consentimiento conforme al artículo 22.2 LSSI-CE:
         </p>
@@ -186,6 +186,22 @@ export default function CookiesPage() {
             (<code>sessionStorage</code>) — marca que ya has visto la pantalla de
             carga en esta sesión, para no repetirla al navegar. Se borra al
             cerrar la pestaña. No contiene datos personales.
+          </li>
+          <li>
+            <strong>
+              <code>action-contact-popup</code>
+            </strong>{" "}
+            (<code>localStorage</code>) — recuerda si ya nos has contactado o
+            cuándo cerraste la ventana de contacto rápido, para no volver a
+            mostrártela en 7 días. No contiene datos personales.
+          </li>
+          <li>
+            <strong>
+              <code>action-contact-popup-shown</code>
+            </strong>{" "}
+            (<code>sessionStorage</code>) — marca que la ventana de contacto
+            rápido ya se mostró en esta sesión. Se borra al cerrar la pestaña.
+            No contiene datos personales.
           </li>
         </ul>
 

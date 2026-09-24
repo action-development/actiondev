@@ -39,10 +39,13 @@ export function blindsDuration(): number {
 interface BlindsProps {
   /** `true` = lamas cubriendo la pantalla; `false` = recogidas. */
   closed: boolean;
+  /** Cambiar de estado sin transición: la usa `PageTransition` cuando la
+   * pantalla ya pinta la persiana cerrada (salida de /projects). */
+  instant?: boolean;
   className?: string;
 }
 
-export function Blinds({ closed, className = "" }: BlindsProps) {
+export function Blinds({ closed, instant = false, className = "" }: BlindsProps) {
   const h = 100 / BLIND_COUNT;
   return (
     <div aria-hidden className={`absolute inset-0 overflow-hidden ${className}`}>
@@ -55,8 +58,12 @@ export function Blinds({ closed, className = "" }: BlindsProps) {
             height: `calc(${h}% - ${GAP_PX}px)`,
             transform: `scaleY(${closed ? 1 : 0})`,
             transformOrigin: closed ? "top" : "bottom",
-            transition: `transform ${STRIPE_MS}ms var(--ease)`,
-            transitionDelay: `${i * STAGGER_MS}ms`,
+            // Propiedades sueltas, no el shorthand: React avisa si se mezcla
+            // `transition` con `transitionDelay` entre renders.
+            transitionProperty: "transform",
+            transitionDuration: `${instant ? 0 : STRIPE_MS}ms`,
+            transitionTimingFunction: "var(--ease)",
+            transitionDelay: `${instant ? 0 : i * STAGGER_MS}ms`,
           }}
         />
       ))}

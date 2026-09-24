@@ -51,6 +51,29 @@ export interface Translations {
     callbackCta: string;
     /** Confirmación tras enviar el lead a Firestore. */
     callbackSuccess: string;
+    /** La calle de /contact (C/ Colón 20 en 3D). Rótulos de las etiquetas de
+     * cada objeto: canal + verbo que aparece al apuntarlo. En caja alta. */
+    street: {
+      address: string;
+      loading: string;
+      /** Pista de `ControlSign`, arriba. Corta: una sola línea. */
+      hint: string;
+      whatsappTag: string;
+      whatsappAction: string;
+      emailTag: string;
+      emailAction: string;
+      callbackTag: string;
+      callbackAction: string;
+      /** Caja de luz de la cabina, pantalla del teléfono (dos líneas), placa
+       * del buzón y título de su placa de horarios (texturas). */
+      booth: string;
+      lcd1: string;
+      lcd2: string;
+      postbox: string;
+      collection: string;
+      /** Botón que cierra el campo de "llámame tú". */
+      callbackClose: string;
+    };
   };
   footer: {
     available: string;
@@ -161,6 +184,20 @@ export interface Translations {
     /** Nombre accesible del banner (`role="dialog"`). */
     ariaLabel: string;
   };
+  /** Atajo de contacto (`ui/ContactPopup.tsx`): para quien no quiere jugar. */
+  contactPopup: {
+    eyebrow: string;
+    title: string;
+    lead: string;
+    /** Leyenda del selector de servicio (solo lectores de pantalla). */
+    servicesLegend: string;
+    services: Record<"apps" | "webapp" | "web", { label: string; message: string }>;
+    whatsappCta: string;
+    emailPrefix: string;
+    reassurance: string;
+    askAI: string;
+    close: string;
+  };
   /** Sala 3D de reseñas — /resenas ("plaza de personajes"). */
   plaza: {
     title: string;
@@ -183,5 +220,38 @@ export interface Translations {
     ratingAriaLabel: string;
     /** Texto junto al icono de Google en la ficha de reseña. */
     googleSource: string;
+  };
+  /** Sala recreativa 3D — /projects (pasillo de máquinas, una por proyecto). */
+  arcade: {
+    /** h1 de la página: solo para lectores de pantalla y buscadores. */
+    title: string;
+    loading: string;
+    /** Tutorial (`ControlSign`): paso 1, andar. Caja alta, una línea. */
+    hintWalk: string;
+    /** Paso 2: mirar a una fila y elegir máquina. */
+    hintPick: string;
+    /** Rótulo de neón sobre la puerta del fondo (lleva a /contact). */
+    door: string;
+    /** Acción de la ficha de la máquina enfocada. */
+    play: string;
+    /** Botón "Ver lista" y título del panel con todos los proyectos. */
+    list: string;
+    listTitle: string;
+    close: string;
+    /** Pantalla de la máquina acoplada (`arcade/ArcadeScreen`). */
+    screen: {
+      /** Botón de salida bajo la pantalla. */
+      back: string;
+      /** `aria-label` de las flechas laterales. */
+      prev: string;
+      next: string;
+      /** Pista junto a la salida: ◀ ▶ pasan a la máquina de al lado. */
+      neighbors: string;
+      brief: string;
+      result: string;
+      site: string;
+      /** Enlace a /projects/[slug]. */
+      caseStudy: string;
+    };
   };
 }

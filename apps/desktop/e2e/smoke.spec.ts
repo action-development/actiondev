@@ -146,62 +146,107 @@ test.describe("Navigation", () => {
 });
 
 test.describe("Projects page", () => {
-  test("renders featured projects section", async ({ page }) => {
-    await page.goto("/projects");
-    await page.waitForLoadState("domcontentloaded");
-    await expect(page).toHaveURL(/\/projects$/);
-    await expect(page.locator("#projects")).toBeVisible();
+  // /projects es la sala recreativa 3D: pasillo con una máquina por proyecto
+  // y la puerta de contacto al fondo. `?quieto` congela la mirada del ratón.
+  test("monta la sala y recoge la persiana", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (err) => errors.push(err.message));
+
+    await page.goto("/projects?quieto");
+    await expect(page.getByTestId("arcade-scene")).toBeVisible();
+    await expect(page.locator('[data-testid="arcade-scene"] canvas')).toHaveCount(1);
+    await expect(page.getByTestId("arcade-curtain")).toHaveCount(0, { timeout: 20_000 });
+    await expect(page.getByTestId("arcade-hint")).toHaveAttribute("data-step", "walk");
+    expect(errors).toHaveLength(0);
   });
 
-  test("el contenedor colgado no aparece arriba, ni al entrar ni al volver", async ({ page }) => {
-    await page.goto("/projects");
-    await page.waitForLoadState("domcontentloaded");
-    const cargo = page.locator('[data-testid="hanging-cargo"]');
-    const opacity = async () => Number(await cargo.evaluate((el) => getComputedStyle(el).opacity));
+  test("la lista lleva a todos los proyectos", async ({ page }) => {
+    await page.goto("/projects?quieto");
+    const toggle = page.getByTestId("arcade-list-toggle");
+    const list = page.getByTestId("arcade-list");
 
-    await expect(cargo).toHaveCount(1);
-    expect(await opacity()).toBe(0);
+    // Cerrada no se ve, pero los enlaces están en el HTML (buscadores).
+    await expect(list).toBeHidden();
+    expect(await list.locator('a[href^="/projects/"]').count()).toBeGreaterThan(30);
 
-    // Dentro del carrusel sí se ve.
-    await page.evaluate(() => {
-      const s = document.querySelector('section[aria-label="Featured projects showcase"]') as HTMLElement;
-      window.scrollTo(0, s.offsetTop + s.offsetHeight * 0.3);
-    });
-    await expect.poll(opacity).toBeGreaterThan(0.9);
-
-    // Al volver arriba del todo vuelve a estar oculto.
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await expect.poll(opacity, { timeout: 5000 }).toBe(0);
-  });
-
-  test("el índice llega abierto con todos los trabajos", async ({ page }) => {
-    await page.goto("/projects");
-    await page.waitForLoadState("domcontentloaded");
-
-    await page.evaluate(() => {
-      document.getElementById("projects-index")?.scrollIntoView();
-    });
-
-    const section = page.locator("#projects-index");
-    await expect(section).toBeVisible();
-
-    // De entrada ya están los 31 trabajos a la vista.
-    const rows = section.locator("[data-row]");
-    const toggle = page.getByTestId("projects-index-toggle");
-    await expect(toggle).toBeVisible();
+    await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
-    await expect(rows.first()).toBeVisible();
-    expect(await rows.count()).toBeGreaterThan(20);
+    await expect(list).toBeVisible();
 
-    // El botón sigue pudiendo recogerlos.
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(await rows.count()).toBe(0);
+    await expect(list).toBeHidden();
+  });
 
-    // Y volver a abrirlos.
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(await rows.count()).toBeGreaterThan(20);
+  test("Enter acopla la máquina enfocada y Esc devuelve al pasillo", async ({ page }) => {
+    await page.goto("/projects?quieto");
+    await expect(page.getByTestId("arcade-curtain")).toHaveCount(0, { timeout: 20_000 });
+
+    // Fila izquierda: mirándola, "a tu derecha" es el fondo del pasillo, donde
+    // siempre hay otra máquina (en la derecha, la primera no tiene vecina).
+    await page.keyboard.press("ArrowLeft");
+    const focus = page.getByTestId("arcade-focus");
+    await expect(focus).toBeVisible();
+    await expect(page.getByTestId("arcade-hint")).toHaveAttribute("data-step", "done");
+    const slug = await focus.getAttribute("data-project");
+
+    // Elegir NO navega: la pantalla de la máquina se enciende con su ficha.
+    await page.keyboard.press("Enter");
+    const screen = page.getByTestId("arcade-screen");
+    await expect(screen).toBeVisible({ timeout: 5_000 });
+    await expect(screen).toHaveAttribute("data-project", slug!);
+    await expect(page).toHaveURL(/\/projects(\?quieto)?$/);
+    await expect(page.getByTestId("arcade-screen-close")).toBeVisible();
+
+    // → pasa a la máquina de al lado sin salir.
+    await page.keyboard.press("ArrowRight");
+    await expect(screen).not.toHaveAttribute("data-project", slug!, { timeout: 5_000 });
+
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("arcade-screen-layer")).toHaveCount(0);
+    await expect(page.getByTestId("arcade-focus")).toBeVisible();
+  });
+
+  test("el botón de salir y el clic fuera de la pantalla vuelven al pasillo", async ({ page }) => {
+    await page.goto("/projects?quieto");
+    await expect(page.getByTestId("arcade-curtain")).toHaveCount(0, { timeout: 20_000 });
+
+    await page.keyboard.press("ArrowLeft");
+    await page.getByTestId("arcade-focus").click();
+    await expect(page.getByTestId("arcade-screen")).toBeVisible({ timeout: 5_000 });
+    await page.getByTestId("arcade-screen-close").click();
+    await expect(page.getByTestId("arcade-screen-layer")).toHaveCount(0);
+
+    await page.getByTestId("arcade-focus").click();
+    await expect(page.getByTestId("arcade-screen")).toBeVisible({ timeout: 5_000 });
+    await page.mouse.click(20, 400);
+    await expect(page.getByTestId("arcade-screen-layer")).toHaveCount(0);
+  });
+
+  test("la puerta del fondo se cruza y la persiana entra ya cerrada", async ({ page }) => {
+    await page.goto("/projects?quieto");
+    await expect(page.getByTestId("arcade-curtain")).toHaveCount(0, { timeout: 20_000 });
+
+    // Se apuntan las fases de la persiana: con el relevo desde la sala de neón
+    // pasa de `idle` a `closed` sin `closing` (el último frame 3D YA es ella).
+    await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="page-blinds"]')!;
+      const w = window as unknown as { __blinds: string[] };
+      w.__blinds = [];
+      new MutationObserver(() => w.__blinds.push(el.getAttribute("data-state")!)).observe(el, {
+        attributes: true,
+        attributeFilter: ["data-state"],
+      });
+    });
+
+    await page.keyboard.down("ArrowUp");
+    await expect(page).toHaveURL(/\/contact$/, { timeout: 20_000 });
+    await page.keyboard.up("ArrowUp");
+    await expect(page.getByTestId("page-blinds")).toHaveAttribute("data-state", "idle", { timeout: 5_000 });
+
+    const phases = await page.evaluate(() => (window as unknown as { __blinds: string[] }).__blinds);
+    expect(phases[0]).toBe("closed");
+    expect(phases).not.toContain("closing");
   });
 });
 
@@ -220,6 +265,25 @@ test.describe("Contact page", () => {
 
     const email = page.locator('[data-channel="email"]');
     await expect(email).toHaveAttribute("href", /^mailto:[^@]+@[^?]+\?subject=.+&body=.+/);
+  });
+
+  test("la calle se recoge y el portero abre el 'llámame tú'", async ({ page }) => {
+    await page.goto("/contact?quieto");
+    await expect(page.getByTestId("street-curtain")).toHaveCount(0, { timeout: 20_000 });
+    await expect(page.getByTestId("street-scene")).toBeVisible();
+    // Las etiquetas de los tres objetos de la calle.
+    for (const id of ["whatsapp", "email", "callback"]) {
+      await expect(page.getByTestId(`street-tag-${id}`)).toBeAttached();
+    }
+
+    // Apuntar un canal del HUD resalta su objeto en la calle.
+    await page.locator('[data-channel="email"]').hover();
+    await expect(page.getByTestId("street-tag-email")).toHaveAttribute("data-active", "true");
+
+    // El botón del HUD hace lo mismo que el portero: abre el campo y lo enfoca.
+    await page.getByTestId("callback-toggle").click();
+    await expect(page.getByTestId("callback-form")).toBeVisible();
+    await expect(page.locator("#contact-callback-phone")).toBeFocused();
   });
 });
 
@@ -281,5 +345,53 @@ test.describe("SEO landing pages", () => {
   test("unknown slug returns 404", async ({ page }) => {
     const response = await page.goto("/landing-inexistente");
     expect(response?.status()).toBe(404);
+  });
+});
+
+test.describe("Contact shortcut popup", () => {
+  // Consentimiento ya decidido: sin él el popup no sale (nunca dos capas).
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem("action-cookie-consent", "denied");
+    });
+    await page.clock.install();
+  });
+
+  const exitIntent = (page: import("@playwright/test").Page) =>
+    page.evaluate(() =>
+      document.dispatchEvent(new MouseEvent("mouseout", { clientY: -1, relatedTarget: null, bubbles: true })),
+    );
+
+  test("opens on exit intent, prefills WhatsApp and does not come back once closed", async ({ page }) => {
+    await page.goto("/servicios");
+    await page.waitForLoadState("domcontentloaded");
+
+    // Recién llegado: aún no está armado.
+    await exitIntent(page);
+    await expect(page.getByTestId("contact-popup")).toHaveCount(0);
+
+    await page.clock.fastForward(9_000);
+    await exitIntent(page);
+    const popup = page.getByTestId("contact-popup");
+    await expect(popup).toBeVisible();
+
+    await page.getByTestId("contact-popup-service-apps").click();
+    const href = await page.getByTestId("contact-popup-whatsapp").getAttribute("href");
+    expect(decodeURIComponent(href ?? "")).toContain("desarrollar una app");
+
+    await page.keyboard.press("Escape");
+    await expect(popup).toHaveCount(0);
+
+    // Una vez por sesión.
+    await exitIntent(page);
+    await expect(popup).toHaveCount(0);
+  });
+
+  test("never shows on /contact", async ({ page }) => {
+    await page.goto("/contact");
+    await page.waitForLoadState("domcontentloaded");
+    await page.clock.fastForward(60_000);
+    await exitIntent(page);
+    await expect(page.getByTestId("contact-popup")).toHaveCount(0);
   });
 });

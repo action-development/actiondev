@@ -19,7 +19,7 @@ import type { ReactNode } from "react";
 interface HoloButtonProps {
   /** Enlace. SIN `href` el componente es un `<button type="button">` de acción. */
   href?: string;
-  /** Acción en la propia página (desplegar, filtrar). Sólo se usa sin `href`. */
+  /** Sin `href`, la acción del botón. Con `href`, se ejecuta además de navegar (medición). */
   onClick?: () => void;
   children: ReactNode;
   variant?: "outline" | "solid" | "quiet";
@@ -86,7 +86,7 @@ export function HoloButton({
 
   if (isInternal) {
     return (
-      <Link href={href} className={classes} aria-label={ariaLabel}>
+      <Link href={href} onClick={onClick} className={classes} aria-label={ariaLabel} data-testid={testId}>
         {body}
       </Link>
     );
@@ -95,8 +95,10 @@ export function HoloButton({
   return (
     <a
       href={href}
+      onClick={onClick}
       className={classes}
       aria-label={ariaLabel}
+      data-testid={testId}
       {...(href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
     >
       {body}

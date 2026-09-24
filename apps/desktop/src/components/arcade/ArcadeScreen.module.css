@@ -1,0 +1,227 @@
+/*
+ * Pantalla de la recreativa acoplada — un tubo de fósforo encendido encima
+ * del tubo 3D. Todo va en `cqw` (ancho de la pantalla): el tamaño de la
+ * pantalla sale del viewport, así que el texto escala con ella y la
+ * composición es la misma en un portátil que en un 27".
+ */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  container-type: inline-size;
+  overflow: hidden;
+  /* El vignette 3D del tubo redondea las esquinas; esto las acompaña. */
+  border-radius: 2.2cqw;
+  color: var(--foreground);
+  background:
+    radial-gradient(120% 90% at 50% 40%, rgb(200 255 0 / 0.07), transparent 70%),
+    #060806;
+  outline: none;
+  animation: crt-on 460ms var(--ease) both;
+}
+
+/* Líneas de barrido y viñeteado del tubo, por encima del contenido y sin
+   robarle eventos. */
+.screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.22) 0 1px, transparent 1px 3px),
+    radial-gradient(130% 110% at 50% 50%, transparent 60%, rgb(0 0 0 / 0.55));
+}
+
+.content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 4.2cqw 4.8cqw;
+  animation: crt-content 520ms var(--ease) 180ms both;
+}
+
+.meta {
+  display: flex;
+  gap: 1.6cqw;
+  font-size: max(11px, 1.35cqw);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.title {
+  margin-top: 1.4cqw;
+  font-size: 5cqw;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4cqw;
+  min-height: 0;
+  flex: 1;
+  margin-top: 3cqw;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 2cqw;
+}
+
+.media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border: 1px solid rgb(200 255 0 / 0.25);
+  background: var(--border);
+}
+
+.mediaFallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 2cqw;
+  text-align: center;
+  font-size: 3cqw;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2cqw 3cqw;
+  font-size: max(13px, 1.7cqw);
+  font-weight: 600;
+}
+
+.text {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 1cqw;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(200 255 0 / 0.3) transparent;
+}
+
+.label {
+  font-size: max(11px, 1.35cqw);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--foreground);
+}
+
+.label + * {
+  margin-top: 1.4cqw;
+}
+
+.brief {
+  display: flex;
+  flex-direction: column;
+  gap: 1cqw;
+  margin-bottom: 3cqw;
+}
+
+.brief li {
+  display: flex;
+  gap: 1cqw;
+}
+
+.brief,
+.result {
+  font-size: max(13px, 1.75cqw);
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--foreground) 82%, transparent);
+}
+
+/* Flecha lateral: tapa con el glifo + nombre de la máquina a la que lleva. */
+.neighbor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 8.5rem;
+  padding: 1rem 0.75rem;
+  color: var(--foreground);
+  text-align: center;
+}
+.neighbor:disabled {
+  visibility: hidden;
+}
+
+.neighborKey {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid currentColor;
+  color: var(--accent);
+}
+
+.neighborTitle {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+/* Tecla impresa dentro del botón de salir: se ve qué tecla hace lo mismo. */
+.kbd {
+  padding: 0.15em 0.45em;
+  border: 1px solid currentColor;
+  font-family: inherit;
+  font-size: 0.8em;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+/* Flechas y pista lateral: entran cuando la pantalla ya está encendida. */
+.chrome {
+  transition: opacity var(--duration) var(--ease);
+}
+.chrome[data-visible="false"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Encendido de tubo: una raya que se abre en vertical. */
+@keyframes crt-on {
+  0% {
+    transform: scale(0.7, 0.008);
+    filter: brightness(3);
+  }
+  45% {
+    transform: scale(1, 0.008);
+    filter: brightness(2.2);
+  }
+  100% {
+    transform: scale(1, 1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes crt-content {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen,
+  .content {
+    animation: none;
+  }
+}

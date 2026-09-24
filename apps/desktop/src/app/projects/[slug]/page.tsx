@@ -5,23 +5,15 @@ import { notFound } from "next/navigation";
 import { projects, type Project } from "@actiondev/shared";
 import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 import { Header } from "@/components/layout/Header";
+import { projectCase } from "@/lib/project-case";
 
 /**
  * Ficha de proyecto (/projects/[slug]) — server component, misma familia
  * visual que /blog/[slug]: fuera del lenguaje holográfico a propósito, es
  * una página para leer un caso, no el juego de la home. `brief`/`result`
  * (ES) son opcionales en `Project`: mientras no haya contenido real por
- * proyecto, caen en el placeholder genérico de abajo.
+ * proyecto, caen en el placeholder genérico de `lib/project-case.ts`.
  */
-
-const BRIEF_PLACEHOLDER = [
-  "Una presencia digital a la altura de su marca frente a la competencia.",
-  "Una web rápida, clara y fácil de gestionar en el día a día.",
-  "Una identidad propia, sin recurrir a plantillas genéricas.",
-];
-
-const RESULT_PLACEHOLDER =
-  "Una web a medida construida desde cero, con una experiencia fluida en cualquier dispositivo y una base técnica pensada para crecer con el negocio.";
 
 interface ProjectPageProps {
   params: Promise<{ slug: string }>;
@@ -106,8 +98,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   const category = project.categoryEs ?? project.category;
   const niche = project.nicheEs ?? project.niche;
-  const brief = project.briefEs ?? project.brief ?? BRIEF_PLACEHOLDER;
-  const result = project.resultEs ?? project.result ?? RESULT_PLACEHOLDER;
+  const { brief, result } = projectCase(project);
 
   return (
     <>

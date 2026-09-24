@@ -6,6 +6,7 @@ import { LocaleProvider } from "@/lib/i18n";
 import { PageTransition } from "@/components/animations/PageTransition";
 import { GoogleTagManager } from "@/components/analytics/GoogleTagManager";
 import { CookieConsent } from "@/components/ui/CookieConsent";
+import { ContactPopup } from "@/components/ui/ContactPopup";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -134,7 +135,10 @@ export default function RootLayout({
           <StructuredData kind="organization" />
           <StructuredData kind="website" />
           <StructuredData kind="services" />
-          <PageTransition>{children}</PageTransition>
+          <PageTransition>
+            {children}
+            <ContactPopup />
+          </PageTransition>
           <CookieConsent />
         </LocaleProvider>
       </body>

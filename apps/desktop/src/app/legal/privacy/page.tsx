@@ -16,7 +16,7 @@ import {
  * datos a ningún servidor propio — compone un mensaje y abre WhatsApp. Hay
  * analítica (Google Tag Manager, solo tras consentimiento — ver
  * `/legal/cookies`) pero no base de datos propia de analítica. Mantener este
- * documento alineado con `components/sections/Contact.tsx` y
+ * documento alineado con `components/contact/*` (canales y "llámame tú") y
  * `components/analytics/GoogleTagManager.tsx` si eso cambia.
  */
 

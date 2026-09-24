@@ -1,0 +1,10 @@
+# Solo el código: Vercel instala y construye en remoto.
+**/node_modules
+**/.next
+**/.turbo
+**/.vercel
+**/test-results
+**/playwright-report
+apps/desktop/e2e/report
+**/*.log
+.git

@@ -14,23 +14,9 @@ test.describe("Visual regression", () => {
     });
   });
 
-  test("projects page", async ({ page }) => {
-    await page.goto("/projects");
-    await page.waitForLoadState("domcontentloaded");
-    await page.evaluate(() => {
-      document.getElementById("projects")?.scrollIntoView({ behavior: "instant" });
-    });
-    await page.waitForTimeout(500);
-    await expect(page).toHaveScreenshot("projects-page.png");
-  });
+  // /projects (sala recreativa 3D) no tiene snapshot, igual que /resenas: las
+  // capturas de los proyectos y el vídeo de la máquina enfocada llegan cuando
+  // llegan y la imagen no es determinista. Lo cubre smoke.spec.ts. Lo mismo
+  // /contact (la calle de C/ Colón 20): su HUD lo cubren smoke y sections.
 
-  test("contact page", async ({ page }) => {
-    await page.goto("/contact");
-    await page.waitForLoadState("domcontentloaded");
-    await page.evaluate(() => {
-      document.getElementById("contact")?.scrollIntoView({ behavior: "instant" });
-    });
-    await page.waitForTimeout(300);
-    await expect(page).toHaveScreenshot("contact-page.png");
-  });
 });

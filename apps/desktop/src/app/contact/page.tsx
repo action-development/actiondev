@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { SectionPage } from "@/components/layout/SectionPage";
-import { Contact } from "@/components/sections/Contact";
 import { BRAND, OG_IMAGE, absoluteUrl } from "@/lib/seo";
+import { ContactPage } from "./ContactPage";
 
 /**
- * /contact — antigua sección #contact de la home, movida a su propia ruta.
- * Server component: metadata. Los canales son client (GSAP + i18n).
+ * /contact — el portal de C/ Colón 20 en 3D (ver `ContactPage`).
+ * Server component: solo metadata; la calle y el HUD son client.
  */
 export const metadata: Metadata = {
   // Sin la marca: el `template` del layout raíz ya añade " — Action".
@@ -24,14 +23,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ContactPage() {
-  return (
-    <SectionPage>
-      {/* Sin padding extra: la sección ya mide 100dvh, y sumarlo dejaría
-          asomar el footer antes de hacer scroll. */}
-      <div id="contact">
-        <Contact />
-      </div>
-    </SectionPage>
-  );
+export default function Page() {
+  return <ContactPage />;
 }

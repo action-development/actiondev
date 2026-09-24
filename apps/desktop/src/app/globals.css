@@ -861,6 +861,23 @@ html.lenis body { height: auto; }
   animation: fade-in 0.8s ease-out 0.3s both;
 }
 
+/* Atajo de contacto (`ui/ContactPopup.tsx`): el panel se proyecta subiendo
+   medio paso y el fondo se apaga detrás. Con reduced motion la regla global
+   lo deja en su fotograma final: aparece, sin viaje. */
+.contact-popup[open] {
+  animation: contact-popup-in var(--duration-slow) var(--ease) both;
+}
+.contact-popup::backdrop {
+  background: rgba(8, 8, 8, 0.78);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fade-in var(--duration) var(--ease) both;
+}
+@keyframes contact-popup-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
 /* Easter egg: contador de gaviotas abatidas (arriba a la derecha). */
 .tally-pop {
   animation: tally-pop 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
