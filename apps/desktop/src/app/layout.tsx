@@ -78,7 +78,10 @@ export const metadata: Metadata = {
    * del manifest.
    */
   icons: {
-    icon: [{ url: "/logos/action_globe-64.png", type: "image/png", sizes: "64x64" }],
+    icon: [
+      { url: "/logos/action_globe-64.png", type: "image/png", sizes: "64x64" },
+      { url: "/favicon.ico", sizes: "48x48" },
+    ],
   },
   formatDetection: {
     email: false,
