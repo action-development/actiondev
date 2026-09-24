@@ -4,12 +4,15 @@ import { adminAuth } from "@/lib/firebase/admin";
 export const SESSION_COOKIE = "admin_session";
 const SESSION_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
-/** Único usuario admitido — un solo usuario, sin auto-registro (ver CLAUDE.md [SECURITY]). */
-const ALLOWED_EMAIL = "hi@actiondev.es";
-
+/**
+ * Autorización por custom claim `role: "admin"`, no por email hardcodeado.
+ * Un admin nuevo se da de alta asignándole el claim en Firebase (Admin SDK
+ * o consola), sin tocar código. Mismo criterio que usa el portal de
+ * clientes en apps/desktop y que firestore.rules.
+ */
 export async function createSessionCookie(idToken: string): Promise<string> {
   const decoded = await adminAuth().verifyIdToken(idToken);
-  if (decoded.email !== ALLOWED_EMAIL) {
+  if (decoded.role !== "admin") {
     throw new Error("Cuenta no autorizada.");
   }
   return adminAuth().createSessionCookie(idToken, { expiresIn: SESSION_MAX_AGE_MS });
@@ -22,7 +25,7 @@ export async function getSessionUser(): Promise<{ email: string } | null> {
 
   try {
     const decoded = await adminAuth().verifySessionCookie(session, true);
-    if (decoded.email !== ALLOWED_EMAIL) return null;
+    if (decoded.role !== "admin" || !decoded.email) return null;
     return { email: decoded.email };
   } catch {
     return null;

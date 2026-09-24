@@ -1,13 +1,56 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Rol resuelto por custom claim (`role: "admin" | "client"`), no por
+    // email hardcodeado — ver apps/admin/src/lib/firebase/session.ts y
+    // apps/desktop/src/lib/portal/session.ts. Un admin nuevo se da de alta
+    // asignándole el claim en Firebase, sin tocar este archivo.
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == 'admin';
+    }
+    function isClient() {
+      return request.auth != null && request.auth.token.role == 'client';
+    }
+
     match /posts/{postId} {
       allow get, list: if resource.data.status == 'published';
-      allow read, write: if request.auth != null && request.auth.token.email == 'hi@actiondev.es';
+      allow read, write: if isAdmin();
     }
     match /leads/{leadId} {
       allow create: if true;
-      allow read, update, delete: if request.auth != null && request.auth.token.email == 'hi@actiondev.es';
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /clients/{clientId} {
+      allow read: if isAdmin() || (isClient() && request.auth.uid == clientId);
+      allow write: if isAdmin();
+    }
+
+    match /clientProjects/{projectId} {
+      allow read: if isAdmin() ||
+        (isClient() && resource.data.clientId == request.auth.token.clientId);
+      allow create, update, delete: if isAdmin();
+
+      match /milestones/{milestoneId} {
+        allow read: if isAdmin() ||
+          (isClient() &&
+           get(/databases/$(database)/documents/clientProjects/$(projectId)).data.clientId == request.auth.token.clientId);
+        allow write: if isAdmin();
+      }
+
+      match /messages/{messageId} {
+        allow read: if isAdmin() ||
+          (isClient() &&
+           get(/databases/$(database)/documents/clientProjects/$(projectId)).data.clientId == request.auth.token.clientId);
+        allow create: if request.auth != null &&
+          request.resource.data.authorEmail == request.auth.token.email &&
+          request.resource.data.authorRole == request.auth.token.role &&
+          (isAdmin() ||
+           (isClient() &&
+            get(/databases/$(database)/documents/clientProjects/$(projectId)).data.clientId == request.auth.token.clientId));
+        // Mensajes inmutables: ni admin edita/borra un mensaje ya enviado.
+        allow update, delete: if false;
+      }
     }
   }
 }
