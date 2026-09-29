@@ -35,6 +35,11 @@ export function middleware(request: NextRequest) {
   // MISMA URL. Google pide `Vary: User-Agent` para que ni él ni las cachés
   // intermedias sirvan la versión desktop al rastreador móvil o al revés.
   if (isHome) response.headers.set("Vary", "User-Agent");
+  // El rewrite entre proyectos llega a la URL de despliegue de la zona
+  // mobile (`actiondev-mobile-<hash>.vercel.app`), y Vercel pone
+  // `x-robots-tag: noindex` a esas URLs. Sin esto, la home que indexa
+  // Googlebot smartphone (mobile-first) salía noindex.
+  if (isHome && isMobile) response.headers.set("X-Robots-Tag", "index, follow");
   return response;
 }
 
