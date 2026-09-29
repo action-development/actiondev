@@ -7,10 +7,11 @@ import { useGSAP } from "@gsap/react";
 
 import { testimonials, type Testimonial } from "@/data/testimonials";
 import { AccentWord } from "@/components/ui/AccentWord";
+import { BUSINESS } from "@/lib/seo";
 import { useLocale, useT } from "@/lib/i18n";
 
 // TODO: replace with the exact Google Business profile URL (g.page/r/…) when available.
-const GOOGLE_REVIEWS_URL = "https://www.google.com/maps/search/?api=1&query=Action+Development+Vigo";
+const GOOGLE_REVIEWS_URL = BUSINESS.mapsUrl;
 
 function getInitials(name: string): string {
 	const parts = name.trim().split(/\s+/);

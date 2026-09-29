@@ -34,8 +34,15 @@ export const BUSINESS = {
   },
   // Aproximadas a Rúa Colón 20 — verificar contra el pin exacto de la ficha GBP.
   geo: { latitude: 42.2372, longitude: -8.7203 },
-  mapsUrl:
-    "https://www.google.com/maps/search/?api=1&query=Action+Development+Vigo",
+  /**
+   * Ficha REAL de Google Business Profile ("Action Development"), por CID.
+   * Antes era una URL de búsqueda de Maps: podía enseñar a la competencia y
+   * no ataba la web a la entidad de Google. Va a `hasMap`/`sameAs` del
+   * JSON-LD y a los enlaces "ver reseñas".
+   */
+  mapsUrl: "https://maps.google.com/?cid=18162141466997281764",
+  /** Enlace corto de GBP que abre directamente el formulario de reseña. */
+  reviewUrl: "https://g.page/r/CeTTw-Rv4wz8EBM/review",
   foundingYear: 2020,
   social: {
     instagram: "https://instagram.com/action.dev",
@@ -150,8 +157,10 @@ export function organizationSchema(description?: string) {
   return {
     "@type": ["Organization", "ProfessionalService"],
     "@id": ORGANIZATION_ID,
-    name: BUSINESS.name,
-    alternateName: BUSINESS.alternateName,
+    // Nombre EXACTO de la ficha de Google Business Profile, para que Google
+    // case la web con la ficha. "Action" (la marca corta) va de alias.
+    name: BUSINESS.alternateName,
+    alternateName: BUSINESS.name,
     // "Action" es marca; la persona jurídica es Alcasi Systems, S.L.
     // `legalName` + `vatID` permiten cruzar el proveedor con el Registro
     // Mercantil sin salir del JSON-LD.
@@ -204,6 +213,6 @@ export function organizationSchema(description?: string) {
         },
       })),
     },
-    sameAs: [BUSINESS.social.instagram, BUSINESS.social.linkedin],
+    sameAs: [BUSINESS.mapsUrl, BUSINESS.social.instagram, BUSINESS.social.linkedin],
   };
 }
