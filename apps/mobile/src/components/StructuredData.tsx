@@ -1,4 +1,4 @@
-import { BUSINESS } from "@actiondev/shared";
+import { BUSINESS, ORGANIZATION_ID, organizationSchema } from "@actiondev/shared";
 
 /**
  * JSON-LD para la zona mobile. Con mobile-first indexing, esta versión es la
@@ -9,94 +9,19 @@ import { BUSINESS } from "@actiondev/shared";
  * desktop para que ambas versiones referencien las mismas entidades.
  */
 
-const ORG_ID = `${BUSINESS.domain}/#organization`;
-
 const schema = {
   "@context": "https://schema.org",
   "@graph": [
-    {
-      "@type": "Organization",
-      "@id": ORG_ID,
-      name: BUSINESS.name,
-      alternateName: BUSINESS.alternateName,
-      // Marca "Action" vs. persona jurídica: mismos identificadores que emite
-      // desktop, para que Google vea una sola entidad con CIF verificable.
-      legalName: BUSINESS.legalName,
-      vatID: BUSINESS.taxId,
-      taxID: BUSINESS.taxId,
-      url: BUSINESS.domain,
-      logo: `${BUSINESS.domain}/logos/logo.webp`,
-      email: BUSINESS.email,
-      telephone: BUSINESS.phoneE164,
-      foundingDate: String(BUSINESS.foundingYear),
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: BUSINESS.address.street,
-        postalCode: BUSINESS.address.postalCode,
-        addressLocality: BUSINESS.address.locality,
-        addressRegion: BUSINESS.address.region,
-        addressCountry: BUSINESS.address.country,
-      },
-      sameAs: [BUSINESS.social.instagram, BUSINESS.social.linkedin],
-    },
+    // Mismo nodo que desktop (Organization + ProfessionalService), generado
+    // desde @actiondev/shared para que las dos zonas no se desincronicen.
+    organizationSchema(),
     {
       "@type": "WebSite",
       "@id": `${BUSINESS.domain}/#website`,
       url: BUSINESS.domain,
       name: BUSINESS.name,
       inLanguage: "es",
-      publisher: { "@id": ORG_ID },
-    },
-    {
-      "@type": "ProfessionalService",
-      "@id": `${BUSINESS.domain}/#services`,
-      name: BUSINESS.displayName,
-      legalName: BUSINESS.legalName,
-      vatID: BUSINESS.taxId,
-      url: BUSINESS.domain,
-      image: `${BUSINESS.domain}/logos/logo.webp`,
-      telephone: BUSINESS.phoneE164,
-      email: BUSINESS.email,
-      priceRange: "€€",
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: BUSINESS.address.street,
-        postalCode: BUSINESS.address.postalCode,
-        addressLocality: BUSINESS.address.locality,
-        addressRegion: BUSINESS.address.region,
-        addressCountry: BUSINESS.address.country,
-      },
-      geo: {
-        "@type": "GeoCoordinates",
-        latitude: BUSINESS.geo.latitude,
-        longitude: BUSINESS.geo.longitude,
-      },
-      hasMap: BUSINESS.mapsUrl,
-      areaServed: [
-        { "@type": "City", name: "Vigo" },
-        { "@type": "City", name: "Pontevedra" },
-        { "@type": "City", name: "A Coruña" },
-        { "@type": "City", name: "Santiago de Compostela" },
-        { "@type": "AdministrativeArea", name: "Galicia" },
-        { "@type": "Country", name: "ES" },
-      ],
-      hasOfferCatalog: {
-        "@type": "OfferCatalog",
-        name: `${BUSINESS.name} Services`,
-        itemListElement: BUSINESS.services.map((service, i) => ({
-          "@type": "ListItem",
-          position: i + 1,
-          item: {
-            "@type": "Offer",
-            itemOffered: {
-              "@type": "Service",
-              name: service,
-              provider: { "@id": ORG_ID },
-            },
-          },
-        })),
-      },
-      provider: { "@id": ORG_ID },
+      publisher: { "@id": ORGANIZATION_ID },
     },
   ],
 };

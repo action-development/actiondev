@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { LEGAL_UPDATED, SITE_URL } from "@/lib/seo";
 import { landings } from "@/data/landings";
 import { getPosts } from "@/lib/blog";
-import { projects } from "@/data/projects";
+import { hasCaseStudy, projects } from "@/data/projects";
 
 const CORE_LANDING = "desarrollo-de-aplicaciones-vigo";
 
@@ -83,7 +83,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  const projectEntries: MetadataRoute.Sitemap = projects.map((p) => ({
+  // Solo fichas con caso redactado: las demás van `noindex` (ver `hasCaseStudy`).
+  const projectEntries: MetadataRoute.Sitemap = projects.filter(hasCaseStudy).map((p) => ({
     url: `${SITE_URL}/projects/${p.slug}`,
     lastModified: CONTENT_UPDATED,
     changeFrequency: "yearly",

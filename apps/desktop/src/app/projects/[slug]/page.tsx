@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { projects, type Project } from "@actiondev/shared";
+import { hasCaseStudy, projects, type Project } from "@actiondev/shared";
 import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 import { Header } from "@/components/layout/Header";
 import { projectCase } from "@/lib/project-case";
@@ -41,6 +41,9 @@ export async function generateMetadata({
     title: project.title,
     description,
     alternates: { canonical: `/projects/${project.slug}` },
+    // Sin caso redactado: fuera del índice (ver `hasCaseStudy`). `follow`
+    // sigue repartiendo enlaces hacia la web del cliente y el resto del sitio.
+    ...(!hasCaseStudy(project) && { robots: { index: false, follow: true } }),
     openGraph: {
       type: "article",
       locale: "es_ES",

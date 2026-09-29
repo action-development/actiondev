@@ -129,3 +129,81 @@ export const SERVICE_LANDINGS = [
   { slug: "desarrollo-de-aplicaciones-galicia", label: "Desarrollo de aplicaciones en Galicia" },
   { slug: "agencia-desarrollo-web-galicia", label: "Agencia de desarrollo web en Galicia" },
 ] as const;
+
+/** `@id` de la entidad de negocio. Desktop, mobile y landings apuntan aquí. */
+export const ORGANIZATION_ID = `${BUSINESS.domain}/#organization`;
+
+/**
+ * JSON-LD de la entidad de negocio: UN solo nodo `Organization` +
+ * `ProfessionalService`. Antes eran dos nodos con nombres distintos
+ * ("Action" y "Action Digital Agency") y Google veía dos entidades en vez de
+ * una ficha local consolidada. Lo emiten desktop y mobile (mobile-first
+ * indexing: la home móvil es la que se indexa), así que vive aquí para que no
+ * se desincronicen.
+ *
+ * SIN `aggregateRating` ni `review`: Google no muestra estrellas de reseñas
+ * sobre el propio negocio (self-serving) y marcar reseñas que no están en el
+ * HTML es "spammy structured markup". Las reseñas cuentan en la ficha de
+ * Google Business Profile, no aquí.
+ */
+export function organizationSchema(description?: string) {
+  return {
+    "@type": ["Organization", "ProfessionalService"],
+    "@id": ORGANIZATION_ID,
+    name: BUSINESS.name,
+    alternateName: BUSINESS.alternateName,
+    // "Action" es marca; la persona jurídica es Alcasi Systems, S.L.
+    // `legalName` + `vatID` permiten cruzar el proveedor con el Registro
+    // Mercantil sin salir del JSON-LD.
+    legalName: BUSINESS.legalName,
+    vatID: BUSINESS.taxId,
+    taxID: BUSINESS.taxId,
+    url: BUSINESS.domain,
+    logo: `${BUSINESS.domain}/logos/logo.webp`,
+    image: `${BUSINESS.domain}/logos/logo.webp`,
+    ...(description && { description }),
+    foundingDate: String(BUSINESS.foundingYear),
+    email: BUSINESS.email,
+    telephone: BUSINESS.phoneE164,
+    priceRange: "€€",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: BUSINESS.address.street,
+      postalCode: BUSINESS.address.postalCode,
+      addressLocality: BUSINESS.address.locality,
+      addressRegion: BUSINESS.address.region,
+      addressCountry: BUSINESS.address.country,
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: BUSINESS.geo.latitude,
+      longitude: BUSINESS.geo.longitude,
+    },
+    hasMap: BUSINESS.mapsUrl,
+    areaServed: [
+      { "@type": "City", name: "Vigo" },
+      { "@type": "City", name: "Pontevedra" },
+      { "@type": "City", name: "A Coruña" },
+      { "@type": "City", name: "Santiago de Compostela" },
+      { "@type": "AdministrativeArea", name: "Galicia" },
+      { "@type": "Country", name: "ES" },
+    ],
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: `Servicios de ${BUSINESS.alternateName}`,
+      itemListElement: BUSINESS.services.map((service, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            name: service,
+            provider: { "@id": ORGANIZATION_ID },
+          },
+        },
+      })),
+    },
+    sameAs: [BUSINESS.social.instagram, BUSINESS.social.linkedin],
+  };
+}

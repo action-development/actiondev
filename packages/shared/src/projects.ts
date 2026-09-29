@@ -996,3 +996,15 @@ export const projects: Project[] = [
 ];
 
 export const featuredProjects = projects.filter((p) => p.featured);
+
+/**
+ * ¿La ficha `/projects/[slug]` tiene caso redactado? Mientras la descripción
+ * sea el placeholder, la ficha va `noindex` y fuera del sitemap: veinte URLs
+ * con la misma meta "Case study próximamente." son contenido fino duplicado
+ * que resta calidad al sitio entero. Redactar la descripción la indexa sola.
+ */
+export function hasCaseStudy(project: Project): boolean {
+  return (
+    project.descriptionEs !== TBD_DESC_ES && project.description !== TBD_DESC_EN
+  );
+}

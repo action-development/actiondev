@@ -134,7 +134,6 @@ export default function RootLayout({
         <LocaleProvider>
           <StructuredData kind="organization" />
           <StructuredData kind="website" />
-          <StructuredData kind="services" />
           <PageTransition>
             {children}
             <ContactPopup />

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { StructuredData } from "@/components/seo/StructuredData";
 import { BRAND, OG_IMAGE, absoluteUrl } from "@/lib/seo";
 import { PlazaPage } from "./PlazaPage";
 
 /**
  * /resenas — plaza 3D de reseñas ("sala de personajes" estilo Wii).
  *
- * Server component: solo metadata + JSON-LD. Todo lo interactivo vive en
+ * Server component: solo metadata. Sin JSON-LD de reseñas a propósito: Google
+ * no da estrellas a reseñas sobre el propio negocio y aquí el texto de cada
+ * reseña no está en el HTML (sale al hacer clic en un muñeco 3D). Todo lo interactivo vive en
  * PlazaPage.tsx (client). La home mantiene su sección #reviews y su
  * redirect /reviews intactos — esta es una experiencia nueva e
  * independiente, no un reemplazo.
@@ -29,16 +30,5 @@ export const metadata: Metadata = {
 };
 
 export default function ResenasPage() {
-  return (
-    <>
-      {/* Reutiliza el mismo schema "reviews" que la home (StructuredData.tsx).
-          Emite @id absoluto "#organization", igual que el organization schema
-          global del layout raíz — es intencional: ambos anotan la MISMA
-          entidad Organization, fusionando aggregateRating/review sobre ella.
-          No es un duplicado erróneo; ya ocurre hoy en la home (layout +
-          página emiten el mismo @id). Ver informe para el detalle. */}
-      <StructuredData kind="reviews" />
-      <PlazaPage />
-    </>
-  );
+  return <PlazaPage />;
 }

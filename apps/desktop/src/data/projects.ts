@@ -1,1 +1,1 @@
-export { projects, featuredProjects, type Project } from "@actiondev/shared";
+export { projects, featuredProjects, hasCaseStudy, type Project } from "@actiondev/shared";

@@ -2,28 +2,40 @@ import { NextResponse, userAgent, type NextRequest } from "next/server";
 
 const MOBILE_ZONE_URL = process.env.MOBILE_ZONE_URL;
 
+// Assets estáticos que SOLO existen en `apps/mobile/public` y que pide la
+// home mobile. Todo lo demás lo sirve desktop también con UA móvil: antes se
+// reescribía CUALQUIER ruta con extensión, y con Googlebot smartphone
+// `/llms.txt`, `/icons/*`, `/plaza/*`, `/projects_video/*`… daban 404 porque
+// la zona mobile no los tiene. `/logos/` y `/projects/` existen idénticos en
+// las dos apps y no necesitan reescritura. Si la home mobile estrena una
+// carpeta en `public/`, hay que añadirla aquí o su useGLTF revienta sobre un
+// 404 y crashea toda la app (pasó en 3db8f7f).
+const MOBILE_ONLY_ASSETS = ["/3d/", "/ai-logos/", "/recursos/", "/mascot.webm"];
+
+function isMobileAsset(pathname: string) {
+  return MOBILE_ONLY_ASSETS.some((prefix) => pathname.startsWith(prefix));
+}
+
 export function middleware(request: NextRequest) {
   if (!MOBILE_ZONE_URL) return NextResponse.next();
 
-  const { device } = userAgent(request);
-  if (device.type !== "mobile") return NextResponse.next();
+  const { pathname, search } = request.nextUrl;
+  const isHome = pathname === "/";
+  // Solo `/` y sus assets propios salen de la zona mobile. Las rutas de
+  // página (landings SEO, /contact, /projects…) se sirven desde desktop en
+  // cualquier dispositivo: reescribirlas daba 404 a Googlebot smartphone.
+  if (!isHome && !isMobileAsset(pathname)) return NextResponse.next();
 
-  // La zona mobile solo implementa la home, pero SÍ sirve sus propios
-  // assets estáticos (GLBs, webp) referenciados por esa home — hay que
-  // reescribirlos o el useGLTF de R3F revienta sobre un 404 y crashea
-  // toda la app (pasó antes en 3db8f7f). Las rutas de página (landings
-  // SEO, /contact|/projects|/reviews) sí deben servirse desde desktop —
-  // reescribirlas producía 404 para usuarios y para Googlebot smartphone.
-  const isAsset = /\.[a-zA-Z0-9]+$/.test(request.nextUrl.pathname);
-  if (request.nextUrl.pathname !== "/" && !isAsset) {
-    return NextResponse.next();
-  }
+  const isMobile = userAgent(request).device.type === "mobile";
+  const response = isMobile
+    ? NextResponse.rewrite(new URL(pathname + search, MOBILE_ZONE_URL))
+    : NextResponse.next();
 
-  const target = new URL(
-    request.nextUrl.pathname + request.nextUrl.search,
-    MOBILE_ZONE_URL,
-  );
-  return NextResponse.rewrite(target);
+  // Dynamic serving: `/` responde HTML distinto según el dispositivo en la
+  // MISMA URL. Google pide `Vary: User-Agent` para que ni él ni las cachés
+  // intermedias sirvan la versión desktop al rastreador móvil o al revés.
+  if (isHome) response.headers.set("Vary", "User-Agent");
+  return response;
 }
 
 export const config = {
