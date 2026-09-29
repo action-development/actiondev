@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { hasCaseStudy, projects, type Project } from "@actiondev/shared";
+import { PLACEHOLDER_IMAGE, hasCaseStudy, projects, type Project } from "@actiondev/shared";
 import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 import { Header } from "@/components/layout/Header";
-import { projectCase } from "@/lib/project-case";
+import { projectCase, projectCategoryLabel, relatedService } from "@/lib/project-case";
 
 /**
  * Ficha de proyecto (/projects/[slug]) — server component, misma familia
@@ -27,6 +27,16 @@ function findProject(slug: string): Project | undefined {
   return projects.find((p) => p.slug === slug);
 }
 
+/**
+ * Título SEO: proyecto + tipo en español + localidad si es verificable
+ * ("Musa | Night Club — Aplicación web en Vigo"). El `template` del layout
+ * añade " — Action"; el OG title la lleva escrita.
+ */
+function projectSeoTitle(project: Project): string {
+  const kind = projectCategoryLabel(project);
+  return `${project.title} — ${kind}${project.location ? ` en ${project.location}` : ""}`;
+}
+
 export async function generateMetadata({
   params,
 }: ProjectPageProps): Promise<Metadata> {
@@ -37,8 +47,10 @@ export async function generateMetadata({
   const description = project.descriptionEs ?? project.description;
   const ogUrl = `${OG_IMAGE.url}?title=${encodeURIComponent(project.title)}`;
 
+  const title = projectSeoTitle(project);
+
   return {
-    title: project.title,
+    title,
     description,
     alternates: { canonical: `/projects/${project.slug}` },
     // Sin caso redactado: fuera del índice (ver `hasCaseStudy`). `follow`
@@ -49,13 +61,13 @@ export async function generateMetadata({
       locale: "es_ES",
       url: absoluteUrl(`/projects/${project.slug}`),
       siteName: "Action",
-      title: project.title,
+      title: `${title} — Action`,
       description,
       images: [{ url: ogUrl, width: OG_IMAGE.width, height: OG_IMAGE.height }],
     },
     twitter: {
       card: "summary_large_image",
-      title: project.title,
+      title: `${title} — Action`,
       description,
       images: [ogUrl],
     },
@@ -63,6 +75,7 @@ export async function generateMetadata({
 }
 
 function buildJsonLd(project: Project) {
+  const service = relatedService(project);
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -76,6 +89,25 @@ function buildJsonLd(project: Project) {
         inLanguage: "es",
         creator: { "@id": absoluteUrl("#organization") },
         isPartOf: { "@id": absoluteUrl("#website") },
+        genre: projectCategoryLabel(project),
+        about: {
+          "@type": "Service",
+          name: service.label,
+          url: absoluteUrl(service.href),
+          provider: { "@id": absoluteUrl("#organization") },
+        },
+        ...(project.image !== PLACEHOLDER_IMAGE && { image: absoluteUrl(project.image) }),
+        ...(project.location && {
+          locationCreated: {
+            "@type": "Place",
+            name: project.location,
+            address: {
+              "@type": "PostalAddress",
+              addressLocality: project.location,
+              addressCountry: "ES",
+            },
+          },
+        }),
       },
       {
         "@type": "BreadcrumbList",
@@ -102,6 +134,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const category = project.categoryEs ?? project.category;
   const niche = project.nicheEs ?? project.niche;
   const { brief, result } = projectCase(project);
+  const service = relatedService(project);
 
   return (
     <>
@@ -197,7 +230,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         <div className="container-editorial mt-16">
           <div className="grid grid-cols-1 gap-12 md:grid-cols-2 md:gap-24">
             <div>
-              <p className="micro-label micro-label-loud">Qué nos pidieron</p>
+              <h2 className="micro-label micro-label-loud">Qué nos pidieron</h2>
               <ul className="mt-6 flex flex-col gap-4">
                 {brief.map((objective) => (
                   <li
@@ -213,7 +246,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               </ul>
             </div>
             <div>
-              <p className="micro-label micro-label-loud">Qué conseguimos</p>
+              <h2 className="micro-label micro-label-loud">Qué conseguimos</h2>
               <p className="mt-6 text-lg leading-relaxed text-muted">{result}</p>
             </div>
           </div>
@@ -221,6 +254,24 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
         <article className="container-editorial">
           <div className="mx-auto max-w-3xl">
+            {/* Servicio relacionado — enlazado interno hacia la landing del
+                tipo de proyecto (ver `relatedService`), con ancla descriptiva. */}
+            <section className="mt-20 border-t border-border pt-16">
+              <h2 className="micro-label micro-label-loud">Servicio relacionado</h2>
+              <Link
+                href={service.href}
+                className="link-sweep group mt-6 inline-flex items-baseline gap-3 text-2xl font-semibold text-foreground hover:text-accent"
+              >
+                {service.label}
+                <span
+                  aria-hidden
+                  className="transition-transform duration-[var(--duration)] ease-[var(--ease)] group-hover:translate-x-1"
+                >
+                  →
+                </span>
+              </Link>
+            </section>
+
             {/* CTA */}
             <section className="mt-20 border-t border-border pt-16">
               <h2 className="text-2xl font-semibold text-foreground">

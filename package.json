@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "lint": "turbo lint"
+    "lint": "turbo lint",
+    "seo:indexnow": "npx tsx scripts/indexnow.ts"
   },
   "devDependencies": {
     "turbo": "2.4.0"

@@ -7,7 +7,7 @@ export const dictionaries = {
     metadata: {
       title: "Action — App & Web Development in Vigo",
       description:
-        "App and web development studio in Vigo, Spain. Native iOS & Android apps, custom websites and 3D experiences for businesses across Galicia. 5.0 on Google.",
+        "App and web development studio in Vigo, Spain: iOS & Android apps, custom websites and 3D experiences for businesses across Galicia. 5.0 on Google.",
     },
     nav: {
       home: "Home",
@@ -162,7 +162,7 @@ export const dictionaries = {
     metadata: {
       title: "Action — Desarrollo de Aplicaciones y Webs en Vigo",
       description:
-        "Agencia de desarrollo de aplicaciones y páginas web en Vigo. Apps iOS y Android, webs a medida y experiencias 3D para empresas de Pontevedra y toda Galicia. ★ 5,0 en Google.",
+        "Agencia de desarrollo de aplicaciones y webs en Vigo: apps iOS y Android, webs a medida y experiencias 3D para empresas de toda Galicia. ★ 5,0 en Google.",
     },
     nav: {
       home: "Inicio",

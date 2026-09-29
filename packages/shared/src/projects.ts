@@ -26,6 +26,13 @@ export interface Project {
   briefEs?: string[];
   result?: string;
   resultEs?: string;
+  /**
+   * Localidad del cliente, en su forma oficial ("O Porriño", "Redondela").
+   * Solo cuando se puede comprobar desde el propio proyecto (dominio del
+   * cliente, nombre o slug) — nunca a ojo. La usan el `<title>` de la ficha y
+   * el `locationCreated` de su JSON-LD.
+   */
+  location?: string;
 }
 
 export const PLACEHOLDER_IMAGE = "/projects/placeholder.webp";
@@ -98,6 +105,7 @@ export const projects: Project[] = [
   {
     id: "pbb-porrino",
     slug: "pbb-porrino",
+    location: "O Porriño",
     title: "PBB",
     description:
       "Full digital presence for a local business: website, booking system, and local SEO strategy driving consistent organic traffic.",
@@ -192,6 +200,7 @@ export const projects: Project[] = [
   {
     id: "ticketera-la-fabrica",
     slug: "ticketera-la-fabrica",
+    location: "Redondela",
     title: "Ticketera La Fábrica",
     description: TBD_DESC_EN,
     descriptionEs: TBD_DESC_ES,
@@ -222,6 +231,7 @@ export const projects: Project[] = [
   {
     id: "musa",
     slug: "musa",
+    location: "Vigo",
     title: "Musa | Night Club",
     description:
       "Sensory restaurant website with integrated booking, interactive menu, and local SEO. Online reservations up 40%.",
@@ -444,6 +454,7 @@ export const projects: Project[] = [
   {
     id: "samoa",
     slug: "samoa",
+    location: "Redondela",
     title: "Samoa Café",
     description:
       "Full brand identity from scratch: naming, logo, menu design, website with reservations, and social launch strategy.",
@@ -606,6 +617,7 @@ export const projects: Project[] = [
   {
     id: "paris-de-noia",
     slug: "paris-de-noia",
+    location: "Noia",
     title: "París de Noia",
     description:
       "Website for París de Noia, one of the most in-demand and best-known orchestras on the Galician verbena circuit, founded in 1957.",
@@ -702,6 +714,7 @@ export const projects: Project[] = [
   {
     id: "canelita",
     slug: "canelita",
+    location: "Redondela",
     title: "Canelita",
     description: TBD_DESC_EN,
     descriptionEs: TBD_DESC_ES,
@@ -882,6 +895,7 @@ export const projects: Project[] = [
   {
     id: "fisioterapia-noia",
     slug: "fisioterapia-noia",
+    location: "Noia",
     title: "Fisionorte",
     description: TBD_DESC_EN,
     descriptionEs: TBD_DESC_ES,

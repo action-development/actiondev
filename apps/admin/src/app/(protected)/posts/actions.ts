@@ -5,13 +5,13 @@ import { redirect } from "next/navigation";
 import type { BlogPost } from "@actiondev/shared";
 import { adminDb } from "@/lib/firebase/admin";
 import { requireSessionUser } from "@/lib/firebase/session";
-import type { PostWriteInput } from "@/lib/posts";
+import { cleanPostInput, type PostWriteInput } from "@/lib/posts";
 import { revalidateSite } from "@/lib/revalidate-site";
 
 export async function createPost(input: PostWriteInput) {
   await requireSessionUser();
 
-  const ref = await adminDb().collection("posts").add(input);
+  const ref = await adminDb().collection("posts").add(cleanPostInput(input));
 
   if (input.status === "published") await revalidateSite(input.slug);
   revalidatePath("/posts");
@@ -21,7 +21,9 @@ export async function createPost(input: PostWriteInput) {
 export async function updatePost(id: string, input: PostWriteInput) {
   await requireSessionUser();
 
-  await adminDb().collection("posts").doc(id).set(input);
+  // `set` sin merge a propósito: un campo opcional vaciado en el formulario
+  // tiene que desaparecer del documento.
+  await adminDb().collection("posts").doc(id).set(cleanPostInput(input));
 
   await revalidateSite(input.slug);
   revalidatePath("/posts");

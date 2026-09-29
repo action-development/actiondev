@@ -11,16 +11,16 @@ import { ArcadePage } from "./ArcadePage";
  */
 export const metadata: Metadata = {
   // Sin la marca: el `template` del layout raíz ya añade " — Action".
-  title: "Proyectos",
+  title: "Proyectos de desarrollo web y apps en Vigo",
   description:
-    "Proyectos de desarrollo web y de aplicaciones de Action en Vigo: recorre la sala recreativa, una máquina por cada trabajo, o abre la lista completa.",
+    "Apps, webs a medida y tiendas online hechas en Vigo para negocios de Vigo, Redondela, O Porriño y toda Galicia. Casos reales, uno por máquina recreativa.",
   alternates: { canonical: "/projects" },
   openGraph: {
     type: "website",
     locale: "es_ES",
     url: absoluteUrl("/projects"),
     siteName: BRAND.name,
-    title: "Proyectos — Action",
+    title: "Proyectos de desarrollo web y apps en Vigo — Action",
     description: "Una máquina recreativa por cada proyecto de Action. Elige una y juega.",
     images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
   },

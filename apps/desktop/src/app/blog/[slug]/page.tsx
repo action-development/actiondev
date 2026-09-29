@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { BlogContentBlock } from "@actiondev/shared";
+import {
+  ORGANIZATION_ID,
+  getAuthor,
+  type Author,
+  type BlogContentBlock,
+  type BlogPost,
+} from "@actiondev/shared";
 import { getPost, getPosts } from "@/lib/blog";
 import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
+import { getLanding } from "@/data/landings";
 import { Header } from "@/components/layout/Header";
 
 /**
@@ -17,6 +24,13 @@ import { Header } from "@/components/layout/Header";
  * próximo deploy; `dynamicParams` (default `true`) lo sirve on-demand y lo
  * cachea. El webhook `/api/revalidate` (llamado por `apps/admin` al
  * guardar) es la vía rápida; este `revalidate` es la red de seguridad.
+ *
+ * SEO por post (campos opcionales de `BlogPost`, retrocompatibles): firma del
+ * autor (`author` → `AUTHORS` de shared, mismo `@id` Person que
+ * pablo.actiondev.es), fecha de actualización (`updatedAt`), tarjeta de
+ * "Servicio relacionado" (`targetLanding` → `landings.ts`), FAQs visibles +
+ * FAQPage, e índice con anclas a partir de 3 subtítulos. Todo lo que va al
+ * JSON-LD está también pintado en el HTML.
  */
 export const revalidate = 3600;
 
@@ -36,7 +50,8 @@ export async function generateMetadata({
   const post = await getPost(slug);
   if (!post) return {};
 
-  const ogUrl = `${OG_IMAGE.url}?title=${encodeURIComponent(post.h1)}`;
+  const ogUrl = postImage(post);
+  const author = getAuthor(post.author);
 
   return {
     title: post.title,
@@ -50,8 +65,16 @@ export async function generateMetadata({
       title: post.title,
       description: post.metaDescription,
       publishedTime: post.date,
-      images: [{ url: ogUrl, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+      modifiedTime: post.updatedAt ?? post.date,
+      authors: author ? [author.url] : undefined,
+      section: post.category,
+      images: [
+        post.image
+          ? { url: ogUrl }
+          : { url: ogUrl, width: OG_IMAGE.width, height: OG_IMAGE.height },
+      ],
     },
+    authors: author ? [{ name: author.name, url: author.url }] : undefined,
     twitter: {
       card: "summary_large_image",
       title: post.title,
@@ -61,38 +84,129 @@ export async function generateMetadata({
   };
 }
 
-function buildJsonLd(post: NonNullable<Awaited<ReturnType<typeof getPost>>>) {
+/** Imagen del post: la suya si la tiene (absolutizada), si no la OG dinámica. */
+function postImage(post: BlogPost): string {
+  if (post.image) return absoluteUrl(post.image);
+  return `${OG_IMAGE.url}?title=${encodeURIComponent(post.h1)}`;
+}
+
+/** Texto plano para el JSON-LD: quita `**` y deja solo el texto de los enlaces. */
+function stripInline(text: string): string {
+  return text.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
+}
+
+function personSchema(author: Author) {
+  return {
+    "@type": "Person",
+    "@id": author.schemaId,
+    name: author.name,
+    url: author.url,
+    jobTitle: author.role,
+    sameAs: author.sameAs,
+    worksFor: { "@id": author.worksFor },
+  };
+}
+
+function buildJsonLd(
+  post: BlogPost,
+  author: Author | undefined,
+  landing: ReturnType<typeof getLanding>,
+) {
+  const url = absoluteUrl(`/blog/${post.slug}`);
+  const service = landing
+    ? {
+        "@type": "Service",
+        "@id": absoluteUrl(`/${landing.slug}#service`),
+        name: landing.serviceName,
+        url: absoluteUrl(`/${landing.slug}`),
+      }
+    : undefined;
+
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "BlogPosting",
-        "@id": absoluteUrl(`/blog/${post.slug}`),
-        url: absoluteUrl(`/blog/${post.slug}`),
+        "@id": `${url}#article`,
+        url,
+        mainEntityOfPage: { "@type": "WebPage", "@id": url },
         headline: post.h1,
         description: post.metaDescription,
+        image: postImage(post),
         datePublished: post.date,
-        dateModified: post.date,
+        dateModified: post.updatedAt ?? post.date,
         inLanguage: "es",
-        author: { "@id": absoluteUrl("#organization") },
-        publisher: { "@id": absoluteUrl("#organization") },
+        articleSection: post.category,
+        author: author ? personSchema(author) : { "@id": ORGANIZATION_ID },
+        publisher: { "@id": ORGANIZATION_ID },
         isPartOf: { "@id": absoluteUrl("#website") },
+        ...(service ? { about: service, mentions: service } : {}),
       },
       {
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL },
           { "@type": "ListItem", position: 2, name: "Blog", item: absoluteUrl("/blog") },
-          {
-            "@type": "ListItem",
-            position: 3,
-            name: post.h1,
-            item: absoluteUrl(`/blog/${post.slug}`),
-          },
+          { "@type": "ListItem", position: 3, name: post.h1, item: url },
         ],
       },
+      ...(post.faqs?.length
+        ? [
+            {
+              "@type": "FAQPage",
+              "@id": `${url}#faq`,
+              mainEntity: post.faqs.map((faq) => ({
+                "@type": "Question",
+                name: faq.question,
+                acceptedAnswer: { "@type": "Answer", text: stripInline(faq.answer) },
+              })),
+            },
+          ]
+        : []),
     ],
   };
+}
+
+const dateFormatter = new Intl.DateTimeFormat("es-ES", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+function formatDate(iso: string): string {
+  return dateFormatter.format(new Date(iso));
+}
+
+/** Ancla estable de un subtítulo (sin tildes, en minúsculas, con guiones). */
+function headingId(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Ids de los H2 por índice de bloque, sin colisiones (sufijo -2, -3…). */
+function headingIds(content: BlogContentBlock[]): Map<number, string> {
+  const ids = new Map<number, string>();
+  const used = new Set<string>();
+  content.forEach((block, index) => {
+    if (block.type !== "heading") return;
+    const base = headingId(block.text) || `seccion-${index}`;
+    let id = base;
+    for (let n = 2; used.has(id); n++) id = `${base}-${n}`;
+    used.add(id);
+    ids.set(index, id);
+  });
+  return ids;
+}
+
+/** Slug de landing → texto legible, por si el slug ya no existe en `landings.ts`. */
+function humanizeSlug(slug: string): string {
+  const text = slug.replace(/-/g, " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 /**
@@ -121,10 +235,14 @@ function renderInline(text: string) {
     });
 }
 
-function renderBlock(block: BlogContentBlock, index: number) {
+function renderBlock(block: BlogContentBlock, index: number, ids: Map<number, string>) {
   switch (block.type) {
     case "heading":
-      return <h2 key={index}>{block.text}</h2>;
+      return (
+        <h2 key={index} id={ids.get(index)} className="scroll-mt-28">
+          {block.text}
+        </h2>
+      );
     case "paragraph":
       return <p key={index}>{renderInline(block.text)}</p>;
     case "list":
@@ -145,11 +263,19 @@ export default async function BlogPostPage({ params }: PostPageProps) {
   const post = await getPost(slug);
   if (!post) notFound();
 
+  const author = getAuthor(post.author);
+  const landing = post.targetLanding ? getLanding(post.targetLanding) : undefined;
+  const ids = headingIds(post.content);
+  const toc = post.content.flatMap((block, index) =>
+    block.type === "heading" ? [{ id: ids.get(index)!, text: block.text }] : [],
+  );
+  const updated = post.updatedAt && post.updatedAt > post.date ? post.updatedAt : undefined;
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd(post)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd(post, author, landing)) }}
       />
 
       <Header />
@@ -190,12 +316,121 @@ export default async function BlogPostPage({ params }: PostPageProps) {
                 {post.h1}
               </h1>
               <p className="mt-8 text-lg leading-relaxed text-muted">{post.excerpt}</p>
+
+              {/* Firma y fechas */}
+              <div className="mt-10 flex flex-col gap-1 text-sm text-muted">
+                {author && (
+                  <p>
+                    Por{" "}
+                    <a
+                      href={author.url}
+                      rel="author"
+                      className="font-medium text-foreground underline decoration-border decoration-2 underline-offset-4 hover:decoration-foreground"
+                    >
+                      {author.name}
+                    </a>
+                    <span> · {author.role} en Action</span>
+                  </p>
+                )}
+                <p>
+                  Publicado el <time dateTime={post.date}>{formatDate(post.date)}</time>
+                  {updated && (
+                    <>
+                      {" · "}Actualizado el{" "}
+                      <time dateTime={updated}>{formatDate(updated)}</time>
+                    </>
+                  )}
+                </p>
+              </div>
             </div>
+
+            {/* Índice — solo si el artículo es lo bastante largo para necesitarlo */}
+            {toc.length >= 3 && (
+              <nav
+                aria-labelledby="post-toc-title"
+                className="mt-16 border-t border-border pt-10"
+              >
+                <p id="post-toc-title" className="text-sm font-medium text-foreground">
+                  En este artículo
+                </p>
+                <ol className="mt-5 flex flex-col gap-3 text-[1.05rem] text-muted">
+                  {toc.map((item) => (
+                    <li key={item.id}>
+                      <a
+                        href={`#${item.id}`}
+                        className="link-sweep hover:text-foreground"
+                      >
+                        {item.text}
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            )}
 
             {/* Cuerpo */}
             <div className="post-prose mt-20 border-t border-border pt-16">
-              {post.content.map((block, index) => renderBlock(block, index))}
+              {post.content.map((block, index) => renderBlock(block, index, ids))}
             </div>
+
+            {/* Preguntas frecuentes — visibles: el FAQPage del JSON-LD sale de aquí */}
+            {post.faqs && post.faqs.length > 0 && (
+              <section
+                aria-labelledby="post-faq-title"
+                className="mt-20 border-t border-border pt-16"
+              >
+                <h2
+                  id="post-faq-title"
+                  className="text-2xl font-semibold text-foreground"
+                >
+                  Preguntas frecuentes
+                </h2>
+                <div className="mt-8 divide-y divide-border border-y border-border">
+                  {post.faqs.map((faq) => (
+                    <details key={faq.question} className="disclosure group py-6">
+                      <summary className="flex cursor-pointer list-none items-start justify-between gap-6 text-lg font-medium text-foreground [&::-webkit-details-marker]:hidden">
+                        <h3>{faq.question}</h3>
+                        <span
+                          aria-hidden
+                          className="mt-1 text-muted transition-transform duration-[var(--duration)] ease-[var(--ease)] group-open:rotate-45"
+                        >
+                          +
+                        </span>
+                      </summary>
+                      <p className="mt-4 max-w-[62ch] text-[1.05rem] leading-relaxed text-muted">
+                        {renderInline(faq.answer)}
+                      </p>
+                    </details>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Servicio relacionado */}
+            {post.targetLanding && (
+              <section aria-label="Servicio relacionado" className="mt-20">
+                <Link
+                  href={`/${post.targetLanding}`}
+                  className="group block border border-border p-8 transition-colors duration-[var(--duration)] ease-[var(--ease)] hover:border-foreground active:translate-y-px md:p-10"
+                >
+                  <p className="text-sm text-muted">Servicio relacionado</p>
+                  <p className="mt-3 flex items-baseline justify-between gap-6 text-2xl font-semibold text-foreground">
+                    <span>{landing?.h1 ?? humanizeSlug(post.targetLanding)}</span>
+                    <span
+                      aria-hidden
+                      className="transition-transform duration-[var(--duration)] ease-[var(--ease)] group-hover:translate-x-1"
+                    >
+                      →
+                    </span>
+                  </p>
+                  {landing && (
+                    <p className="mt-4 max-w-[58ch] text-[1.05rem] leading-relaxed text-muted">
+                      {landing.metaDescription}
+                    </p>
+                  )}
+                </Link>
+              </section>
+            )}
 
             {/* CTA */}
             <section className="mt-20 border-t border-border pt-16">

@@ -15,6 +15,13 @@ import { BUSINESS, OG_IMAGE, absoluteUrl } from "@/lib/seo";
  */
 export const revalidate = 3600;
 
+const dateFormatter = new Intl.DateTimeFormat("es-ES", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
 export const metadata: Metadata = {
   title: "Blog",
   description:
@@ -90,7 +97,10 @@ export default async function BlogPage() {
                 <li key={post.slug} className="py-14">
                   <Link href={`/blog/${post.slug}`} className="group block">
                     <p className="text-sm text-muted">
-                      {post.category} · {post.readingTime} min de lectura
+                      <time dateTime={post.date}>
+                        {dateFormatter.format(new Date(post.date))}
+                      </time>{" "}
+                      · {post.category} · {post.readingTime} min de lectura
                     </p>
                     <h2 className="mt-4 text-2xl font-semibold leading-snug text-foreground underline decoration-border decoration-2 underline-offset-4 transition-colors group-hover:decoration-foreground">
                       {post.title}

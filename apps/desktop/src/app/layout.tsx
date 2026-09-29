@@ -16,13 +16,21 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
+/**
+ * Meta description de la home (≤155 caracteres: `BRAND.shortDescription`
+ * pasa de 170 y Google la cortaba). La larga sigue en el texto indexable de
+ * `app/page.tsx`, en el manifest y en el JSON-LD.
+ */
+const HOME_DESCRIPTION =
+  "Agencia de desarrollo de aplicaciones y webs en Vigo: apps iOS y Android, webs a medida y experiencias 3D para empresas de toda Galicia. ★ 5,0 en Google.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: `${BRAND.name} — ${BRAND.tagline}`,
     template: `%s — ${BRAND.name}`,
   },
-  description: BRAND.shortDescription,
+  description: HOME_DESCRIPTION,
   keywords: [...BRAND.keywords],
   applicationName: BRAND.name,
   authors: [{ name: BRAND.legalName, url: SITE_URL }],
@@ -38,7 +46,7 @@ export const metadata: Metadata = {
     url: SITE_URL,
     siteName: BRAND.name,
     title: `${BRAND.name} — ${BRAND.tagline}`,
-    description: BRAND.shortDescription,
+    description: HOME_DESCRIPTION,
     images: [
       {
         url: OG_IMAGE.url,
@@ -51,7 +59,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `${BRAND.name} — ${BRAND.tagline}`,
-    description: BRAND.shortDescription,
+    description: HOME_DESCRIPTION,
     images: [OG_IMAGE.url],
     ...(SOCIAL.twitter && { creator: SOCIAL.twitter, site: SOCIAL.twitter }),
   },

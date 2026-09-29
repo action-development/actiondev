@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getLanding, landings } from "@/data/landings";
+import { ORGANIZATION_ID, projects } from "@actiondev/shared";
+import { getLanding, landings, type Landing } from "@/data/landings";
 import { testimonials } from "@/data/testimonials";
 import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 import { HoloButton } from "@/components/ui/HoloButton";
@@ -12,7 +13,10 @@ import { HoloBar } from "@/components/layout/HoloBar";
  *
  * Server components 100% estáticos: sin GSAP, sin Lenis, sin client JS.
  * No están enlazadas desde la navegación principal (decisión de diseño);
- * se descubren vía sitemap.xml, /servicios y el enlazado entre landings.
+ * se descubren vía sitemap.xml, /servicios, llms.txt, el nav sr-only de la
+ * home y el enlazado entre landings. El contenido vive en `data/landings.ts`:
+ * contexto local, casos reales (enlazados a `/projects/{slug}`), secciones
+ * propias, proceso, reseñas citadas por id, FAQ y relacionadas.
  * Responsive: los móviles reciben esta misma página (el middleware solo
  * reescribe "/" hacia la zona mobile).
  */
@@ -61,29 +65,32 @@ export async function generateMetadata({
   };
 }
 
-function buildJsonLd(landing: NonNullable<ReturnType<typeof getLanding>>) {
+function buildJsonLd(landing: Landing) {
+  const url = absoluteUrl(`/${landing.slug}`);
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "WebPage",
-        "@id": absoluteUrl(`/${landing.slug}`),
-        url: absoluteUrl(`/${landing.slug}`),
+        "@id": url,
+        url,
         name: landing.title,
         description: landing.metaDescription,
         inLanguage: "es",
         isPartOf: { "@id": absoluteUrl("#website") },
+        about: { "@id": `${url}#service` },
       },
       {
         "@type": "Service",
-        "@id": absoluteUrl(`/${landing.slug}#service`),
+        "@id": `${url}#service`,
         name: landing.serviceName,
         description: landing.metaDescription,
-        url: absoluteUrl(`/${landing.slug}`),
-        serviceType: landing.serviceName,
-        provider: { "@id": absoluteUrl("#organization") },
-        areaServed: landing.areaServed.map((name) => ({
-          "@type": name === "Galicia" ? "AdministrativeArea" : "City",
+        url,
+        serviceType: landing.serviceType,
+        // Misma entidad que emiten desktop y mobile (`organizationSchema`).
+        provider: { "@id": ORGANIZATION_ID },
+        areaServed: landing.areaServed.map(({ name, type }) => ({
+          "@type": type,
           name,
         })),
       },
@@ -109,7 +116,7 @@ function buildJsonLd(landing: NonNullable<ReturnType<typeof getLanding>>) {
             "@type": "ListItem",
             position: 3,
             name: landing.serviceName,
-            item: absoluteUrl(`/${landing.slug}`),
+            item: url,
           },
         ],
       },
@@ -121,6 +128,18 @@ export default async function LandingPage({ params }: LandingPageProps) {
   const { landing: slug } = await params;
   const landing = getLanding(slug);
   if (!landing) notFound();
+
+  // Casos y reseñas se resuelven contra sus fuentes (projects.ts,
+  // testimonials.ts): un slug o id que ya no exista se cae en silencio en vez
+  // de pintar una tarjeta rota.
+  const cases = landing.cases.flatMap((c) => {
+    const project = projects.find((p) => p.slug === c.slug);
+    return project ? [{ ...c, project }] : [];
+  });
+  const quotes = landing.proof.testimonials.flatMap((id) => {
+    const t = testimonials.find((x) => x.id === id);
+    return t ? [t] : [];
+  });
 
   return (
     <>
@@ -185,8 +204,22 @@ export default async function LandingPage({ params }: LandingPageProps) {
             </ul>
           </div>
 
+          {/* Contexto local */}
+          <section aria-labelledby="contexto" className="mt-20">
+            <h2 id="contexto" className="display-m text-foreground">
+              {landing.localContext.title}
+            </h2>
+            <div className="mt-8 space-y-5">
+              {landing.localContext.paragraphs.map((paragraph) => (
+                <p key={paragraph.slice(0, 32)} className="prose-body">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </section>
+
           {/* Servicios */}
-          <section aria-labelledby="ofertas" className="mt-16">
+          <section aria-labelledby="ofertas" className="mt-20">
             <h2 id="ofertas" className="display-m text-foreground">
               {landing.offersTitle}
             </h2>
@@ -207,43 +240,114 @@ export default async function LandingPage({ params }: LandingPageProps) {
             </div>
           </section>
 
-          {/* Proceso */}
-          {landing.process && (
-            <section aria-labelledby="proceso" className="mt-20">
-              <h2 id="proceso" className="display-m text-foreground">
-                Cómo trabajamos
+          {/* Casos reales → ficha /projects/{slug} */}
+          {cases.length > 0 && (
+            <section aria-labelledby="casos" className="mt-20">
+              <h2 id="casos" className="display-m text-foreground">
+                {landing.casesTitle}
               </h2>
-              <ol className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {landing.process.map((step) => (
-                  <li
-                    key={step.title}
-                    className="holo-surface holo-corners p-6"
-                  >
-                    <h3 className="micro-label micro-label-accent">
-                      {step.title}
-                    </h3>
-                    <p className="mt-3 text-sm leading-relaxed text-muted">
-                      {step.text}
-                    </p>
+              <ul className="mt-10 grid gap-4 md:grid-cols-2">
+                {cases.map(({ slug, note, project }) => (
+                  <li key={slug}>
+                    <Link
+                      href={`/projects/${slug}`}
+                      className="holo-surface holo-corners holo-link group h-full p-7"
+                    >
+                      <p className="micro-label">
+                        {project.nicheEs ?? project.categoryEs ?? project.category}
+                      </p>
+                      <h3 className="mt-3 text-lg font-semibold text-foreground transition-colors group-hover:text-accent">
+                        {project.title}
+                      </h3>
+                      <p className="mt-3 text-[0.95rem] leading-relaxed text-muted">
+                        {note}
+                      </p>
+                      <span className="micro-label micro-label-accent mt-5 inline-block">
+                        Ver el caso
+                      </span>
+                    </Link>
                   </li>
                 ))}
-              </ol>
+              </ul>
             </section>
           )}
 
-          {/* Prueba local */}
-          <section aria-label="Clientes y resultados" className="mt-20">
-            <blockquote className="holo-surface holo-corners p-8 md:p-10">
-              <p className="prose-body text-lg">{landing.proof}</p>
+          {/* Secciones propias de la landing */}
+          {landing.sections.map((section, i) => (
+            <section
+              key={section.title}
+              aria-labelledby={`seccion-${i}`}
+              className="mt-20"
+            >
+              <h2 id={`seccion-${i}`} className="display-m text-foreground">
+                {section.title}
+              </h2>
+              <div className="mt-8 space-y-5">
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph.slice(0, 32)} className="prose-body">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            </section>
+          ))}
+
+          {/* Proceso */}
+          <section aria-labelledby="proceso" className="mt-20">
+            <h2 id="proceso" className="display-m text-foreground">
+              {landing.processTitle}
+            </h2>
+            <ol className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {landing.process.map((step) => (
+                <li key={step.title} className="holo-surface holo-corners p-6">
+                  <h3 className="micro-label micro-label-accent">{step.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted">
+                    {step.text}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* Reseñas reales citadas (distintas en cada landing) */}
+          <section aria-labelledby="resenas" className="mt-20">
+            <h2 id="resenas" className="display-m text-foreground">
+              Lo que dicen en Google
+            </h2>
+            <p className="prose-body mt-6">{landing.proof.text}</p>
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
+              {quotes.map((t) => (
+                <figure key={t.id} className="holo-surface holo-corners p-7">
+                  <blockquote className="prose-body">
+                    <p>«{t.quoteEs ?? t.quote}»</p>
+                  </blockquote>
+                  <figcaption className="micro-label mt-5">
+                    <span className="text-accent" aria-hidden>
+                      {"★".repeat(t.rating)}
+                    </span>{" "}
+                    {t.name} · Reseña de Google
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+            <p className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
               <a
                 href={BUSINESS.mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="link-sweep micro-label micro-label-accent mt-5 inline-block hover:text-foreground"
+                className="link-sweep micro-label micro-label-accent hover:text-foreground"
               >
-                Ver reseñas en Google Maps
+                Ver todas las reseñas en Google
               </a>
-            </blockquote>
+              <a
+                href={BUSINESS.reviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-sweep micro-label hover:text-accent"
+              >
+                ¿Ya eres cliente? Deja tu reseña en Google
+              </a>
+            </p>
           </section>
 
           {/* FAQ */}
@@ -279,13 +383,8 @@ export default async function LandingPage({ params }: LandingPageProps) {
             aria-label="Contacto"
             className="holo-surface holo-corners mt-20 p-8 text-center md:p-14"
           >
-            <h2 className="display-m text-foreground">
-              Cuéntanos tu proyecto
-            </h2>
-            <p className="lede mx-auto mt-4">
-              Escríbenos y recibe una propuesta detallada en 24 horas. Sin
-              compromiso y sin letra pequeña.
-            </p>
+            <h2 className="display-m text-foreground">{landing.cta.title}</h2>
+            <p className="lede mx-auto mt-4">{landing.cta.text}</p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <HoloButton href={BUSINESS.whatsappUrl} variant="solid">
                 Hablar por WhatsApp
@@ -302,7 +401,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
 
           {/* Enlazado interno */}
           <nav aria-label="Servicios relacionados" className="mt-20">
-            <h2 className="micro-label">También te puede interesar</h2>
+            <h2 className="micro-label">Servicios relacionados</h2>
             <ul className="mt-5 flex flex-wrap gap-3">
               {landing.related.map((rel) => (
                 <li key={rel.slug}>

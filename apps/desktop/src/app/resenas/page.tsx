@@ -6,24 +6,25 @@ import { PlazaPage } from "./PlazaPage";
  * /resenas — plaza 3D de reseñas ("sala de personajes" estilo Wii).
  *
  * Server component: solo metadata. Sin JSON-LD de reseñas a propósito: Google
- * no da estrellas a reseñas sobre el propio negocio y aquí el texto de cada
- * reseña no está en el HTML (sale al hacer clic en un muñeco 3D). Todo lo interactivo vive en
+ * no da estrellas a reseñas sobre el propio negocio. El texto de cada reseña
+ * SÍ está en el HTML del servidor: la lista plegada ("Ver lista") de
+ * `PlazaHud`, mismo patrón que la recreativa de /projects. Todo lo interactivo vive en
  * PlazaPage.tsx (client). La home mantiene su sección #reviews y su
  * redirect /reviews intactos — esta es una experiencia nueva e
  * independiente, no un reemplazo.
  */
 export const metadata: Metadata = {
   // Sin la marca: el `template` del layout raíz ya añade " — Action".
-  title: "Reseñas de clientes",
+  title: "Reseñas de clientes en Vigo",
   description:
-    "Lo que opinan nuestros clientes de Action, agencia de desarrollo web y de aplicaciones en Vigo. Reseñas reales, en una plaza 3D interactiva.",
+    "Reseñas reales de clientes de Action, agencia de desarrollo web y de aplicaciones en Vigo: 5 estrellas en Google. Léelas en la plaza 3D o en la lista.",
   alternates: { canonical: "/resenas" },
   openGraph: {
     type: "website",
     locale: "es_ES",
     url: absoluteUrl("/resenas"),
     siteName: BRAND.name,
-    title: "Reseñas de clientes — Action",
+    title: "Reseñas de clientes en Vigo — Action",
     description: "Lo que opinan nuestros clientes de Action, en una plaza 3D interactiva.",
     images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
   },

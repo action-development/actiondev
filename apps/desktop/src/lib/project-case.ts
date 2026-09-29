@@ -44,3 +44,42 @@ export function projectCase(project: Project, locale: "es" | "en" = "es"): Proje
     result: project.result ?? PLACEHOLDER.en.result,
   };
 }
+
+/**
+ * Tipo de proyecto en español legible, para el `<title>` de la ficha. El
+ * `categoryEs` de los datos está pensado para la etiqueta de la recreativa
+ * ("Web", "E-commerce") y en un título de buscador se queda corto.
+ */
+const CATEGORY_LABEL_ES: Record<string, string> = {
+  "Mobile App": "App móvil",
+  "Desktop App": "App de escritorio",
+  "Web Application": "Aplicación web",
+  Website: "Página web",
+  "Landing Page": "Landing page",
+  "E-commerce": "Tienda online",
+};
+
+export function projectCategoryLabel(project: Project): string {
+  return CATEGORY_LABEL_ES[project.category] ?? project.categoryEs ?? project.category;
+}
+
+export interface RelatedService {
+  /** Ruta de la landing SEO (ver `data/landings.ts`). */
+  href: string;
+  /** Ancla descriptiva: el mismo texto con el que las landings se enlazan entre sí. */
+  label: string;
+}
+
+const SERVICE_BY_CATEGORY: Record<string, RelatedService> = {
+  "Mobile App": { href: "/desarrollo-de-aplicaciones-vigo", label: "Desarrollo de aplicaciones en Vigo" },
+  "Desktop App": { href: "/desarrollo-de-aplicaciones-vigo", label: "Desarrollo de aplicaciones en Vigo" },
+  "Web Application": { href: "/desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
+  Website: { href: "/desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
+  "Landing Page": { href: "/diseno-web-vigo", label: "Diseño web en Vigo" },
+  "E-commerce": { href: "/tienda-online-vigo", label: "Tiendas online en Vigo" },
+};
+
+/** Landing de servicio más pertinente para el proyecto, por su categoría. */
+export function relatedService(project: Project): RelatedService {
+  return SERVICE_BY_CATEGORY[project.category] ?? SERVICE_BY_CATEGORY.Website;
+}

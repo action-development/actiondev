@@ -2,8 +2,14 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import type { BlogPost } from "@actiondev/shared";
+import {
+  AUTHOR_LIST,
+  DEFAULT_AUTHOR_ID,
+  SERVICE_LANDINGS,
+  type BlogPost,
+} from "@actiondev/shared";
 import { BlockEditor } from "./BlockEditor";
+import { FaqEditor } from "./FaqEditor";
 import { slugify, estimateReadingTime, type PostWriteInput } from "@/lib/posts";
 import { createPost, updatePost, deletePost } from "@/app/(protected)/posts/actions";
 
@@ -18,6 +24,8 @@ const EMPTY: PostWriteInput = {
   excerpt: "",
   content: [],
   status: "draft",
+  author: DEFAULT_AUTHOR_ID,
+  faqs: [],
 };
 
 export function PostForm({ post }: { post?: BlogPost }) {
@@ -146,6 +154,71 @@ export function PostForm({ post }: { post?: BlogPost }) {
         <BlockEditor blocks={values.content} onChange={(content) => field("content", content)} />
       </section>
 
+      <section className="flex flex-col gap-8 border-t border-border pt-10">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Posicionamiento
+          </h2>
+          <p className="mt-2 text-sm text-muted">
+            A qué servicio empuja el artículo, quién lo firma y qué preguntas responde.
+          </p>
+        </div>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-base font-medium text-foreground">Servicio relacionado</span>
+          <span className="text-sm text-muted">
+            Aparece como tarjeta al final del artículo, enlazando a esa página.
+          </span>
+          <select
+            value={values.targetLanding ?? ""}
+            onChange={(e) => field("targetLanding", e.target.value || undefined)}
+            className="max-w-md rounded-[var(--radius-sm)] border border-border bg-background px-4 py-3 text-base outline-none focus:border-foreground"
+          >
+            <option value="">Ninguno</option>
+            {SERVICE_LANDINGS.map((l) => (
+              <option key={l.slug} value={l.slug}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-base font-medium text-foreground">Autor</span>
+          <select
+            value={values.author ?? ""}
+            onChange={(e) => field("author", e.target.value || undefined)}
+            className="max-w-sm rounded-[var(--radius-sm)] border border-border bg-background px-4 py-3 text-base outline-none focus:border-foreground"
+          >
+            <option value="">Sin firma</option>
+            {AUTHOR_LIST.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-base font-medium text-foreground">Palabra clave principal</span>
+          <span className="text-sm text-muted">
+            Solo para ti: no se muestra en la web. Debería aparecer en el título y en el
+            primer párrafo.
+          </span>
+          <input
+            value={values.keyword ?? ""}
+            onChange={(e) => field("keyword", e.target.value)}
+            placeholder="Ej: cuánto cuesta desarrollar una app"
+            className="max-w-md rounded-[var(--radius-sm)] border border-border px-4 py-3 text-base outline-none focus:border-foreground"
+          />
+        </label>
+
+        <div className="flex flex-col gap-3">
+          <span className="text-base font-medium text-foreground">Preguntas frecuentes</span>
+          <FaqEditor faqs={values.faqs ?? []} onChange={(faqs) => field("faqs", faqs)} />
+        </div>
+      </section>
+
       <details className="group border-t border-border pt-8">
         <summary className="cursor-pointer text-sm font-medium text-muted marker:content-none hover:text-foreground">
           <span className="inline-block transition-transform group-open:rotate-90">▸</span>{" "}
@@ -160,6 +233,37 @@ export function PostForm({ post }: { post?: BlogPost }) {
               value={values.date}
               onChange={(e) => field("date", e.target.value)}
               className="max-w-xs rounded-[var(--radius-sm)] border border-border px-3 py-2 text-sm outline-none focus:border-foreground"
+            />
+          </label>
+
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-foreground">
+              Última actualización (opcional)
+            </span>
+            <span className="text-sm text-muted">
+              Ponla solo si has revisado el contenido de verdad. Se muestra como
+              &laquo;Actualizado&raquo; en el artículo.
+            </span>
+            <input
+              type="date"
+              value={values.updatedAt ?? ""}
+              min={values.date}
+              onChange={(e) => field("updatedAt", e.target.value || undefined)}
+              className="max-w-xs rounded-[var(--radius-sm)] border border-border px-3 py-2 text-sm outline-none focus:border-foreground"
+            />
+          </label>
+
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-foreground">Imagen destacada (opcional)</span>
+            <span className="text-sm text-muted">
+              URL de la imagen para redes y buscadores. Si lo dejas vacío, se genera una
+              con el título.
+            </span>
+            <input
+              value={values.image ?? ""}
+              onChange={(e) => field("image", e.target.value)}
+              placeholder="https://actiondev.es/…"
+              className="max-w-md rounded-[var(--radius-sm)] border border-border px-3 py-2 text-sm font-mono outline-none focus:border-foreground"
             />
           </label>
 

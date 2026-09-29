@@ -4,10 +4,22 @@
  * Cada entrada genera una ruta indexable en /[slug] con metadata propia,
  * JSON-LD (Service + FAQPage + BreadcrumbList) y contenido único en español.
  * Estas páginas NO están enlazadas desde la navegación principal a propósito:
- * se descubren vía sitemap.xml, /servicios y el enlazado interno entre ellas.
+ * se descubren vía sitemap.xml, /servicios, llms.txt, el nav sr-only de la
+ * home y el enlazado interno entre ellas.
  *
- * Regla de calidad: el copy de cada landing es único (sin plantillas repetidas)
- * para evitar que Google las trate como doorway pages.
+ * Reglas de contenido (auditoría SEO de 2026-09-30):
+ * - Copy único por landing: `localContext`, `cases`, `sections` y `faqs` no se
+ *   reutilizan entre páginas (evita que Google las trate como doorway pages).
+ * - VERACIDAD: solo datos comprobables en el repo. Casos → `slug` de
+ *   `packages/shared/src/projects.ts` (se enlazan a `/projects/{slug}`);
+ *   citas → `id` de `src/data/testimonials.ts`. Nada de cifras, plazos,
+ *   precios, tecnologías o clientes que no estén ahí. Una ubicación de
+ *   cliente solo se afirma si sale de su dominio/slug/descripción (Samoa,
+ *   La Fábrica y Canelita → Redondela; PBB → O Porriño; Musa → Vigo;
+ *   París de Noia y Fisionorte → Noia).
+ * - Sin precios publicados (pendiente de decisión del cliente): se explica
+ *   de qué depende el presupuesto, cada landing con un enfoque distinto.
+ * - Cada testimonio se cita en UNA sola landing.
  */
 
 export interface LandingFaq {
@@ -20,636 +32,1515 @@ export interface LandingBlock {
   text: string;
 }
 
+export interface LandingSection {
+  title: string;
+  paragraphs: string[];
+}
+
+/** Caso real del porfolio: `slug` de `projects.ts`, enlazado a su ficha. */
+export interface LandingCase {
+  slug: string;
+  note: string;
+}
+
+export interface LandingArea {
+  name: string;
+  type: "City" | "AdministrativeArea" | "Place";
+}
+
 export interface Landing {
   slug: string;
+  /** Bloque de /servicios en el que se lista. */
+  group: "servicio" | "zona";
   /** Nombre del servicio para el schema Service. */
   serviceName: string;
-  /** Ciudades / áreas para areaServed del schema. */
-  areaServed: string[];
+  /** `serviceType` del schema Service. */
+  serviceType: string;
+  /** `areaServed` del schema Service, coherente con la landing. */
+  areaServed: LandingArea[];
+  /** ≤ 60 caracteres. */
   title: string;
+  /** ≤ 155 caracteres. */
   metaDescription: string;
   h1: string;
   intro: string[];
+  /** Contexto del mercado local — el bloque que no se puede reutilizar. */
+  localContext: LandingSection;
   offersTitle: string;
   offers: LandingBlock[];
-  process?: LandingBlock[];
-  proof: string;
+  casesTitle: string;
+  cases: LandingCase[];
+  /** Secciones largas propias de la landing. */
+  sections: LandingSection[];
+  processTitle: string;
+  process: LandingBlock[];
+  /** Texto de entrada + ids de `testimonials.ts` que se citan. */
+  proof: { text: string; testimonials: string[] };
   faqs: LandingFaq[];
+  cta: { title: string; text: string };
+  /** 2-4 landings relacionadas, con anclas descriptivas y distintas. */
   related: { slug: string; label: string }[];
+  /** Descripción propia para la tarjeta de /servicios. */
+  hubSummary: string;
 }
 
 export const landings: Landing[] = [
-  {
-    slug: "diseno-web-pontevedra",
-    serviceName: "Diseño web en Pontevedra",
-    areaServed: ["Pontevedra", "Vigo", "Galicia"],
-    title: "Diseño de Páginas Web en Pontevedra | Webs Premium",
-    metaDescription:
-      "Estudio de diseño web para empresas de Pontevedra y las Rías Baixas. Identidad propia, animaciones y experiencias 3D, sin plantillas. ★ 5,0 en Google.",
-    h1: "Diseño web en Pontevedra",
-    intro: [
-      "En Pontevedra la mayoría de webs de empresa se parecen entre sí: misma plantilla, mismo tono, cero diferenciación. Diseñamos webs con identidad propia para negocios de la provincia que quieren que su presencia digital se note tanto como su producto o su servicio.",
-      "Trabajamos desde Vigo, a 25 minutos de la capital, con el mismo equipo que diseña y programa: lo que apruebas en el prototipo es exactamente lo que se publica, sin traducción perdida entre un diseñador externo y quien luego construye la web.",
-    ],
-    offersTitle: "Cómo trabajamos el diseño",
-    offers: [
-      {
-        title: "Dirección de arte digital",
-        text: "Sistema visual completo — tipografía, color, retícula y tono — coherente con tu marca o construido desde cero si todavía no la tienes definida.",
-      },
-      {
-        title: "Diseño UX orientado a conversión",
-        text: "Arquitectura de la información pensada para tu cliente real de Pontevedra: que llegue sin fricción al formulario, la reserva o la ficha de producto.",
-      },
-      {
-        title: "Animación y experiencias 3D",
-        text: "Motion design con GSAP y, cuando el proyecto lo pide, escenas 3D interactivas con Three.js — el detalle que hace que una web se recuerde.",
-      },
-      {
-        title: "Diseño + desarrollo bajo el mismo techo",
-        text: "Sin intermediarios entre quien diseña y quien programa: menos reuniones de traspaso, menos versiones perdidas, entregas más rápidas.",
-      },
-    ],
-    proof:
-      "Diseñamos para negocios de la provincia de Pontevedra y del área de Vigo — hostelería, salud, formación, industria y marcas personales. 5,0 de media en 20 reseñas de Google avalan el trabajo.",
-    faqs: [
-      {
-        q: "¿Atendéis presencialmente en Pontevedra?",
-        a: "Sí. Nuestra oficina está en Vigo (Rúa Colón, 20), a unos 25 minutos de Pontevedra capital, y nos desplazamos para las reuniones clave del proyecto — kickoff y entrega del diseño.",
-      },
-      {
-        q: "¿Qué diferencia hay entre diseño web y desarrollo web?",
-        a: "El diseño define cómo se ve y se usa la web (interfaz, marca, experiencia); el desarrollo la construye en código. Hacemos ambas cosas con el mismo equipo, así que no hay pérdida de matices entre lo que se diseña y lo que se publica.",
-      },
-      {
-        q: "Ya tengo web. ¿Podéis rediseñarla?",
-        a: "Sí, es de lo que más hacemos. Auditamos la web actual, conservamos lo que funciona — URLs, posicionamiento, contenido — y rediseñamos lo que te está frenando.",
-      },
-      {
-        q: "¿El diseño incluye versión móvil?",
-        a: "Siempre, y la diseñamos primero: la mayoría de tus visitas llegarán desde el móvil, así que el diseño de escritorio parte del móvil y no al revés.",
-      },
-    ],
-    related: [
-      { slug: "desarrollo-web-pontevedra", label: "Desarrollo web en Pontevedra" },
-      { slug: "diseno-web-vigo", label: "Diseño web en Vigo" },
-      {
-        slug: "desarrollo-de-aplicaciones-pontevedra",
-        label: "Desarrollo de aplicaciones en Pontevedra",
-      },
-    ],
-  },
+  // ───────────────────────────────────────────────────────────────────
   {
     slug: "desarrollo-de-aplicaciones-vigo",
+    group: "servicio",
     serviceName: "Desarrollo de aplicaciones en Vigo",
-    areaServed: ["Vigo", "Pontevedra", "Galicia"],
+    serviceType: "Desarrollo de aplicaciones móviles",
+    areaServed: [
+      { name: "Vigo", type: "City" },
+      { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
+    ],
     title: "Desarrollo de Aplicaciones en Vigo | Apps iOS y Android",
     metaDescription:
-      "Empresa de desarrollo de aplicaciones en Vigo. Apps nativas iOS y Android, multiplataforma y web apps. Equipo senior en Rúa Colón 20, ★ 5,0 en Google. Presupuesto en 24h.",
+      "Desarrollo de aplicaciones en Vigo: apps iOS y Android con React Native, panel de gestión y backend propio. Oficina en Rúa Colón 20. ★ 5,0 en Google.",
     h1: "Desarrollo de aplicaciones en Vigo",
     intro: [
-      "Somos Action, una agencia de desarrollo de aplicaciones con oficina en pleno centro de Vigo (Rúa Colón, 20). Diseñamos, desarrollamos y publicamos apps para iOS y Android — nativas y multiplataforma — para empresas que necesitan un producto digital serio, no un experimento.",
-      "A diferencia de la mayoría de estudios de la zona, cubrimos todo el ciclo con el mismo equipo senior: definición de producto, diseño de interfaz, desarrollo, backend, publicación en App Store y Google Play, y mantenimiento posterior. Sin subcontratas y sin intermediarios.",
+      "Somos Action, un estudio de desarrollo de aplicaciones con oficina en el centro de Vigo, en la Rúa Colón, 20. Diseñamos y programamos apps para iOS y Android, aplicaciones web y el backend que las sostiene, para empresas que necesitan que su app resuelva un problema concreto: reservas, fichajes, pedidos, alumnos, socios o clientes.",
+      "Trabajamos con el mismo equipo de principio a fin — definición, diseño, desarrollo, publicación y mantenimiento —, así que la persona con la que hablas en la primera reunión es la que conoce el código cuando, meses después, hay que añadir una función o corregir un fallo.",
+      "En esta página te contamos qué tipo de apps hacemos, con qué casos reales puedes comprobarlo, cómo decidimos la tecnología y qué conviene tener claro antes de pedir presupuesto.",
     ],
+    localContext: {
+      title: "Apps para cómo se trabaja en Vigo",
+      paragraphs: [
+        "Vigo es la ciudad más poblada de Galicia y su economía no se parece a la de ninguna otra: el puerto pesquero y la industria conservera, la planta de Stellantis en Balaídos y su red de proveedores de automoción, los astilleros de la ría, la logística ligada al puerto y los polígonos que gestiona la Zona Franca. Buena parte de ese tejido son pymes industriales y de servicios que siguen resolviendo procesos críticos con hojas de cálculo, papel y grupos de WhatsApp.",
+        "Ahí es donde una app a medida tiene más sentido: partes de trabajo que se rellenan en la nave y llegan al instante a la oficina, control horario de una plantilla repartida en turnos, pedidos de clientes profesionales que hoy entran por teléfono o una herramienta para los comerciales que recorren la comarca. No hace falta una app de consumo con millones de descargas; hace falta que la usen treinta personas todos los días sin quejarse.",
+        "Y luego está el Vigo de calle: hostelería, academias, clínicas, clubes deportivos y comercio, que necesitan reservas, cuotas, citas o un canal directo con sus clientes. Conocemos los dos mundos porque trabajamos en medio de ellos, desde una oficina en pleno centro.",
+      ],
+    },
     offersTitle: "Qué desarrollamos",
     offers: [
       {
-        title: "Apps nativas iOS y Android",
-        text: "Swift y SwiftUI para iPhone; Kotlin y Jetpack Compose para Android. Máximo rendimiento y acceso completo al hardware cuando el proyecto lo exige.",
+        title: "Apps iOS y Android multiplataforma",
+        text: "Con React Native — la tecnología de XauLabs, nuestra app de formación para iOS y Android — escribimos una sola base de código para las dos tiendas. Para la mayoría de apps de negocio es la opción que mejor equilibra coste, plazo y experiencia.",
       },
       {
-        title: "Apps multiplataforma",
-        text: "React Native y Flutter: una sola base de código para las dos tiendas, con costes y plazos más ajustados. Te asesoramos honestamente sobre cuándo compensa y cuándo no.",
+        title: "Nativo, cuando de verdad hace falta",
+        text: "Si tu app depende de hardware muy concreto o de funciones que solo resuelven bien los SDK de Apple y Google, lo planteamos en la fase de definición, antes de escribir código, y no a mitad del proyecto.",
       },
       {
-        title: "Aplicaciones web y PWA",
-        text: "Web apps con React y Next.js que funcionan como una app instalable, sin pasar por las tiendas: paneles internos, portales de cliente y SaaS.",
+        title: "App + panel de gestión",
+        text: "La app del usuario casi nunca va sola: detrás hay un panel web donde tu equipo gestiona altas, contenidos y datos. En Autoescuela GTI, la app de alumnos y el ERP de secretaría comparten la misma información.",
       },
       {
-        title: "Backend, APIs y middleware",
-        text: "La app es la punta del iceberg. Construimos el servidor, las APIs, las integraciones (ERP, CRM, pasarelas de pago) y los sincronizadores de datos que la hacen funcionar.",
+        title: "Backend, APIs e integraciones",
+        text: "Servidor, base de datos, autenticación, notificaciones y conexión con lo que ya usas. En True Trading y Lift, la app se conecta en tiempo real con plataformas externas.",
       },
       {
         title: "Publicación y mantenimiento",
-        text: "Gestionamos el alta y la revisión en App Store y Google Play, y después mantenemos la app: actualizaciones de sistema, nuevas funcionalidades y soporte.",
+        text: "Preparamos las fichas, gestionamos la revisión de App Store y Google Play y mantenemos la app cuando Apple o Google cambian sus requisitos, que ocurre cada año.",
       },
     ],
+    casesTitle: "Apps que ya hemos construido",
+    cases: [
+      {
+        slug: "autoescuela-gti",
+        note: "ERP para secretaría y app móvil para alumnos: prácticas, clases y exámenes consultables desde el móvil, y gestión de la flota de coches. Multiplicó por 10 los trámites que se resuelven sin pasar por secretaría.",
+      },
+      {
+        slug: "xaulabs",
+        note: "App multiplataforma para iOS y Android, hecha con React Native, que convierte el aprendizaje de trading en un recorrido por niveles con progreso visible.",
+      },
+      {
+        slug: "true-trading-app",
+        note: "Una sola app para una operativa que antes vivía repartida entre Telegram y otras herramientas: chats, grupos, perfiles y conexión en tiempo real con plataformas de trading.",
+      },
+      {
+        slug: "san-jose",
+        note: "El caso contrario: una app sencilla para que una inmobiliaria enseñe su catálogo de propiedades en el móvil. No todas las apps tienen que ser grandes.",
+      },
+    ],
+    sections: [
+      {
+        title: "¿App nativa, multiplataforma o web app?",
+        paragraphs: [
+          "Es la primera pregunta que nos hacen, y la respuesta depende de tres cosas: quién va a usar la app, desde qué dispositivo y qué tiene que hacer con el hardware del teléfono.",
+          "Si tus usuarios son clientes finales que la descargan de la tienda, una app multiplataforma con React Native cubre iPhone y Android con una sola base de código. Si los usuarios son tu propia plantilla, a menudo basta una aplicación web instalable (PWA): no pasa por la revisión de las tiendas y se actualiza al instante. Y si la app vive de la cámara, el Bluetooth o la localización en segundo plano con requisitos exigentes, conviene valorar el desarrollo nativo.",
+          "Lo decidimos contigo en la fase de definición, con tu caso delante. Y si lo que necesitas no es una app sino una web bien hecha, también te lo diremos: es más barato y, para ese caso, funciona mejor.",
+        ],
+      },
+      {
+        title: "De qué depende el presupuesto de una app",
+        paragraphs: [
+          "No publicamos tarifas porque dos apps con el mismo nombre pueden costar cosas muy distintas. Lo que mueve el presupuesto es, sobre todo, el número de pantallas y de tipos de usuario, si hace falta backend propio o bastan servicios gestionados, las integraciones con sistemas que ya tienes (ERP, pasarela de pago, plataformas externas) y si la app tiene que funcionar sin conexión.",
+          "Por eso el presupuesto sale de una reunión de definición: escuchamos, delimitamos qué entra en la primera versión y qué puede esperar, y te enviamos una propuesta cerrada con el alcance por escrito. Si el proyecto es grande, lo partimos en fases para que la primera llegue antes a tus usuarios.",
+        ],
+      },
+    ],
+    processTitle: "Cómo trabajamos una app",
     process: [
       {
         title: "1. Definición",
-        text: "Reunión (presencial en Vigo o por videollamada) para entender el negocio, los usuarios y el alcance real. Salimos con un documento de producto y un presupuesto cerrado.",
+        text: "Reunión en Rúa Colón o por videollamada. Salimos con los usuarios, las pantallas clave y el alcance de la primera versión por escrito.",
       },
       {
-        title: "2. Diseño",
-        text: "Prototipo navegable de la app antes de escribir una línea de código. Validas el flujo completo con tu equipo.",
+        title: "2. Prototipo",
+        text: "Diseño navegable de la app antes de programar. Lo pruebas con tu equipo y lo corregimos mientras cambiar cosas todavía es barato.",
       },
       {
-        title: "3. Desarrollo",
-        text: "Sprints con entregas visibles. Puedes probar la app en tu propio móvil desde las primeras semanas (TestFlight / testing interno de Play).",
+        title: "3. Desarrollo por entregas",
+        text: "Versiones de prueba que instalas en tu propio móvil (TestFlight en iPhone, pruebas internas en Android) para que veas avances reales, no informes.",
       },
       {
-        title: "4. Publicación y soporte",
-        text: "Subimos la app a las tiendas, monitorizamos los primeros días y quedamos como equipo de mantenimiento y evolución.",
+        title: "4. Tiendas y evolución",
+        text: "Publicación en App Store y Google Play, seguimiento de los primeros días de uso y mantenimiento posterior.",
       },
     ],
-    proof:
-      "Trabajamos con negocios de Vigo y su área: salud (Fisionorte), formación (Autoescuela GTI), hostelería y ocio (Musa, Samoa Café, Cervecería Equs), industria (PBB, O Porriño) y decenas de proyectos más. Nuestra ficha de Google tiene 20 reseñas con 5,0 de valoración media.",
+    proof: {
+      text: "Las reseñas que dejan nuestros clientes en Google son la mejor forma de saber cómo trabajamos. Estas dos hablan precisamente de una app hecha en Vigo y de estar disponibles:",
+      testimonials: ["rapeal-john", "dominik-saworski"],
+    },
     faqs: [
       {
-        q: "¿Cuánto cuesta desarrollar una aplicación en Vigo?",
-        a: "Depende del alcance: no cuesta lo mismo una app de catálogo que una plataforma con pagos, usuarios y backend a medida. Por eso no damos tarifas genéricas: analizamos tu caso y te enviamos un presupuesto cerrado y detallado en 24 horas, sin compromiso.",
+        q: "¿Qué tipo de empresas de Vigo encargan una app?",
+        a: "Sobre todo dos perfiles: pymes industriales y de servicios que quieren digitalizar un proceso interno (fichajes, partes de trabajo, pedidos, formación) y negocios de cara al público que necesitan reservas, cuotas, citas o un canal propio con sus clientes. Los dos tienen algo en común: la app sustituye algo que hoy se hace a mano.",
       },
       {
-        q: "¿Cuánto se tarda en desarrollar una app?",
-        a: "Una app bien definida suele estar en tiendas entre 2 y 4 meses. Proyectos con backend complejo o integraciones con sistemas existentes pueden llevar más. En la fase de definición te damos un calendario realista con hitos verificables.",
-      },
-      {
-        q: "¿App nativa o multiplataforma? ¿Qué me conviene?",
-        a: "Si tu app necesita máximo rendimiento, hardware específico o una experiencia iOS/Android impecable, nativa. Si el presupuesto es ajustado y la app es de negocio estándar, React Native o Flutter permiten lanzar en ambas tiendas con una sola base de código. Te lo evaluamos gratis en la primera reunión — y si no necesitas una app, también te lo diremos.",
+        q: "¿Puedo tener una app y un panel web para mi equipo en el mismo proyecto?",
+        a: "Sí, y es lo habitual. En Autoescuela GTI los alumnos usan la app mientras secretaría y profesorado trabajan en un ERP web, y ambos comparten los mismos datos. Diseñarlos juntos evita duplicar información y sincronizaciones a mano.",
       },
       {
         q: "¿Os encargáis de subir la app a App Store y Google Play?",
-        a: "Sí. Gestionamos las cuentas de desarrollador, las fichas de tienda, el proceso de revisión de Apple y Google, y las publicaciones posteriores de cada actualización.",
+        a: "Sí. Te ayudamos a crear las cuentas de desarrollador a nombre de tu empresa, preparamos las fichas de tienda y gestionamos la revisión de Apple y Google en cada nueva versión.",
+      },
+      {
+        q: "¿Se puede empezar por una versión pequeña?",
+        a: "Sí, y casi siempre lo recomendamos. Una primera versión con lo imprescindible llega antes a tus usuarios, y lo que aprendes de su uso real decide mejor que cualquier reunión qué construir después.",
       },
       {
         q: "¿Puedo reunirme con vosotros en persona?",
-        a: "Claro. Estamos en Rúa Colón 20, en el centro de Vigo. Trabajamos presencialmente con clientes de Vigo y su área metropolitana, y en remoto con el resto de Galicia y España.",
+        a: "Sí. La oficina está en Rúa Colón, 20 (36201 Vigo). Con clientes de Vigo y su área hacemos en persona las reuniones importantes — arranque, validación del prototipo y entrega — y el día a día avanza por videollamada, WhatsApp y versiones de prueba.",
       },
     ],
+    cta: {
+      title: "¿Tienes una app en la cabeza?",
+      text: "Cuéntanos qué problema quieres resolver y para quién. Te respondemos en 24 horas con los siguientes pasos y, si hace falta, quedamos en Rúa Colón.",
+    },
     related: [
-      { slug: "desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
-      { slug: "diseno-web-vigo", label: "Diseño web en Vigo" },
+      { slug: "software-a-medida-vigo", label: "Software a medida y ERP para empresas de Vigo" },
+      { slug: "desarrollo-web-vigo", label: "Webs y aplicaciones web a medida en Vigo" },
       {
         slug: "desarrollo-de-aplicaciones-pontevedra",
-        label: "Desarrollo de aplicaciones en Pontevedra",
+        label: "Apps para negocios de la provincia de Pontevedra",
       },
       {
         slug: "desarrollo-de-aplicaciones-galicia",
-        label: "Desarrollo de aplicaciones en Galicia",
+        label: "Socio técnico de apps para toda Galicia",
       },
     ],
+    hubSummary:
+      "Apps iOS y Android con React Native, con su panel de gestión y su backend, para empresas de Vigo. Casos: Autoescuela GTI y XauLabs.",
   },
+
+  // ───────────────────────────────────────────────────────────────────
   {
     slug: "desarrollo-web-vigo",
+    group: "servicio",
     serviceName: "Desarrollo web en Vigo",
-    areaServed: ["Vigo", "Pontevedra", "Galicia"],
-    title: "Desarrollo Web en Vigo | Páginas y Aplicaciones Web a Medida",
+    serviceType: "Desarrollo web a medida",
+    areaServed: [
+      { name: "Vigo", type: "City" },
+      { name: "O Porriño", type: "City" },
+      { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
+    ],
+    title: "Desarrollo Web en Vigo | Webs y Aplicaciones a Medida",
     metaDescription:
-      "Desarrollo web en Vigo: webs corporativas, e-commerce y aplicaciones web a medida con React y Next.js. Rápidas, seguras y preparadas para SEO. ★ 5,0 en Google.",
+      "Desarrollo web a medida en Vigo con Next.js: webs que venden entradas, cobran cuotas o gestionan reservas. Casos reales: Musa y PBB. Oficina en Colón 20.",
     h1: "Desarrollo web en Vigo",
     intro: [
-      "Desarrollamos páginas y aplicaciones web a medida desde nuestra oficina de Vigo. Nada de plantillas: código propio con React y Next.js, la misma tecnología que usan Netflix, Nike o TikTok para sus webs.",
-      "Una web lenta o genérica te cuesta clientes todos los días. Las nuestras cargan en menos de un segundo, puntúan +90 en las métricas de Google y salen de fábrica con el SEO técnico resuelto: datos estructurados, sitemap, metadatos y accesibilidad.",
+      "Desarrollamos páginas y aplicaciones web a medida desde nuestra oficina de la Rúa Colón, en el centro de Vigo. Webs que hacen algo más que estar: venden entradas, cobran cuotas, reciben reservas o se conectan con el software con el que ya trabajas.",
+      "Programamos con React y Next.js, sin plantillas ni constructores visuales. No es una cuestión de moda: el código propio nos deja decidir cómo carga cada página, cómo la lee Google y qué pasa cuando tu negocio necesita una función que ningún plugin trae.",
     ],
+    localContext: {
+      title: "Lo que vemos en las webs de Vigo",
+      paragraphs: [
+        "En Vigo hay mucha oferta de webs y buena parte se parece: la misma plantilla con otra foto de la ría. En la ciudad más poblada de Galicia, con competencia en cada barrio y en cada sector, parecerse a los demás sale caro.",
+        "Cuando un negocio de Vigo nos llama, los problemas suelen ser otros que la estética: webs que no se pueden actualizar sin llamar al informático, formularios que no llegan a nadie, reservas que siguen entrando por teléfono y fichas de Google Business sin una web decente detrás. La web existe, pero no hace ningún trabajo.",
+        "Por eso empezamos preguntando qué tarea debería quitarte la web: la taquilla de una sala de ocio nocturno, el papeleo de inscripciones de un club deportivo, las llamadas para consultar disponibilidad. A partir de ahí se decide la tecnología, no al revés.",
+      ],
+    },
     offersTitle: "Qué construimos",
     offers: [
       {
         title: "Webs corporativas",
-        text: "La web de tu empresa como herramienta comercial: mensaje claro, diseño premium y formularios que convierten visitas en contactos.",
+        text: "La web de tu empresa como herramienta comercial: mensaje claro, estructura por servicios y formularios que llegan a quien tiene que responder.",
       },
       {
-        title: "Tiendas online",
-        text: "E-commerce a medida o sobre Shopify, con integraciones de pago (Redsys, Stripe), logística y conexión con tu ERP si lo necesitas.",
+        title: "Venta y reservas online",
+        text: "Entradas, reservas, cuotas y matrículas cobradas desde la propia web, con perfiles de usuario para que cada cliente vea lo que ha comprado.",
       },
       {
-        title: "Aplicaciones web y SaaS",
-        text: "Paneles de administración, portales de cliente, plataformas de reservas y productos SaaS completos — frontend, backend y base de datos.",
+        title: "Aplicaciones web y paneles",
+        text: "Portales de cliente, paneles internos y plataformas con usuarios, roles y base de datos, cuando lo que necesitas ya no es una web sino una herramienta.",
       },
       {
-        title: "Migraciones y rescates",
-        text: "¿Tu web actual se ha quedado pequeña o es imposible de mantener? Migramos plataformas legacy a infraestructura moderna sin perder datos ni posicionamiento.",
+        title: "Conexión con tu software",
+        text: "Disponibilidad, precios o pedidos leídos directamente de tu programa de gestión, sin que nadie tenga que copiar datos a mano.",
+      },
+      {
+        title: "Rediseño y migración",
+        text: "Si tu web actual no se deja mantener, la rehacemos conservando el dominio, las URLs que ya posicionan y los contenidos que funcionan.",
       },
     ],
-    proof:
-      "Hemos construido webs y plataformas para hostelería, salud, formación, industria y ocio en Vigo y su área — de Samoa Café a Fisionorte pasando por Autoescuela GTI o la sala Musa. 20 reseñas de 5 estrellas en Google nos avalan.",
+    casesTitle: "Webs que trabajan para su negocio",
+    cases: [
+      {
+        slug: "musa",
+        note: "Sala de ocio nocturno de Vigo. Venta de entradas desde su propia web, sin ticketera externa, y perfil de cliente con sus entradas. Las reservas online subieron un 40%.",
+      },
+      {
+        slug: "pbb-porrino",
+        note: "Club de baloncesto base de O Porriño. Inscripción y pago de cuota y matrícula desde la web, con cuentas separadas para familias y deportistas.",
+      },
+      {
+        slug: "nautirent",
+        note: "Alquiler de embarcaciones. La web lee la disponibilidad de la flota desde el software interno y permite reservar sin llamadas ni intermediarios.",
+      },
+      {
+        slug: "fang-tours",
+        note: "Landing con calendario de disponibilidad, pago con Stripe y un panel propio para gestionar los tours en tiempo real.",
+      },
+    ],
+    sections: [
+      {
+        title: "¿Por qué no WordPress?",
+        paragraphs: [
+          "WordPress sirve para muchas cosas y no tenemos nada contra él. Pero para una web que tiene que vender o conectarse con otros sistemas, depender de una cadena de plugins de terceros significa actualizaciones que rompen cosas, fallos de seguridad conocidos y una web que se vuelve más lenta con cada añadido.",
+          "Con Next.js la web se genera como páginas estáticas o renderizadas en servidor, sin un panel de administración expuesto ni plugins que parchear. Cuando necesitas editar contenidos tú mismo, preparamos un editor a medida de lo que de verdad vas a cambiar — como la carta que Samoa Café actualiza desde su web — en lugar de un panel con doscientas opciones.",
+          "Si ya tienes WordPress y te funciona, no te diremos que lo tires. Si se ha convertido en un problema, planificamos la migración para no perder posicionamiento por el camino.",
+        ],
+      },
+      {
+        title: "SEO técnico desde el primer día",
+        paragraphs: [
+          "Una web a medida no posiciona sola, pero sí puede nacer sin los errores que frenan a la mayoría: títulos y descripciones únicos por página, datos estructurados de schema.org, sitemap, URLs limpias, imágenes optimizadas y accesibilidad revisada.",
+          "Lo que no depende de nosotros también cuenta, y te lo decimos claro: contenido propio, reseñas y una ficha de Google Business cuidada pesan tanto como el código. Te explicamos cómo trabajarlo para que la web y la ficha se refuercen.",
+        ],
+      },
+    ],
+    processTitle: "Cómo trabajamos una web",
+    process: [
+      {
+        title: "1. Qué tiene que hacer",
+        text: "Antes de hablar de diseño, definimos el trabajo de la web — vender, captar contactos, reservar, informar — y cómo sabrás si lo cumple.",
+      },
+      {
+        title: "2. Arquitectura y prototipo",
+        text: "Mapa de páginas y prototipo navegable. Lo que apruebas aquí es lo que se construye.",
+      },
+      {
+        title: "3. Desarrollo e integraciones",
+        text: "Construcción con entregas en un entorno de pruebas, pasarela de pago y conexión con tu software si hace falta.",
+      },
+      {
+        title: "4. Publicación y medición",
+        text: "Cambio de dominio sin cortes, redirecciones desde la web antigua y analítica configurada con consentimiento.",
+      },
+    ],
+    proof: {
+      text: "Dos reseñas de Google que resumen lo que más nos importa en un proyecto web: que funcione bien y que sigamos ahí después de publicarlo.",
+      testimonials: ["carla-hermida", "ratsquad"],
+    },
     faqs: [
       {
-        q: "¿Cuánto cuesta una página web en Vigo?",
-        a: "Una web corporativa a medida y un e-commerce con integraciones no juegan en la misma liga, así que huimos de los precios cerrados de catálogo. Cuéntanos qué necesitas y en 24 horas tienes un presupuesto detallado y sin compromiso.",
+        q: "¿Cuánto cuesta una página web a medida en Vigo?",
+        a: "Depende sobre todo de cuatro cosas: cuántos tipos de página distintos hay que diseñar, si la web vende o reserva (pasarela, usuarios, perfiles), si se conecta con otro software y quién escribe los contenidos. Una web de presentación y una plataforma de venta de entradas no se presupuestan igual. Tras una primera conversación te enviamos una propuesta cerrada con el alcance detallado.",
       },
       {
-        q: "¿Usáis WordPress?",
-        a: "No para proyectos nuevos. Desarrollamos con React y Next.js: webs más rápidas, más seguras (sin plugins vulnerables) y sin costes ocultos de mantenimiento. Si ya tienes WordPress y quieres migrar, nos encargamos de la transición completa.",
+        q: "¿Podré cambiar yo los textos y las fotos?",
+        a: "Sí, en las partes donde tiene sentido. Preparamos un editor para lo que cambias a menudo (carta, eventos, noticias, precios) y dejamos fijo lo que sostiene el diseño, para que la web no se desmonte con el uso.",
       },
       {
-        q: "¿La web saldrá bien posicionada en Google?",
-        a: "El SEO técnico va incluido de serie: rendimiento +90 en Core Web Vitals, datos estructurados schema.org, metadatos, sitemap y accesibilidad WCAG. El posicionamiento además depende de contenido y autoridad — te asesoramos sobre la estrategia completa.",
+        q: "¿Se pueden cobrar cuotas o vender entradas desde la web?",
+        a: "Sí. En Musa se venden entradas con perfil de cliente y en PBB se cobran cuota y matrícula desde la web. Integramos la pasarela y los perfiles para que cada cliente vea lo que ha pagado.",
       },
       {
-        q: "¿Cuánto tarda el desarrollo de una web?",
-        a: "Una web corporativa suele estar online en 3-6 semanas. Un e-commerce o una aplicación web, entre 1 y 3 meses según integraciones. Siempre con calendario y entregas parciales visibles.",
+        q: "¿Qué pasa con mi web actual y su posicionamiento?",
+        a: "Antes de publicar la nueva, inventariamos las URLs que ya reciben visitas y configuramos redirecciones 301 hacia sus equivalentes. Así Google traslada lo ganado en lugar de empezar de cero.",
+      },
+      {
+        q: "¿Trabajáis solo con empresas de Vigo?",
+        a: "No, pero es donde más trabajamos. De Vigo a O Porriño o Redondela, donde tenemos clientes, podemos vernos en persona sin complicaciones; con el resto de Galicia y España trabajamos en remoto con el mismo método.",
       },
     ],
+    cta: {
+      title: "¿Qué debería hacer tu web por ti?",
+      text: "Explícanos qué tarea te gustaría quitarte de encima — llamadas, papeleo, taquilla — y te proponemos cómo resolverla con una web a medida.",
+    },
     related: [
-      { slug: "diseno-web-vigo", label: "Diseño web en Vigo" },
-      {
-        slug: "desarrollo-de-aplicaciones-vigo",
-        label: "Desarrollo de aplicaciones en Vigo",
-      },
-      { slug: "desarrollo-web-pontevedra", label: "Desarrollo web en Pontevedra" },
-      { slug: "tienda-online-vigo", label: "Tiendas online en Vigo" },
-      {
-        slug: "agencia-desarrollo-web-galicia",
-        label: "Agencia de desarrollo web en Galicia",
-      },
+      { slug: "diseno-web-vigo", label: "Diseño web con identidad propia en Vigo" },
+      { slug: "tienda-online-vigo", label: "Tiendas online y ecommerce en Vigo" },
+      { slug: "desarrollo-web-redondela", label: "Páginas web para negocios de Redondela" },
+      { slug: "desarrollo-web-pontevedra", label: "Desarrollo y diseño web en Pontevedra" },
     ],
+    hubSummary:
+      "Webs corporativas y aplicaciones web con Next.js que venden, reservan o cobran. Casos: Musa (Vigo) y PBB (O Porriño).",
   },
+
+  // ───────────────────────────────────────────────────────────────────
   {
     slug: "diseno-web-vigo",
+    group: "servicio",
     serviceName: "Diseño web en Vigo",
-    areaServed: ["Vigo", "Pontevedra", "Galicia"],
-    title: "Diseño de Páginas Web en Vigo | Webs Premium que Venden",
+    serviceType: "Diseño web",
+    areaServed: [
+      { name: "Vigo", type: "City" },
+      { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
+      { name: "Galicia", type: "AdministrativeArea" },
+    ],
+    title: "Diseño Web en Vigo | Webs con Identidad Propia",
     metaDescription:
-      "Estudio de diseño web en Vigo. Webs premium con identidad propia, animaciones y experiencias 3D. Diseño orientado a conversión para empresas de Galicia. ★ 5,0 en Google.",
+      "Diseño de páginas web en Vigo con dirección de arte, motion y 3D: webs que no parecen plantillas. Casos: Samoa Café y Almudena Muhle. Estudio en Vigo.",
     h1: "Diseño web en Vigo",
     intro: [
-      "El diseño de tu web decide en tres segundos si un cliente se queda o se va. En Action diseñamos webs con identidad propia — tipografía cuidada, movimiento fluido, experiencias 3D — que hacen que tu marca parezca exactamente lo que es: profesional.",
-      "No usamos plantillas ni bibliotecas de componentes genéricos. Cada proyecto parte de tu marca, tu sector y tus clientes, y se diseña para un objetivo medible: que te contacten, que reserven, que compren.",
+      "El diseño de una web decide en pocos segundos si alguien se queda o vuelve a Google. En Action diseñamos webs con identidad propia — tipografía, ritmo, movimiento y, cuando el proyecto lo pide, 3D — para marcas que no quieren parecerse a la plantilla de su competencia.",
+      "Somos un estudio de Vigo donde diseño y programación los hace el mismo equipo. Eso cambia el resultado más de lo que parece: lo que se aprueba en el prototipo es lo que se publica, y los detalles de animación no se pierden en el traspaso a un desarrollador que no estuvo en las reuniones.",
     ],
+    localContext: {
+      title: "Diseñar para marcas con carácter",
+      paragraphs: [
+        "Vigo es una ciudad de marcas con personalidad: hostelería que cambia de ambiente del día a la noche, moda, interiorismo, industria que exporta y comercio que se defiende de las grandes cadenas. Lo que tienen en común es que su producto se ve y se toca, y una web genérica lo aplana.",
+        "Nuestro trabajo consiste en trasladar ese carácter a la pantalla sin sacrificar lo práctico. Una carta que cambia sola entre la versión de día y la de noche, como la de Samoa Café. Un lookbook de pasarela a pantalla completa, como el de Patricia Avendaño. Proyectos de interiorismo contados como historias, como en la web de Almudena Muhle. El diseño tiene que servir al negocio, no al porfolio del estudio.",
+        "Y lo hacemos con los pies en el suelo: un diseño que tarda en cargar en el móvil de alguien que está en la calle buscando dónde cenar no es un buen diseño, por bonito que sea en una pantalla grande.",
+      ],
+    },
     offersTitle: "Cómo trabajamos el diseño",
     offers: [
       {
         title: "Dirección de arte digital",
-        text: "Sistema visual completo para tu presencia digital: tipografía, color, retícula y tono. Coherente con tu marca o construyéndola desde cero.",
+        text: "Tipografía, color, retícula y tono para tu web, coherentes con tu marca o creados desde cero si aún no existe. En Samoa Café partimos del naming y el logo.",
       },
       {
-        title: "Diseño UX orientado a conversión",
-        text: "Arquitectura de la información y flujos pensados para que el usuario llegue sin fricción a donde tú quieres: el formulario, la reserva, la compra.",
+        title: "Interfaz y experiencia de uso",
+        text: "Arquitectura de contenidos y recorridos pensados para que el visitante llegue a la acción que te importa: reservar, pedir presupuesto, comprar.",
       },
       {
-        title: "Animación y experiencias 3D",
-        text: "Motion design con GSAP y escenas 3D interactivas con Three.js — el tipo de detalle que hace que una web se recuerde y se comparta.",
+        title: "Motion design",
+        text: "Animaciones con GSAP o Framer Motion que guían la lectura y dan ritmo, respetando a quien tiene activada la reducción de movimiento en su dispositivo.",
       },
       {
-        title: "Diseño + desarrollo bajo el mismo techo",
-        text: "El equipo que diseña es el que programa. Lo que apruebas en el prototipo es exactamente lo que se publica, sin pérdidas por el camino.",
+        title: "Experiencias 3D",
+        text: "Escenas interactivas con Three.js cuando aportan algo. Esta misma web, con su puerto de Vigo jugable, es el ejemplo más a mano.",
+      },
+      {
+        title: "Rediseño",
+        text: "Auditamos tu web actual, conservamos lo que funciona y rediseñamos lo que te frena, sin empezar de cero si no hace falta.",
       },
     ],
-    proof:
-      "Nuestro porfolio en Vigo abarca desde marcas personales (Patricia Avendaño, Almudena Muhle) hasta ocio nocturno (Musa), hostelería (Samoa Café, Cervecería Equs) y empresas industriales. Diseño premium con resultados verificables: 5,0 de media en 20 reseñas de Google.",
+    casesTitle: "Diseños que puedes visitar",
+    cases: [
+      {
+        slug: "samoa",
+        note: "Identidad de marca completa desde cero — naming, logo y carta — y una web con carta editable que cambia sola entre día y noche. Hostelería en Redondela.",
+      },
+      {
+        slug: "almudena-muhle",
+        note: "Estudio de interiorismo. Cada proyecto se presenta como una historia inmersiva con vídeo y motion, pensada para un cliente de mayor poder adquisitivo.",
+      },
+      {
+        slug: "patricia-avendano",
+        note: "Diseñadora de moda nupcial con más de 100 tiendas en España. Web bilingüe con lookbook interactivo, vídeos de pasarela a pantalla completa y sección de prensa.",
+      },
+      {
+        slug: "cerveceria-equs",
+        note: "Landing de presentación para una cervecería que transmite el carácter artesanal de su producto y deja claros el contacto y la ubicación.",
+      },
+    ],
+    sections: [
+      {
+        title: "Qué diferencia un diseño a medida de una plantilla",
+        paragraphs: [
+          "Una plantilla resuelve el caso medio: cabecera con foto, tres columnas de servicios, formulario al final. Funciona, pero no dice nada de ti. Un diseño a medida parte de preguntas concretas: qué tiene que sentir el visitante, qué necesita ver para confiar y cuál es el siguiente paso que queremos que dé.",
+          "La diferencia se nota en detalles que no salen en una captura: la jerarquía tipográfica que hace que un texto largo se lea, el orden en que aparece la información en el móvil, la forma en que un botón responde al pulsarlo. Son decisiones pequeñas que, sumadas, hacen que una web se sienta cuidada.",
+        ],
+      },
+      {
+        title: "Diseño que también se mide",
+        paragraphs: [
+          "Un diseño premium no está reñido con la accesibilidad ni con la velocidad. Revisamos el contraste de color, el tamaño de los elementos pulsables, la navegación con teclado y los textos alternativos, y medimos el rendimiento con Lighthouse antes de publicar.",
+          "Cuando el diseño incluye 3D o vídeo, lo cargamos de forma diferida para que no retrase lo importante: que el texto y la llamada a la acción aparezcan cuanto antes.",
+        ],
+      },
+    ],
+    processTitle: "Del concepto a la web publicada",
+    process: [
+      {
+        title: "1. Descubrimiento",
+        text: "Tu marca, tu cliente y tu competencia. Recopilamos referencias y definimos qué debe transmitir la web.",
+      },
+      {
+        title: "2. Dirección de arte",
+        text: "Propuesta visual con tipografía, color y piezas clave antes de maquetar todas las páginas.",
+      },
+      {
+        title: "3. Prototipo",
+        text: "Diseño completo navegable, en móvil y escritorio, con las animaciones principales definidas.",
+      },
+      {
+        title: "4. Construcción",
+        text: "El mismo equipo lo programa, así que el prototipo aprobado es lo que se publica.",
+      },
+    ],
+    proof: {
+      text: "Lo que más valoran quienes nos han confiado el diseño de su web, en sus propias palabras en Google:",
+      testimonials: ["almudena-muhle", "ivan-matas"],
+    },
     faqs: [
       {
-        q: "¿Qué diferencia hay entre diseño web y desarrollo web?",
-        a: "El diseño define cómo se ve y cómo se usa la web (interfaz, marca, experiencia); el desarrollo la construye en código. En Action hacemos ambas cosas con el mismo equipo, así que no hay traducción perdida entre el diseñador y el programador.",
+        q: "¿Hacéis también el logo y la identidad de marca?",
+        a: "Sí, cuando hace falta. En Samoa Café partimos de cero: naming, logo, diseño de carta y web. Si ya tienes identidad, la respetamos y la adaptamos al medio digital.",
       },
       {
-        q: "Ya tengo web. ¿Podéis rediseñarla?",
-        a: "Sí, es de lo que más hacemos. Auditamos la web actual (diseño, rendimiento, SEO), conservamos lo que funciona — URLs, posicionamiento, contenido — y rediseñamos lo que te está frenando.",
-      },
-      {
-        q: "¿El diseño incluye versión móvil?",
-        a: "Siempre. Más del 60% de tus visitas llegarán desde el móvil, así que diseñamos primero la experiencia móvil y la escalamos a escritorio, no al revés.",
+        q: "¿Qué necesito aportar para empezar el diseño?",
+        a: "Lo que tengas: logo, fotos, textos, webs que te gustan y webs que no. Si no tienes fotografía de calidad te lo diremos pronto, porque es de lo que más pesa en el resultado final.",
       },
       {
         q: "¿Podéis hacer una web con 3D como la vuestra?",
-        a: "Sí. Las experiencias 3D interactivas (Three.js / WebGL) son una de nuestras especialidades, y las optimizamos para que carguen rápido incluso en móviles modestos.",
+        a: "Sí. Las escenas 3D con Three.js son una de nuestras especialidades — la portada de esta web es un puerto de Vigo jugable hecho así —. Te diremos con franqueza si en tu caso aporta o si distrae de lo que quieres vender.",
+      },
+      {
+        q: "¿El diseño se adapta al móvil?",
+        a: "Diseñamos móvil y escritorio a la vez, no uno encogido del otro: en el móvil cambian el orden de lectura, el tamaño de los elementos pulsables y lo que merece aparecer primero.",
+      },
+      {
+        q: "¿De qué depende el precio del diseño de una web?",
+        a: "Del número de tipos de página distintos, de si hay que crear la identidad de marca, de la cantidad de animación o 3D y de si la fotografía y los textos ya existen. Con tu marca y tus objetivos delante te preparamos un presupuesto cerrado.",
       },
     ],
+    cta: {
+      title: "¿Quieres una web que se reconozca a primera vista?",
+      text: "Enséñanos tu marca — o cuéntanos la que quieres construir — y te proponemos una dirección de arte.",
+    },
     related: [
-      { slug: "desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
-      {
-        slug: "desarrollo-de-aplicaciones-vigo",
-        label: "Desarrollo de aplicaciones en Vigo",
-      },
-      { slug: "diseno-web-pontevedra", label: "Diseño web en Pontevedra" },
+      { slug: "desarrollo-web-vigo", label: "Desarrollo web con Next.js en Vigo" },
+      { slug: "tienda-online-vigo", label: "Diseño de tiendas online en Vigo" },
+      { slug: "desarrollo-web-pontevedra", label: "Diseño y desarrollo web en la provincia" },
     ],
+    hubSummary:
+      "Dirección de arte, motion y 3D para marcas que no quieren una plantilla. Casos: Samoa Café, Almudena Muhle y Patricia Avendaño.",
   },
-  {
-    slug: "desarrollo-de-aplicaciones-pontevedra",
-    serviceName: "Desarrollo de aplicaciones en Pontevedra",
-    areaServed: ["Pontevedra", "Vigo", "Galicia"],
-    title: "Desarrollo de Aplicaciones en Pontevedra | Apps iOS y Android",
-    metaDescription:
-      "Desarrollo de aplicaciones móviles para empresas de Pontevedra y las Rías Baixas. Apps iOS, Android y web apps con equipo senior propio en Galicia. Presupuesto en 24h.",
-    h1: "Desarrollo de aplicaciones en Pontevedra",
-    intro: [
-      "Desarrollamos aplicaciones móviles y web para empresas de toda la provincia de Pontevedra: la capital, Vilagarcía de Arousa, Marín, Sanxenxo, O Porriño, Ponteareas, Lalín o cualquier punto de las Rías Baixas.",
-      "Nuestra base está en Vigo (Rúa Colón, 20), a media hora de casi cualquier ayuntamiento de la provincia, lo que nos permite combinar reuniones presenciales cuando hacen falta con un flujo de trabajo remoto ágil el resto del tiempo. El resultado: apps de nivel nacional sin depender de agencias de Madrid o Barcelona.",
-    ],
-    offersTitle: "Servicios para empresas de la provincia",
-    offers: [
-      {
-        title: "Apps para negocio local",
-        text: "Reservas para hostelería y turismo, carta digital, fidelización, citas para clínicas y servicios — apps que resuelven el día a día de tu negocio en la provincia.",
-      },
-      {
-        title: "Apps industriales y de gestión",
-        text: "Digitalización de procesos para el tejido industrial de la provincia: partes de trabajo, control de flotas, inventario y conexión con tu ERP.",
-      },
-      {
-        title: "Apps iOS y Android completas",
-        text: "Desarrollo nativo (Swift, Kotlin) o multiplataforma (React Native, Flutter) con backend incluido y publicación en App Store y Google Play.",
-      },
-      {
-        title: "Productos digitales desde cero",
-        text: "¿Tienes una idea de app y buscas un socio técnico en Galicia? Te acompañamos desde la definición del producto hasta el lanzamiento y las primeras métricas.",
-      },
-    ],
-    proof:
-      "Ya trabajamos con empresas de la provincia — como PBB en O Porriño — y con decenas de negocios del área de Vigo. Somos uno de los pocos estudios de Galicia que desarrolla apps nativas, multiplataforma y web con el mismo equipo interno, y nuestra ficha de Google luce un 5,0 con 20 reseñas.",
-    faqs: [
-      {
-        q: "¿Trabajáis con empresas de Pontevedra capital?",
-        a: "Sí, y de toda la provincia. Nos desplazamos para las reuniones clave (kickoff, entregas) y el resto del proyecto avanza en remoto con demos semanales, así no pagas desplazamientos innecesarios.",
-      },
-      {
-        q: "¿Por qué elegir un estudio gallego en vez de una agencia grande?",
-        a: "Cercanía real (estamos a menos de una hora), interlocución directa con quien programa tu app — no con un gestor de cuentas — y costes sin el sobreprecio de las grandes capitales. Con la misma tecnología y calidad de ingeniería.",
-      },
-      {
-        q: "¿Qué necesito tener claro antes de encargar una app?",
-        a: "Solo el problema que quieres resolver y para quién. El resto — plataformas, tecnología, alcance de la primera versión — lo definimos juntos en la fase de producto, que es precisamente donde más valor aportamos.",
-      },
-      {
-        q: "¿Hacéis también la web de la empresa?",
-        a: "Sí. Muchos clientes nos encargan el ecosistema completo: app + web corporativa + panel de gestión, todo integrado y con una sola empresa como responsable.",
-      },
-    ],
-    related: [
-      {
-        slug: "desarrollo-de-aplicaciones-vigo",
-        label: "Desarrollo de aplicaciones en Vigo",
-      },
-      { slug: "desarrollo-web-pontevedra", label: "Desarrollo web en Pontevedra" },
-      { slug: "diseno-web-pontevedra", label: "Diseño web en Pontevedra" },
-    ],
-  },
-  {
-    slug: "desarrollo-web-pontevedra",
-    serviceName: "Desarrollo web en Pontevedra",
-    areaServed: ["Pontevedra", "Vigo", "Galicia"],
-    title: "Desarrollo Web en Pontevedra | Webs a Medida para tu Negocio",
-    metaDescription:
-      "Páginas web a medida para empresas de Pontevedra y las Rías Baixas: hostelería, turismo, industria y comercio. Webs rápidas y preparadas para Google. ★ 5,0.",
-    h1: "Desarrollo web en Pontevedra",
-    intro: [
-      "Creamos páginas web a medida para empresas de la provincia de Pontevedra. Si tu negocio vive del turismo de las Rías Baixas, de la industria del área de Vigo-O Porriño o del comercio local, tu web es tu primer comercial — y merece más que una plantilla.",
-      "Somos un estudio de Vigo con clientes en toda la provincia. Desarrollamos con tecnología moderna (React, Next.js), entregamos webs que cargan al instante y dejamos el SEO técnico configurado para que Google te encuentre desde el primer día.",
-    ],
-    offersTitle: "Webs para cada tipo de negocio",
-    offers: [
-      {
-        title: "Hostelería y turismo",
-        text: "Webs con reservas online para restaurantes, hoteles y experiencias en las Rías Baixas. Fotografía cuidada, carta actualizable y reservas sin comisiones de terceros.",
-      },
-      {
-        title: "Industria y servicios B2B",
-        text: "Webs corporativas que generan confianza y captan leads cualificados: catálogo técnico, casos de éxito y formularios conectados a tu CRM.",
-      },
-      {
-        title: "Comercio y e-commerce",
-        text: "Tiendas online para vender fuera de tu zona: pasarela de pago española (Redsys, Bizum), envíos y stock sincronizado con tu sistema de gestión.",
-      },
-      {
-        title: "Renovación de webs anticuadas",
-        text: "Si tu web tiene más de 4 años, probablemente esté perdiendo clientes. La renovamos conservando tu dominio y tu posicionamiento actual.",
-      },
-    ],
-    proof:
-      "Trabajamos con negocios de toda la provincia — hostelería, salud, formación, ocio e industria — desde nuestra oficina de Vigo. La media de nuestras 20 reseñas en Google es un 5,0, y cada web que entregamos supera el 90 en las métricas de rendimiento de Google.",
-    faqs: [
-      {
-        q: "¿Atendéis presencialmente en Pontevedra?",
-        a: "Sí. Nuestra oficina está en Vigo (Rúa Colón, 20), a 25 minutos de Pontevedra capital, y nos desplazamos a cualquier punto de la provincia para las reuniones importantes del proyecto.",
-      },
-      {
-        q: "Mi negocio es pequeño. ¿Una web a medida no es demasiado?",
-        a: "Al contrario: una web a medida bien enfocada suele ser más rentable que una plantilla, porque está diseñada para convertir visitas en clientes de TU negocio concreto. Dimensionamos el proyecto a tu tamaño real — sin venderte funcionalidades que no necesitas.",
-      },
-      {
-        q: "¿Incluís el mantenimiento de la web?",
-        a: "Ofrecemos planes de mantenimiento con actualizaciones, copias de seguridad, cambios de contenido y soporte directo por WhatsApp o email. Sin permanencias.",
-      },
-      {
-        q: "¿Podéis llevar también el posicionamiento en Google?",
-        a: "El SEO técnico va incluido en todos los proyectos. Para posicionamiento continuado (contenidos, ficha de Google Business, autoridad local) ofrecemos acompañamiento mensual.",
-      },
-    ],
-    related: [
-      { slug: "diseno-web-pontevedra", label: "Diseño web en Pontevedra" },
-      {
-        slug: "desarrollo-de-aplicaciones-pontevedra",
-        label: "Desarrollo de aplicaciones en Pontevedra",
-      },
-      { slug: "diseno-web-vigo", label: "Diseño web en Vigo" },
-    ],
-  },
-  {
-    slug: "desarrollo-de-aplicaciones-galicia",
-    serviceName: "Desarrollo de aplicaciones en Galicia",
-    areaServed: ["Galicia", "Vigo", "Pontevedra", "A Coruña", "Santiago de Compostela"],
-    title: "Desarrollo de Aplicaciones en Galicia | Estudio Full-Stack",
-    metaDescription:
-      "Estudio gallego de desarrollo de aplicaciones: iOS, Android, web y backend con un único equipo senior. Clientes en Vigo, Pontevedra, A Coruña y Santiago. ★ 5,0 en Google.",
-    h1: "Desarrollo de aplicaciones en Galicia",
-    intro: [
-      "Action es un estudio de desarrollo con sede en Vigo que trabaja para empresas de toda Galicia: Vigo, Pontevedra, A Coruña, Santiago de Compostela, Ourense y Lugo. Nuestra especialidad es poco común en la comunidad: cubrir el producto completo — app móvil, web y backend — con un único equipo senior interno.",
-      "La mayoría de estudios gallegos hacen apps o hacen webs, y subcontratan lo demás. Nosotros desarrollamos nativo iOS (Swift), nativo Android (Kotlin), multiplataforma (React Native, Flutter), web (Next.js, React) y middleware de integración con la misma plantilla de ingenieros. Un solo interlocutor, una sola visión de producto.",
-    ],
-    offersTitle: "Un socio técnico para toda Galicia",
-    offers: [
-      {
-        title: "Producto digital completo",
-        text: "App para tus clientes, panel web para tu equipo y backend que lo conecta todo. Un solo proyecto, un solo responsable, cero fricción entre proveedores.",
-      },
-      {
-        title: "Integraciones con tus sistemas",
-        text: "Sincronizadores y middleware entre tu app y lo que ya usas: ERP, Salesforce, Shopify, sistemas propios. Especialistas en migraciones sin pérdida de datos.",
-      },
-      {
-        title: "Ingeniería senior, trato directo",
-        text: "Sin juniors en código de producción y sin gestores de cuenta intermediarios: hablas directamente con quien diseña la arquitectura de tu producto.",
-      },
-      {
-        title: "Un proyecto grande al mes",
-        text: "Limitamos deliberadamente la carga de clientes. Tu proyecto recibe atención de nivel fundador de principio a fin, no un hueco en una cola de producción.",
-      },
-    ],
-    proof:
-      "Nuestro porfolio gallego cruza sectores: salud, formación, hostelería, ocio nocturno, industria y marcas personales, de Vigo a O Porriño. 20 reseñas de 5 estrellas en Google y proyectos publicados en App Store y Google Play avalan el método.",
-    faqs: [
-      {
-        q: "¿Trabajáis con empresas de A Coruña y Santiago?",
-        a: "Sí. El grueso del trabajo se desarrolla en remoto con demos semanales, y nos desplazamos para las sesiones clave. La distancia Vigo–A Coruña nunca ha sido un problema: la mayoría de nuestros clientes gallegos nos eligen precisamente por tener al equipo en la misma comunidad y franja horaria.",
-      },
-      {
-        q: "¿Qué tipo de empresa gallega os encaja mejor?",
-        a: "Empresas que se juegan algo con su producto digital: una app que es parte del negocio, una plataforma interna crítica o un e-commerce serio. Si buscas la opción más barata posible, no somos nosotros; si buscas la que funciona y escala, hablemos.",
-      },
-      {
-        q: "¿Podéis rescatar una app que otro proveedor dejó a medias?",
-        a: "Sí, lo hacemos a menudo. Auditamos el código existente, te damos un diagnóstico honesto (a veces compensa continuar, a veces reescribir) y un plan con costes cerrados para llevarla a producción.",
-      },
-      {
-        q: "¿Desarrolláis para startups gallegas?",
-        a: "Sí. Ayudamos a definir el MVP con criterio — qué entra en la primera versión y qué no — y construimos una base técnica que aguante la escala si el producto despega, evitando la reescritura a los dos años.",
-      },
-    ],
-    related: [
-      {
-        slug: "desarrollo-de-aplicaciones-vigo",
-        label: "Desarrollo de aplicaciones en Vigo",
-      },
-      {
-        slug: "desarrollo-de-aplicaciones-pontevedra",
-        label: "Desarrollo de aplicaciones en Pontevedra",
-      },
-      { slug: "desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
-      {
-        slug: "agencia-desarrollo-web-galicia",
-        label: "Agencia de desarrollo web en Galicia",
-      },
-    ],
-  },
+
+  // ───────────────────────────────────────────────────────────────────
   {
     slug: "tienda-online-vigo",
+    group: "servicio",
     serviceName: "Tiendas online en Vigo",
-    areaServed: ["Vigo", "Pontevedra", "Galicia"],
-    title: "Tiendas Online en Vigo | Diseño y Desarrollo de Ecommerce",
+    serviceType: "Desarrollo de tiendas online",
+    areaServed: [
+      { name: "Vigo", type: "City" },
+      { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
+      { name: "Galicia", type: "AdministrativeArea" },
+    ],
+    title: "Tiendas Online en Vigo | Shopify y Ecommerce a Medida",
     metaDescription:
-      "Creamos tiendas online a medida en Vigo: Shopify o desarrollo propio con Next.js, pagos con Redsys, Bizum y Stripe e integración con tu ERP. ★ 5,0 en Google.",
+      "Creamos tiendas online en Vigo: Shopify o ecommerce a medida con React y Node.js, pagos y catálogo cuidado. Casos reales como Canelita, Cliché y Koopey.",
     h1: "Tiendas online en Vigo",
     intro: [
-      "Una tienda online no es una web con un carrito: es un canal de venta que tiene que cargar rápido, cobrar sin fricción y hablar con el resto de tu negocio — stock, facturación, logística. Diseñamos y desarrollamos ecommerce para empresas de Vigo y su área que quieren vender más allá de su escaparate.",
-      "Hacemos las dos cosas y te decimos cuál te conviene: Shopify cuando el catálogo es estándar y quieres salir cuanto antes, desarrollo propio cuando necesitas reglas de precio, integraciones o una experiencia que una plantilla no da. El mismo equipo diseña, programa y conecta la tienda con tus sistemas.",
+      "Una tienda online no es una web con un carrito: es un canal de venta que tiene que cargar rápido en el móvil, cobrar sin fricción y encajar con el resto de tu negocio — stock, pedidos, envíos. Diseñamos y desarrollamos tiendas online para marcas y comercios de Vigo y su área que quieren vender más allá de su escaparate.",
+      "Trabajamos con Shopify y con desarrollo propio, y te decimos cuál te conviene con tu catálogo delante. Hemos montado tiendas Shopify para Canelita, Cliché, Nabi Cosmética o Cachadas, y una tienda a medida con capa en tiempo real para Koopey.",
     ],
+    localContext: {
+      title: "Vender online desde Vigo",
+      paragraphs: [
+        "El comercio de Vigo compite en dos frentes: contra los centros comerciales y las grandes cadenas en la calle, y contra los marketplaces en internet. Una tienda online propia es la forma de que tu cliente de Vigo te compre también un domingo por la noche, y de que alguien de Ourense, Madrid o Lisboa descubra tu marca sin pasar por tu local.",
+        "Galicia tiene además tradición de marcas que nacen pequeñas y venden lejos: moda, cosmética, producto gourmet, conservas. Y Vigo es un nodo logístico de primer orden, con puerto y autovías hacia Portugal y la meseta, así que enviar desde aquí no es una desventaja.",
+        "Lo que suele fallar no es la tecnología sino la operativa: fichas de producto sin cuidar, gastos de envío que aparecen al final y asustan, stock que no cuadra con la tienda física. Diseñamos la tienda pensando en esos puntos antes que en los efectos.",
+      ],
+    },
     offersTitle: "Qué incluye una tienda online con nosotros",
     offers: [
       {
-        title: "Shopify o desarrollo a medida",
-        text: "Shopify cuando compensa por plazo y coste; Next.js con backend propio cuando el negocio pide algo que la plataforma no permite. Sin casarnos con una tecnología: la elegimos con tu caso delante.",
+        title: "Shopify bien hecho",
+        text: "Tema a medida sobre Shopify cuando el catálogo y la venta son estándar: sales antes, con una plataforma que tu equipo aprende en una tarde.",
       },
       {
-        title: "Pagos que convierten",
-        text: "Pasarelas españolas y europeas — Redsys, Bizum, Stripe —, con un proceso de compra corto, pensado para móvil, que es desde donde compra la mayoría.",
+        title: "Ecommerce a medida",
+        text: "React y Node.js cuando necesitas algo que la plataforma no permite: reglas de precio propias, experiencias en tiempo real o un flujo de compra poco habitual, como en Koopey.",
       },
       {
-        title: "Conexión con tu ERP y tu logística",
-        text: "Stock, pedidos y facturas sincronizados con el sistema que ya usas, sin duplicar datos a mano ni vender lo que no tienes. Middleware propio cuando no existe conector.",
+        title: "Venta de productos digitales",
+        text: "Entrega automática tras el pago — licencias, accesos, descargas — sin que nadie tenga que enviar nada a mano, como en Licentia.",
       },
       {
-        title: "Migración desde otra plataforma",
-        text: "Si ya vendes online y tu tienda se ha quedado pequeña o es imposible de mantener, migramos catálogo, clientes y pedidos conservando URLs y posicionamiento.",
+        title: "Pagos y checkout",
+        text: "Pasarela de pago integrada y un proceso de compra corto, pensado para el móvil. En Fang Tours cobramos con Stripe; si tu banco te ofrece su propia pasarela, valoramos cuál te conviene.",
       },
       {
-        title: "SEO técnico de serie",
-        text: "Fichas de producto con datos estructurados, sitemap, metadatos y rendimiento cuidado: la base para que Google entienda tu catálogo desde el primer día.",
+        title: "Catálogo que vende",
+        text: "Fotos, textos y datos estructurados de producto para que el cliente entienda qué compra y Google entienda qué vendes.",
       },
     ],
+    casesTitle: "Tiendas que ya venden",
+    cases: [
+      {
+        slug: "canelita",
+        note: "Comercio de Redondela. Tienda Shopify construida alrededor de su identidad, con catálogo y checkout optimizados, que le dio un canal de venta propio más allá del mostrador.",
+      },
+      {
+        slug: "koopey",
+        note: "Marca de moda que se hizo viral a nivel nacional en su lanzamiento, con cobertura en Modaes y El Español. Tienda a medida con React, Node.js y WebSocket.",
+      },
+      {
+        slug: "cliche",
+        note: "Tienda Shopify a medida con un checkout rápido y un catálogo preparado para crecer con la marca.",
+      },
+      {
+        slug: "licentia",
+        note: "Marketplace de licencias de software con entrega automática tras la compra: cero gestión manual por pedido.",
+      },
+    ],
+    sections: [
+      {
+        title: "Shopify o tienda a medida: cómo lo decidimos",
+        paragraphs: [
+          "Shopify gana cuando vendes productos físicos con variantes normales (talla, color), precios fijos y envíos estándar. Pagas una cuota mensual a la plataforma, pero a cambio no mantienes servidores y tienes un ecosistema enorme de aplicaciones.",
+          "El desarrollo a medida gana cuando el modelo de venta no encaja en ese molde: precios por cliente o por volumen, productos configurables, venta de accesos digitales, lanzamientos con mucha gente comprando a la vez o una experiencia de marca que la plantilla limita. Cuesta más al principio y, a cambio, no dependes de lo que la plataforma permita.",
+          "Existe un punto intermedio: Shopify como motor de pedidos y pagos con un frontal propio encima. Lo valoramos cuando la marca pide más de lo que un tema permite, pero la operativa es estándar.",
+        ],
+      },
+      {
+        title: "De qué depende el precio de una tienda online",
+        paragraphs: [
+          "Las variables que más pesan son la plataforma (Shopify o desarrollo propio), el número de productos y variantes, si hay que migrar un catálogo existente, las integraciones con tu programa de gestión o tu operador logístico y cuánto diseño a medida necesita la marca.",
+          "Ten en cuenta también los costes recurrentes, que no son nuestros pero existen: la cuota de Shopify y sus aplicaciones, las comisiones de la pasarela de pago y el alojamiento si la tienda es propia. Te los ponemos por escrito en la propuesta para que compares con datos.",
+        ],
+      },
+    ],
+    processTitle: "Cómo abrimos una tienda",
     process: [
       {
-        title: "1. Análisis",
-        text: "Catálogo, canales de venta, sistemas existentes y objetivos. Salimos con la plataforma recomendada y un presupuesto cerrado.",
+        title: "1. Catálogo y operativa",
+        text: "Qué vendes, cómo lo envías y cómo gestionas el stock hoy. De ahí sale la plataforma recomendada.",
       },
       {
-        title: "2. Diseño",
-        text: "Prototipo navegable de la tienda — home, categoría, ficha y compra — que validas antes de programar.",
+        title: "2. Diseño de tienda",
+        text: "Home, categoría, ficha de producto y proceso de compra, prototipados y validados en el móvil.",
       },
       {
-        title: "3. Desarrollo e integración",
-        text: "Construcción, pasarelas de pago y conexión con tu ERP, con entregas parciales que puedes probar.",
+        title: "3. Montaje y carga",
+        text: "Desarrollo, pasarela de pago, envíos, impuestos y carga o migración del catálogo.",
       },
       {
-        title: "4. Lanzamiento y soporte",
-        text: "Publicación, pruebas de pedidos reales y mantenimiento posterior: actualizaciones, mejoras y soporte directo.",
+        title: "4. Pedidos reales",
+        text: "Pruebas de compra de punta a punta antes de abrir y acompañamiento en las primeras semanas de venta.",
       },
     ],
-    proof:
-      "Trabajamos con negocios de hostelería, salud, formación, ocio e industria de Vigo y su área, y montamos las integraciones que hagan falta entre la web y los sistemas de cada uno. Nuestra ficha de Google tiene 20 reseñas con 5,0 de media.",
+    proof: {
+      text: "La tienda es solo la mitad; la otra mitad es cómo te acompañan mientras la montas. Así lo cuentan dos clientes en Google:",
+      testimonials: ["nabi-nabi", "katherine-tovar"],
+    },
     faqs: [
       {
-        q: "¿Cuánto cuesta una tienda online en Vigo?",
-        a: "Depende de la plataforma, el tamaño del catálogo y las integraciones: una tienda sobre Shopify y un ecommerce a medida conectado a un ERP no juegan en la misma liga. Cuéntanos qué vendes y cómo, y en 24 horas te enviamos un presupuesto cerrado y sin compromiso.",
+        q: "¿Qué retrasa más la apertura de una tienda online?",
+        a: "Casi nunca la parte técnica: el contenido. Fotos, descripciones, precios y variantes de cada producto. Planificamos la tienda por fases con fechas en la propuesta y trabajamos el catálogo en paralelo desde el primer día.",
       },
       {
-        q: "¿Shopify o una tienda a medida?",
-        a: "Shopify es la mejor opción cuando el catálogo y el proceso de venta son estándar: sales antes y con menos coste. A medida compensa cuando necesitas reglas de precios propias, integraciones profundas o una experiencia de compra diferencial. Te lo evaluamos en la primera reunión, y si Shopify basta, te lo diremos.",
+        q: "¿Puedo vender en la tienda física y online con el mismo stock?",
+        a: "Sí. Shopify tiene punto de venta propio que comparte inventario con la tienda online, y si usas otro programa de gestión estudiamos cómo sincronizarlo para no vender lo que no tienes.",
       },
       {
-        q: "¿Cuánto tarda en estar online?",
-        a: "Un ecommerce suele estar en producción entre 1 y 3 meses, según catálogo e integraciones. En la fase de análisis te damos un calendario con hitos verificables.",
+        q: "Ya vendo por Instagram. ¿Para qué quiero una tienda?",
+        a: "Porque en redes el cliente pregunta por mensaje, espera respuesta y a menudo se enfría. Una tienda propia cobra sola a cualquier hora y te deja los datos de tus clientes. Koopey dio ese paso para no depender solo de las redes sociales.",
       },
       {
-        q: "¿Podéis conectar la tienda con mi ERP o mi sistema de gestión?",
-        a: "Sí. Desarrollamos sincronizadores de stock, pedidos y facturación entre la tienda y tu sistema, incluso cuando no hay conector oficial.",
+        q: "¿Podéis migrar mi tienda actual sin perder posicionamiento?",
+        a: "Sí. Migramos productos, clientes y pedidos, y redirigimos cada URL antigua de producto y categoría a la nueva para que Google no pierda el rastro.",
       },
       {
-        q: "Ya tengo tienda online. ¿Podéis migrarla?",
-        a: "Sí. Migramos catálogo, clientes y pedidos a una plataforma moderna conservando URLs y posicionamiento, para que el cambio no te cueste ventas.",
+        q: "¿Me enseñáis a gestionar la tienda?",
+        a: "Sí. Al entregarla te enseñamos a dar de alta productos, gestionar pedidos y devoluciones y consultar las ventas, que es lo que tu equipo hará cada día.",
       },
     ],
+    cta: {
+      title: "¿Qué quieres vender online?",
+      text: "Cuéntanos tu catálogo y cómo vendes hoy, y te diremos si te conviene Shopify o una tienda a medida, con los costes de cada opción por escrito.",
+    },
     related: [
-      { slug: "desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
-      { slug: "diseno-web-vigo", label: "Diseño web en Vigo" },
-      { slug: "desarrollo-web-pontevedra", label: "Desarrollo web en Pontevedra" },
+      { slug: "desarrollo-web-redondela", label: "Webs y tiendas para el comercio de Redondela" },
+      { slug: "diseno-web-vigo", label: "Diseño de marca y web en Vigo" },
+      { slug: "software-a-medida-vigo", label: "Integraciones y software a medida en Vigo" },
     ],
+    hubSummary:
+      "Shopify o ecommerce a medida, con pagos y catálogo cuidado. Casos: Canelita (Redondela), Cliché, Koopey y Licentia.",
   },
+
+  // ───────────────────────────────────────────────────────────────────
+  {
+    slug: "software-a-medida-vigo",
+    group: "servicio",
+    serviceName: "Software a medida en Vigo",
+    serviceType: "Desarrollo de software a medida",
+    areaServed: [
+      { name: "Vigo", type: "City" },
+      { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
+      { name: "Galicia", type: "AdministrativeArea" },
+    ],
+    title: "Software a Medida en Vigo | ERP, Paneles e Integraciones",
+    metaDescription:
+      "Empresa de desarrollo de software a medida en Vigo: ERP, control horario, paneles internos e integraciones para pymes gallegas. Caso: Autoescuela GTI.",
+    h1: "Software a medida en Vigo",
+    intro: [
+      "Desarrollamos software a medida para empresas de Vigo y de Galicia: ERPs, paneles de gestión internos, control horario, portales para clientes y proveedores e integraciones entre los programas que ya usas. Programación a medida para procesos que ningún software estándar resuelve bien.",
+      "Somos una empresa de desarrollo de software con oficina en la Rúa Colón de Vigo. No vendemos licencias ni adaptamos un producto enlatado: escribimos el software alrededor de cómo trabaja tu empresa y después lo mantenemos.",
+    ],
+    localContext: {
+      title: "El software que necesita el tejido de Vigo",
+      paragraphs: [
+        "El área de Vigo concentra una parte enorme de la industria gallega: la automoción alrededor de la planta de Stellantis en Balaídos y sus proveedores, la transformación del mar y las conserveras, los astilleros, el granito de O Porriño y una red logística que gira en torno al puerto y a los polígonos de la Zona Franca. Son empresas con procesos muy específicos y, a menudo, con sistemas que no se hablan entre sí.",
+        "El patrón se repite: un ERP de mercado que cubre la contabilidad y la facturación y, alrededor, un mar de hojas de Excel, partes en papel y correos para todo lo demás — turnos, fichajes, incidencias, trazabilidad, pedidos de clientes profesionales. El software a medida no sustituye necesariamente a ese ERP; muchas veces lo rodea y lo alimenta.",
+        "También trabajamos con empresas de servicios — formación, náutica, clubes — que han crecido hasta el punto de que la gestión les come el día. Autoescuela GTI es un buen ejemplo: necesitaba un ERP propio porque ningún programa genérico entendía cómo se organizan sus prácticas, sus exámenes y su flota.",
+      ],
+    },
+    offersTitle: "Qué software desarrollamos",
+    offers: [
+      {
+        title: "ERP y software de gestión",
+        text: "Módulos a medida para lo que tu negocio hace distinto: matrículas, flota, producción, pedidos, turnos. Con roles y permisos para cada perfil de la empresa.",
+      },
+      {
+        title: "Control horario y partes de trabajo",
+        text: "Fichaje digital y registro de jornada con un panel en tiempo real para dirección, en lugar de hojas en papel. Es el caso de Timetracker.",
+      },
+      {
+        title: "Paneles internos y portales",
+        text: "Paneles de administración, cuadros de mando y portales para clientes o proveedores con acceso por usuario.",
+      },
+      {
+        title: "Integraciones y middleware",
+        text: "Conectamos tu web, tu tienda o tu app con el software que ya tienes para que los datos viajen solos. En Nautirent, la web lee la disponibilidad de la flota del programa interno.",
+      },
+      {
+        title: "Automatización de procesos",
+        text: "Tareas repetitivas que hoy hace una persona — enviar una licencia tras un pago, avisar a un cliente, generar un informe — convertidas en procesos automáticos, como en Licentia.",
+      },
+    ],
+    casesTitle: "Software a medida en producción",
+    cases: [
+      {
+        slug: "autoescuela-gti",
+        note: "ERP para secretaría con registro de prácticas y exámenes por parte del profesorado, gestión de la flota de coches y app móvil para alumnos. Multiplicó por 10 los trámites resueltos sin pasar por secretaría.",
+      },
+      {
+        slug: "timetracker",
+        note: "Software a medida para una pyme industrial: fichaje y control horario digital, con panel de gestión en tiempo real y adiós al registro en papel. Hecho con React y Node.js.",
+      },
+      {
+        slug: "nautirent",
+        note: "Integración entre la web de reservas y el software interno de gestión de la flota, con disponibilidad de las embarcaciones en tiempo real.",
+      },
+      {
+        slug: "pro-lift-formacion",
+        note: "Aplicación de escritorio para vender cursos propios, con bloqueo de grabación de pantalla y capturas y acceso solo para quien ha pagado.",
+      },
+    ],
+    sections: [
+      {
+        title: "Software a medida o software estándar",
+        paragraphs: [
+          "La pregunta honesta no es cuál es mejor, sino qué parte de tu negocio es diferente. Para contabilidad, nóminas o facturación hay programas estándar excelentes y sería absurdo reinventarlos. El software a medida compensa en la parte que te distingue o que ningún producto resuelve bien: tu forma de planificar, de producir, de atender o de medir.",
+          "Por eso muchas soluciones a medida conviven con un ERP de mercado: cubren el hueco y se integran con él, en lugar de sustituirlo todo de golpe. Es más barato, más rápido de poner en marcha y menos arriesgado.",
+        ],
+      },
+      {
+        title: "Cómo evitamos los proyectos que no se acaban nunca",
+        paragraphs: [
+          "El riesgo clásico del software a medida es el proyecto eterno: el alcance crece, las fechas se mueven y nadie sabe qué queda. Lo evitamos dividiendo el sistema en módulos que entran en uso por separado. El primero resuelve el problema que más duele y se usa de verdad; los siguientes se diseñan con lo aprendido.",
+          "Además, trabajamos con los usuarios reales, no solo con dirección. Quien ficha, quien rellena el parte o quien atiende el mostrador es quien decide si una herramienta se adopta o se abandona, así que prueban el sistema desde las primeras entregas.",
+          "Y dejamos por escrito el modelo de datos, las integraciones y las decisiones técnicas importantes, para que el sistema no dependa de la memoria de nadie.",
+        ],
+      },
+    ],
+    processTitle: "Cómo desarrollamos software a medida",
+    process: [
+      {
+        title: "1. Mapa del proceso",
+        text: "Hablamos con quienes hacen el trabajo y dibujamos el proceso actual, con sus atajos y sus Excel.",
+      },
+      {
+        title: "2. Alcance por módulos",
+        text: "Priorizamos qué se construye primero y te damos una propuesta cerrada por módulo.",
+      },
+      {
+        title: "3. Desarrollo con usuarios",
+        text: "Entregas periódicas en un entorno de pruebas que usan las personas que luego trabajarán con el sistema.",
+      },
+      {
+        title: "4. Puesta en marcha",
+        text: "Migración de datos, formación del equipo, arranque acompañado y mantenimiento evolutivo.",
+      },
+    ],
+    proof: {
+      text: "Las integraciones y el software interno no se ven desde fuera, pero se notan en el día a día. Esto dicen en Google dos clientes, uno de ellos de Nautirent:",
+      testimonials: ["samuel-flores", "julio-walker"],
+    },
+    faqs: [
+      {
+        q: "¿Qué diferencia hay entre software a medida y programación a medida?",
+        a: "En la práctica, ninguna: los dos términos describen software escrito específicamente para tu empresa, en lugar de un producto genérico al que te adaptas tú. También es programación a medida una integración o una automatización, aunque no tenga pantallas.",
+      },
+      {
+        q: "¿Podéis conectar mi ERP actual con la web o con una app?",
+        a: "Normalmente sí. Depende de cómo exponga los datos tu ERP: una API, una base de datos accesible o exportaciones periódicas. Lo revisamos al principio y te decimos qué es viable antes de comprometer nada.",
+      },
+      {
+        q: "¿Qué pasa con los datos que ya tengo en Excel u otro programa?",
+        a: "Los migramos. Parte del trabajo es limpiar y ordenar esos datos antes de cargarlos, porque un sistema nuevo con datos viejos desordenados arrastra los mismos problemas.",
+      },
+      {
+        q: "¿El software funciona también en el móvil?",
+        a: "Sí. Las pantallas de uso diario — fichar, registrar una práctica, consultar un pedido — se diseñan para el móvil, y si hace falta una app en las tiendas la desarrollamos también, como la app de alumnos de Autoescuela GTI.",
+      },
+      {
+        q: "¿Quién mantiene el software cuando esté terminado?",
+        a: "Nosotros, si quieres. El software a medida necesita mantenimiento: actualizaciones de seguridad, cambios normativos y mejoras que salen del uso. Lo planteamos en la propuesta para que no sea una sorpresa.",
+      },
+      {
+        q: "¿Cómo se presupuesta un software a medida?",
+        a: "Por módulos. Tras entender el proceso, estimamos cada módulo por separado con lo que incluye y lo que no, para que decidas por dónde empezar y cuánto invertir en cada fase.",
+      },
+    ],
+    cta: {
+      title: "¿Qué proceso de tu empresa sigue en Excel?",
+      text: "Cuéntanoslo. Te diremos si tiene sentido un software a medida, una integración o simplemente un programa estándar bien configurado.",
+    },
+    related: [
+      { slug: "desarrollo-de-aplicaciones-vigo", label: "Apps móviles para empresas de Vigo" },
+      { slug: "tienda-online-vigo", label: "Tiendas online conectadas a tu gestión" },
+      {
+        slug: "desarrollo-de-aplicaciones-galicia",
+        label: "Desarrollo de producto digital en Galicia",
+      },
+    ],
+    hubSummary:
+      "ERP, control horario, paneles internos e integraciones para pymes. Casos: Autoescuela GTI, Timetracker y Nautirent.",
+  },
+
+  // ───────────────────────────────────────────────────────────────────
+  {
+    slug: "desarrollo-de-aplicaciones-pontevedra",
+    group: "zona",
+    serviceName: "Desarrollo de aplicaciones en Pontevedra",
+    serviceType: "Desarrollo de aplicaciones móviles",
+    areaServed: [
+      { name: "Pontevedra", type: "City" },
+      { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
+      { name: "Rías Baixas", type: "Place" },
+    ],
+    title: "Desarrollo de Aplicaciones en Pontevedra | Apps a Medida",
+    metaDescription:
+      "Apps móviles y web para empresas de Pontevedra y las Rías Baixas: reservas, socios, turismo y gestión interna. Equipo en Vigo, a media hora de la capital.",
+    h1: "Desarrollo de aplicaciones en Pontevedra",
+    intro: [
+      "Desarrollamos aplicaciones móviles y web para empresas de la provincia de Pontevedra: la capital, Marín, Sanxenxo, O Grove, Cambados, Vilagarcía de Arousa, O Porriño, Ponteareas, Lalín o cualquier punto de las Rías Baixas.",
+      "Nuestra oficina está en Vigo, a una media hora de Pontevedra capital, y la sociedad que hay detrás de Action, Alcasi Systems, S.L., tiene su domicilio social en Marín. Somos de aquí, y eso se nota en algo práctico: podemos sentarnos contigo cuando el proyecto lo pide sin que el desplazamiento sea una partida del presupuesto.",
+    ],
+    localContext: {
+      title: "Qué apps necesita la provincia",
+      paragraphs: [
+        "La economía de la provincia de Pontevedra tiene dos ritmos. El de la costa, marcado por el turismo de las Rías Baixas, el mar y la hostelería, donde la temporada alta concentra buena parte del año en pocos meses. Y el de la capital y el interior, con industria, servicios, comercio y un peso importante de la administración: Pontevedra es capital provincial y sede de la Diputación.",
+        "Cada ritmo pide apps distintas. En la costa, reservas y disponibilidad en tiempo real para quien alquila embarcaciones, organiza excursiones o gestiona alojamientos, porque en agosto nadie tiene tiempo de contestar el teléfono. En la capital y el interior, herramientas de gestión: socios de un club, alumnos de una academia, citas de una clínica, partes de trabajo de una empresa de servicios.",
+        "Tenemos casos reales en los dos lados: un club deportivo de O Porriño que gestiona inscripciones y pagos de las familias desde su plataforma, y proyectos de náutica y turismo con reservas conectadas a la disponibilidad real.",
+      ],
+    },
+    offersTitle: "Apps para empresas de la provincia",
+    offers: [
+      {
+        title: "Reservas y disponibilidad",
+        text: "Para náutica, turismo y hostelería: calendario, pago anticipado y disponibilidad que se actualiza sola, sin comisiones de intermediarios.",
+      },
+      {
+        title: "Gestión de socios y cuotas",
+        text: "Clubes, asociaciones y academias: altas, cuotas, perfiles familiares y comunicación con los socios desde el móvil.",
+      },
+      {
+        title: "Herramientas internas",
+        text: "Apps para el equipo — partes, fichajes, inventario — conectadas al panel de la oficina y, si existe, a tu ERP.",
+      },
+      {
+        title: "Asistentes con IA",
+        text: "Cuando tiene sentido, integramos un asistente de IA que responde dudas frecuentes dentro de la propia app, como en la plataforma de Kairos Futures.",
+      },
+    ],
+    casesTitle: "Casos con los que se puede comparar",
+    cases: [
+      {
+        slug: "pbb-porrino",
+        note: "Club de baloncesto base de O Porriño. Cuentas diferenciadas para padres y deportistas, gestión de los hijos desde el perfil familiar e inscripción con pago online.",
+      },
+      {
+        slug: "nautirent",
+        note: "Náutica: reservas de embarcaciones desde la web con la disponibilidad real de la flota, sin llamadas ni intermediarios.",
+      },
+      {
+        slug: "fang-tours",
+        note: "Turismo: calendario de disponibilidad, pago online y panel propio para gestionar las excursiones en tiempo real.",
+      },
+      {
+        slug: "kairos-futures",
+        note: "Plataforma de cursos con asistente de IA integrado para resolver las dudas de los alumnos sin saturar al equipo.",
+      },
+    ],
+    sections: [
+      {
+        title: "Apps para negocios de temporada",
+        paragraphs: [
+          "Un negocio que factura en tres meses lo que otros en doce no puede permitirse que su sistema de reservas falle en julio. Por eso en proyectos de turismo y náutica diseñamos primero para el pico: qué pasa cuando llegan muchas reservas a la vez, cómo se evita la doble reserva y qué ve el cliente si algo no está disponible.",
+          "Y pensamos también en el resto del año: una app que en invierno sirve para fidelizar, vender bonos o comunicar novedades justifica mejor su coste que una que solo se abre en agosto.",
+        ],
+      },
+      {
+        title: "Antes de encargar una app, tres preguntas",
+        paragraphs: [
+          "¿Quién la va a usar y cuántas veces? Una app que tu cliente abre una vez al año quizá deba ser una web. ¿Qué proceso sustituye? Si no reemplaza nada que hoy se haga a mano, es difícil que se use. ¿Quién la mantendrá viva? Una app sin contenidos ni actualizaciones se abandona en meses.",
+          "Si tienes respuesta para las tres, hablemos. Si no, la primera reunión sirve precisamente para encontrarlas.",
+        ],
+      },
+    ],
+    processTitle: "Cómo trabajamos con la provincia",
+    process: [
+      {
+        title: "1. Primera reunión",
+        text: "Por videollamada o en persona, en Vigo o en tus instalaciones, para entender el negocio.",
+      },
+      {
+        title: "2. Alcance y propuesta",
+        text: "Definimos la primera versión, los usuarios y las integraciones, y te enviamos una propuesta cerrada.",
+      },
+      {
+        title: "3. Desarrollo con demos",
+        text: "Avances visibles en tu propio móvil y reuniones de seguimiento periódicas, la mayoría en remoto.",
+      },
+      {
+        title: "4. Lanzamiento",
+        text: "Publicación en tiendas o en la web, acompañamiento en los primeros usos reales y mantenimiento.",
+      },
+    ],
+    proof: {
+      text: "Dos reseñas de Google que hablan de lo que más preocupa al encargar una app: los plazos y el trato.",
+      testimonials: ["pablo-r", "odiseo"],
+    },
+    faqs: [
+      {
+        q: "¿Os desplazáis a Pontevedra, Sanxenxo o Vilagarcía?",
+        a: "Sí, para las reuniones que lo merecen: el arranque del proyecto, la validación del prototipo y la entrega. El resto avanza en remoto, con demos y versiones de prueba, para que no pagues desplazamientos innecesarios.",
+      },
+      {
+        q: "Tengo un negocio de temporada. ¿Me compensa una app?",
+        a: "Depende de cuánto trabajo te quite en temporada alta. Si hoy pierdes reservas por no contestar a tiempo o haces a mano lo que podría hacerse solo, suele compensar. Si tu cliente te encuentra una vez y no vuelve, quizá te baste una web con reservas; te lo diremos.",
+      },
+      {
+        q: "¿La app puede estar en gallego y en otros idiomas?",
+        a: "Sí. Podemos preparar la app en gallego, castellano, inglés o portugués — pensando en el visitante del norte de Portugal — desde el diseño, que es cuando menos cuesta.",
+      },
+      {
+        q: "¿Podéis contratar con organismos públicos?",
+        a: "Sí. Action es la marca comercial de Alcasi Systems, S.L. (CIF B72910664), inscrita en el Registro Mercantil de Pontevedra, y nuestras condiciones de contratación contemplan el sector público. Los datos registrales están en el aviso legal.",
+      },
+      {
+        q: "Ya tengo una app que no funciona bien. ¿Qué hacemos?",
+        a: "La auditamos: revisamos el código, la arquitectura y las opiniones de los usuarios, y te decimos con franqueza si compensa arreglarla o rehacerla, con el coste de cada opción.",
+      },
+    ],
+    cta: {
+      title: "¿Tu negocio de la provincia necesita una app?",
+      text: "Cuéntanos dónde estás y qué quieres resolver. Te respondemos en 24 horas y, si hace falta, nos vemos en persona.",
+    },
+    related: [
+      { slug: "desarrollo-web-pontevedra", label: "Páginas web a medida en Pontevedra" },
+      { slug: "desarrollo-de-aplicaciones-vigo", label: "Desarrollo de apps desde nuestra oficina de Vigo" },
+      { slug: "software-a-medida-vigo", label: "Software de gestión a medida" },
+    ],
+    hubSummary:
+      "Apps de reservas, socios y gestión para la capital y las Rías Baixas, con casos de náutica, turismo y el club PBB de O Porriño.",
+  },
+
+  // ───────────────────────────────────────────────────────────────────
+  {
+    slug: "desarrollo-web-pontevedra",
+    group: "zona",
+    serviceName: "Desarrollo y diseño web en Pontevedra",
+    serviceType: "Diseño y desarrollo web",
+    areaServed: [
+      { name: "Pontevedra", type: "City" },
+      { name: "Redondela", type: "City" },
+      { name: "O Porriño", type: "City" },
+      { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
+    ],
+    title: "Desarrollo y Diseño Web en Pontevedra | Webs a Medida",
+    metaDescription:
+      "Diseño y desarrollo de páginas web a medida en Pontevedra y las Rías Baixas: hostelería, eventos, clubes y comercio. Casos en Redondela y O Porriño. ★ 5,0",
+    h1: "Desarrollo y diseño web en Pontevedra",
+    intro: [
+      "Diseñamos y desarrollamos páginas web a medida para negocios de la provincia de Pontevedra. El mismo equipo hace las dos cosas, la dirección de arte y la programación, así que lo que apruebas en el diseño es exactamente lo que se publica.",
+      "Nuestra oficina está en Vigo, pero buena parte de los clientes con web publicada que puedes visitar están en la provincia: en Redondela, un café, una sala de eventos y un comercio; en O Porriño, un club deportivo. Conocemos el tipo de negocio que hay aquí porque trabajamos para él.",
+    ],
+    localContext: {
+      title: "Webs para la economía de las Rías Baixas",
+      paragraphs: [
+        "Pontevedra capital tiene uno de los centros urbanos peatonales más conocidos de España, y eso ha hecho del comercio y la hostelería del casco histórico una parte esencial de su vida económica. Alrededor, la provincia vive del turismo de Sanxenxo, O Grove o Cambados, del vino de la D.O. Rías Baixas, del mar y de una industria que se concentra sobre todo en el área de Vigo y O Porriño.",
+        "Para muchos de esos negocios la web es el primer contacto con un cliente que aún no los conoce: el turista que busca dónde cenar en Sanxenxo, la familia que busca club para sus hijos, la empresa que busca proveedor. Si la web no responde en segundos a qué haces, dónde estás y cómo reservar o contactar, ese cliente pasa a la siguiente opción del mapa.",
+        "Por eso diseñamos cada web alrededor de una acción concreta — reservar, comprar una entrada, inscribirse, pedir presupuesto — y cuidamos lo que más pesa en una búsqueda local: ficha de Google coherente con la web, dirección y horario claros y páginas que carguen rápido con la cobertura móvil que haya.",
+      ],
+    },
+    offersTitle: "Qué hacemos para negocios de la provincia",
+    offers: [
+      {
+        title: "Diseño con identidad propia",
+        text: "Tipografía, color y fotografía al servicio de tu marca, con una propuesta visual antes de maquetar. Sin plantillas compartidas con tu competencia.",
+      },
+      {
+        title: "Webs de hostelería y ocio",
+        text: "Carta editable, reservas y venta de entradas desde tu propia web, sin comisiones de plataformas intermediarias.",
+      },
+      {
+        title: "Webs para clubes y asociaciones",
+        text: "Inscripciones, cuotas y perfiles de socio integrados en la web, con cobro online.",
+      },
+      {
+        title: "Webs corporativas y B2B",
+        text: "Para industria y servicios: estructura por líneas de negocio, casos y un contacto que llega a quien debe.",
+      },
+      {
+        title: "Rediseño conservando posicionamiento",
+        text: "Si tu web tiene años, la renovamos sin perder el dominio ni las URLs que ya te traen visitas.",
+      },
+    ],
+    casesTitle: "Clientes de la provincia",
+    cases: [
+      {
+        slug: "samoa",
+        note: "Café de Redondela. Identidad de marca desde cero y web con carta editable que cambia sola entre versión de día y de noche.",
+      },
+      {
+        slug: "ticketera-la-fabrica",
+        note: "Recinto de ocio y eventos de Redondela. Venta de entradas online con perfil de usuario e historial, y gestión del aforo en tiempo real.",
+      },
+      {
+        slug: "pbb-porrino",
+        note: "Club de baloncesto de O Porriño. Web con inscripción y pago online, cuentas de familia y estrategia de SEO local.",
+      },
+    ],
+    sections: [
+      {
+        title: "Diseño y desarrollo, un mismo proyecto",
+        paragraphs: [
+          "Cuando el diseño lo hace un estudio y la programación otro, lo que se pierde en el traspaso son los detalles: una animación que se simplifica porque no daba tiempo, un espaciado que no cuadra en el móvil, una tipografía sustituida por otra parecida. Aquí no hay traspaso.",
+          "Trabajamos en tres capas que se deciden juntas: la dirección de arte (cómo se ve), la experiencia (cómo se usa y en qué orden aparece la información) y la construcción (cómo carga, cómo la lee Google y cómo la editas tú). Separarlas es la forma más rápida de acabar con una web bonita que no convierte, o con una web eficaz que nadie recuerda.",
+        ],
+      },
+      {
+        title: "Una web para el vecino y para el visitante",
+        paragraphs: [
+          "En la provincia, muchos negocios tienen dos públicos: el vecino, que ya los conoce, y el visitante, que los descubre en el móvil. La web tiene que servir a los dos: al primero, con información práctica siempre actualizada (horario, carta, próximos eventos); al segundo, con una primera impresión que le haga elegirte.",
+          "Si recibes visitantes de fuera, valoramos preparar la web en más de un idioma desde el diseño — castellano, gallego, inglés o portugués, según tu público —, con la configuración técnica para que cada versión posicione por sí misma.",
+        ],
+      },
+    ],
+    processTitle: "Cómo trabajamos con tu negocio",
+    process: [
+      {
+        title: "1. Visita y objetivos",
+        text: "Nos cuentas el negocio — si hace falta, en tu local — y fijamos qué acción debe conseguir la web.",
+      },
+      {
+        title: "2. Propuesta visual",
+        text: "Dirección de arte y prototipo de las páginas clave, en móvil y escritorio.",
+      },
+      {
+        title: "3. Construcción",
+        text: "Desarrollo con Next.js, carga de contenidos y configuración de reservas, pagos o entradas.",
+      },
+      {
+        title: "4. Publicación local",
+        text: "Web publicada, recomendaciones para que tu ficha de Google cuadre con ella y formación para que la actualices.",
+      },
+    ],
+    proof: {
+      text: "Dos clientes que nos confiaron la imagen de su negocio lo resumen así en Google:",
+      testimonials: ["eduardo-castro", "pablo-martinez-lamas"],
+    },
+    faqs: [
+      {
+        q: "¿Atendéis presencialmente en Pontevedra?",
+        a: "Sí. Desde nuestra oficina de Vigo (Rúa Colón, 20) estamos a una media hora de la capital, y vamos a verte para las reuniones clave: arranque, presentación del diseño y entrega.",
+      },
+      {
+        q: "¿Qué diferencia hay entre diseño web y desarrollo web?",
+        a: "El diseño define cómo se ve y cómo se usa la web; el desarrollo la construye en código y decide cómo carga, cómo la indexa Google y cómo la editas. Nosotros hacemos las dos cosas con el mismo equipo, así que no hay matices que se pierdan entre una fase y otra.",
+      },
+      {
+        q: "Mi negocio es pequeño. ¿Una web a medida no es demasiado?",
+        a: "Una web a medida bien enfocada suele rendir más que una plantilla, porque está pensada para convertir visitas en clientes de tu negocio concreto. La dimensionamos a tu tamaño real, sin venderte funciones que no vas a usar.",
+      },
+      {
+        q: "¿Puedo tener carta, reservas o entradas en la web sin pagar comisiones a plataformas?",
+        a: "Sí. En Samoa Café la carta se edita desde la propia web y en La Fábrica las entradas se venden online con perfil de usuario. Solo pagas la comisión de la pasarela de pago, no la de un intermediario.",
+      },
+      {
+        q: "¿Os ocupáis del posicionamiento en Google?",
+        a: "Dejamos resuelto el SEO técnico — títulos, datos estructurados, sitemap, velocidad — y te orientamos en lo que depende de ti: reseñas, ficha de Google Business y contenido. En PBB, la estrategia de SEO local formó parte del proyecto.",
+      },
+    ],
+    cta: {
+      title: "¿Renovamos la web de tu negocio?",
+      text: "Cuéntanos qué haces y dónde estás. Te proponemos una dirección visual y un plan para que la web trabaje para ti.",
+    },
+    related: [
+      { slug: "desarrollo-web-redondela", label: "Diseño web para negocios de Redondela" },
+      {
+        slug: "desarrollo-de-aplicaciones-pontevedra",
+        label: "Apps a medida en la provincia de Pontevedra",
+      },
+      { slug: "diseno-web-vigo", label: "Estudio de diseño web en Vigo" },
+    ],
+    hubSummary:
+      "Diseño y desarrollo web para hostelería, eventos, clubes y comercio de la provincia. Casos en Redondela y O Porriño.",
+  },
+
+  // ───────────────────────────────────────────────────────────────────
+  {
+    slug: "desarrollo-web-redondela",
+    group: "zona",
+    serviceName: "Diseño y desarrollo web en Redondela",
+    serviceType: "Diseño y desarrollo web",
+    areaServed: [
+      { name: "Redondela", type: "City" },
+      { name: "Chapela", type: "Place" },
+      { name: "Cesantes", type: "Place" },
+      { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
+    ],
+    title: "Páginas Web en Redondela | Diseño y Desarrollo Web",
+    metaDescription:
+      "Páginas web y tiendas online para negocios de Redondela, Chapela y Cesantes, a 15 minutos de nuestra oficina de Vigo. Casos: Samoa, La Fábrica y Canelita.",
+    h1: "Diseño y desarrollo web en Redondela",
+    intro: [
+      "Hacemos páginas web y tiendas online para negocios de Redondela. No es una página de ciudad más: Redondela es uno de los municipios donde más clientes tenemos. Samoa Café, la sala La Fábrica y la tienda Canelita tienen su web hecha por nosotros.",
+      "Estamos en Vigo, en la Rúa Colón, a unos quince minutos en coche del centro de Redondela. Lo bastante cerca para pasarnos por tu local a ver cómo trabajas, que es la mejor forma de entender qué necesita tu web.",
+    ],
+    localContext: {
+      title: "Redondela, Chapela, Cesantes",
+      paragraphs: [
+        "Redondela es la villa de los viaductos, el punto donde el Camino Portugués por la costa se une al camino central y un municipio que mira a la ensenada de San Simón. Tiene un centro con comercio y hostelería de toda la vida, parroquias como Chapela o Cesantes con vida propia, playa y un paso constante de peregrinos y visitantes camino de Santiago.",
+        "Eso dibuja dos tipos de cliente para un negocio local: el vecino, que conoce tu local pero quiere saber el horario, la carta del día o el próximo evento; y el que está de paso — peregrino, excursionista, gente de Vigo que viene a cenar o a un concierto — que te descubre en el móvil y decide en un minuto.",
+        "Una web pensada para Redondela tiene que servir a los dos: información práctica siempre al día para el primero y una primera impresión que convenza al segundo. Y tiene que aparecer cuando alguien busca en Google lo que ofreces en Redondela, que es donde se decide buena parte de las visitas.",
+      ],
+    },
+    offersTitle: "Qué hacemos para negocios de Redondela",
+    offers: [
+      {
+        title: "Webs para hostelería",
+        text: "Carta editable desde el móvil, horarios, reservas y fotos que hacen justicia al local. Como la carta de día y de noche de Samoa Café.",
+      },
+      {
+        title: "Venta de entradas y eventos",
+        text: "Entradas online con perfil de cliente y control de aforo en tiempo real, sin depender de una ticketera externa. Lo que hicimos para La Fábrica.",
+      },
+      {
+        title: "Tiendas online para el comercio local",
+        text: "Una tienda Shopify que vende también cuando el local está cerrado, como la de Canelita.",
+      },
+      {
+        title: "Presencia local en Google",
+        text: "Web y ficha de Google Business coherentes, con dirección, horario y datos estructurados, para aparecer en las búsquedas de la zona.",
+      },
+    ],
+    casesTitle: "Tres negocios de Redondela",
+    cases: [
+      {
+        slug: "samoa",
+        note: "Café lanzado desde cero con nosotros: naming, logo, diseño de carta y web. La carta se edita desde la propia web y cambia sola entre la versión de día y la de noche.",
+      },
+      {
+        slug: "ticketera-la-fabrica",
+        note: "La Fábrica vende las entradas de sus eventos desde su web, con historial en el perfil de cada cliente y aforo gestionado en tiempo real. La venta online sustituyó a la taquilla como canal principal.",
+      },
+      {
+        slug: "canelita",
+        note: "Comercio con tienda Shopify construida alrededor de su marca, que le dio un canal de venta propio más allá de la venta presencial.",
+      },
+    ],
+    sections: [
+      {
+        title: "Por qué una web a medida para un negocio de villa",
+        paragraphs: [
+          "Es razonable pensar que un café, una tienda o una sala de conciertos de Redondela no necesita una web a medida. Pero los tres casos de esta página tenían problemas muy concretos que una plantilla no resolvía: una carta que cambia según la hora, entradas que se vendían en taquilla con colas, ventas que dependían de que el cliente cruzase la puerta.",
+          "La web a medida no es un lujo cuando cada función que añade te ahorra trabajo todas las semanas. Y la dimensionamos al tamaño del negocio: una web de hostelería no necesita lo mismo que una ticketera, y no te vamos a vender lo que no vas a usar.",
+        ],
+      },
+      {
+        title: "Cerca de verdad",
+        paragraphs: [
+          "Trabajar con un estudio a quince minutos tiene ventajas prácticas: podemos reunirnos en tu local, ver cómo atiendes y detectar qué preguntas te hacen los clientes una y otra vez, que son justo las que la web debería responder.",
+          "Y cuando la web ya está publicada, un cambio urgente — un evento nuevo, el horario de festivos, una carta especial — se pide con un mensaje de WhatsApp a las mismas personas que la construyeron.",
+        ],
+      },
+    ],
+    processTitle: "Cómo lo hacemos",
+    process: [
+      {
+        title: "1. Café en tu local",
+        text: "Nos pasamos por Redondela, vemos el negocio y hablamos de lo que tiene que hacer la web.",
+      },
+      {
+        title: "2. Propuesta a tu medida",
+        text: "Alcance y presupuesto cerrados, dimensionados a lo que de verdad vas a usar.",
+      },
+      {
+        title: "3. Diseño y construcción",
+        text: "Prototipo en tu móvil y, después, contenidos, carta, entradas o tienda configurados.",
+      },
+      {
+        title: "4. Publicación",
+        text: "Web online, datos coherentes con tu ficha de Google y formación para que la actualices tú.",
+      },
+    ],
+    proof: {
+      text: "La reseña que nos dejó en Google un cliente con local en Redondela, y otra más de las que tenemos en nuestra ficha:",
+      testimonials: ["carlos-alonso", "nuria-balaguer"],
+    },
+    faqs: [
+      {
+        q: "¿Cuánto tardáis en venir a Redondela?",
+        a: "Desde Rúa Colón, unos quince minutos en coche. Por eso, si lo prefieres, las reuniones importantes las hacemos en tu local.",
+      },
+      {
+        q: "¿Hacéis webs también para negocios de Chapela, Cesantes o Soutomaior?",
+        a: "Sí. Chapela y Cesantes son parte de Redondela, y los municipios vecinos como Soutomaior o Pazos de Borbén quedan igual de cerca de nuestra oficina.",
+      },
+      {
+        q: "Tengo un bar o restaurante. ¿Qué debería tener mi web?",
+        a: "Lo imprescindible: carta actualizada, horario, cómo llegar y cómo reservar, visibles sin buscar. Lo que marca la diferencia: fotos reales del local y un sistema para cambiar la carta tú mismo en un minuto, como en Samoa Café.",
+      },
+      {
+        q: "¿Puedo vender entradas para mis eventos desde mi web?",
+        a: "Sí. La Fábrica lo hace así: venta online con perfil de cliente, historial de entradas y control de aforo en tiempo real. No dependes de una ticketera externa y te quedas con los datos de tu público.",
+      },
+      {
+        q: "¿Me ayudáis a aparecer en Google cuando buscan en Redondela?",
+        a: "Dejamos la web preparada para búsquedas locales — datos de negocio estructurados, dirección y horario coherentes con tu ficha de Google, páginas rápidas — y te explicamos cómo conseguir reseñas y mantener la ficha al día, que es lo que más pesa en el mapa.",
+      },
+    ],
+    cta: {
+      title: "¿Tienes un negocio en Redondela?",
+      text: "Escríbenos y quedamos en tu local. Te contamos qué haríamos con tu web y cuánto costaría, sin compromiso.",
+    },
+    related: [
+      {
+        slug: "desarrollo-web-pontevedra",
+        label: "Diseño y desarrollo web en toda la provincia de Pontevedra",
+      },
+      { slug: "tienda-online-vigo", label: "Tiendas online con Shopify para comercio local" },
+      { slug: "desarrollo-web-vigo", label: "Aplicaciones web y reservas online en Vigo" },
+    ],
+    hubSummary:
+      "Webs, venta de entradas y tiendas online para la hostelería y el comercio de Redondela. Casos: Samoa Café, La Fábrica y Canelita.",
+  },
+
+  // ───────────────────────────────────────────────────────────────────
+  {
+    slug: "desarrollo-de-aplicaciones-galicia",
+    group: "zona",
+    serviceName: "Desarrollo de aplicaciones en Galicia",
+    serviceType: "Desarrollo de aplicaciones y producto digital",
+    areaServed: [
+      { name: "Galicia", type: "AdministrativeArea" },
+      { name: "Vigo", type: "City" },
+      { name: "A Coruña", type: "City" },
+      { name: "Santiago de Compostela", type: "City" },
+      { name: "Ourense", type: "City" },
+      { name: "Lugo", type: "City" },
+    ],
+    title: "Desarrollo de Aplicaciones en Galicia | Apps y Plataformas",
+    metaDescription:
+      "Estudio gallego de desarrollo de aplicaciones: apps iOS y Android, plataformas de formación y apps de escritorio. Casos como XauLabs, Kairos y PRO Lift.",
+    h1: "Desarrollo de aplicaciones en Galicia",
+    intro: [
+      "Action es un estudio de desarrollo de aplicaciones con sede en Vigo que trabaja para empresas y emprendedores de toda Galicia. Construimos producto digital completo: la app que usan tus clientes, el panel desde el que tu equipo la gestiona y el backend que conecta ambas cosas.",
+      "Una parte importante de nuestro trabajo son productos digitales en sí mismos — plataformas de formación, comunidades, herramientas — donde la app no es un complemento del negocio sino el negocio. Ahí es donde más se nota trabajar con un equipo que piensa en producto y no solo en pantallas.",
+    ],
+    localContext: {
+      title: "Producto digital hecho en Galicia",
+      paragraphs: [
+        "Galicia tiene un tejido empresarial repartido entre sus siete ciudades y una red densa de villas: el textil y la distribución en el área de A Coruña, la administración autonómica y la universidad en Santiago, la industria y el puerto en Vigo, el sector agroalimentario en Lugo y Ourense. Y en todas partes, cada vez más proyectos nacen digitales desde el primer día: academias online, comunidades de pago, marketplaces, servicios por suscripción.",
+        "Para esos proyectos, tener al equipo técnico en la misma comunidad — mismo horario, mismo contexto, la posibilidad de verse cuando hace falta — es más útil de lo que parece. Las decisiones de producto se toman mejor en una conversación que en un hilo de correos con una agencia a mil kilómetros.",
+        "Trabajamos en remoto con clientes de toda Galicia y nos desplazamos para los momentos que lo merecen. La distancia de Vigo a A Coruña o Santiago no es el problema; el problema suele ser no tener un interlocutor técnico que entienda el negocio.",
+      ],
+    },
+    offersTitle: "Un socio técnico para tu producto",
+    offers: [
+      {
+        title: "Apps de formación y comunidad",
+        text: "Cursos, niveles, progreso, chats y grupos: plataformas donde la experiencia de aprendizaje es el producto, como XauLabs o Kairos Futures.",
+      },
+      {
+        title: "Aplicaciones de escritorio",
+        text: "Cuando el móvil no basta: apps de escritorio con control de acceso y protección de contenido, como la de Formación PRO Lift.",
+      },
+      {
+        title: "Tiempo real e integraciones",
+        text: "Chats, mensajería y conexión en tiempo real con plataformas externas, como en True Trading y Lift.",
+      },
+      {
+        title: "IA integrada en tu producto",
+        text: "Asistentes que responden dudas frecuentes con el contenido de tu plataforma, integrados en la propia app.",
+      },
+      {
+        title: "MVP con criterio",
+        text: "Definimos qué entra en la primera versión para salir antes, y construimos una base que aguante si el producto crece.",
+      },
+    ],
+    casesTitle: "Productos que hemos construido",
+    cases: [
+      {
+        slug: "xaulabs",
+        note: "App multiplataforma para iOS y Android con React Native que gamifica el aprendizaje de trading con niveles y progreso visible.",
+      },
+      {
+        slug: "kairos-futures",
+        note: "Plataforma con catálogo de cursos, progreso centralizado por alumno y un asistente de IA integrado que redujo las consultas repetitivas al equipo.",
+      },
+      {
+        slug: "pro-lift-formacion",
+        note: "App de escritorio para impartir cursos de pago con bloqueo de grabación de pantalla y capturas: vender formación de alto valor sin miedo a la piratería.",
+      },
+      {
+        slug: "lift",
+        note: "Una comunidad que vivía en grupos de Telegram, trasladada a una app propia con chats, grupos, perfiles y conexión en tiempo real con plataformas externas.",
+      },
+    ],
+    sections: [
+      {
+        title: "De la idea al MVP sin tirar dinero",
+        paragraphs: [
+          "Muchos productos digitales fracasan por construir demasiado antes de saber si alguien los quiere. Nuestro trabajo en la fase de definición es incómodo a propósito: preguntamos qué pasa si quitamos cada funcionalidad, hasta quedarnos con la versión más pequeña que ya resuelve algo.",
+          "Eso no significa construir mal. La primera versión tiene que ser pequeña, no frágil: autenticación, datos y pagos bien resueltos desde el principio, porque son las partes más caras de rehacer después.",
+        ],
+      },
+      {
+        title: "Proteger el contenido y la comunidad",
+        paragraphs: [
+          "En productos de formación y comunidad, el valor está en el contenido y en quién tiene acceso. Por eso trabajamos con control de acceso por pago, perfiles y, cuando hace falta, protección frente a grabaciones y capturas, como en la app de escritorio de Formación PRO Lift.",
+          "Sacar una comunidad de plataformas de terceros a una app propia, como hizo Lift al dejar Telegram, también es una decisión de control: los datos, las normas y la relación con los usuarios pasan a ser tuyos.",
+        ],
+      },
+    ],
+    processTitle: "Cómo construimos producto",
+    process: [
+      {
+        title: "1. Descubrimiento",
+        text: "Usuarios, problema, modelo de negocio y competencia. Salimos con el alcance del MVP por escrito.",
+      },
+      {
+        title: "2. Diseño y prototipo",
+        text: "Flujo completo navegable que puedes enseñar a usuarios o inversores antes de programar.",
+      },
+      {
+        title: "3. Construcción iterativa",
+        text: "Entregas frecuentes, pruebas con usuarios reales y ajustes con datos, no con intuiciones.",
+      },
+      {
+        title: "4. Lanzamiento y crecimiento",
+        text: "Publicación, métricas de uso y evolución del producto con lo aprendido.",
+      },
+    ],
+    proof: {
+      text: "Así describe en Google su experiencia el cliente de Kairos Futures, junto a otra reseña de nuestra ficha:",
+      testimonials: ["yonday", "fangfamily"],
+    },
+    faqs: [
+      {
+        q: "¿Trabajáis con empresas de A Coruña, Santiago, Lugo u Ourense?",
+        a: "Sí. El proyecto avanza en remoto con demos periódicas y nos desplazamos para las sesiones clave. Al estar en la misma comunidad y el mismo horario, coordinarnos es sencillo.",
+      },
+      {
+        q: "Tengo una idea de app pero no sé por dónde empezar. ¿Me ayudáis?",
+        a: "Sí, y es donde más aportamos. Solo necesitas tener claro el problema que quieres resolver y para quién; plataformas, tecnología y alcance de la primera versión los definimos juntos.",
+      },
+      {
+        q: "¿Podéis rescatar una app que otro proveedor dejó a medias?",
+        a: "Sí. Auditamos el código existente, te damos un diagnóstico honesto — a veces compensa continuar, a veces reescribir — y un plan con costes cerrados para llevarla a producción.",
+      },
+      {
+        q: "¿Se puede integrar inteligencia artificial en mi app?",
+        a: "Sí, cuando resuelve algo concreto. En Kairos Futures integramos un asistente que responde las dudas de los alumnos dentro de la plataforma. También te diremos cuándo la IA no aporta nada y solo encarece el producto.",
+      },
+      {
+        q: "¿Hacéis apps de escritorio además de móviles?",
+        a: "Sí. Formación PRO Lift es una app de escritorio para impartir cursos con acceso restringido y bloqueo de capturas. Elegimos escritorio, móvil o web según dónde se va a usar el producto.",
+      },
+    ],
+    cta: {
+      title: "¿Tienes un producto digital en mente?",
+      text: "Cuéntanos la idea en dos líneas. Te respondemos con las preguntas que hay que hacerse antes de gastar un euro y con los siguientes pasos.",
+    },
+    related: [
+      { slug: "desarrollo-de-aplicaciones-vigo", label: "Estudio de desarrollo de apps en Vigo" },
+      { slug: "agencia-desarrollo-web-galicia", label: "Agencia web para empresas gallegas" },
+      { slug: "software-a-medida-vigo", label: "Software a medida para pymes" },
+    ],
+    hubSummary:
+      "Producto digital completo — app, panel y backend — para toda Galicia. Casos: XauLabs, Kairos Futures y Formación PRO Lift.",
+  },
+
+  // ───────────────────────────────────────────────────────────────────
   {
     slug: "agencia-desarrollo-web-galicia",
+    group: "zona",
     serviceName: "Agencia de desarrollo web en Galicia",
-    areaServed: ["Galicia", "Vigo", "Pontevedra", "A Coruña", "Santiago de Compostela"],
+    serviceType: "Desarrollo web",
+    areaServed: [
+      { name: "Galicia", type: "AdministrativeArea" },
+      { name: "A Coruña", type: "City" },
+      { name: "Santiago de Compostela", type: "City" },
+      { name: "Ourense", type: "City" },
+      { name: "Lugo", type: "City" },
+      { name: "Noia", type: "City" },
+    ],
     title: "Agencia de Desarrollo Web en Galicia | Webs a Medida",
     metaDescription:
-      "Agencia de desarrollo web en Galicia con sede en Vigo: webs corporativas, tiendas online y aplicaciones web a medida para empresas de Vigo, Pontevedra, A Coruña y Santiago. ★ 5,0.",
+      "Agencia de desarrollo web con sede en Vigo: webs corporativas, tiendas y aplicaciones web para empresas de A Coruña, Santiago, Ourense, Lugo y Pontevedra.",
     h1: "Agencia de desarrollo web en Galicia",
     intro: [
-      "Action es una agencia de desarrollo web con sede en Vigo que trabaja con empresas de toda Galicia: Vigo, Pontevedra, A Coruña, Santiago de Compostela, Ourense y Lugo. Construimos webs corporativas, tiendas online y aplicaciones web a medida, sin plantillas.",
-      "Elegir agencia es elegir con quién vas a hablar los próximos años. Aquí hablas con quien diseña y programa tu web, no con un gestor de cuentas que traduce entre tú y un equipo que no conoces. Y como estamos en la misma comunidad y franja horaria, las reuniones son ágiles y, cuando hace falta, presenciales.",
+      "Action es una agencia de desarrollo web con sede en Vigo que trabaja con empresas de toda Galicia. Construimos webs corporativas, tiendas online y aplicaciones web a medida para negocios de A Coruña, Santiago, Ourense, Lugo y la provincia de Pontevedra.",
+      "Elegir agencia es elegir con quién vas a hablar los próximos años. Aquí hablas con quien diseña y programa tu web, y ese equipo es el mismo que la mantiene después.",
     ],
+    localContext: {
+      title: "Webs para empresas de toda Galicia",
+      paragraphs: [
+        "No todos nuestros clientes están en Vigo. En Noia, en la provincia de A Coruña, hemos hecho la web de París de Noia, una de las orquestas más conocidas del circuito de verbenas gallego, fundada en 1957, y la de la clínica de fisioterapia Fisionorte. Son buenos ejemplos de algo muy gallego: negocios con décadas de trayectoria o con una clientela muy local que necesitan una presencia digital a su altura.",
+        "Galicia es una comunidad dispersa, con mucha población fuera de las grandes ciudades. Eso tiene dos consecuencias para una web: el cliente te busca desde el móvil, a menudo desde lejos, y la web tiene que resolver por sí sola lo que antes se preguntaba en persona — horarios, calendarios, cómo llegar, cómo contratar.",
+        "También trabajamos con marcas que venden fuera de España. Fase Service Partner necesitaba una web corporativa pensada para clientes de distintos países; Patricia Avendaño, una web bilingüe que reflejara su presencia internacional. Una web a la altura permite competir en cualquier mercado.",
+      ],
+    },
     offersTitle: "Qué hace una agencia web como la nuestra",
     offers: [
       {
-        title: "Webs corporativas a medida",
-        text: "La web de tu empresa como herramienta comercial: mensaje claro, diseño con identidad propia y rendimiento que Google mide y premia.",
+        title: "Webs corporativas",
+        text: "Estructura por líneas de servicio, mensaje claro y un contacto que llega a la persona adecuada. Para empresas que necesitan transmitir solidez.",
+      },
+      {
+        title: "Webs con agenda y calendario",
+        text: "Calendarios de conciertos, eventos o citas siempre actualizados desde la propia web, como el de París de Noia.",
       },
       {
         title: "Tiendas online y aplicaciones web",
-        text: "Ecommerce, portales de cliente, paneles internos y plataformas a medida, con backend e integraciones con tus sistemas.",
+        text: "Ecommerce, portales de cliente y plataformas con usuarios, cuando la web tiene que hacer más que informar.",
       },
       {
-        title: "Diseño y desarrollo en el mismo equipo",
-        text: "Lo que apruebas en el prototipo es lo que se publica: sin traspasos entre diseñador externo y programador.",
+        title: "Webs multilingües",
+        text: "Castellano, gallego, inglés u otros idiomas, con la estructura técnica correcta para que Google muestre a cada visitante su versión.",
       },
       {
         title: "Mantenimiento y evolución",
-        text: "Planes de mantenimiento con actualizaciones, copias de seguridad y soporte directo por WhatsApp o email, sin permanencias.",
+        text: "Actualizaciones, cambios de contenido y mejoras con el mismo equipo que construyó la web.",
       },
     ],
-    proof:
-      "Nuestro porfolio cruza sectores — salud, formación, hostelería, ocio nocturno, industria y marcas personales — de Vigo a O Porriño. 20 reseñas de 5 estrellas en Google avalan el método.",
+    casesTitle: "Trabajo publicado dentro y fuera de Galicia",
+    cases: [
+      {
+        slug: "paris-de-noia",
+        note: "Orquesta de Noia fundada en 1957. Web de presentación con su trayectoria y repertorio y un calendario de conciertos que se convirtió en la referencia de su público.",
+      },
+      {
+        slug: "fisioterapia-noia",
+        note: "Clínica de fisioterapia Fisionorte, en Noia. Landing que transmite cercanía y confianza, con contacto y ubicación accesibles.",
+      },
+      {
+        slug: "fase",
+        note: "Web corporativa pensada para alcance internacional, con contenidos por línea de servicio y una imagen homogénea ante clientes de distintos países.",
+      },
+      {
+        slug: "patricia-avendano",
+        note: "Web bilingüe para una diseñadora de moda nupcial con más de 100 tiendas en España y presencia en México, Japón y Europa.",
+      },
+    ],
+    sections: [
+      {
+        title: "Cómo elegir agencia de desarrollo web en Galicia",
+        paragraphs: [
+          "Hay tres cosas que conviene comprobar antes de firmar con cualquier agencia, también con nosotros. Primero, trabajo real y verificable: webs publicadas que puedas visitar y reseñas que no estén escritas por la propia agencia. Segundo, con quién vas a hablar: si tu interlocutor es un comercial que traslada peticiones a un equipo que no conoces, cada cambio será más lento y más caro.",
+          "Tercero, qué pasa después de publicar. Una web necesita actualizaciones, cambios de contenido y mejoras; pregunta quién las hará, cómo se piden y cuánto tardan. Nuestras reseñas en Google hablan a menudo de eso: de estar disponibles antes y después de la entrega.",
+        ],
+      },
+      {
+        title: "Agencia, freelance o plataforma",
+        paragraphs: [
+          "Una plataforma de creación de webs es la opción más barata para empezar y la más limitada cuando creces. Un freelance puede encajar muy bien en proyectos pequeños y acotados. Un equipo cubre diseño, desarrollo, integraciones y mantenimiento sin depender de una sola persona, y el proyecto no se detiene si alguien se va de vacaciones.",
+          "La elección depende de lo que la web signifique para tu negocio. Si es un folleto, no necesitas una agencia. Si vende, reserva o se conecta con tu gestión, sí necesitas a alguien que responda por todo el conjunto.",
+        ],
+      },
+    ],
+    processTitle: "Cómo trabajamos a distancia",
+    process: [
+      {
+        title: "1. Primera llamada",
+        text: "Videollamada para entender el proyecto, estés en el punto de Galicia que estés.",
+      },
+      {
+        title: "2. Propuesta cerrada",
+        text: "Alcance, fases y precio por escrito, con lo que incluye y lo que no.",
+      },
+      {
+        title: "3. Proyecto en remoto",
+        text: "Prototipo, desarrollo y revisiones con un entorno de pruebas accesible en todo momento.",
+      },
+      {
+        title: "4. Entrega y continuidad",
+        text: "Publicación, formación y mantenimiento con el mismo equipo.",
+      },
+    ],
+    proof: {
+      text: "Lo que dice en Google el cliente de París de Noia, de fuera del área de Vigo, y otra reseña de nuestra ficha:",
+      testimonials: ["adrian-rodriguez", "rodri-vegas"],
+    },
     faqs: [
       {
-        q: "¿Cómo elijo una agencia de desarrollo web en Galicia?",
-        a: "Fíjate en tres cosas: que puedas ver trabajo real y reseñas verificables, que hables directamente con quien construye tu web y que el presupuesto sea cerrado y detallado. Es exactamente como trabajamos, y puedes comprobarlo en nuestro porfolio y en la ficha de Google.",
+        q: "¿Hace falta reunirse en persona para hacer una web?",
+        a: "No es imprescindible. Podemos llevar el proyecto entero en remoto: videollamadas, un entorno de pruebas donde ves la web avanzar y WhatsApp para el día a día. Si prefieres vernos, nos desplazamos para las reuniones clave.",
       },
       {
-        q: "¿Trabajáis con empresas de A Coruña, Santiago, Ourense o Lugo?",
-        a: "Sí. El proyecto avanza en remoto con demos periódicas y nos desplazamos para las reuniones clave. Tener al equipo en la misma comunidad y franja horaria facilita mucho el día a día.",
+        q: "¿Podéis actualizar una web que ya existe en lugar de hacerla nueva?",
+        a: "Sí. Con París de Noia el encargo fue precisamente actualizar su web. Antes de proponer empezar de cero valoramos qué se puede aprovechar: contenidos, URLs que posicionan, imágenes.",
       },
       {
-        q: "¿Qué diferencia hay entre una agencia y un freelance?",
-        a: "Un equipo cubre diseño, desarrollo, backend y mantenimiento sin depender de una sola persona, y el proyecto no se detiene si alguien falta. Un freelance puede encajar en webs muy pequeñas; para algo que sea parte del negocio, un equipo da más continuidad.",
+        q: "¿Podéis hacer la web en gallego?",
+        a: "Sí. Preparamos webs en gallego y castellano, y en otros idiomas si tu público lo pide, con la configuración técnica — hreflang y URLs por idioma — para que cada versión posicione por sí misma.",
       },
       {
         q: "¿Cuánto cuesta una web a medida?",
-        a: "Depende del alcance: una web corporativa y una plataforma con usuarios y pagos no se parecen. No damos tarifas genéricas; analizamos tu caso y te enviamos un presupuesto detallado en 24 horas, sin compromiso.",
+        a: "No publicamos tarifas porque el alcance cambia mucho de una web a otra. Para orientarte necesitamos tres datos: qué debe conseguir la web, cuántas secciones o tipos de página tendrá y si necesita vender, reservar o conectarse con otro sistema. Con eso preparamos una propuesta cerrada y, si no encaja en tu presupuesto, te proponemos qué dejar para una segunda fase.",
       },
       {
         q: "¿Os encargáis también del mantenimiento?",
-        a: "Sí. Ofrecemos planes con actualizaciones, copias de seguridad, cambios de contenido y soporte directo, sin permanencias.",
+        a: "Sí. Planteamos el mantenimiento en la propia propuesta — actualizaciones, cambios de contenido, copias de seguridad y soporte — para que sepas desde el principio quién cuidará la web y cómo.",
       },
     ],
+    cta: {
+      title: "¿Buscas agencia web en Galicia?",
+      text: "Escríbenos desde donde estés. Te respondemos en 24 horas con una propuesta de siguiente paso.",
+    },
     related: [
-      { slug: "desarrollo-web-vigo", label: "Desarrollo web en Vigo" },
-      { slug: "tienda-online-vigo", label: "Tiendas online en Vigo" },
+      { slug: "desarrollo-web-vigo", label: "Desarrollo web a medida en Vigo" },
+      { slug: "tienda-online-vigo", label: "Crear una tienda online con Shopify o a medida" },
       {
         slug: "desarrollo-de-aplicaciones-galicia",
-        label: "Desarrollo de aplicaciones en Galicia",
+        label: "Apps y plataformas digitales en Galicia",
       },
     ],
+    hubSummary:
+      "Webs corporativas, tiendas y aplicaciones web para toda Galicia. Casos: París de Noia y Fisionorte (Noia), Fase y Patricia Avendaño.",
   },
 ];
 
 export function getLanding(slug: string): Landing | undefined {
   return landings.find((l) => l.slug === slug);
+}
+
+/** Landings de un bloque de /servicios, en el orden de `landings`. */
+export function getLandingsByGroup(group: Landing["group"]): Landing[] {
+  return landings.filter((l) => l.group === group);
 }

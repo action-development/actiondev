@@ -1,5 +1,7 @@
 # SEO Playbook — Action (actiondev.es)
 
+> **Ejecución off-page y SEO local (GBP, reseñas, directorios, Wikidata, PR, KPIs): ver `docs/seo-kit-offpage.md`.** Este playbook queda como estado on-page/código.
+
 **Objetivo:** #1 en Google y en buscadores de IA para "desarrollo de aplicaciones Vigo" (núcleo) + desarrollo web / diseño web en Vigo, Pontevedra y Galicia.
 
 **Última revisión:** 24 sep 2026 (estado contrastado con el código).

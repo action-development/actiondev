@@ -21,6 +21,21 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,
   },
+  // Landings consolidadas (auditoría SEO 2026-09-30): la de diseño en
+  // Pontevedra era un clon de la de Vigo y canibalizaba a la de desarrollo
+  // web en Pontevedra, que ahora cubre diseño + desarrollo. 301 para
+  // trasladar lo que tuviera ganado.
+  async redirects() {
+    return [
+      {
+        source: "/diseno-web-pontevedra",
+        destination: "/desarrollo-web-pontevedra",
+        permanent: true,
+      },
+      // Antes era un `redirect()` en app/reviews (307, temporal).
+      { source: "/reviews", destination: "/resenas", permanent: true },
+    ];
+  },
   // /admin es la app `@actiondev/admin` (basePath "/admin"), proxeada para
   // que viva en el mismo dominio. En producción, ADMIN_URL = su deploy en Vercel.
   async rewrites() {
@@ -42,6 +57,13 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
+      },
+      // `/` sirve HTML distinto a móvil (zona mobile vía middleware) y a
+      // desktop: dynamic serving. El middleware solo consigue fijar `Vary`
+      // en la rama móvil (en la desktop lo pisa Next), así que va aquí.
+      {
+        source: "/",
+        headers: [{ key: "Vary", value: "User-Agent" }],
       },
       // Static assets — content-addressed via filename, safe to cache for 1 year
       {
