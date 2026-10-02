@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     url: absoluteUrl("/contact"),
     siteName: BRAND.name,
     title: "Contacto — Agencia de desarrollo en Vigo — Action",
-    description: "Sin formularios: WhatsApp o email directo, y te responde una persona.",
+    description: "WhatsApp, email o te llamamos nosotros: te responde una persona del equipo.",
     images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
   },
 };

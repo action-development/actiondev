@@ -44,8 +44,10 @@ export const projects: Project[] = [
     id: "autoescuela-gti",
     slug: "autoescuela-gti",
     title: "Autoescuela GTI",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Custom ERP for a driving school covering enrolments, lessons, exam results and the training fleet, plus a mobile app where students follow their classes.",
+    descriptionEs:
+      "ERP a medida para una autoescuela: matrículas, prácticas, exámenes y flota de coches, con una app móvil para que los alumnos sigan sus clases.",
     category: "Web Application",
     categoryEs: "Aplicación Web",
     niche: "Driving School",
@@ -76,8 +78,10 @@ export const projects: Project[] = [
     id: "lift",
     slug: "lift",
     title: "Lift",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Dedicated app for the Lift trading community, previously spread across Telegram groups: chats, profiles and real-time links to trading platforms.",
+    descriptionEs:
+      "App propia para la comunidad de traders de Lift, antes repartida en grupos de Telegram: chats, perfiles y conexión en tiempo real con plataformas.",
     category: "Mobile App",
     categoryEs: "Aplicación Móvil",
     niche: "Trading",
@@ -141,8 +145,10 @@ export const projects: Project[] = [
     id: "true-trading-app",
     slug: "true-trading-app",
     title: "True Trading App",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Mobile app for a trading team: in-house chats, groups and profiles, connected in real time to external trading platforms to move off Telegram.",
+    descriptionEs:
+      "App móvil para un equipo de trading: chats, grupos y perfiles propios, conectada en tiempo real a plataformas externas para dejar atrás Telegram.",
     category: "Mobile App",
     categoryEs: "Aplicación Móvil",
     niche: "Trading",
@@ -171,8 +177,10 @@ export const projects: Project[] = [
     id: "nautirent",
     slug: "nautirent",
     title: "Nautirent",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Boat rental website connected to the fleet management software, with real-time availability and online bookings that need no phone calls.",
+    descriptionEs:
+      "Web de alquiler de embarcaciones conectada al software de gestión de la flota: disponibilidad en tiempo real y reservas online sin llamadas.",
     category: "Web Application",
     categoryEs: "Aplicación Web",
     niche: "Boating",
@@ -202,8 +210,10 @@ export const projects: Project[] = [
     slug: "ticketera-la-fabrica",
     location: "Redondela",
     title: "Ticketera La Fábrica",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Online ticketing for La Fábrica, an events venue in Redondela, with customer profiles, purchase history and real-time capacity management.",
+    descriptionEs:
+      "Venta de entradas online para La Fábrica, recinto de eventos de Redondela: perfil con historial de compras y aforo gestionado en tiempo real.",
     category: "Web Application",
     categoryEs: "Aplicación Web",
     niche: "Entertainment & Events",
@@ -299,8 +309,10 @@ export const projects: Project[] = [
     id: "kairos-futures",
     slug: "kairos-futures",
     title: "Kairos Futures",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Trading education platform with a full course catalogue, per-student progress tracking and a built-in AI assistant that answers questions.",
+    descriptionEs:
+      "Plataforma de formación en trading con catálogo de cursos, progreso de cada alumno y un asistente de IA integrado que resuelve sus dudas.",
     category: "Web Application",
     categoryEs: "Aplicación Web",
     niche: "Trading",
@@ -395,8 +407,10 @@ export const projects: Project[] = [
     id: "pro-lift-formacion",
     slug: "pro-lift-formacion",
     title: "Formación PRO Lift",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Desktop app to sell in-house training courses, with access limited to paying students and screen recording and screenshots blocked.",
+    descriptionEs:
+      "App de escritorio para vender cursos de formación propios: acceso solo para alumnos que han pagado y bloqueo de grabación y capturas de pantalla.",
     category: "Desktop App",
     categoryEs: "App de Escritorio",
     niche: "Training",
@@ -425,8 +439,10 @@ export const projects: Project[] = [
     id: "licentia",
     slug: "licentia",
     title: "Licentia Marketplace",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Software licence marketplace with automatic delivery after checkout and a catalogue organised by product type, with no manual order handling.",
+    descriptionEs:
+      "Marketplace de licencias de software con entrega automática tras la compra y catálogo por tipo de producto, sin gestionar cada pedido a mano.",
     category: "Website",
     categoryEs: "Web",
     niche: "Retail",
@@ -520,8 +536,10 @@ export const projects: Project[] = [
     id: "fase",
     slug: "fase",
     title: "Fase Service Partner",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Corporate website for Fase Service Partner built for clients worldwide, with clear content for each service line and a solid, professional image.",
+    descriptionEs:
+      "Web corporativa para Fase Service Partner pensada para clientes de todo el mundo: contenidos claros por línea de servicio y una imagen sólida.",
     category: "Website",
     categoryEs: "Web",
     niche: "Corporate",
@@ -685,8 +703,10 @@ export const projects: Project[] = [
     id: "cliche",
     slug: "cliche",
     title: "C L I C H É",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Tailored Shopify store for the C L I C H É brand: fast, frictionless checkout, a catalogue built to scale and a consistent visual identity.",
+    descriptionEs:
+      "Tienda Shopify a medida para la marca C L I C H É: checkout rápido y sin fricción, catálogo preparado para crecer e identidad visual coherente.",
     category: "E-commerce",
     categoryEs: "E-commerce",
     niche: "Retail",
@@ -716,8 +736,10 @@ export const projects: Project[] = [
     slug: "canelita",
     location: "Redondela",
     title: "Canelita",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Shopify store for Canelita, a shop in Redondela: product catalogue, optimised checkout and a direct sales channel alongside the physical store.",
+    descriptionEs:
+      "Tienda online en Shopify para Canelita, comercio de Redondela: catálogo, checkout optimizado y un canal de venta propio además de la tienda física.",
     category: "E-commerce",
     categoryEs: "E-commerce",
     niche: "Retail",
@@ -866,8 +888,10 @@ export const projects: Project[] = [
     id: "cerveceria-equs",
     slug: "cerveceria-equs",
     title: "Cervecería Equs",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Landing page for a craft brewery: the character of its beer, clear location and contact details, and a home of its own beyond social media.",
+    descriptionEs:
+      "Landing para una cervecería artesana: el carácter de su cerveza, ubicación y contacto claros, y una presencia propia más allá de las redes.",
     category: "Website",
     categoryEs: "Web",
     niche: "Hospitality",
@@ -897,8 +921,10 @@ export const projects: Project[] = [
     slug: "fisioterapia-noia",
     location: "Noia",
     title: "Fisionorte",
-    description: TBD_DESC_EN,
-    descriptionEs: TBD_DESC_ES,
+    description:
+      "Landing page for Fisionorte, a physiotherapy clinic in Noia: a warm, professional introduction with contact details and location at hand.",
+    descriptionEs:
+      "Landing para Fisionorte, clínica de fisioterapia en Noia: una presentación cercana y profesional, con contacto y ubicación siempre a mano.",
     category: "Website",
     categoryEs: "Web",
     niche: "Physiotherapy",

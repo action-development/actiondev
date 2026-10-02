@@ -8,6 +8,7 @@ import { PlazaWorld } from "./plaza/PlazaWorld";
 import { disposePlazaTextures } from "./plaza/plaza-textures";
 import { disposeFaceTextures } from "./plaza/face-texture";
 import { PLAZA_PALETTES, currentPlazaMode } from "./plaza/plaza-mode";
+import { SceneWarmup } from "./SceneWarmup";
 
 export interface PlazaSceneProps {
   /** Id del testimonio seleccionado, o `null`. Lo controla la página. */
@@ -39,6 +40,9 @@ export function PlazaScene({ selectedId, onSelect, onReady, onHoldChange }: Plaz
   // texturas, shaders y buffers ya no existen, y recrearlos a mano sale más caro
   // y más frágil que un Canvas nuevo.
   const [canvasKey, setCanvasKey] = useState(0);
+  // Bucle de render parado hasta tener los shaders compilados (ver SceneWarmup).
+  const [warm, setWarm] = useState(false);
+  const handleWarm = useCallback(() => setWarm(true), []);
 
   const handleCreated = useCallback(({ gl }: { gl: WebGLRenderer }) => {
     gl.setSize(window.innerWidth, window.innerHeight);
@@ -46,7 +50,11 @@ export function PlazaScene({ selectedId, onSelect, onReady, onHoldChange }: Plaz
 
     // Sin `preventDefault` el navegador no intenta restaurar el contexto nunca.
     const onLost = (e: Event) => e.preventDefault();
-    const onRestored = () => setCanvasKey((k) => k + 1);
+    // Contexto nuevo = programas nuevos: se vuelve a precompilar.
+    const onRestored = () => {
+      setWarm(false);
+      setCanvasKey((k) => k + 1);
+    };
 
     canvas.addEventListener("webglcontextlost", onLost);
     canvas.addEventListener("webglcontextrestored", onRestored);
@@ -72,6 +80,7 @@ export function PlazaScene({ selectedId, onSelect, onReady, onHoldChange }: Plaz
     >
       <Canvas
         key={canvasKey}
+        frameloop={warm ? "always" : "never"}
         // Antialias activo: el contorno de cómic sin MSAA se ve dentado.
         gl={{ antialias: true, powerPreference: "high-performance" }}
         // Sombras proyectadas de verdad. Sin ellas el parque se lee como una
@@ -101,6 +110,8 @@ export function PlazaScene({ selectedId, onSelect, onReady, onHoldChange }: Plaz
             onReady={onReady}
             onHoldChange={onHoldChange}
           />
+          {/* Dentro del Suspense y el último: precompila con la plaza ya montada. */}
+          <SceneWarmup onDone={handleWarm} />
         </Suspense>
       </Canvas>
     </div>

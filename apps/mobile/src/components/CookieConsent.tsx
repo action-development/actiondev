@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CONSENT_EVENT, readStoredConsent, storeConsent } from "@actiondev/shared";
 import { useI18n } from "@/lib/i18n/context";
@@ -38,9 +37,10 @@ export function CookieConsent() {
     >
       <p className="text-[13px] leading-relaxed">
         {t.cookieConsent.message}{" "}
-        <Link href="/legal/cookies" className="underline underline-offset-2">
+        {/* `<a>`: /legal/* es de la zona desktop; `Link` hacía prefetch RSC a esta app y fallaba. */}
+        <a href="/legal/cookies" className="underline underline-offset-2">
           {t.cookieConsent.linkLabel}
-        </Link>
+        </a>
       </p>
       <div className="flex shrink-0 gap-3">
         <button

@@ -6,6 +6,7 @@ import { PinBoard } from "@/components/blog/PinBoard";
 import { Pinned } from "@/components/blog/Pinned";
 import board from "@/components/blog/CorkBoard.module.css";
 import { BUSINESS, OG_IMAGE, absoluteUrl } from "@/lib/seo";
+import { LegalLinks } from "@/components/layout/LegalLinks";
 
 /**
  * Índice del blog — server component, data-driven desde Firestore
@@ -144,6 +145,7 @@ export default async function BlogPage() {
               {BUSINESS.phoneDisplay}
             </a>
           </p>
+          <LegalLinks className="mt-3 text-[0.8em]" linkClassName={board.inkLink} />
         </Pinned>
       </CorkBoard>
     </>

@@ -12,6 +12,7 @@ import { getPost, getPosts } from "@/lib/blog";
 import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 import { getLanding } from "@/data/landings";
 import { Header } from "@/components/layout/Header";
+import { LegalLinks } from "@/components/layout/LegalLinks";
 
 /**
  * Artículo de blog (/blog/[slug]) — server component, data-driven desde
@@ -27,10 +28,12 @@ import { Header } from "@/components/layout/Header";
  *
  * SEO por post (campos opcionales de `BlogPost`, retrocompatibles): firma del
  * autor (`author` → `AUTHORS` de shared, mismo `@id` Person que
- * pablo.actiondev.es), fecha de actualización (`updatedAt`), tarjeta de
- * "Servicio relacionado" (`targetLanding` → `landings.ts`), FAQs visibles +
- * FAQPage, e índice con anclas a partir de 3 subtítulos. Todo lo que va al
- * JSON-LD está también pintado en el HTML.
+ * pablo.actiondev.es), tarjeta de "Servicio relacionado" (`targetLanding` →
+ * `landings.ts`), FAQs visibles + FAQPage, e índice con anclas a partir de 3
+ * subtítulos. Todo lo que va al JSON-LD está también pintado en el HTML, salvo
+ * las fechas: no se muestran (decisión del cliente), pero `date`/`updatedAt`
+ * siguen en `datePublished`/`dateModified` y en el `article:*_time` de Open
+ * Graph, que es donde Google y las redes las leen.
  */
 export const revalidate = 3600;
 
@@ -167,17 +170,6 @@ function buildJsonLd(
   };
 }
 
-const dateFormatter = new Intl.DateTimeFormat("es-ES", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-function formatDate(iso: string): string {
-  return dateFormatter.format(new Date(iso));
-}
-
 /** Ancla estable de un subtítulo (sin tildes, en minúsculas, con guiones). */
 function headingId(text: string): string {
   return text
@@ -269,7 +261,6 @@ export default async function BlogPostPage({ params }: PostPageProps) {
   const toc = post.content.flatMap((block, index) =>
     block.type === "heading" ? [{ id: ids.get(index)!, text: block.text }] : [],
   );
-  const updated = post.updatedAt && post.updatedAt > post.date ? post.updatedAt : undefined;
 
   return (
     <>
@@ -317,31 +308,20 @@ export default async function BlogPostPage({ params }: PostPageProps) {
               </h1>
               <p className="mt-8 text-lg leading-relaxed text-muted">{post.excerpt}</p>
 
-              {/* Firma y fechas */}
-              <div className="mt-10 flex flex-col gap-1 text-sm text-muted">
-                {author && (
-                  <p>
-                    Por{" "}
-                    <a
-                      href={author.url}
-                      rel="author"
-                      className="font-medium text-foreground underline decoration-border decoration-2 underline-offset-4 hover:decoration-foreground"
-                    >
-                      {author.name}
-                    </a>
-                    <span> · {author.role} en Action</span>
-                  </p>
-                )}
-                <p>
-                  Publicado el <time dateTime={post.date}>{formatDate(post.date)}</time>
-                  {updated && (
-                    <>
-                      {" · "}Actualizado el{" "}
-                      <time dateTime={updated}>{formatDate(updated)}</time>
-                    </>
-                  )}
+              {/* Firma. Sin fecha visible (decisión del cliente). */}
+              {author && (
+                <p className="mt-10 text-sm text-muted">
+                  Por{" "}
+                  <a
+                    href={author.url}
+                    rel="author"
+                    className="font-medium text-foreground underline decoration-border decoration-2 underline-offset-4 hover:decoration-foreground"
+                  >
+                    {author.name}
+                  </a>
+                  <span> · {author.role} en Action</span>
                 </p>
-              </div>
+              )}
             </div>
 
             {/* Índice — solo si el artículo es lo bastante largo para necesitarlo */}
@@ -472,7 +452,7 @@ export default async function BlogPostPage({ params }: PostPageProps) {
       </main>
 
       <footer className="border-t border-border">
-        <div className="container-editorial flex flex-col gap-2 py-10 text-sm text-muted md:flex-row md:items-center md:justify-between">
+        <div className="container-editorial flex flex-col gap-2 pt-10 pb-5 text-sm text-muted md:flex-row md:items-center md:justify-between">
           <p>
             Action — {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
             {BUSINESS.address.locality}, {BUSINESS.address.region}
@@ -484,6 +464,10 @@ export default async function BlogPostPage({ params }: PostPageProps) {
             · {BUSINESS.phoneDisplay}
           </p>
         </div>
+        <LegalLinks
+          className="container-editorial pb-10 text-sm text-muted"
+          linkClassName="hover:text-foreground"
+        />
       </footer>
     </>
   );

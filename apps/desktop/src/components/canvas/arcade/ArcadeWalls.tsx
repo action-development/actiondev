@@ -102,6 +102,12 @@ function buildArt(): ArtSlot[] {
  */
 export function ArcadeWalls({ palette }: ArcadeWallsProps) {
   const art = useMemo(() => buildArt(), []);
+  // Memorizado: con el `.filter()` en línea, `Posters` recibía un array nuevo
+  // en cada render, rehacía sus geometrías y su limpieza desechaba de paso el
+  // material de las láminas AÚN en uso — three soltaba el programa y lo
+  // recompilaba en el frame siguiente (y, con `SceneWarmup`, en plena
+  // precompilación).
+  const posterSlots = useMemo(() => art.filter((a) => a.kind === "poster"), [art]);
 
   const plaster = useMemo(() => {
     const t = getPlasterTexture().clone();
@@ -194,7 +200,7 @@ export function ArcadeWalls({ palette }: ArcadeWallsProps) {
       ))}
 
       <ChaseBulbs palette={palette} />
-      <Posters slots={art.filter((a) => a.kind === "poster")} lit={palette.signsOn} />
+      <Posters slots={posterSlots} lit={palette.signsOn} />
       {art
         .filter((a) => a.kind === "sign")
         .map((a) => (
@@ -344,16 +350,14 @@ function Posters({ slots, lit }: { slots: ArtSlot[]; lit: boolean }) {
     () => new THREE.BoxGeometry(LIGHTBOX_DEPTH, POSTER.h + POSTER.frame * 2, POSTER.w + POSTER.frame * 2),
     [],
   );
-  useEffect(
-    () => () => {
-      sheet.dispose();
-      glass.dispose();
-      material.dispose();
-      glassMaterial.dispose();
-      frameGeometry.dispose();
-    },
-    [sheet, glass, material, glassMaterial, frameGeometry],
-  );
+  // Una limpieza por recurso: cada uno se desecha cuando cambia ÉL, no cuando
+  // cambia cualquiera de los otros (desechar un material en uso obliga a
+  // recompilar su shader).
+  useEffect(() => () => sheet.dispose(), [sheet]);
+  useEffect(() => () => glass.dispose(), [glass]);
+  useEffect(() => () => material.dispose(), [material]);
+  useEffect(() => () => glassMaterial.dispose(), [glassMaterial]);
+  useEffect(() => () => frameGeometry.dispose(), [frameGeometry]);
 
   const frames = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {

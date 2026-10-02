@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BUSINESS, LEGAL_ENTITY } from "@/lib/seo";
+import { LegalLinks } from "@/components/layout/LegalLinks";
 
 /**
  * Chrome compartido de /legal/*.
@@ -64,6 +65,7 @@ export default function LegalLayout({
             </a>{" "}
             · {BUSINESS.phoneDisplay}
           </p>
+          <LegalLinks className="mt-2" linkClassName="link-sweep uppercase tracking-[0.16em] hover:text-accent" />
         </div>
       </footer>
     </>

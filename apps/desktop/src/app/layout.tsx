@@ -57,11 +57,11 @@ export const metadata: Metadata = {
       },
     ],
   },
+  // Solo la tarjeta: con título y descripción aquí, toda página sin `twitter`
+  // propio (servicios, blog, proyectos, reseñas, contacto, legales) heredaba
+  // los de la HOME. Sin ellos, X cae a los `og:` de cada página.
   twitter: {
     card: "summary_large_image",
-    title: `${BRAND.name} — ${BRAND.tagline}`,
-    description: HOME_DESCRIPTION,
-    images: [OG_IMAGE.url],
     ...(SOCIAL.twitter && { creator: SOCIAL.twitter, site: SOCIAL.twitter }),
   },
   robots: {

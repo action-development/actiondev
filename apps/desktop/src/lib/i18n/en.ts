@@ -47,7 +47,7 @@ export const en: Translations = {
     callbackSuccess: "Thank you! We'll be in touch within 24h.",
     callbackError: "It couldn't be sent. Try again or message us on WhatsApp.",
     street: {
-      address: "C/ Colón 20 · Vigo",
+      address: "Rúa Colón, 20 · Vigo",
       loading: "Arriving at Colón 20…",
       hint: "Use the booth, the postbox or the intercom",
       whatsappTag: "WhatsApp",

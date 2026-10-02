@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactElement } from "react";
+import { BUSINESS, resetConsent } from "@actiondev/shared";
 import { useI18n } from "@/lib/i18n/context";
 
 type AiTarget = {
@@ -166,7 +167,7 @@ export default function EndPanelContent() {
           </a>
           <div className="flex items-center gap-4">
             <a
-              href="https://www.linkedin.com/company/action-development/"
+              href={BUSINESS.social.linkedin}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"
@@ -177,7 +178,7 @@ export default function EndPanelContent() {
               </svg>
             </a>
             <a
-              href="https://www.instagram.com/action.dev"
+              href={BUSINESS.social.instagram}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -189,6 +190,40 @@ export default function EndPanelContent() {
             </a>
           </div>
         </div>
+
+        {/* `<a>` y no `next/link`: /legal/* lo sirve la zona desktop (rewrite
+            del middleware); con `Link`, el prefetch RSC fallaba con ChunkLoadError. */}
+        <nav
+          aria-label={t.legal.ariaLabel}
+          className="mt-4 font-mono text-[10px] uppercase tracking-[0.18em] text-black/55"
+        >
+          <ul className="flex flex-wrap gap-x-4 gap-y-2">
+            <li>
+              <a href="/legal/aviso-legal" className="active:text-black">
+                {t.legal.notice}
+              </a>
+            </li>
+            <li>
+              <a href="/legal/privacy" className="active:text-black">
+                {t.legal.privacy}
+              </a>
+            </li>
+            <li>
+              <a href="/legal/cookies" className="active:text-black">
+                {t.legal.cookies}
+              </a>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={resetConsent}
+                className="uppercase tracking-[0.18em] active:text-black"
+              >
+                {t.legal.preferences}
+              </button>
+            </li>
+          </ul>
+        </nav>
 
         <div className="mt-3 flex items-center justify-between border-t border-black/5 pt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-black/35">
           <span>{t.endPanel.footerStat}</span>

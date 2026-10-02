@@ -7,6 +7,7 @@ import { testimonials } from "@/data/testimonials";
 import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { HoloBar } from "@/components/layout/HoloBar";
+import { LegalLinks } from "@/components/layout/LegalLinks";
 
 /**
  * Landing pages SEO locales (/desarrollo-de-aplicaciones-vigo, …).
@@ -421,7 +422,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
       </main>
 
       <footer className="border-t border-border">
-        <div className="container-editorial flex flex-col gap-3 py-10 font-mono text-xs uppercase tracking-widest text-muted md:flex-row md:items-center md:justify-between">
+        <div className="container-editorial flex flex-col gap-3 pt-10 pb-5 font-mono text-xs uppercase tracking-widest text-muted md:flex-row md:items-center md:justify-between">
           <p>
             Action — {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
             {BUSINESS.address.locality}, {BUSINESS.address.region}
@@ -433,6 +434,10 @@ export default async function LandingPage({ params }: LandingPageProps) {
             · {BUSINESS.phoneDisplay}
           </p>
         </div>
+        <LegalLinks
+          className="container-editorial pb-10 font-mono text-xs uppercase tracking-widest text-muted"
+          linkClassName="link-sweep uppercase tracking-widest hover:text-accent"
+        />
       </footer>
     </>
   );

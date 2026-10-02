@@ -10,10 +10,23 @@ const CORE_LANDING = "desarrollo-de-aplicaciones-vigo";
 // no `new Date()`: con la fecha de build, cada deploy le decía a Google
 // "todo cambió hoy" sin que el contenido se hubiera tocado. Bump manual al
 // editar contenido de esa ruta.
-const CONTENT_UPDATED = new Date("2026-09-23");
+const CONTENT_UPDATED = new Date("2026-10-02");
 const LEGAL_LAST_MODIFIED = new Date(LEGAL_UPDATED);
 
+// Se genera en el build: sin esto, un post publicado desde el admin no
+// entraba en el sitemap (ni en `pnpm seo:indexnow`, que lo lee) hasta el
+// siguiente deploy. El webhook `/api/revalidate` lo refresca al publicar;
+// esto es la red de seguridad, igual que en `/blog`.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const posts = await getPosts();
+  const postDate = (p: (typeof posts)[number]) => new Date(p.updatedAt ?? p.date);
+  // El índice del blog cambia cuando cambia su post más reciente.
+  const blogUpdated = posts.length
+    ? new Date(Math.max(...posts.map((p) => postDate(p).getTime())))
+    : CONTENT_UPDATED;
+
   const home: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
@@ -47,7 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${SITE_URL}/blog`,
-      lastModified: CONTENT_UPDATED,
+      lastModified: blogUpdated,
       changeFrequency: "weekly",
       priority: 0.7,
     },
@@ -75,10 +88,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: l.slug === CORE_LANDING ? 0.9 : 0.8,
   }));
 
-  const posts = await getPosts();
   const postEntries: MetadataRoute.Sitemap = posts.map((p) => ({
     url: `${SITE_URL}/blog/${p.slug}`,
-    lastModified: new Date(p.updatedAt ?? p.date),
+    lastModified: postDate(p),
     changeFrequency: "yearly",
     priority: 0.6,
   }));

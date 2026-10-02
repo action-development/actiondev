@@ -9,11 +9,13 @@ import { PlazaHud } from "@/components/plaza/PlazaHud";
 import { ReviewCard } from "@/components/plaza/ReviewCard";
 import { SceneCurtain } from "@/components/ui/SceneCurtain";
 import { useT } from "@/lib/i18n";
+import { loadPlazaScene } from "@/lib/scene-preload";
 
 // Mismo patrón que GameScene en src/app/page.tsx: escena Three.js siempre
-// lazy + ssr:false, nunca en el bundle inicial del servidor.
+// lazy + ssr:false, nunca en el bundle inicial del servidor. El loader es el
+// de `lib/scene-preload`: el mismo que precarga al apuntar.
 const PlazaScene = dynamic(
-  () => import("@/components/canvas/PlazaScene").then((m) => m.PlazaScene),
+  () => loadPlazaScene().then((m) => m.PlazaScene),
   { ssr: false }
 );
 

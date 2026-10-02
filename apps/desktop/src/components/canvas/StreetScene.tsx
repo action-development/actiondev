@@ -7,23 +7,33 @@ import type { WebGLRenderer } from "three";
 import { StreetWorld, type StreetWorldProps } from "./street/StreetWorld";
 import { disposeStreetTextures } from "./street/street-textures";
 import { CAMERA } from "./street/street-config";
+import { SceneWarmup } from "./SceneWarmup";
 
 /**
  * Canvas de /contact: el portal de C/ Colón 20.
  *
  * Se monta siempre con `dynamic(..., { ssr: false })`. Sin `<Suspense>`: nada
  * de lo que monta la escena suspende ni descarga un asset (todo es
- * `CanvasTexture`), así que la persiana se recoge con el primer frame.
+ * `CanvasTexture`), así que la persiana se recoge con el primer frame — que
+ * llega cuando `SceneWarmup` ha compilado los shaders sin bloquear
+ * (`frameloop` en "never" hasta entonces).
  */
 export function StreetScene(props: StreetWorldProps) {
   // Se incrementa para remontar el Canvas entero tras perder el contexto WebGL
   // (mismo patrón que la plaza y la recreativa).
   const [canvasKey, setCanvasKey] = useState(0);
+  // Bucle de render parado hasta tener los shaders compilados (ver SceneWarmup).
+  const [warm, setWarm] = useState(false);
+  const handleWarm = useCallback(() => setWarm(true), []);
 
   const handleCreated = useCallback(({ gl }: { gl: WebGLRenderer }) => {
     const canvas = gl.domElement;
     canvas.addEventListener("webglcontextlost", (e) => e.preventDefault());
-    canvas.addEventListener("webglcontextrestored", () => setCanvasKey((k) => k + 1));
+    canvas.addEventListener("webglcontextrestored", () => {
+      // Contexto nuevo = programas nuevos: se vuelve a precompilar.
+      setWarm(false);
+      setCanvasKey((k) => k + 1);
+    });
   }, []);
 
   // Las texturas son singletons de módulo: se liberan al salir de la página,
@@ -40,6 +50,7 @@ export function StreetScene(props: StreetWorldProps) {
     >
       <Canvas
         key={canvasKey}
+        frameloop={warm ? "always" : "never"}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         // `percentage`, no `soft`: three deprecó `PCFSoftShadowMap` en 0.183
         // (ver la plaza).
@@ -50,6 +61,8 @@ export function StreetScene(props: StreetWorldProps) {
         onCreated={handleCreated}
       >
         <StreetWorld {...props} />
+        {/* El último: precompila con toda la escena ya montada y el entorno puesto. */}
+        <SceneWarmup onDone={handleWarm} />
       </Canvas>
     </div>
   );

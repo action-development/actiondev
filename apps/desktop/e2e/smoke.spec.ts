@@ -224,6 +224,11 @@ test.describe("Projects page", () => {
   });
 
   test("la puerta del fondo se cruza y la persiana entra ya cerrada", async ({ page }) => {
+    // El Chromium headless de Playwright pinta WebGL por software a ~9 fps y
+    // el paso de cada frame está acotado: los 24 m del pasillo + la entrada a
+    // la sala de neón tardan ~21 s (medido 2026-10-02, igual con el código
+    // anterior y en producción). Con 20 s el test fallaba siempre.
+    test.setTimeout(75_000);
     await page.goto("/projects?quieto");
     await expect(page.getByTestId("arcade-curtain")).toHaveCount(0, { timeout: 20_000 });
 
@@ -240,7 +245,7 @@ test.describe("Projects page", () => {
     });
 
     await page.keyboard.down("ArrowUp");
-    await expect(page).toHaveURL(/\/contact$/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/contact$/, { timeout: 45_000 });
     await page.keyboard.up("ArrowUp");
     await expect(page.getByTestId("page-blinds")).toHaveAttribute("data-state", "idle", { timeout: 5_000 });
 
@@ -414,5 +419,38 @@ test.describe("Contact shortcut popup", () => {
     await page.clock.fastForward(60_000);
     await exitIntent(page);
     await expect(page.getByTestId("contact-popup")).toHaveCount(0);
+  });
+});
+
+test.describe("Legal links", () => {
+  // LSSI art. 10 + RGPD art. 7.3: aviso legal, privacidad y retirar el
+  // consentimiento accesibles desde TODA ruta, también las 3D sin pie.
+  test("3D pages show the legal dock once consent is decided", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem("action-cookie-consent", "denied");
+    });
+    await page.goto("/resenas?quieto=1");
+    await page.waitForLoadState("domcontentloaded");
+
+    const dock = page.getByTestId("legal-dock");
+    await expect(dock).toBeVisible();
+    await expect(dock.locator('a[href="/legal/aviso-legal"]')).toBeVisible();
+    await expect(dock.locator('a[href="/legal/privacy"]')).toBeVisible();
+
+    // "Cookies" reabre el banner y el acceso se retira para no coincidir con él.
+    await dock.getByTestId("legal-dock-cookies").click();
+    await expect(page.getByTestId("cookie-consent")).toBeVisible();
+    await expect(dock).toHaveCount(0);
+  });
+
+  test("reading pages link every legal document in the footer", async ({ page }) => {
+    await page.goto("/desarrollo-de-aplicaciones-vigo");
+    await page.waitForLoadState("domcontentloaded");
+
+    const footer = page.locator("footer");
+    for (const href of ["/legal/aviso-legal", "/legal/privacy", "/legal/terms", "/legal/cookies"]) {
+      await expect(footer.locator(`a[href="${href}"]`)).toHaveCount(1);
+    }
+    await expect(footer.getByTestId("cookie-preferences-link")).toBeVisible();
   });
 });

@@ -26,9 +26,13 @@ export const SITE = {
  */
 export const IG_PROFILE = `https://instagram.com/${SITE.instagram}`;
 
+// Mismo `@id` que la Organization de actiondev.es: el nombre y la
+// denominación social tienen que ser LOS MISMOS que allí (ficha de Google
+// «Action Development»; titular Alcasi Systems, S.L.), o los buscadores ven
+// dos entidades con un solo identificador.
 export const AGENCY = {
-  name: "Action",
-  legalName: "Action Digital Agency",
+  name: "Action Development",
+  legalName: "Alcasi Systems, S.L.",
   url: "https://actiondev.es",
   phoneE164: "+34614027410",
   address: {

@@ -60,6 +60,13 @@ export const dictionaries = {
       reject: "Reject",
       ariaLabel: "Cookie consent",
     },
+    legal: {
+      ariaLabel: "Legal",
+      notice: "Legal notice",
+      privacy: "Privacy",
+      cookies: "Cookies",
+      preferences: "Cookie preferences",
+    },
     endPanel: {
       title1: "Want to know",
       title2: "what we do?",
@@ -215,6 +222,13 @@ export const dictionaries = {
       accept: "Aceptar",
       reject: "Rechazar",
       ariaLabel: "Consentimiento de cookies",
+    },
+    legal: {
+      ariaLabel: "Legal",
+      notice: "Aviso legal",
+      privacy: "Privacidad",
+      cookies: "Cookies",
+      preferences: "Preferencias de cookies",
     },
     endPanel: {
       title1: "¿Quieres saber",

@@ -95,12 +95,12 @@ export const landings: Landing[] = [
       { name: "Vigo", type: "City" },
       { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
     ],
-    title: "Desarrollo de Aplicaciones en Vigo | Apps iOS y Android",
+    title: "Desarrollo de Apps en Vigo | Aplicaciones iOS y Android",
     metaDescription:
       "Desarrollo de aplicaciones en Vigo: apps iOS y Android con React Native, panel de gestión y backend propio. Oficina en Rúa Colón 20. ★ 5,0 en Google.",
     h1: "Desarrollo de aplicaciones en Vigo",
     intro: [
-      "Somos Action, un estudio de desarrollo de aplicaciones con oficina en el centro de Vigo, en la Rúa Colón, 20. Diseñamos y programamos apps para iOS y Android, aplicaciones web y el backend que las sostiene, para empresas que necesitan que su app resuelva un problema concreto: reservas, fichajes, pedidos, alumnos, socios o clientes.",
+      "Somos Action, un estudio de desarrollo de apps y aplicaciones con oficina en el centro de Vigo, en la Rúa Colón, 20. Diseñamos y programamos apps para iOS y Android, aplicaciones web y el backend que las sostiene, para empresas que necesitan que su app resuelva un problema concreto: reservas, fichajes, pedidos, alumnos, socios o clientes.",
       "Trabajamos con el mismo equipo de principio a fin — definición, diseño, desarrollo, publicación y mantenimiento —, así que la persona con la que hablas en la primera reunión es la que conoce el código cuando, meses después, hay que añadir una función o corregir un fallo.",
       "En esta página te contamos qué tipo de apps hacemos, con qué casos reales puedes comprobarlo, cómo decidimos la tecnología y qué conviene tener claro antes de pedir presupuesto.",
     ],
@@ -112,7 +112,7 @@ export const landings: Landing[] = [
         "Y luego está el Vigo de calle: hostelería, academias, clínicas, clubes deportivos y comercio, que necesitan reservas, cuotas, citas o un canal directo con sus clientes. Conocemos los dos mundos porque trabajamos en medio de ellos, desde una oficina en pleno centro.",
       ],
     },
-    offersTitle: "Qué desarrollamos",
+    offersTitle: "Qué apps desarrollamos para empresas de Vigo",
     offers: [
       {
         title: "Apps iOS y Android multiplataforma",
@@ -392,12 +392,12 @@ export const landings: Landing[] = [
       { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
       { name: "Galicia", type: "AdministrativeArea" },
     ],
-    title: "Diseño Web en Vigo | Webs con Identidad Propia",
+    title: "Diseño de Páginas Web en Vigo | Webs con Identidad Propia",
     metaDescription:
       "Diseño de páginas web en Vigo con dirección de arte, motion y 3D: webs que no parecen plantillas. Casos: Samoa Café y Almudena Muhle. Estudio en Vigo.",
     h1: "Diseño web en Vigo",
     intro: [
-      "El diseño de una web decide en pocos segundos si alguien se queda o vuelve a Google. En Action diseñamos webs con identidad propia — tipografía, ritmo, movimiento y, cuando el proyecto lo pide, 3D — para marcas que no quieren parecerse a la plantilla de su competencia.",
+      "El diseño de una web decide en pocos segundos si alguien se queda o vuelve a Google. En Action diseñamos páginas web con identidad propia — tipografía, ritmo, movimiento y, cuando el proyecto lo pide, 3D — para marcas de Vigo que no quieren parecerse a la plantilla de su competencia.",
       "Somos un estudio de Vigo donde diseño y programación los hace el mismo equipo. Eso cambia el resultado más de lo que parece: lo que se aprueba en el prototipo es lo que se publica, y los detalles de animación no se pierden en el traspaso a un desarrollador que no estuvo en las reuniones.",
     ],
     localContext: {
@@ -535,10 +535,10 @@ export const landings: Landing[] = [
       { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
       { name: "Galicia", type: "AdministrativeArea" },
     ],
-    title: "Tiendas Online en Vigo | Shopify y Ecommerce a Medida",
+    title: "Diseño de Tiendas Online en Vigo | Shopify y Ecommerce",
     metaDescription:
       "Creamos tiendas online en Vigo: Shopify o ecommerce a medida con React y Node.js, pagos y catálogo cuidado. Casos reales como Canelita, Cliché y Koopey.",
-    h1: "Tiendas online en Vigo",
+    h1: "Diseño de tiendas online en Vigo",
     intro: [
       "Una tienda online no es una web con un carrito: es un canal de venta que tiene que cargar rápido en el móvil, cobrar sin fricción y encajar con el resto de tu negocio — stock, pedidos, envíos. Diseñamos y desarrollamos tiendas online para marcas y comercios de Vigo y su área que quieren vender más allá de su escaparate.",
       "Trabajamos con Shopify y con desarrollo propio, y te decimos cuál te conviene con tu catálogo delante. Hemos montado tiendas Shopify para Canelita, Cliché, Nabi Cosmética o Cachadas, y una tienda a medida con capa en tiempo real para Koopey.",
@@ -679,7 +679,7 @@ export const landings: Landing[] = [
       { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
       { name: "Galicia", type: "AdministrativeArea" },
     ],
-    title: "Software a Medida en Vigo | ERP, Paneles e Integraciones",
+    title: "Empresa de Software a Medida en Vigo | ERP e Integraciones",
     metaDescription:
       "Empresa de desarrollo de software a medida en Vigo: ERP, control horario, paneles internos e integraciones para pymes gallegas. Caso: Autoescuela GTI.",
     h1: "Software a medida en Vigo",
@@ -964,9 +964,9 @@ export const landings: Landing[] = [
     group: "zona",
     serviceName: "Desarrollo y diseño web en Pontevedra",
     serviceType: "Diseño y desarrollo web",
+    // Sin Redondela: tiene landing propia y la compartían en `areaServed`.
     areaServed: [
       { name: "Pontevedra", type: "City" },
-      { name: "Redondela", type: "City" },
       { name: "O Porriño", type: "City" },
       { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
     ],

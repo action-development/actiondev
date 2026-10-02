@@ -11,9 +11,11 @@ import { ARCADE_PALETTES, currentArcadeMode, type ArcadeMode } from "@/component
 import { Header } from "@/components/layout/Header";
 import { SceneCurtain } from "@/components/ui/SceneCurtain";
 import { useT } from "@/lib/i18n";
+import { loadArcadeScene } from "@/lib/scene-preload";
 
 // Escena Three.js siempre lazy + ssr:false (mismo patrón que la plaza y el hero).
-const ArcadeScene = dynamic(() => import("@/components/canvas/ArcadeScene").then((m) => m.ArcadeScene), {
+// El loader es el de `lib/scene-preload`: el mismo que precarga al apuntar.
+const ArcadeScene = dynamic(() => loadArcadeScene().then((m) => m.ArcadeScene), {
   ssr: false,
 });
 

@@ -18,6 +18,8 @@ export async function POST(request: Request) {
 
   revalidatePath("/blog");
   if (typeof slug === "string" && slug) revalidatePath(`/blog/${slug}`);
+  // El post nuevo tiene que aparecer también en el sitemap (y en IndexNow).
+  revalidatePath("/sitemap.xml");
 
   return NextResponse.json({ revalidated: true });
 }

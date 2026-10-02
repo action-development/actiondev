@@ -11,9 +11,11 @@ import { Header } from "@/components/layout/Header";
 import { SceneCurtain } from "@/components/ui/SceneCurtain";
 import { buildMailtoUrl, buildWhatsappUrl } from "@/data/socials";
 import { useT } from "@/lib/i18n";
+import { loadStreetScene } from "@/lib/scene-preload";
 
 // Escena Three.js siempre lazy + ssr:false (mismo patrón que la plaza y la recreativa).
-const StreetScene = dynamic(() => import("@/components/canvas/StreetScene").then((m) => m.StreetScene), {
+// El loader es el de `lib/scene-preload`: el mismo que precarga al apuntar.
+const StreetScene = dynamic(() => loadStreetScene().then((m) => m.StreetScene), {
   ssr: false,
 });
 

@@ -12,16 +12,23 @@ export interface Social {
   handle: string;
 }
 
+/** Último segmento de la URL del perfil: `…/actiondev.es/` → `actiondev.es`. */
+function handleFromUrl(url: string): string {
+  return new URL(url).pathname.split("/").filter(Boolean).pop() ?? "";
+}
+
+// `SOCIAL` ya trae URLs completas (`lib/seo.ts`): construirlas otra vez
+// componía `https://www.instagram.com/https://instagram.com/…`.
 export const SOCIALS: readonly Social[] = [
   SOCIAL.linkedin && {
     name: "LinkedIn",
-    url: `https://www.linkedin.com/company/${SOCIAL.linkedin}/`,
-    handle: SOCIAL.linkedin,
+    url: SOCIAL.linkedin,
+    handle: handleFromUrl(SOCIAL.linkedin),
   },
   SOCIAL.instagram && {
     name: "Instagram",
-    url: `https://www.instagram.com/${SOCIAL.instagram}`,
-    handle: `@${SOCIAL.instagram}`,
+    url: SOCIAL.instagram,
+    handle: `@${handleFromUrl(SOCIAL.instagram)}`,
   },
 ].filter(Boolean) as readonly Social[];
 

@@ -67,7 +67,11 @@ test("navigating between routes closes and reopens the blinds", async ({ page })
 	const blinds = page.getByTestId("page-blinds");
 	await expect(blinds).toHaveAttribute("data-state", "idle");
 
-	await page.getByRole("link", { name: "Privacidad" }).click();
+	// Acotado a la cabecera: el pie (`LegalLinks`) repite los mismos enlaces.
+	await page
+		.getByRole("navigation", { name: "Documentos legales" })
+		.getByRole("link", { name: "Privacidad" })
+		.click();
 	await expect(blinds).toHaveAttribute("data-state", /closing|closed/);
 	await expect(page).toHaveURL(/\/legal\/privacy$/);
 	await expect(blinds).toHaveAttribute("data-state", "idle", { timeout: 10_000 });

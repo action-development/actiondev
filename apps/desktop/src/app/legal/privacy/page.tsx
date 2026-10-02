@@ -12,10 +12,12 @@ import {
 /**
  * Política de privacidad (RGPD + LOPDGDD).
  *
- * Describe el tratamiento REAL del sitio: el formulario de contacto no envía
- * datos a ningún servidor propio — compone un mensaje y abre WhatsApp. Hay
- * analítica (Google Tag Manager, solo tras consentimiento — ver
- * `/legal/cookies`) pero no base de datos propia de analítica. Mantener este
+ * Describe el tratamiento REAL del sitio: WhatsApp y email abren la app del
+ * visitante sin formulario; el único dato que se guarda es el "llámame tú"
+ * (`CallbackForm` → Firestore `leads`, base de datos en `nam5` = EE. UU.: de
+ * ahí la transferencia internacional del apartado 5). Hay analítica (Google
+ * Tag Manager, solo tras consentimiento — ver `/legal/cookies`) pero no base
+ * de datos propia de analítica. Mantener este
  * documento alineado con `components/contact/*` (canales y "llámame tú") y
  * `components/analytics/GoogleTagManager.tsx` si eso cambia.
  */
@@ -111,28 +113,20 @@ export default function PrivacyPage() {
         </p>
 
         <h2>2. Qué datos tratamos y de dónde salen</h2>
-        <h3>2.1. Formulario de contacto</h3>
+        <h3>2.1. Solicitud de llamada</h3>
         <p>
-          El formulario de la web recoge: <strong>nombre</strong>,{" "}
-          <strong>correo electrónico</strong>, y opcionalmente{" "}
-          <strong>teléfono</strong>, <strong>sitio web</strong> y la{" "}
-          <strong>descripción del proyecto</strong> que escribas.
+          En la página de contacto puedes pedirnos que te llamemos («¿Prefieres
+          que te contactemos?»). Esa solicitud recoge tu{" "}
+          <strong>teléfono</strong> y, si quieres, una <strong>nota</strong>{" "}
+          sobre lo que necesitas, y se guarda junto con la fecha de envío en
+          nuestra base de datos (<strong>Google Cloud Firestore</strong>), que
+          solo puede consultar el equipo de Action. Es el único dato que la web
+          guarda en un servidor nuestro.
         </p>
         <p>
-          <strong>
-            Importante: el formulario no envía esos datos a ningún servidor
-            nuestro.
-          </strong>{" "}
-          Al enviarlo, el navegador compone un mensaje con lo que has escrito y
-          abre WhatsApp para que seas tú quien lo envíe. Hasta que pulsas enviar
-          en WhatsApp, los datos no salen de tu dispositivo. No existe base de
-          datos, ni almacenamiento en servidor, ni registro de envíos por nuestra
-          parte.
-        </p>
-        <p>
-          El formulario incluye un campo oculto anti-spam (honeypot) que no es
-          visible ni rellenable por una persona; su único uso es descartar envíos
-          automatizados.
+          Los demás canales de la web (WhatsApp y correo electrónico) no pasan
+          por ningún formulario: abren tu aplicación de mensajería o de correo,
+          y eres tú quien envía el mensaje (ver el apartado 2.2).
         </p>
 
         <h3>2.2. Comunicaciones directas</h3>
@@ -169,7 +163,11 @@ export default function PrivacyPage() {
         <h2>3. Finalidades y base legal</h2>
         <ul>
           <li>
-            <strong>Atender tu consulta y elaborar una propuesta</strong> — base
+            <strong>
+              Atender tu consulta, devolverte la llamada que nos pidas y
+              elaborar una propuesta
+            </strong>{" "}
+            — base
             legal: aplicación de medidas precontractuales a petición del
             interesado (art. 6.1.b RGPD).
           </li>
@@ -196,7 +194,8 @@ export default function PrivacyPage() {
             <strong>Analítica de uso del sitio</strong> (Google Tag Manager /
             Google Analytics) — base legal: consentimiento expreso mediante el
             banner de cookies (art. 6.1.a RGPD), revocable en cualquier
-            momento desde «Preferencias de cookies» en el pie de página.
+            momento desde «Preferencias de cookies», en el pie de página, o
+            desde «Cookies», abajo a la izquierda en las pantallas 3D.
           </li>
         </ul>
         <p>
@@ -240,6 +239,11 @@ export default function PrivacyPage() {
             y la política de privacidad de Meta, ajenas a nuestro control.
           </li>
           <li>
+            <strong>Google Cloud (Firebase / Cloud Firestore)</strong> —
+            encargado del tratamiento que almacena las solicitudes de llamada
+            del apartado 2.1, en servidores de <strong>Estados Unidos</strong>.
+          </li>
+          <li>
             <strong>Proveedor de correo electrónico</strong> — para gestionar la
             correspondencia.
           </li>
@@ -264,10 +268,15 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          No se realizan transferencias internacionales de datos fuera del
-          Espacio Económico Europeo por iniciativa nuestra. Cuando un prestador
-          las realice, se ampararán en decisiones de adecuación o en cláusulas
-          contractuales tipo de la Comisión Europea.
+          <strong>Transferencias internacionales:</strong> las solicitudes de
+          llamada (apartado 2.1) se almacenan en Estados Unidos, en la
+          infraestructura de Google. La transferencia se ampara en la decisión
+          de adecuación del Marco de Privacidad de Datos UE-EE. UU. (Comisión
+          Europea, 10 de julio de 2023), al que está adherida Google LLC, y en
+          las cláusulas contractuales tipo de sus condiciones de tratamiento de
+          datos. Cuando otro prestador realice transferencias fuera del Espacio
+          Económico Europeo, se ampararán igualmente en decisiones de adecuación
+          o en cláusulas contractuales tipo de la Comisión Europea.
         </p>
 
         <h2>6. Tus derechos</h2>

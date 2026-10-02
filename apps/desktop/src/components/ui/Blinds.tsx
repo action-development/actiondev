@@ -18,12 +18,18 @@
  * Sin GSAP a propósito: el estado lo renderiza React y GSAP pelearía con la
  * reconciliación (ver nota de `LoadingScreen`). Las transiciones CSS respetan
  * `prefers-reduced-motion` desde `globals.css` sin código extra; el padre debe
- * usar `blindsDuration()` para no esperar 900 ms a una animación de 0,01 ms.
+ * usar `blindsDuration()` para no esperar 600 ms a una animación de 0,01 ms.
+ *
+ * Ritmo: ~600 ms por barrido (antes 885). La persiana se paga DOS veces en
+ * cada cambio de página —cierre y apertura— y con la escena ya en caché era el
+ * 80 % de lo que tardaba la navegación (auditoría de cargas 2026-10). Mismo
+ * dibujo y misma curva; solo más corto. Va en el compositor (`transform`), así
+ * que no da tirones aunque el hilo principal esté ocupado montando la ruta.
  */
 
 export const BLIND_COUNT = 10;
-const STRIPE_MS = 480;
-const STAGGER_MS = 45;
+const STRIPE_MS = 340;
+const STAGGER_MS = 28;
 /** Hueco entre lamas: en reposo se leen como persiana, no como un bloque lima. */
 const GAP_PX = 3;
 

@@ -102,6 +102,28 @@ service cloud.firestore {
            resource.data.uploadedByEmail == request.auth.token.email &&
            get(/databases/$(database)/documents/clientProjects/$(projectId)).data.clientId == request.auth.token.clientId);
       }
+
+      // Facturas del proyecto (portal). Solo las gestiona un admin; el cliente
+      // dueño del proyecto las lee. El binario vive en Storage
+      // (projects/{projectId}/invoices/**, ver storage.rules).
+      match /invoices/{invoiceId} {
+        allow read: if isAdmin() ||
+          (isClient() &&
+           get(/databases/$(database)/documents/clientProjects/$(projectId)).data.clientId == request.auth.token.clientId);
+        allow create: if isAdmin() &&
+          request.resource.data.uploadedByEmail == request.auth.token.email &&
+          request.resource.data.uploadedByRole == 'admin' &&
+          request.resource.data.name is string &&
+          request.resource.data.name.size() > 0 &&
+          request.resource.data.name.size() <= 255 &&
+          request.resource.data.size is number &&
+          request.resource.data.size <= 26214400 &&
+          request.resource.data.storagePath.matches('projects/' + projectId + '/invoices/' + invoiceId + '-.*') &&
+          request.resource.data.createdAt == request.time;
+        // Inmutables: para corregir una factura se borra y se sube de nuevo.
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
     }
   }
 }

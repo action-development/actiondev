@@ -104,7 +104,8 @@ test.describe("Plaza de reseñas", () => {
 
     const google = page.getByRole("link", { name: /ver reseñas en google/i });
     await expect(google).toBeVisible();
-    await expect(google).toHaveAttribute("href", /google\.[a-z.]+\/maps/);
+    // Ficha real de Google Business por CID (`BUSINESS.mapsUrl`).
+    await expect(google).toHaveAttribute("href", /maps\.google\.com\/\?cid=\d+/);
 
     // En reposo es solo la "G": la etiqueta sigue en el DOM (de ahí el nombre
     // accesible del enlace) pero recortada a ancho 0, y se despliega al hover.

@@ -7,7 +7,7 @@ import { useGSAP } from "@gsap/react";
 import { gsap } from "@/lib/gsap-config";
 import { projects, type Project } from "@/data/projects";
 import { HoloButton } from "@/components/ui/HoloButton";
-import { getLenis } from "@/hooks/use-lenis";
+import { getLenis } from "@/lib/lenis-instance";
 import { useLocale } from "@/lib/i18n";
 import hud from "./projects-hud.module.css";
 

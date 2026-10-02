@@ -4,6 +4,7 @@ import { getLandingsByGroup, type Landing } from "@/data/landings";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { HoloBar } from "@/components/layout/HoloBar";
 import { BUSINESS, OG_IMAGE, absoluteUrl } from "@/lib/seo";
+import { LegalLinks } from "@/components/layout/LegalLinks";
 
 /**
  * Hub de servicios — página índice que enlaza todas las landings SEO locales.
@@ -177,7 +178,7 @@ export default function ServiciosPage() {
       </main>
 
       <footer className="border-t border-border">
-        <div className="container-editorial flex flex-col gap-3 py-10 font-mono text-xs uppercase tracking-widest text-muted md:flex-row md:items-center md:justify-between">
+        <div className="container-editorial flex flex-col gap-3 pt-10 pb-5 font-mono text-xs uppercase tracking-widest text-muted md:flex-row md:items-center md:justify-between">
           <p>
             Action — {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
             {BUSINESS.address.locality}, {BUSINESS.address.region}
@@ -189,6 +190,10 @@ export default function ServiciosPage() {
             · {BUSINESS.phoneDisplay}
           </p>
         </div>
+        <LegalLinks
+          className="container-editorial pb-10 font-mono text-xs uppercase tracking-widest text-muted"
+          linkClassName="link-sweep uppercase tracking-widest hover:text-accent"
+        />
       </footer>
     </>
   );

@@ -10,9 +10,11 @@ import { usePageTransition } from "@/components/animations/PageTransition";
 import { PORT_CONTAINERS } from "@/data/port-containers";
 import { landings } from "@/data/landings";
 import { BRAND } from "@/lib/seo";
+import { loadGameScene } from "@/lib/scene-preload";
 
+// El loader es el de `lib/scene-preload`: el mismo que precarga al navegar.
 const GameScene = dynamic(
-  () => import("@/components/canvas/GameScene").then((m) => m.GameScene),
+  () => loadGameScene().then((m) => m.GameScene),
   { ssr: false }
 );
 

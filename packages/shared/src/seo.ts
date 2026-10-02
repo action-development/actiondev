@@ -15,7 +15,7 @@ export const BUSINESS = {
    */
   legalName: "Alcasi Systems, S.L.",
   /** Nombre largo de marca para usos visuales (OG image, firma de servicio). */
-  displayName: "Action Digital Agency",
+  displayName: "Action Development",
   alternateName: "Action Development",
   /** NIF/CIF del titular — JSON-LD `vatID` / `taxID`. */
   taxId: "B72910664",
@@ -45,8 +45,10 @@ export const BUSINESS = {
   reviewUrl: "https://g.page/r/CeTTw-Rv4wz8EBM/review",
   foundingYear: 2020,
   social: {
-    instagram: "https://instagram.com/action.dev",
-    linkedin: "https://linkedin.com/company/action-development",
+    // `@action.dev` NO existe (el `sameAs` del JSON-LD apuntaba a un perfil
+    // vacío): el perfil real es `@actiondev.es`.
+    instagram: "https://www.instagram.com/actiondev.es/",
+    linkedin: "https://www.linkedin.com/company/action-development/",
   },
   /** Catálogo de servicios — usado por el `hasOfferCatalog` del JSON-LD en desktop y mobile. */
   services: [

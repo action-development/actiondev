@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { track } from "@actiondev/shared";
-import { requestCallback } from "@/lib/callback-request";
+import { preloadCallbackBackend, requestCallback } from "@/lib/callback-request";
 import { PhoneIcon } from "@/components/icons/channel-icons";
 import { useT } from "@/lib/i18n";
 
@@ -22,8 +22,11 @@ export function CallbackForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const trimmed = phone.trim();
 
+  // Al abrirse: foco al teléfono y, mientras se teclea, Firebase ya bajando
+  // (no viaja con /contact, ver `lib/callback-request`).
   useEffect(() => {
     phoneRef.current?.focus();
+    preloadCallbackBackend();
   }, []);
 
   // El éxito se enseña (y se mide) solo con el lead YA guardado: antes se

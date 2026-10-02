@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { Blinds, blindsDuration } from "@/components/ui/Blinds";
+import { preloadScene } from "@/lib/scene-preload";
 
 /**
  * PageTransition — persiana de acento entre rutas.
@@ -40,7 +41,11 @@ import { Blinds, blindsDuration } from "@/components/ui/Blinds";
  * la que ya estamos. Si el padre ya hizo `preventDefault` (logo del Header en
  * `/` → scroll a 0) tampoco se toca. Back/forward del navegador no pasan por
  * aquí y cambian de página en seco a propósito: es navegación del usuario
- * fuera del sitio y no debe esperar 900 ms.
+ * fuera del sitio y no debe esperar a la persiana.
+ *
+ * Precarga: al apuntar o enfocar un enlace interno, y al empezar a navegar, se
+ * pide ya el chunk de la escena 3D del destino (`lib/scene-preload`). Sin eso
+ * no se pedía hasta montar la ruta, con la persiana ya cerrada esperando.
  */
 
 type Phase = "idle" | "closing" | "closed" | "opening";
@@ -111,6 +116,9 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
 
       const from = currentLocation();
       const closeMs = options?.covered ? 0 : blindsDuration();
+      // El chunk de la escena baja mientras la persiana se cierra (el juego de
+      // la home y la puerta de /projects llegan aquí sin pasar por un hover).
+      preloadScene(url.pathname);
       router.prefetch(href);
       if (options?.covered) {
         setInstant(true);
@@ -139,7 +147,9 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
           later(() => setPhaseSync("idle"), blindsDuration());
           return;
         }
-        later(poll, 50);
+        // Cada frame: la URL suele cambiar a los pocos ms del `push`, y con 50
+        // ms de sondeo la persiana esperaba de media 25 ms de más.
+        later(poll, 16);
       };
       later(poll, closeMs);
     },
@@ -172,6 +182,32 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
   }, [navigate]);
+
+  // Precarga por intención: apuntar (o enfocar con el teclado) un enlace
+  // interno a una escena 3D ya empieza a bajar su chunk. Al hacer click se
+  // gana lo que se tarda en apuntar más el cierre de la persiana.
+  //
+  // `/` no: el logo y "Inicio" se rozan sin querer en todas las páginas y la
+  // home son ~1,1 MB gz (GameScene + Rapier); se precarga solo al navegar de
+  // verdad (`navigate`). El táctil tampoco: un `pointerover` de dedo puede ser
+  // el principio de un scroll, y el toque ya pasa por `navigate`.
+  useEffect(() => {
+    const onIntent = (e: Event) => {
+      if ((e as PointerEvent).pointerType === "touch") return;
+      const anchor = (e.target as Element | null)?.closest?.("a[href]");
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      const url = new URL(anchor.href, window.location.href);
+      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return;
+      if (url.pathname === "/") return;
+      preloadScene(url.pathname);
+    };
+    document.addEventListener("pointerover", onIntent, { passive: true });
+    document.addEventListener("focusin", onIntent);
+    return () => {
+      document.removeEventListener("pointerover", onIntent);
+      document.removeEventListener("focusin", onIntent);
+    };
+  }, []);
 
   const closed = phase === "closing" || phase === "closed";
   const active = phase !== "idle";

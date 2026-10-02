@@ -143,7 +143,13 @@ export function StreetWorld({
   // código y prefiltrada con PMREM — nada que descargar, al contrario que los
   // `preset` de drei (ver "Errores prohibidos" en CLAUDE.md). Sin él, todo lo
   // metálico o pulido se veía de plástico mate.
-  useEffect(() => {
+  //
+  // `useLayoutEffect`, no `useEffect`: el entorno forma parte de la clave de
+  // cada shader PBR (`USE_ENVMAP`). Puesto en un efecto pasivo llegaba DESPUÉS
+  // del primer frame y three recompilaba los ~10 materiales con reflejo: un
+  // segundo bloqueo de 1,4 s en la primera visita (auditoría de cargas
+  // 2026-10). Así está puesto antes de que `SceneWarmup` compile nada.
+  useLayoutEffect(() => {
     const pmrem = new THREE.PMREMGenerator(gl);
     const room = new RoomEnvironment();
     const env = pmrem.fromScene(room, 0.04).texture;

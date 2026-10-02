@@ -76,7 +76,7 @@ export default function CookiesPage() {
       <LegalDocHeader
         eyebrow="Legal · LSSI art. 22.2"
         title="Política de cookies"
-        lede="Este sitio no instala ninguna cookie de analítica hasta que la aceptas en el banner. Puedes cambiar tu decisión en cualquier momento desde el pie de página."
+        lede="Este sitio no instala ninguna cookie de analítica hasta que la aceptas en el banner. Puedes cambiar tu decisión en cualquier momento desde «Preferencias de cookies», en el pie de página, o desde «Cookies», abajo a la izquierda en las pantallas 3D."
       />
 
       <div className="legal-prose">
@@ -160,8 +160,10 @@ export default function CookiesPage() {
         </p>
         <p>
           Para cambiar tu decisión en cualquier momento, usa el enlace{" "}
-          <strong>«Preferencias de cookies»</strong> del pie de página: vuelve
-          a mostrar el banner sin recargar la web.
+          <strong>«Preferencias de cookies»</strong> del pie de página o, en
+          las pantallas 3D (inicio, proyectos, reseñas y contacto),{" "}
+          <strong>«Cookies»</strong> abajo a la izquierda: vuelve a mostrar el
+          banner sin recargar la web.
         </p>
 
         <h2>5. Almacenamiento local técnico</h2>
@@ -207,11 +209,11 @@ export default function CookiesPage() {
 
         <h2>6. Servicios de terceros</h2>
         <p>
-          Si utilizas el formulario de contacto, al enviarlo se abre{" "}
-          <strong>WhatsApp</strong> en una pestaña nueva. A partir de ese
-          momento estás en un dominio de Meta Platforms, sujeto a sus propias
-          cookies y política de privacidad, ajenas a nuestro control. Lo mismo
-          aplica a los enlaces a redes sociales del pie de página.
+          Si eliges <strong>WhatsApp</strong> como canal de contacto, se abre
+          en una pestaña nueva o en la aplicación. A partir de ese momento
+          estás en un servicio de Meta Platforms, sujeto a sus propias cookies
+          y política de privacidad, ajenas a nuestro control. Lo mismo aplica a
+          los enlaces a nuestras redes sociales.
         </p>
         <p>
           El proveedor de alojamiento puede registrar datos técnicos de acceso en
@@ -221,7 +223,8 @@ export default function CookiesPage() {
 
         <h2>7. Cómo controlar el almacenamiento y las cookies</h2>
         <p>
-          Además del enlace «Preferencias de cookies» del pie de página, puedes
+          Además de «Preferencias de cookies» (o «Cookies» en las pantallas
+          3D), puedes
           borrar el almacenamiento y las cookies de este sitio desde los
           ajustes de tu navegador (normalmente en «Privacidad y seguridad» →
           «Datos de sitios»), o navegar en modo incógnito. Borrar el

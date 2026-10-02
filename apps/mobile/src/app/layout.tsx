@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { detectLocale } from "@/lib/i18n";
 import { dictionaries } from "@/lib/i18n/dictionaries";
+import { BUSINESS } from "@actiondev/shared";
 import { I18nProvider } from "@/lib/i18n/context";
 import { StructuredData } from "@/components/StructuredData";
 import { SeoIntro } from "@/components/SeoIntro";
@@ -33,9 +34,11 @@ export async function generateMetadata(): Promise<Metadata> {
       "agencia desarrollo web Galicia",
     ],
     applicationName: "Action",
-    authors: [{ name: "Action Digital Agency", url: SITE_URL }],
-    creator: "Action Digital Agency",
-    publisher: "Action Digital Agency",
+    // Denominación social real, como en desktop (`BRAND.legalName`): un nombre
+    // de marketing aquí era una tercera "entidad" para buscadores.
+    authors: [{ name: BUSINESS.legalName, url: SITE_URL }],
+    creator: BUSINESS.legalName,
+    publisher: BUSINESS.legalName,
     openGraph: {
       title: t.title,
       description: t.description,

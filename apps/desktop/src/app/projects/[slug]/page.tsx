@@ -6,6 +6,7 @@ import { PLACEHOLDER_IMAGE, hasCaseStudy, projects, type Project } from "@action
 import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 import { Header } from "@/components/layout/Header";
 import { projectCase, projectCategoryLabel, relatedService } from "@/lib/project-case";
+import { LegalLinks } from "@/components/layout/LegalLinks";
 
 /**
  * Ficha de proyecto (/projects/[slug]) — server component, misma familia
@@ -312,7 +313,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       </main>
 
       <footer className="border-t border-border">
-        <div className="container-editorial flex flex-col gap-2 py-10 text-sm text-muted md:flex-row md:items-center md:justify-between">
+        <div className="container-editorial flex flex-col gap-2 pt-10 pb-5 text-sm text-muted md:flex-row md:items-center md:justify-between">
           <p>
             Action — {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
             {BUSINESS.address.locality}, {BUSINESS.address.region}
@@ -324,6 +325,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             · {BUSINESS.phoneDisplay}
           </p>
         </div>
+        <LegalLinks
+          className="container-editorial pb-10 text-sm text-muted"
+          linkClassName="hover:text-foreground"
+        />
       </footer>
     </>
   );

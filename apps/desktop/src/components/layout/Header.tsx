@@ -6,7 +6,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navigation } from "@/data/navigation";
 import { useLocale, useT } from "@/lib/i18n";
-import { getLenis } from "@/hooks/use-lenis";
+// De `lib/lenis-instance`, no de `hooks/use-lenis`: el hook arrastra Lenis +
+// GSAP + ScrollTrigger y el Header va en casi todas las rutas.
+import { getLenis } from "@/lib/lenis-instance";
 import { usePageTransition } from "@/components/animations/PageTransition";
 import { resolveTimeOfDay, type TimeOfDay } from "@/components/canvas/port/time-of-day";
 import styles from "./Header.module.css";
