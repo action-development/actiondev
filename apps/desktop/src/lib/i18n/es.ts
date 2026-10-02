@@ -46,6 +46,7 @@ export const es: Translations = {
       "¿Llamada o mensaje? ¿Algún horario mejor para llamarte? Cuéntanos lo que quieras (opcional)",
     callbackCta: "Enviar",
     callbackSuccess: "¡Gracias! Te contactaremos en menos de 24h.",
+    callbackError: "No se ha podido enviar. Inténtalo de nuevo o escríbenos por WhatsApp.",
     street: {
       address: "C/ Colón 20 · Vigo",
       loading: "Llegando a Colón 20…",

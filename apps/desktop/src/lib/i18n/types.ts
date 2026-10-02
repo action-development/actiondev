@@ -51,6 +51,7 @@ export interface Translations {
     callbackCta: string;
     /** Confirmación tras enviar el lead a Firestore. */
     callbackSuccess: string;
+    callbackError: string;
     /** La calle de /contact (C/ Colón 20 en 3D). Rótulos de las etiquetas de
      * cada objeto: canal + verbo que aparece al apuntarlo. En caja alta. */
     street: {

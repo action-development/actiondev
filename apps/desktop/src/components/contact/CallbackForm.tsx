@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { track } from "@actiondev/shared";
 import { requestCallback } from "@/lib/callback-request";
 import { PhoneIcon } from "@/components/icons/channel-icons";
 import { useT } from "@/lib/i18n";
@@ -18,22 +19,29 @@ export function CallbackForm() {
   const phoneRef = useRef<HTMLInputElement>(null);
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const trimmed = phone.trim();
 
   useEffect(() => {
     phoneRef.current?.focus();
   }, []);
 
-  const submit = () => {
-    if (!trimmed || submitted) return;
-    requestCallback(trimmed, notes.trim()).catch((error) => {
+  // El éxito se enseña (y se mide) solo con el lead YA guardado: antes se
+  // daba por enviado sin esperar a Firestore y un fallo se perdía en silencio.
+  const submit = async () => {
+    if (!trimmed || status === "sending" || status === "sent") return;
+    setStatus("sending");
+    try {
+      await requestCallback(trimmed, notes.trim());
+      track("generate_lead", { lead_source: "callback_form", page_path: window.location.pathname });
+      setStatus("sent");
+    } catch (error) {
       console.error("[contact] no se pudo guardar el lead:", error);
-    });
-    setSubmitted(true);
+      setStatus("error");
+    }
   };
 
-  if (submitted) {
+  if (status === "sent") {
     return (
       <p data-testid="callback-success" role="status" className="animate-fade-in text-sm text-accent">
         {t.contact.callbackSuccess}
@@ -46,7 +54,7 @@ export function CallbackForm() {
       data-testid="callback-form"
       onSubmit={(event) => {
         event.preventDefault();
-        submit();
+        void submit();
       }}
       className="animate-fade-in"
     >
@@ -70,11 +78,22 @@ export function CallbackForm() {
           className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted"
         />
         {trimmed && (
-          <button type="submit" className="holo-btn holo-btn-solid holo-btn-sm shrink-0">
+          <button
+            type="submit"
+            disabled={status === "sending"}
+            aria-busy={status === "sending"}
+            className="holo-btn holo-btn-solid holo-btn-sm shrink-0 disabled:opacity-60"
+          >
             <span className="inline-flex items-center gap-2">{t.contact.callbackCta}</span>
           </button>
         )}
       </div>
+
+      {status === "error" && (
+        <p data-testid="callback-error" role="alert" className="mt-2 animate-fade-in text-xs text-foreground">
+          {t.contact.callbackError}
+        </p>
+      )}
 
       {trimmed && (
         <div className="mt-2 animate-fade-in">

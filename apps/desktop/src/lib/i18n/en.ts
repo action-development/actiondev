@@ -45,6 +45,7 @@ export const en: Translations = {
     callbackNotesPlaceholder: "Call or text? Any time that works best? Tell us anything else (optional)",
     callbackCta: "Send",
     callbackSuccess: "Thank you! We'll be in touch within 24h.",
+    callbackError: "It couldn't be sent. Try again or message us on WhatsApp.",
     street: {
       address: "C/ Colón 20 · Vigo",
       loading: "Arriving at Colón 20…",

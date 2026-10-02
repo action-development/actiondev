@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CONSENT_EVENT, readStoredConsent } from "@actiondev/shared";
+import { CONSENT_EVENT, readStoredConsent, track } from "@actiondev/shared";
 import { buildAiAssistants } from "@/data/ai-assistants";
 import { CONTACT, buildMailtoUrl, buildWhatsappUrl } from "@/data/socials";
 import { usePageTransition } from "@/components/animations/PageTransition";
@@ -70,11 +70,6 @@ function remember(storage: "local" | "session", key: string, value: string) {
   } catch {
     // Storage bloqueado: el tope en memoria del componente sigue valiendo.
   }
-}
-
-function track(event: string, params: Record<string, string> = {}) {
-  const w = window as unknown as { dataLayer?: unknown[] };
-  if (Array.isArray(w.dataLayer)) w.dataLayer.push({ event, ...params });
 }
 
 function isContactHref(href: string | null) {

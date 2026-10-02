@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
+import { trackContact } from "@actiondev/shared";
 import type { HotspotId } from "@/components/canvas/street/street-config";
 import { STREET_PALETTES, currentStreetMode, type StreetMode } from "@/components/canvas/street/street-mode";
 import type { StreetLabels } from "@/components/canvas/street/StreetWorld";
@@ -70,10 +71,15 @@ export function ContactPage() {
   const handleActivate = useCallback(
     (id: HotspotId) => {
       markUsed(id);
+      // Sin `<a>` de por medio, el listener de clics no lo ve: se mide aquí.
       if (id === "whatsapp") {
-        window.open(buildWhatsappUrl(t.contact.intro), "_blank", "noopener,noreferrer");
+        const href = buildWhatsappUrl(t.contact.intro);
+        trackContact(href);
+        window.open(href, "_blank", "noopener,noreferrer");
       } else if (id === "email") {
-        window.location.href = buildMailtoUrl(t.contact.emailSubject, t.contact.intro);
+        const href = buildMailtoUrl(t.contact.emailSubject, t.contact.intro);
+        trackContact(href);
+        window.location.href = href;
       } else {
         setCallbackOpen(true);
       }

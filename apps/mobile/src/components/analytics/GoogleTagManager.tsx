@@ -2,7 +2,13 @@
 
 import Script from "next/script";
 import { useEffect, useState } from "react";
-import { CONSENT_EVENT, GTM_ID, readStoredConsent } from "@actiondev/shared";
+import {
+  CONSENT_EVENT,
+  GTM_ID,
+  applyConsent,
+  listenContactClicks,
+  readStoredConsent,
+} from "@actiondev/shared";
 
 /**
  * Carga Google Tag Manager SOLO tras consentimiento explícito
@@ -15,10 +21,22 @@ export function GoogleTagManager() {
   const [granted, setGranted] = useState(false);
 
   useEffect(() => {
-    const sync = () => setGranted(readStoredConsent() === "granted");
+    const sync = () => {
+      const consent = readStoredConsent();
+      // Consent Mode v2 antes de que el script de GTM exista: al cargar ya
+      // encuentra en el dataLayer el default denegado + el update concedido.
+      applyConsent(consent);
+      setGranted(consent === "granted");
+    };
     sync();
     window.addEventListener(CONSENT_EVENT, sync);
-    return () => window.removeEventListener(CONSENT_EVENT, sync);
+    // Clics en wa.me / mailto: / tel: de toda la página. `track` descarta
+    // solo lo que llegue sin consentimiento.
+    const stopContactClicks = listenContactClicks();
+    return () => {
+      window.removeEventListener(CONSENT_EVENT, sync);
+      stopContactClicks();
+    };
   }, []);
 
   if (!granted) return null;
