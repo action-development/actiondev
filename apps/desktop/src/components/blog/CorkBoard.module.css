@@ -1,0 +1,413 @@
+/* ─────────────────────────────────────────────────────────────── */
+/*  TABLERO DE CHINCHETAS  (/blog)                                 */
+/*  blog/CorkBoard.tsx · blog/Pinned.tsx · blog/PostIt.tsx         */
+/*                                                                 */
+/*  Objeto físico del mundo del cómic, como `ui/ControlSign`: no   */
+/*  es UI proyectada. Contorno de tinta y sombras DURAS (sin       */
+/*  difuminar, como piden los tokens), pero ahora proyectadas de   */
+/*  verdad: CSS 3D con la sombra en el plano del corcho y el papel */
+/*  flotando delante. Corcho procedural: ruido SVG, cero assets.   */
+/* ─────────────────────────────────────────────────────────────── */
+
+.root {
+  --ink:      #1a1410;
+  --ink-soft: #47453d;
+  --wood:     #2b1e13;
+  --cork:     #7a5636;
+  /* Más ancho que `--container-max` (1200): con cinco pósits por fila, a
+     1200 cada uno se quedaba en ~200px. */
+  --board-max: 88rem;
+}
+
+/* ── Escena ──────────────────────────────────────────────────── */
+
+/* El corcho ES la página. `perspective-origin` lo mueve `CorkBoard.tsx`
+   (centro del viewport al hacer scroll); `50vh` es el arranque correcto antes de
+   hidratar, con la página arriba del todo. Las motas salen del canal R de
+   `feTurbulence`: alfa = k·R − umbral, en dos capas (oscura y clara). */
+.board {
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: clip;
+  /* El lateral es generoso a propósito: la perspectiva empuja hacia fuera lo
+     que flota (~3 % en los extremos) y los pósits de las esquinas tocaban el
+     marco. */
+  padding: clamp(6.5rem, 14vh, 9rem) clamp(1.5rem, 6vw, 6rem) clamp(3.5rem, 8vh, 5.5rem);
+  background-color: var(--cork);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .22 0 0 0 0 .13 0 0 0 0 .06 3 0 0 0 -1.5'/%3E%3C/filter%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='2' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .72 0 0 0 0 .54 0 0 0 0 .36 3 0 0 0 -1.62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23d)'/%3E%3Crect width='100%25' height='100%25' filter='url(%23l)'/%3E%3C/svg%3E");
+  color: var(--ink);
+  perspective: 800px;
+  perspective-origin: 50% 50vh;
+}
+
+/* Marco de madera pegado a los bordes de la pantalla: el viewport es una
+   ventana al tablero. Fijo y FUERA de `.board` (con `perspective`, el
+   corcho sería su bloque contenedor). Por debajo del Header (z-50). */
+.frame {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  border: clamp(6px, 0.9vw, 12px) solid var(--wood);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+/* Todo contenedor entre el corcho y un papel tiene que conservar el 3D:
+   sin `preserve-3d` aplanaría a sus hijos y no les llegaría la perspectiva. */
+.content,
+.grid,
+.cardRow {
+  transform-style: preserve-3d;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3.5rem, 9vh, 6rem);
+  max-width: var(--board-max);
+  margin-inline: auto;
+}
+
+/* ── Papel clavado (Pinned) ──────────────────────────────────── */
+
+/* El objeto vive en el plano del corcho: lleva el giro (alrededor de la
+   primera chincheta) y, en su `::before`, la sombra proyectada. `--z` es a
+   cuánto flota la hoja: la sombra se aleja en proporción (luz arriba a la
+   izquierda), así que más alto = sombra más larga, igual que en la realidad. */
+.object {
+  --z: 16px;
+  --curl: 4deg;
+  position: relative;
+  display: flex;
+  transform-style: preserve-3d;
+  transform: translate(var(--dx), var(--dy)) rotate(var(--tilt));
+  transform-origin: var(--pin-x) 1rem;
+  transition: transform var(--duration) var(--ease);
+}
+
+.object::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 20, 16, 0.6);
+  transform: translate(calc(var(--z) * 0.6), calc(var(--z) * 0.95));
+  transition: transform var(--duration) var(--ease);
+  pointer-events: none;
+}
+
+/* La hoja flota `--z` por delante del corcho y en reposo ya tiene la parte
+   de abajo un poco despegada (`rotateX` con origen en la chincheta): un papel
+   clavado por arriba nunca queda plano del todo, y en perspectiva se ve en
+   trapecio. */
+.sheet {
+  position: relative;
+  flex: 1;
+  /* Sin esto, un flex item con `aspect-ratio` toma su ancho mínimo de la
+     altura del contenido y la hoja desborda su celda (se solapaban a 1280). */
+  min-width: 0;
+  transform-style: preserve-3d;
+  border: 2px solid var(--ink);
+  background-color: var(--paper);
+  color: var(--ink);
+  transform: translateZ(var(--z)) rotateX(var(--curl));
+  transform-origin: var(--pin-x) 1rem;
+  transition: transform var(--duration) var(--ease);
+}
+
+/* Brillo del papel al doblarse hacia la luz. */
+.sheet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 55%, rgba(255, 255, 255, 0.14));
+  opacity: 0;
+  transition: opacity var(--duration) var(--ease);
+  pointer-events: none;
+}
+
+/* Apuntar un enlace: el papel se endereza sobre su chincheta y la parte de
+   abajo se despega hacia ti (`rotateX` con origen en la chincheta, que lo
+   sujeta arriba). La sombra se aleja con él. Solo con puntero fino: en
+   táctil el hover se queda pegado. */
+@media (hover: hover) {
+  .interactive:hover {
+    transform: translate(var(--dx), var(--dy)) rotate(0deg);
+  }
+  .interactive:hover::before {
+    transform: translate(calc(var(--z) * 0.6 + 12px), calc(var(--z) * 0.95 + 26px));
+  }
+  .interactive:hover .sheet {
+    transform: translateZ(calc(var(--z) + 14px)) rotateX(16deg);
+  }
+  .interactive:hover .sheet::after {
+    opacity: 1;
+  }
+}
+
+.interactive:has(.sheet:focus-visible) {
+  transform: translate(var(--dx), var(--dy)) rotate(0deg);
+}
+.interactive:has(.sheet:focus-visible)::before {
+  transform: translate(calc(var(--z) * 0.6 + 12px), calc(var(--z) * 0.95 + 26px));
+}
+.interactive .sheet:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 6px;
+  transform: translateZ(calc(var(--z) + 14px)) rotateX(16deg);
+}
+
+/* Pulsar: se aplasta contra el corcho. Acuse de recibo, no viaje. */
+.interactive:active::before {
+  transform: translate(2px, 3px);
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-snap);
+}
+.interactive:active .sheet {
+  transform: translateZ(3px) rotateX(0deg);
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-snap);
+}
+
+/* ── Chincheta ───────────────────────────────────────────────── */
+
+/* Tres piezas: sombra sobre la hoja (`::before`), aguja (`.needle`, de pie
+   en Z) y cabeza (`::after`, 16px por delante). Lejos del centro de la
+   pantalla la cabeza se separa de su sombra y la aguja asoma: volumen.
+   Círculos completos: el radio es para pilotos y medallones, como éste. */
+.pin {
+  position: absolute;
+  top: 0.55rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-left: -0.5625rem;
+  transform-style: preserve-3d;
+}
+
+.pin::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(26, 20, 16, 0.26);
+  transform: translate(8px, 12px);
+}
+
+.pin::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.7) 0 16%, transparent 19%),
+    #3b3731;
+  transform: translateZ(16px);
+}
+
+.needle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 16px;
+  margin-left: -1px;
+  background: #8d877c;
+  transform: rotateX(90deg);
+  transform-origin: top center;
+}
+
+/* ── Pósits ──────────────────────────────────────────────────── */
+
+/* Cinco por fila en escritorio (decisión del cliente) y de ahí hacia abajo
+   por puntos de corte, no con `auto-fill`: así la fila completa es una
+   decisión y no un efecto del ancho. Entre 2 y 5 columnas el pósit mide
+   ~200–260px; la tipografía de abajo está pensada para ese tamaño y solo
+   la columna única (móvil) la sube. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+  gap: clamp(2.25rem, 4vw, 3.25rem) clamp(1.25rem, 2.5vw, 2.25rem);
+  list-style: none;
+}
+
+@media (min-width: 36rem) { .grid { --cols: 2; } }
+@media (min-width: 52rem) { .grid { --cols: 3; } }
+@media (min-width: 66rem) { .grid { --cols: 4; } }
+@media (min-width: 80rem) { .grid { --cols: 5; } }
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  aspect-ratio: 1;
+  padding: 2.25rem 1.125rem 1rem;
+}
+
+.category {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.125rem 0.75rem;
+  margin-top: auto;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+/* Columna única (móvil): el pósit pasa de ~230 a ~340px y el texto con él. */
+@media (max-width: 35.99rem) {
+  .note {
+    gap: 0.75rem;
+    padding: 2.5rem 1.5rem 1.25rem;
+  }
+  .category,
+  .meta { font-size: 0.8125rem; }
+  .title { font-size: 1.375rem; line-height: 1.15; }
+  .excerpt { font-size: 0.9375rem; line-height: 1.45; }
+}
+
+.empty {
+  align-self: center;
+  width: min(100%, 22rem);
+}
+
+/* ── Cartulina del título ────────────────────────────────────── */
+
+.titleCard {
+  align-self: center;
+}
+
+.titleSheet {
+  padding: 2.25rem clamp(1.75rem, 5vw, 4rem) 1.75rem;
+}
+
+.titleText {
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* ── Ficha de contacto y tarjeta de visita ───────────────────── */
+
+.cardRow {
+  display: flex;
+  justify-content: center;
+}
+
+.ctaCard {
+  width: min(100%, 34rem);
+}
+
+/* Ficha pautada: las rayas caen cada 1.75rem, que es el interlineado de
+   todo su texto, y el relleno superior es múltiplo exacto (2 rayas): así
+   cada línea se apoya en su raya. */
+.indexCard {
+  padding: 3.5rem clamp(1.5rem, 4vw, 2.25rem) 1.75rem;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 calc(1.75rem - 1px),
+    rgba(26, 20, 16, 0.12) calc(1.75rem - 1px) 1.75rem
+  );
+}
+
+.cardHeading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.75rem;
+}
+
+.cardText {
+  margin-top: 1.75rem;
+  font-size: 1.0625rem;
+  line-height: 1.75rem;
+  color: var(--ink-soft);
+}
+
+.cardLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.5rem;
+  margin-top: 1.75rem;
+  font-weight: 600;
+  line-height: 1.75rem;
+}
+
+.inkLink {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  text-decoration-color: rgba(26, 20, 16, 0.3);
+  transition: text-decoration-color var(--duration) var(--ease);
+}
+
+.inkLink:hover {
+  text-decoration-color: var(--ink);
+}
+
+.inkLink:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* Tarjeta de visita (el `<footer>`): 85×55, alineada al borde derecho de la
+   columna de contenido. */
+.businessCard {
+  width: min(100%, 21rem);
+  margin: clamp(3rem, 7vh, 4.5rem) max(0px, calc((100% - var(--board-max)) / 2)) 0 auto;
+}
+
+.businessSheet {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  aspect-ratio: 85 / 55;
+  padding: 1.75rem 1.5rem 1.25rem;
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.businessName {
+  margin-bottom: auto;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board { perspective: none; }
+  .object,
+  .object::before,
+  .sheet,
+  .sheet::after,
+  .inkLink { transition: none; }
+}

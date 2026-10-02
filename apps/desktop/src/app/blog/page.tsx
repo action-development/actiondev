@@ -1,26 +1,23 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getPosts } from "@/lib/blog";
 import { Header } from "@/components/layout/Header";
+import { CorkBoard } from "@/components/blog/CorkBoard";
+import { PinBoard } from "@/components/blog/PinBoard";
+import { Pinned } from "@/components/blog/Pinned";
+import board from "@/components/blog/CorkBoard.module.css";
 import { BUSINESS, OG_IMAGE, absoluteUrl } from "@/lib/seo";
 
 /**
  * Índice del blog — server component, data-driven desde Firestore
  * (colección `posts`, gestionada desde `apps/admin`). Lleva el mismo `Header` que el
  * resto del sitio (nav unificada); el cuerpo sigue deliberadamente al
- * margen del lenguaje holográfico — ver `.post-prose` (globals.css).
+ * margen del lenguaje holográfico: la página entera es un tablero de corcho
+ * en CSS 3D (`components/blog/CorkBoard.tsx`) con cada post como un pósit.
  *
  * `revalidate` es la red de seguridad: la publicación real la dispara el
  * webhook `/api/revalidate` que llama `apps/admin` al guardar un post.
  */
 export const revalidate = 3600;
-
-const dateFormatter = new Intl.DateTimeFormat("es-ES", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "UTC",
-});
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -73,88 +70,82 @@ export default async function BlogPage() {
 
       <Header />
 
-      <main id="main-content" className="pb-32">
-        {/* Cabecera de borde a borde (fuera de `container-editorial`, mismo
-            patrón que el footer y `ProjectsIndex`): marca jerarquía frente a
-            la columna de lectura de abajo y frente a `/blog/[slug]`, que usa
-            `max-w-3xl` en toda la página. */}
-        <div className="px-6 pt-24 text-center md:px-12 md:pt-36">
-          <h1 className="mx-auto max-w-[26ch] text-5xl font-semibold leading-[1.08] tracking-tight text-foreground md:text-7xl">
-            Nuestro Blog
-          </h1>
-        </div>
+      {/* Toda la página es el corcho: título, pósits, CTA y pie son papeles
+          clavados en él — nada de texto sobre el fondo negro. */}
+      <CorkBoard>
+        <main id="main-content" className={board.content}>
+          <Pinned
+            paper="#f2efe6"
+            tilt={-1.2}
+            z={3}
+            flat
+            pins={[12, 88]}
+            className={board.titleCard}
+            sheetClassName={board.titleSheet}
+          >
+            <h1 className={board.titleText}>Nuestro Blog</h1>
+          </Pinned>
 
-        {/* Columna de lectura: `container-editorial` + mismo `max-w-3xl` que
-            `/blog/[slug]`, para que el ancho de la cabecera se lea como
-            jerarquía y no como desajuste. Este `mx-auto` SÍ gana porque no
-            compite con ninguna regla sin `@layer` (a diferencia de
-            `.container-editorial`, que sería su propio `max-width` fuera de
-            capa). */}
-        <div className="container-editorial">
-          <div className="mx-auto max-w-3xl">
-            <ul className="mt-28 divide-y divide-border border-t border-border">
-              {sorted.map((post) => (
-                <li key={post.slug} className="py-14">
-                  <Link href={`/blog/${post.slug}`} className="group block">
-                    <p className="text-sm text-muted">
-                      <time dateTime={post.date}>
-                        {dateFormatter.format(new Date(post.date))}
-                      </time>{" "}
-                      · {post.category} · {post.readingTime} min de lectura
-                    </p>
-                    <h2 className="mt-4 text-2xl font-semibold leading-snug text-foreground underline decoration-border decoration-2 underline-offset-4 transition-colors group-hover:decoration-foreground">
-                      {post.title}
-                    </h2>
-                    <p className="mt-4 text-[1.05rem] leading-relaxed text-muted">
-                      {post.excerpt}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          <PinBoard posts={sorted} />
 
-            <section className="mt-28 border-t border-border pt-16">
-              <h2 className="text-2xl font-semibold text-foreground">
+          <div className={board.cardRow}>
+            <Pinned
+              as="section"
+              paper="#f6f4ee"
+              tilt={1.4}
+              dx={-6}
+              z={20}
+              pins={[50]}
+              className={board.ctaCard}
+              sheetClassName={board.indexCard}
+              aria-labelledby="blog-cta"
+            >
+              <h2 id="blog-cta" className={board.cardHeading}>
                 ¿Hablamos de tu proyecto?
               </h2>
-              <p className="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
+              <p className={board.cardText}>
                 Respuesta en menos de 24 horas, presupuesto cerrado y trato directo
                 con el equipo que desarrolla.
               </p>
-              <p className="mt-8 text-lg">
-                <a
-                  href={BUSINESS.whatsappUrl}
-                  className="font-medium text-foreground underline decoration-border decoration-2 underline-offset-4 hover:decoration-foreground"
-                >
+              <p className={board.cardLinks}>
+                <a href={BUSINESS.whatsappUrl} className={board.inkLink}>
                   Hablar por WhatsApp
                 </a>
-                <span className="text-muted"> · </span>
-                <a
-                  href={`mailto:${BUSINESS.email}`}
-                  className="font-medium text-foreground underline decoration-border decoration-2 underline-offset-4 hover:decoration-foreground"
-                >
+                <a href={`mailto:${BUSINESS.email}`} className={board.inkLink}>
                   {BUSINESS.email}
                 </a>
               </p>
-            </section>
+            </Pinned>
           </div>
-        </div>
-      </main>
+        </main>
 
-      <footer className="border-t border-border">
-        <div className="container-editorial flex flex-col gap-2 py-10 text-sm text-muted md:flex-row md:items-center md:justify-between">
+        <Pinned
+          as="footer"
+          paper="#f2efe6"
+          tilt={-2.2}
+          dy={-8}
+          z={10}
+          pins={[50]}
+          className={board.businessCard}
+          sheetClassName={board.businessSheet}
+        >
+          <p className={board.businessName}>Action</p>
           <p>
-            Action — {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
+            {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
             {BUSINESS.address.locality}, {BUSINESS.address.region}
           </p>
           <p>
-            <a href={`mailto:${BUSINESS.email}`} className="hover:text-foreground">
+            <a href={`mailto:${BUSINESS.email}`} className={board.inkLink}>
               {BUSINESS.email}
-            </a>{" "}
-            · {BUSINESS.phoneDisplay}
+            </a>
           </p>
-        </div>
-      </footer>
+          <p>
+            <a href={`tel:${BUSINESS.phoneE164}`} className={board.inkLink}>
+              {BUSINESS.phoneDisplay}
+            </a>
+          </p>
+        </Pinned>
+      </CorkBoard>
     </>
   );
 }

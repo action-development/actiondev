@@ -295,6 +295,27 @@ test.describe("Reviews page", () => {
   });
 });
 
+test.describe("Blog", () => {
+  test("pin board renders one post-it per post, each linking to its article", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (err) => errors.push(err.message));
+
+    await page.goto("/blog");
+    await page.waitForLoadState("domcontentloaded");
+
+    await expect(page.getByTestId("pin-board")).toBeVisible();
+    const notes = page.getByTestId("post-it");
+    const count = await notes.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < count; i++) {
+      const link = notes.nth(i).locator("a");
+      await expect(link).toHaveAttribute("href", /^\/blog\/[\w-]+$/);
+      await expect(link.locator("h2")).not.toBeEmpty();
+    }
+    expect(errors).toHaveLength(0);
+  });
+});
+
 test.describe("SEO landing pages", () => {
   test("core landing renders h1, FAQ and JSON-LD", async ({ page }) => {
     const errors: string[] = [];
