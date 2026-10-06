@@ -1,26 +1,28 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { FLOOR_RADIUS, PLAZA_PALETTE } from "./plaza-config";
 import { PLAZA_PALETTES, type PlazaMode } from "./plaza-mode";
 import {
   getSkyTexture,
-  getFloorTexture,
-  getPavingTexture,
   getGrassTexture,
   getCloudTexture,
+  CLOUD_SIZE,
   GRASS_TILE_WORLD,
-  PAVING_WORLD_RADIUS,
-  plazaHorizon,
 } from "./plaza-textures";
+import { GROUND_PALETTES } from "./ground-palette";
+import { createPavingMaterial, PAVING_RADIUS } from "./ground-paving";
+import { buildCurbContactGeometry, buildCurbGeometry } from "./ground-curb";
+import { createGrassMaterial } from "./ground-grass";
 import { PlazaDecor } from "./PlazaDecor";
+import { SUN } from "./PlazaLighting";
 import { PlazaBackdrop } from "./PlazaBackdrop";
 
 /**
  * Radio de la esfera de cielo. Muy por encima de `FLOOR_RADIUS` para que el
- * disco del suelo quede siempre dentro, y por debajo del `far` de la cámara
+ * suelo quede siempre dentro, y por debajo del `far` de la cámara
  * (1000). El degradado va por ángulo de elevación, así que el radio no cambia
  * el aspecto: la cámara está casi en el centro de la esfera.
  */
@@ -36,8 +38,12 @@ const SKY_RADIUS = 200;
  * con la niebla, sin necesidad de un degradado en la textura.
  *
  * Solo FUERA de la plaza: dentro, esa referencia la da ya el despiece radial
- * del pavimento (`getPavingTexture`), mucho mejor, y los anillos lima encima
+ * del pavimento (`ground-paving.ts`), mucho mejor, y los anillos lima encima
  * de las losas se leían como aros de neón compitiendo con todo.
+ *
+ * Además solo se ven MIENTRAS SE ARRASTRA un muñeco (prop `holding`): son una
+ * ayuda de profundidad para el gesto, no decorado. Aparecen y se van con un
+ * fundido para que no den un parpadeo al agarrar y soltar.
  */
 const GRID_RINGS = [13, 16, 20] as const;
 /** Grosor de cada anillo (radio ±). Fino: es una referencia, no una decoración. */
@@ -57,69 +63,49 @@ const RING_HALF_WIDTH = 0.014;
  */
 const GRASS = { inner: 8.55, outer: FLOOR_RADIUS } as const;
 
-/**
- * Sombra proyectada del sol.
- *
- * La direccional de la paleta va a ~12 del centro: sirve para iluminar (la
- * intensidad de una direccional no depende de la distancia) pero NO para
- * proyectar, porque la cámara de sombra mira desde la propia luz y todo lo que
- * quede detrás —el arbolado 3D está a 16.8— cae fuera del frustum y no
- * proyecta nada. Así que para la sombra se recoloca el sol a `SUN_DISTANCE` en
- * la MISMA dirección: se ve igual, y ahora la ortográfica cubre el parque
- * entero.
- *
- * `extent` es la mitad del lado de esa ortográfica y `map` el lado del mapa:
- * juntos deciden cuántos téxeles toca cada metro (a 14 y 1024 salen ~2,7 cm) y,
- * sobre todo, cuánto cuesta. El mapa es el segundo pase completo de la escena
- * en cada frame, así que no es un parámetro de calidad: es la mitad del
- * presupuesto. A 2048 y 19 la plaza bajaba a la mitad de fps y el borde extra
- * no se veía — el desenfoque de `shadow-radius` se lo come igualmente.
- *
- * A 14 quedan fuera las copas del arbolado 3D (r = 16.8). No se pierde nada
- * visible: su sombra caía en la pradera lejana, ya medio comida por la niebla.
- */
-const SUN = { distance: 60, extent: 14, map: 1024 } as const;
-
-/** Misma dirección que la luz de la paleta, pero a `SUN.distance` del centro. */
-function sunPosition([x, y, z]: readonly [number, number, number]): [number, number, number] {
-  const len = Math.hypot(x, y, z) || 1;
-  const k = SUN.distance / len;
-  return [x * k, y * k, z * k];
-}
+/** Altura de los ojos de la cámara (`plaza-camera.ts`). La franja de nubes se
+ * mide desde ahí: con la cámara a ras del parque el cielo visible es una cuña
+ * baja, y cada grado cuenta. */
+const EYE_Y = 4.15;
 
 /**
  * Franja de nubes: cilindro de cielo, por dentro de la esfera del cyclorama.
  *
  * Mismo recurso que la franja de arbolado (`PlazaBackdrop`) y por el mismo
  * motivo: envuelta en un cilindro, cada píxel de la textura cae donde se ve.
- * Arranca por encima de las copas del arbolado (que rematan a ~1,6° sobre el
- * horizonte) para que quede aire entre los árboles y la primera nube, y llega
- * a ~31°, bastante más de lo que abarca el encuadre.
+ * Arranca en el horizonte (0°, a la altura de los ojos) y cubre
+ * `CLOUD_SIZE.height / (CLOUD_SIZE.width / 360)` = 22,5°, que es todo el cielo
+ * que enseña el encuadre. Las nubes (bancos achatados) y las estrellas viven
+ * en los primeros 1,5-9° y 3-22° respectivamente; ver `getCloudTexture`.
  */
-const CLOUDS = { radius: 160, bottom: 10, top: 96, repeat: 2 } as const;
+const CLOUDS = {
+  radius: 160,
+  bottom: EYE_Y,
+  top: EYE_Y + 160 * Math.tan(((CLOUD_SIZE.height / (CLOUD_SIZE.width / 360)) * Math.PI) / 180),
+} as const;
 /** Vueltas por segundo de la franja. Un cielo quieto delata la maqueta tanto
  * como un parque sin sombras; a esta velocidad una nube tarda ~9 min en
  * cruzar el encuadre, que es lo que tarda una nube de verdad. */
 const CLOUD_DRIFT = 0.0018;
 
+/** Sube la anisotropía de una textura al máximo de la GPU antes de su primera
+ * subida (o la re-sube si ya estaba). La fijada a mano (8/16/4) dejaba
+ * calidad sobre la mesa en GPUs de escritorio y pedía de más en móviles. */
+function useMaxAnisotropy(texture: THREE.Texture) {
+  const max = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
+  if (texture.anisotropy !== max) {
+    texture.anisotropy = max;
+    texture.needsUpdate = true;
+  }
+}
+
 function CloudBand({ mode, still }: { mode: PlazaMode; still: boolean }) {
   const ref = useRef<THREE.Mesh>(null);
-  const texture = useMemo(() => {
-    const tex = getCloudTexture(mode);
-    tex.repeat.set(CLOUDS.repeat, 1);
-    return tex;
-  }, [mode]);
+  const texture = useMemo(() => getCloudTexture(mode), [mode]);
+  useMaxAnisotropy(texture);
 
   const geometry = useMemo(
-    () =>
-      new THREE.CylinderGeometry(
-        CLOUDS.radius,
-        CLOUDS.radius,
-        CLOUDS.top - CLOUDS.bottom,
-        64,
-        1,
-        true,
-      ),
+    () => new THREE.CylinderGeometry(CLOUDS.radius, CLOUDS.radius, CLOUDS.top - CLOUDS.bottom, 64, 1, true),
     [],
   );
   useEffect(() => () => geometry.dispose(), [geometry]);
@@ -136,7 +122,8 @@ function CloudBand({ mode, still }: { mode: PlazaMode; still: boolean }) {
       renderOrder={-3}
     >
       {/* Como el cyclorama: sin niebla, sin tone mapping y sin escribir en el
-          z-buffer. Es cielo, no geometría del parque. */}
+          z-buffer. Es cielo, no geometría del parque. `dithering` rompe las
+          bandas del borde blando de las nubes sobre el degradado. */}
       <meshBasicMaterial
         map={texture}
         side={THREE.BackSide}
@@ -144,28 +131,45 @@ function CloudBand({ mode, still }: { mode: PlazaMode; still: boolean }) {
         depthWrite={false}
         fog={false}
         toneMapped={false}
+        dithering
       />
     </mesh>
   );
 }
 
-function FloorGrid({ opacity }: { opacity: number }) {
+/** Altura de la retícula guía: por encima del césped (0.004), sin pelearse con
+ * él en el z-buffer. */
+const GRID_Y = 0.007;
+
+function FloorGrid({ opacity, holding }: { opacity: number; holding: boolean }) {
   const geometries = useMemo(
     () => GRID_RINGS.map((r) => new THREE.RingGeometry(r - RING_HALF_WIDTH, r + RING_HALF_WIDTH, 128)),
     [],
   );
-  // Un único material para todos los anillos.
+  // Un único material para todos los anillos. Arranca invisible: solo se
+  // enciende mientras se arrastra.
   const material = useMemo(
     () =>
       new THREE.MeshBasicMaterial({
         color: PLAZA_PALETTE.guide,
         transparent: true,
-        opacity,
+        opacity: 0,
         depthWrite: false,
         toneMapped: false,
       }),
-    [opacity],
+    [],
   );
+  const groupRef = useRef<THREE.Group>(null);
+
+  // Fundido exponencial hacia el objetivo. El grupo se oculta del todo al
+  // acabar para no gastar tres mallas transparentes en cada frame de reposo.
+  useFrame((_, delta) => {
+    const target = holding ? opacity : 0;
+    const k = 1 - Math.exp(-10 * delta);
+    material.opacity += (target - material.opacity) * k;
+    if (Math.abs(target - material.opacity) < 0.002) material.opacity = target;
+    if (groupRef.current) groupRef.current.visible = material.opacity > 0;
+  });
 
   useEffect(() => {
     return () => {
@@ -175,7 +179,7 @@ function FloorGrid({ opacity }: { opacity: number }) {
   }, [geometries, material]);
 
   return (
-    <group rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 0]}>
+    <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, GRID_Y, 0]} visible={false}>
       {geometries.map((geometry, i) => (
         <mesh key={i} geometry={geometry} material={material} renderOrder={-1} />
       ))}
@@ -183,37 +187,31 @@ function FloorGrid({ opacity }: { opacity: number }) {
   );
 }
 
-export function PlazaRoom({ mode, still = false }: { mode: PlazaMode; still?: boolean }) {
+export function PlazaRoom({
+  mode,
+  still = false,
+  holding = false,
+}: {
+  mode: PlazaMode;
+  still?: boolean;
+  /** Hay un muñeco agarrado: enciende la retícula guía del suelo. */
+  holding?: boolean;
+}) {
   const palette = PLAZA_PALETTES[mode];
-  const horizon = plazaHorizon(mode);
-
-  /**
-   * La cámara de sombra hay que recalcularla A MANO.
-   *
-   * R3F escribe `shadow-camera-left` y compañía como propiedades sueltas, pero
-   * una ortográfica no se entera de que han cambiado hasta que alguien llama a
-   * `updateProjectionMatrix()`. Sin esto la luz se queda con el frustum por
-   * defecto (±5, con el sol a 60 del centro) y en pantalla NO se ve ni una
-   * sombra: es el síntoma exacto de haber configurado el sol y no ver nada.
-   */
-  const sunRef = useRef<THREE.DirectionalLight>(null);
-  useEffect(() => {
-    sunRef.current?.shadow.camera.updateProjectionMatrix();
-  }, [mode]);
+  const ground = GROUND_PALETTES[mode];
 
   const skyTexture = useMemo(() => getSkyTexture(mode), [mode]);
-  const floorTexture = useMemo(() => getFloorTexture(mode), [mode]);
-  const pavingTexture = useMemo(() => getPavingTexture(mode), [mode]);
 
   // Las texturas son singletons de módulo (compartidas entre montajes de la
   // plaza) — el dispose real vive en `disposePlazaTextures()`, no aquí. Solo
   // limpiamos lo que es propio de esta instancia: geometrías y materiales.
   const skyGeometry = useMemo(() => new THREE.SphereGeometry(SKY_RADIUS, 48, 64), []);
-  const floorGeometry = useMemo(() => new THREE.CircleGeometry(FLOOR_RADIUS, 96), []);
-  // El disco del pavimento mide exactamente lo que representa su textura: el
-  // despiece es polar, así que la textura y la geometría comparten centro y
-  // radio (ver `getPavingTexture`).
-  const pavingGeometry = useMemo(() => new THREE.CircleGeometry(PAVING_WORLD_RADIUS, 128), []);
+  // El disco del pavimento acaba por debajo del bordillo (que lo tapa), así
+  // que no necesita alpha ni fundido: es opaco.
+  const pavingGeometry = useMemo(() => new THREE.CircleGeometry(PAVING_RADIUS, 128), []);
+  const pavingMaterial = useMemo(() => createPavingMaterial(mode), [mode]);
+  const curbGeometry = useMemo(() => buildCurbGeometry(mode), [mode]);
+  const curbContactGeometry = useMemo(() => buildCurbContactGeometry(mode), [mode]);
   const grassGeometry = useMemo(
     () => new THREE.RingGeometry(GRASS.inner, GRASS.outer, 256, 1),
     [],
@@ -228,11 +226,22 @@ export function PlazaRoom({ mode, still = false }: { mode: PlazaMode; still?: bo
    * `ShadowMaterial`, que es transparente salvo donde le cae sombra. Ventaja
    * añadida: UNA sola capa para pavimento y césped, sin el doble oscurecido
    * que saldría si el césped las recibiera además por su cuenta.
+   *
+   * Color y opacidad son PROPIOS (`ground-palette.ts`): frío de día, casi
+   * negro de noche. Con el negro puro de antes, la sombra sobre un granito
+   * cálido era un gris sucio. La luz ya no atenúa por segunda vez
+   * (`shadow.intensity` = 1), así que la opacidad de aquí es la final.
    */
   const shadowCatcherGeometry = useMemo(() => new THREE.CircleGeometry(SUN.extent, 128), []);
   const shadowCatcherMaterial = useMemo(
-    () => new THREE.ShadowMaterial({ opacity: palette.sunShadow.ground, depthWrite: false }),
-    [palette.sunShadow.ground],
+    () =>
+      new THREE.ShadowMaterial({
+        color: ground.shadow.color,
+        opacity: ground.shadow.opacity,
+        depthWrite: false,
+        dithering: true,
+      }),
+    [ground.shadow.color, ground.shadow.opacity],
   );
 
   // La teja del césped es un singleton de módulo: el `repeat` se fija aquí
@@ -244,43 +253,51 @@ export function PlazaRoom({ mode, still = false }: { mode: PlazaMode; still?: bo
     tex.repeat.set(tiles, tiles);
     return tex;
   }, [mode]);
+  useMaxAnisotropy(grassTexture);
 
-  const grassMaterial = useMemo(
+  const grassMaterial = useMemo(() => createGrassMaterial(mode, grassTexture), [mode, grassTexture]);
+
+  const curbMaterial = useMemo(
+    () => new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, side: THREE.DoubleSide, dithering: true }),
+    [],
+  );
+  const curbContactMaterial = useMemo(
     () =>
-      new THREE.MeshStandardMaterial({
-        // Blanco × mapa: el verde lo pone la teja, que ya lleva el tono del
-        // modo. Con `color` además del `map` los dos se multiplicarían y el
-        // césped saldría el doble de oscuro.
-        color: "#ffffff",
-        map: grassTexture,
-        roughness: 1,
-        metalness: 0,
+      new THREE.MeshBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        depthWrite: false,
+        toneMapped: false,
+        dithering: true,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1,
       }),
-    [grassTexture],
+    [],
   );
 
   useEffect(() => {
     return () => {
       skyGeometry.dispose();
-      floorGeometry.dispose();
       pavingGeometry.dispose();
       grassGeometry.dispose();
       shadowCatcherGeometry.dispose();
     };
-  }, [skyGeometry, floorGeometry, pavingGeometry, grassGeometry, shadowCatcherGeometry]);
-
+  }, [skyGeometry, pavingGeometry, grassGeometry, shadowCatcherGeometry]);
+  useEffect(() => () => curbGeometry.dispose(), [curbGeometry]);
+  useEffect(() => () => curbContactGeometry.dispose(), [curbContactGeometry]);
+  useEffect(() => () => pavingMaterial.dispose(), [pavingMaterial]);
   useEffect(() => () => grassMaterial.dispose(), [grassMaterial]);
   useEffect(() => () => shadowCatcherMaterial.dispose(), [shadowCatcherMaterial]);
+  useEffect(() => () => curbMaterial.dispose(), [curbMaterial]);
+  useEffect(() => () => curbContactMaterial.dispose(), [curbContactMaterial]);
 
   return (
     <group>
-      {/* Sin paredes: el fog lleva el suelo al color del horizonte, que es
-          también la base del degradado del cielo — no hay costura. */}
-      <fog attach="fog" args={[horizon, palette.fog.near, palette.fog.far]} />
-
       {/* Cyclorama: esfera invertida vista desde dentro. `toneMapped={false}`
           y `fog={false}` para que el degradado llegue tal cual a pantalla —
-          ver justificación completa en plaza-textures.ts. */}
+          ver justificación completa en plaza-textures.ts. `dithering` rompe
+          las bandas de los degradados oscuros al cuantizar a 8 bits. */}
       <mesh geometry={skyGeometry} renderOrder={-4}>
         <meshBasicMaterial
           map={skyTexture}
@@ -288,6 +305,7 @@ export function PlazaRoom({ mode, still = false }: { mode: PlazaMode; still?: bo
           toneMapped={false}
           fog={false}
           depthWrite={false}
+          dithering
         />
       </mesh>
 
@@ -295,32 +313,16 @@ export function PlazaRoom({ mode, still = false }: { mode: PlazaMode; still?: bo
       <CloudBand mode={mode} still={still} />
 
       {/*
-        Suelo sin iluminación (MeshBasicMaterial + toneMapped={false}): el
-        color de la textura llega al píxel tal cual, y fondo y suelo coinciden
-        en el horizonte. Con un material iluminado el tono pasaría por luz ×
-        ACES y no casaría con el cielo.
+        Sin disco de suelo base: el pavimento (hasta 8.3), el bordillo (8.2-8.6)
+        y el césped (8.55 hasta `FLOOR_RADIUS`) cubren el suelo sin dejar
+        hueco, así que el disco que había debajo nunca se veía (se comprobó
+        quitándolo). Más allá de `FLOOR_RADIUS` solo hay niebla, que es color
+        de horizonte.
 
-        Sobre MeshReflectorMaterial (drei): es local, pero repinta la escena
-        entera otra vez por frame para el reflejo. Descartado por coste con N
-        muñecos.
+        Césped: SÍ iluminado (MeshStandard), al contrario que el pavimento. Es
+        superficie cercana con volumen aparente, y con la luz del modo coge el
+        mismo tono que la vegetación que hay plantada encima.
       */}
-      <mesh geometry={floorGeometry} rotation={[-Math.PI / 2, 0, 0]}>
-        {/* `polygonOffset` empuja el disco hacia atrás en el z-buffer. Es el
-            cinturón además del tirante (`near` alto en `PlazaScene`): el
-            césped se le monta encima a 1 mm y a cuarenta unidades de la
-            cámara esa distancia es menor que un paso del buffer. */}
-        <meshBasicMaterial
-          map={floorTexture}
-          toneMapped={false}
-          polygonOffset
-          polygonOffsetFactor={2}
-          polygonOffsetUnits={4}
-        />
-      </mesh>
-
-      {/* Césped: SÍ iluminado (MeshStandard), al contrario que el suelo base.
-          Es superficie cercana con volumen aparente, y con la luz del modo
-          coge el mismo tono que la vegetación que hay plantada encima. */}
       <mesh
         geometry={grassGeometry}
         material={grassMaterial}
@@ -330,26 +332,20 @@ export function PlazaRoom({ mode, still = false }: { mode: PlazaMode; still?: bo
       />
 
       {/*
-        Pavimento: capa aparte sobre el suelo base (ver justificación en
-        `getPavingTexture`), con el alpha bakeado en la propia textura.
-        `depthWrite={false}` para no pelearse en el z-buffer con el suelo, a
-        0.002 de distancia.
+        Pavimento: disco opaco con despiece analítico (ver `ground-paving.ts`).
+        A 0.002 sobre el origen, por debajo del césped (0.004), que empieza
+        fuera de él: no se solapan.
       */}
-      <mesh
-        geometry={pavingGeometry}
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0.002, 0]}
-        // Antes que la retícula guía (-1): las dos son transparentes y sin
-        // z-write, así que el orden de dibujado es lo único que decide quién
-        // queda encima. Al revés, el pavimento tapaba las líneas lima.
-        renderOrder={-2}
-      >
-        <meshBasicMaterial map={pavingTexture} transparent depthWrite={false} toneMapped={false} />
-      </mesh>
+      <mesh geometry={pavingGeometry} material={pavingMaterial} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.002, 0]} />
+
+      {/* Bordillo 3D: una malla, sombreado por cara en color de vértice. */}
+      <mesh geometry={curbGeometry} material={curbMaterial} />
+      {/* Oclusión de contacto del bordillo sobre el césped. */}
+      <mesh geometry={curbContactGeometry} material={curbContactMaterial} position={[0, 0.0065, 0]} renderOrder={1} />
 
       {/*
         Sombra proyectada del suelo. Por encima de los discos de contacto
-        (`LAYER_Y.shadow` = 0.012 en `PlazaDecor`) para que se dibuje después:
+        (`LAYER_Y.shadow` = 0.012 en `decor/decor-kit.ts`) para que se dibuje después:
         las dos son transparentes y sin z-write, así que manda `renderOrder`.
       */}
       <mesh
@@ -361,50 +357,17 @@ export function PlazaRoom({ mode, still = false }: { mode: PlazaMode; still?: bo
         receiveShadow
       />
 
-      <FloorGrid opacity={palette.guideOpacity} />
+      <FloorGrid opacity={palette.guideOpacity} holding={holding} />
 
       {/* Mobiliario y vegetación — ver `PlazaDecor.tsx`. */}
-      <PlazaDecor mode={mode} />
+      <PlazaDecor mode={mode} still={still} />
 
       {/* El Pazo, al fondo del parque — ver `PlazaBackdrop.tsx`. */}
       <PlazaBackdrop mode={mode} />
 
-      {/*
-        Luz de "vitrina" para los MeshStandardMaterial de la escena bajo ACES.
-        En three ≥0.155 la difusa es albedo/π × irradiancia, y ACES multiplica
-        por 1/0.6 antes de la curva, así que las intensidades van altas.
-        - Hemisphere: base casi sin direccionalidad; el "suelo" es el rebote
-          del pavimento, para que las zonas bajas no se ensucien de azul.
-        - Key: desde arriba-delante, para sombreado suave.
-        - Fill: contraluz flojo que separa la silueta del fondo.
-        Los valores los pone el modo (`plaza-mode.ts`): de día manda el sol y
-        de noche una hemisférica alta que hace de luz de ciudad.
-      */}
-      <hemisphereLight args={[palette.hemi.sky, palette.hemi.ground, palette.hemi.intensity]} />
-      <directionalLight
-        ref={sunRef}
-        color={palette.key.color}
-        position={sunPosition(palette.key.position)}
-        intensity={palette.key.intensity}
-        castShadow
-        shadow-mapSize={[SUN.map, SUN.map]}
-        shadow-camera-left={-SUN.extent}
-        shadow-camera-right={SUN.extent}
-        shadow-camera-top={SUN.extent}
-        shadow-camera-bottom={-SUN.extent}
-        shadow-camera-near={SUN.distance - SUN.extent * 1.6}
-        shadow-camera-far={SUN.distance + SUN.extent * 1.6}
-        // `normalBias` en vez de subir `bias` a lo bruto: el acné de sombra de
-        // esta escena sale en superficies curvas (cabezas, copas, pilón), y
-        // desplazar por la normal lo quita sin despegar la sombra del pie.
-        shadow-bias={-0.0004}
-        shadow-normalBias={0.035}
-        shadow-intensity={palette.sunShadow.objects}
-        // Ensancha el muestreo PCF: el borde de la sombra de un banco pasa de
-        // escalón de píxel a filo blando, que es lo que pide una escena mate.
-        shadow-radius={1.5}
-      />
-      <directionalLight color={palette.fill.color} position={[-5, 5, -6]} intensity={palette.fill.intensity} />
+      {/* Niebla y luces: las monta `PlazaWorld` como hijas DIRECTAS de la
+          escena (ver `PlazaLighting.tsx`) — aquí colgaban de un <group> y la
+          niebla no se aplicaba. */}
     </group>
   );
 }

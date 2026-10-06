@@ -8,10 +8,11 @@ import { resolveTimeOfDay } from "../port/time-of-day";
  * es; de noche manda el lenguaje oscuro del sitio y lo que ilumina son las
  * farolas.
  *
- * TODO lo que cambia entre las dos versiones vive en este archivo: cielo,
- * suelo, pavimento, césped, niebla, luces y si las farolas están encendidas.
- * El resto de la plaza (materiales del mobiliario, medidas, layout) es el
- * mismo en ambas — lo que cambia es la LUZ que les da, no su color.
+ * Aquí vive lo que cambia entre las dos versiones y comparten varias piezas:
+ * cielo, niebla, luces, si las farolas están encendidas y unos pocos tonos de
+ * referencia. Los detalles de cada pieza tienen paleta propia por modo — el
+ * suelo en `ground-palette.ts`, la vegetación en `decor/vegetation-palette.ts`.
+ * Medidas y layout son los mismos en ambas: lo que cambia es la LUZ.
  *
  * Mismo criterio que el hero del puerto (`port/time-of-day.ts`) y mismo
  * interruptor: la hora LOCAL del visitante, forzable con
@@ -28,41 +29,34 @@ export interface PlazaModePalette {
   skyHorizon: string;
   skyMid: string;
   skyTop: string;
-  /** Suelo base fuera del pavimento: tono cercano y tono intermedio (el borde
-   * siempre acaba en `skyHorizon`, que es lo que hace que no haya costura). */
-  floorNear: string;
-  floorMid: string;
-  /** Pavimento de granito: losa y junta. */
+  /** Losa del pavimento de granito (la junta vive en `ground-palette.ts`). */
   paving: string;
-  joint: string;
   /** Césped del perímetro. */
   grass: string;
-  /** Vegetación: seto (dos tonos) y copa del arbolado (dos tonos). Cambian
-   * con el modo porque un verde de sol bajo la luz de noche se lee como
-   * plástico, y uno de noche a pleno día parece pintado de negro. */
-  leaf: string;
+  /** Verdes oscuros de referencia: seto (`leafDark`) y copa (`crownDark`).
+   * Cambian con el modo porque un verde de sol bajo la luz de noche se lee
+   * como plástico. La vegetación usa su propia paleta; estos dos los siguen
+   * leyendo piezas que tienen que casar con ella (telón, reflejo de la fuente). */
   leafDark: string;
-  crown: string;
   crownDark: string;
   /** Granito del mobiliario pétreo (jardineras, fuente). Es lo único del
    * mobiliario que cambia de color con el modo: una piedra de noche
    * (gris azulado) a pleno sol se lee como hormigón sucio. */
   stone: string;
-  /** Lámina de agua de la fuente y chorro del surtidor. */
-  water: string;
-  waterJet: string;
-  /** Niebla: color = `skyHorizon`. De día se ve mucho más lejos. */
+  /**
+   * Niebla: color = `skyHorizon`, distancias en profundidad de VISTA (no
+   * radio desde el centro). La monta `PlazaLighting` sobre `scene.fog`.
+   *
+   * Three la mezcla DESPUÉS del tone mapping y de pasar a sRGB, con el color
+   * tal cual: a `far` el píxel es exactamente el hex del horizonte, el mismo
+   * del `background` del div — ahí no hay costura posible, ni con ACES ni con
+   * Neutral. `near` deja intacto todo lo cercano (plaza, muñecos, mobiliario y
+   * el arbolado del anillo, a ~28 de la cámara por el lado lejano); el césped
+   * del fondo se va lavando hasta el horizonte.
+   */
   fog: { near: number; far: number };
-  /** Hemisférica: la luz de relleno que baña toda la escena. */
-  hemi: { sky: string; ground: string; intensity: number };
-  /** Luz principal (sol de tarde / cielo nocturno). */
-  key: { color: string; intensity: number; position: [number, number, number] };
-  /** Contraluz flojo para separar siluetas del fondo. */
-  fill: { color: string; intensity: number };
-  /** Tinte del telón del Pazo (`PlazaBackdrop`). Multiplica la imagen: de
-   * noche hay que bajarle la luz, porque una fachada pintada compite con una
-   * plaza que solo alumbran seis farolas. */
-  backdropTint: string;
+  /** Rig de luz del modo. Ver `PlazaLighting.tsx` y `lighting-rig.ts`. */
+  light: PlazaLightRig;
   /**
    * Sotobosque: la masa en sombra bajo la franja de arbolado
    * (`PlazaBackdrop`). Tapa el suelo lejano justo donde la niebla ya lo ha
@@ -73,23 +67,58 @@ export interface PlazaModePalette {
    * desaparece.
    */
   understory: string;
-  /** Tinte de la franja de arbolado pintada. Va aparte del Pazo: la misma
-   * imagen sirve de día y de noche, pero de noche hay que apagarla MUCHO más
-   * que la fachada, que tiene las ventanas encendidas y debe seguir brillando. */
-  treelineTint: string;
   /** Farolas encendidas: vidrio, halo y charco de luz en el suelo. */
   lampsOn: boolean;
   /**
-   * Sombra proyectada del sol (`PlazaRoom`). `ground` es la opacidad de la
-   * capa `ShadowMaterial` que la recibe en el suelo; `objects` es la
-   * `shadow.intensity` de la luz, que gradúa la sombra que una pieza echa
-   * sobre otra. De noche las dos bajan: sin sol, una sombra dura delata que
-   * la luz principal es un truco de relleno, no la luna.
+   * Opacidad de la sombra del sol sobre el suelo (capas `ShadowMaterial` y
+   * calcas falsas de las copas). La `shadow.intensity` de la luz va fija a 1
+   * en `PlazaLighting`: un `ShadowMaterial` multiplica su opacidad por ella, y
+   * con las dos por debajo de 1 la sombra del suelo se atenuaba dos veces. De
+   * noche no hay sombra de luna (`light.key.castShadow`).
    */
-  sunShadow: { ground: number; objects: number };
+  sunShadow: { ground: number };
   /** Retícula guía exterior y sombras de contacto. */
   guideOpacity: number;
   shadowOpacity: number;
+}
+
+/**
+ * Rig de luz de un modo. Lo consume `PlazaLighting` (luces, IBL y exposición)
+ * y `PlazaScene` (exposición).
+ *
+ * Las direcciones NO son posiciones a mano: son ángulos RELATIVOS a la cámara
+ * en reposo (`ORBIT.center`, ver `lighting-rig.ts`). Si se mueve el telón y con
+ * él la cámara, la luz la sigue y el sol nunca vuelve a quedar a contraluz —
+ * que es lo que pasaba con el `[6, 10, 5]` de antes, ajustado con la cámara en
+ * +Z cuando el vaivén ya vivía en ~279°.
+ *
+ * Intensidades en unidades físicas de three (≥ r155): una direccional de
+ * intensidad π sobre una cara de frente devuelve el albedo tal cual; la
+ * hemisférica igual (sin el ×π de antes); el IBL suma π·radiancia·intensidad.
+ */
+export interface PlazaLightRig {
+  /** `toneMappingExposure` (tone mapping Neutral, ver `PlazaScene`). */
+  exposure: number;
+  /**
+   * Luz principal: sol de día, luna de noche. `azimuth` en grados desde el
+   * eje de la cámara en reposo (positivo = a la IZQUIERDA de la cámara),
+   * `elevation` en grados sobre el horizonte.
+   */
+  key: { color: string; intensity: number; azimuth: number; elevation: number; castShadow: boolean };
+  /** Contraluz: por detrás de los muñecos, recorta la silueta contra el fondo. */
+  rim: { color: string; intensity: number; azimuth: number; elevation: number };
+  /** Hemisférica: relleno de cielo/suelo. Baja: el relleno de verdad es el IBL. */
+  hemi: { sky: string; ground: string; intensity: number };
+  /**
+   * IBL procedural: cúpula con degradado (cenit → horizonte → suelo) y un
+   * lóbulo de brillo hacia la luz principal, prefiltrada con PMREM.
+   * `intensity` = `scene.environmentIntensity`; afecta a TODO
+   * `MeshStandardMaterial` de la escena (difuso + especular).
+   */
+  env: { intensity: number; zenith: string; horizon: string; ground: string; glow: string };
+  /** Luz real de las farolas (`pointLight` sin sombra), o `null` si están
+   * apagadas. Posiciones: las farolas de `buildDecorLayout()`. */
+  lamps: { color: string; intensity: number; distance: number } | null;
 }
 
 export const PLAZA_PALETTES: Record<PlazaMode, PlazaModePalette> = {
@@ -102,28 +131,30 @@ export const PLAZA_PALETTES: Record<PlazaMode, PlazaModePalette> = {
     skyHorizon: "#d3e2ee",
     skyMid: "#9cc0e0",
     skyTop: "#6296c9",
-    floorNear: "#b3aca0",
-    floorMid: "#c3bdb2",
     paving: "#b6b0a5",
-    joint: "#928c82",
     grass: "#6f9a4e",
-    leaf: "#5f8f42",
     leafDark: "#48702f",
-    crown: "#4d7c3a",
     crownDark: "#3a5f2c",
     understory: "#4a6634",
     stone: "#b4aea2",
-    water: "#8fc4dd",
-    waterJet: "#eaf7ff",
-    fog: { near: 26, far: 66 },
-    // Cielo azul arriba, rebote cálido de la grava abajo.
-    hemi: { sky: "#cfe6ff", ground: "#c2ab8c", intensity: 1.75 },
-    key: { color: "#fff4df", intensity: 2.3, position: [6, 10, 5] },
-    fill: { color: "#cfe0f5", intensity: 0.35 },
-    backdropTint: "#ffffff",
-    treelineTint: "#ffffff",
+    fog: { near: 22, far: 105 },
+    light: {
+      exposure: 1,
+      // Sol de media tarde: a la izquierda de la cámara y a ~45°, para que
+      // las caras reciban luz principal y las sombras caigan hacia el fondo
+      // (no hacia el espectador).
+      key: { color: "#fff1dc", intensity: 5.0, azimuth: 40, elevation: 46, castShadow: true },
+      // Contraluz cálido desde detrás a la derecha: el filo que separa al
+      // muñeco del pavimento claro.
+      rim: { color: "#ffe2b6", intensity: 1.6, azimuth: 155, elevation: 26 },
+      // Cielo azul arriba, rebote cálido del granito abajo. Baja: el relleno
+      // lo hace el IBL, que sí tiene dirección.
+      hemi: { sky: "#cfe3ff", ground: "#c4b296", intensity: 0.75 },
+      env: { intensity: 0.5, zenith: "#6f9fd0", horizon: "#dce8f2", ground: "#a59c8c", glow: "#fff0d8" },
+      lamps: null,
+    },
     lampsOn: false,
-    sunShadow: { ground: 0.44, objects: 0.6 },
+    sunShadow: { ground: 0.44 },
     guideOpacity: 0.07,
     // Las sombras proyectadas ya anclan las piezas al suelo: el disco de
     // contacto pasa de ser el ancla a ser el oclusión de contacto que la
@@ -141,27 +172,31 @@ export const PLAZA_PALETTES: Record<PlazaMode, PlazaModePalette> = {
     // frío: es lo que separa la silueta del arbolado del negro absoluto.
     skyMid: "#0e0e11",
     skyTop: "#080808",
-    floorNear: "#242424",
-    floorMid: "#101010",
     paving: "#242424",
-    joint: "#151515",
     grass: "#22301c",
-    leaf: "#4c6b52",
     leafDark: "#35503c",
-    crown: "#2f4838",
     crownDark: "#22352a",
     understory: "#16231a",
     stone: "#4a4e52",
-    water: "#1b3442",
-    waterJet: "#9fd4e8",
-    fog: { near: 19, far: 50 },
-    hemi: { sky: "#F4F9FF", ground: "#FFF8EE", intensity: 2.2 },
-    key: { color: "#ffffff", intensity: 1.5, position: [3, 8, 7] },
-    fill: { color: "#ffffff", intensity: 0.5 },
-    backdropTint: "#9d9d9d",
-    treelineTint: "#4f5a52",
+    fog: { near: 18, far: 70 },
+    light: {
+      exposure: 1,
+      // Luna: fría, tenue y alta. Sin sombra: de noche el ancla de cada pieza
+      // al suelo son los discos de contacto, y así se ahorra el segundo pase
+      // completo de la escena (el del mapa de sombras).
+      key: { color: "#c3d0e8", intensity: 2.4, azimuth: 35, elevation: 58, castShadow: false },
+      // Contraluz de luna: sin él, la silueta oscura del muñeco se funde con
+      // el fondo #080808 y solo se ve la cara.
+      rim: { color: "#93a7cc", intensity: 1.8, azimuth: 160, elevation: 30 },
+      hemi: { sky: "#3d4759", ground: "#26221d", intensity: 1.5 },
+      env: { intensity: 0.3, zenith: "#151b27", horizon: "#2b313d", ground: "#17150f", glow: "#4a5670" },
+      // Farolas: luz cálida de verdad sobre muñecos, bancos y setos. El
+      // charco y el halo del suelo siguen siendo decals aditivos (el pavimento
+      // es MeshBasic y no recibe luz).
+      lamps: { color: "#ffd8a1", intensity: 7, distance: 9 },
+    },
     lampsOn: true,
-    sunShadow: { ground: 0.28, objects: 0.36 },
+    sunShadow: { ground: 0.28 },
     guideOpacity: 0.055,
     shadowOpacity: 0.3,
   },

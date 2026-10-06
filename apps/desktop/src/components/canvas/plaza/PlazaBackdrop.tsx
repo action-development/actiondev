@@ -1,9 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { PLAZA_FRONT_ANGLE } from "./plaza-config";
+import {
+  createGradedMaterial,
+  getGravelTexture,
+  getMistTexture,
+  getPazoWindowMask,
+  getSoftShadowTexture,
+} from "./backdrop-material";
+import { BACKDROP_GRADES, type LayerGrade } from "./backdrop-palette";
 import { PLAZA_PALETTES, type PlazaMode } from "./plaza-mode";
+import { getLightPoolTexture, plazaHorizon } from "./plaza-textures";
 
 /**
  * El Pazo de Castrelos al fondo del parque.
@@ -20,52 +29,51 @@ import { PLAZA_PALETTES, type PlazaMode } from "./plaza-mode";
  * órbita pasa justo por su costado se ve de canto — está colocado de espaldas
  * al recorrido más visto y el arbolado tapa el momento.
  *
+ * Horizonte con grading propio (ver `backdrop-material.ts` y
+ * `backdrop-palette.ts`): todas las capas llevan `fog={false}` y resuelven su
+ * perspectiva atmosférica en el shader. El Pazo de NOCHE ya no es otra imagen:
+ * es el de día gradado + una máscara procedural de ventanas encendidas
+ * (`pazo-noche.webp` ya no se carga).
+ *
  * NO cuelga del `<Suspense>` de la escena: la textura se carga aparte y el
  * plano aparece cuando está lista. Un asset dentro del Suspense retrasaría el
  * final de la pantalla de carga, que es justo el error que dejó clavado el
  * loader del hero (ver "Errores prohibidos" en CLAUDE.md).
  */
 
-/** Ruta de la fachada del Pazo por modo. */
-const BACKDROP_SRC: Record<PlazaMode, string> = {
-  dia: "/plaza/pazo-dia.webp",
-  noche: "/plaza/pazo-noche.webp",
-};
+const PAZO_SRC = "/plaza/pazo-dia.webp";
 
-/** Franja de arbolado que cierra el horizonte. Una sola imagen para los dos
- * modos: de noche se tiñe (`backdropTint`), porque una masa de árboles a
- * contraluz es la misma silueta más apagada — al contrario que el Pazo, que
- * de noche enciende las ventanas y necesita imagen propia. */
+/** Franja de arbolado que cierra el horizonte, una sola imagen para los dos
+ * modos (de noche se gradúa en el shader). Va en DOS filas (`TREELINES`). */
 const TREELINE_SRC = "/plaza/arbolado.webp";
 
 /**
- * Cilindro de arbolado: radio, altura y cuántas veces se repite la franja
- * alrededor.
+ * Filas de arbolado: radio, altura y desfase del periodo.
  *
- * Va POR FUERA del arbolado 3D (16.8) y por dentro de la niebla, que es lo que
- * lo funde con el cielo. La textura se repite en modo ESPEJO: cada copia entra
- * invertida, así que los bordes siempre casan y no hay costura visible por
- * ningún lado, que es justo lo que hacía inviable un telón plano con la cámara
- * en movimiento.
+ * Van POR FUERA del arbolado 3D (16.8). La textura se repite en modo ESPEJO:
+ * cada copia entra invertida, así los bordes casan y no hay costura. La
+ * segunda fila (r 45) se desplaza MEDIA copia: rompe el periodo de 18° (la
+ * misma palmera en el mismo sitio) y, al estar más cerca, da un poco de
+ * paralaje con la cámara en vaivén.
  *
- * Cuántas veces se repite NO se fija a mano: se calcula con el aspecto de la
- * imagen para que cada copia salga con sus proporciones (`treelineRepeat`).
- * Con un número puesto a ojo, los árboles salían al doble de ancho que de
- * alto y la franja se leía como una mancha verde, no como arbolado.
+ * Cuántas copias caben NO se fija a mano: se calcula con el aspecto de la
+ * imagen (`treelineRepeat`), o los árboles salen deformados.
  */
-const TREELINE = { radius: 49, height: 5.3 } as const;
+const TREELINES = {
+  far: { radius: 49, height: 5.3, shift: 0 },
+  near: { radius: 45, height: 4.4, shift: 0.5 },
+} as const;
+type TreelineLayer = (typeof TREELINES)[keyof typeof TREELINES];
 
 /** Altura del edificio en unidades de mundo. El muñeco mide 1 ≈ 1,6 m, así
  * que 7 son unos 11 m: dos plantas más la torre. */
 const BACKDROP_HEIGHT = 7;
 
-/** Distancia al centro de la plaza. Por detrás del arbolado (16.8) y dentro
- * de la niebla, que es lo que lo asienta en el fondo en vez de dejarlo como
- * una pegatina. */
+/** Distancia al centro de la plaza. Por detrás del arbolado 3D (16.8). */
 const BACKDROP_RADIUS = 27;
 
 /** Carga una textura fuera del `<Suspense>`: devuelve `null` hasta que está. */
-function useBackdropTexture(src: string, configure?: (tex: THREE.Texture) => void): THREE.Texture | null {
+function useBackdropTexture(src: string): THREE.Texture | null {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
 
   useEffect(() => {
@@ -76,14 +84,11 @@ function useBackdropTexture(src: string, configure?: (tex: THREE.Texture) => voi
         return;
       }
       loaded.colorSpace = THREE.SRGBColorSpace;
-      configure?.(loaded);
       setTexture(loaded);
     });
     return () => {
       cancelled = true;
     };
-    // `configure` se define en el módulo, no cambia entre renders.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src]);
 
   useEffect(() => {
@@ -100,136 +105,259 @@ function useBackdropTexture(src: string, configure?: (tex: THREE.Texture) => voi
  * proporción original de la imagen. Se redondea a PAR para que la última copia
  * cierre contra la primera por el mismo borde (es lo que pide el espejo).
  */
-function treelineRepeat(texture: THREE.Texture): number {
+function treelineRepeat(texture: THREE.Texture, layer: TreelineLayer): number {
   const image = texture.image as { width: number; height: number } | undefined;
   const aspect = image ? image.width / image.height : 3;
-  const copyWidth = TREELINE.height * aspect;
-  const perimeter = 2 * Math.PI * TREELINE.radius;
+  const copyWidth = layer.height * aspect;
+  const perimeter = 2 * Math.PI * layer.radius;
   return Math.max(2, Math.round(perimeter / copyWidth / 2) * 2);
 }
 
-function configureTreeline(tex: THREE.Texture) {
-  tex.wrapS = THREE.MirroredRepeatWrapping;
-  tex.repeat.set(treelineRepeat(tex), 1);
+/** Cilindro abierto, visto desde dentro. */
+function useCylinder(radius: number, height: number, segments = 96): THREE.CylinderGeometry {
+  const geometry = useMemo(
+    () => new THREE.CylinderGeometry(radius, radius, height, segments, 1, true),
+    [radius, height, segments],
+  );
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return geometry;
 }
 
 /**
  * Sotobosque: cilindro opaco JUSTO POR DETRÁS de la franja de arbolado.
  *
- * El síntoma eran unas calvas blancas dentadas entre los troncos pintados. No
- * era el borde del mundo: era el propio suelo, que a partir de `fog.far` ya es
- * 100 % color de horizonte, asomando por el hueco que la imagen deja entre las
- * copas y los troncos. Geométricamente no hay forma de cerrarlo —el suelo se
- * vuelve blanco antes de que la masa opaca de las copas llegue a taparlo— así
- * que lo que se tapa es el suelo, no el hueco.
+ * El síntoma eran unas calvas blancas dentadas entre los troncos pintados: el
+ * propio suelo, ya 100 % color de horizonte, asomando por el hueco entre copas
+ * y troncos. Geométricamente no se puede cerrar, así que se tapa el SUELO con
+ * lo que de verdad hay bajo una masa de árboles: sombra. Va medio metro por
+ * detrás (r 49,5) para que los troncos se sigan recortando contra él.
  *
- * Y tapándolo con lo que de verdad hay bajo una masa de árboles: sombra. Por
- * eso va medio metro POR DETRÁS del arbolado (los troncos se siguen viendo
- * recortados contra él, que es lo que da la profundidad) y con la niebla
- * puesta, que es lo que le hace llegar al mismo gris verdoso que el césped de
- * delante.
+ * Ahora sin niebla de escena: su verde se mezcla a mano con el horizonte
+ * (`understoryHaze`) para llegar al mismo tono que el césped lejano.
  */
 const UNDERSTORY = { radius: 49.5, bottom: -1.5, top: 1.5 } as const;
 
-function Understory({ color }: { color: string }) {
-  const geometry = useMemo(
+function Understory({ mode }: { mode: PlazaMode }) {
+  const geometry = useCylinder(UNDERSTORY.radius, UNDERSTORY.top - UNDERSTORY.bottom);
+  const color = useMemo(
     () =>
-      new THREE.CylinderGeometry(
-        UNDERSTORY.radius,
-        UNDERSTORY.radius,
-        UNDERSTORY.top - UNDERSTORY.bottom,
-        96,
-        1,
-        true,
+      new THREE.Color(PLAZA_PALETTES[mode].understory).lerp(
+        new THREE.Color(plazaHorizon(mode)),
+        BACKDROP_GRADES[mode].understoryHaze,
       ),
-    [],
+    [mode],
   );
-  useEffect(() => () => geometry.dispose(), [geometry]);
-
   return (
     <mesh geometry={geometry} position={[0, (UNDERSTORY.top + UNDERSTORY.bottom) / 2, 0]}>
-      {/* Sin sombrear y CON niebla: es fondo, no superficie. Lo que le da el
-          tono final es la misma niebla que apaga el césped y el arbolado. */}
-      <meshBasicMaterial color={color} side={THREE.BackSide} toneMapped={false} />
+      <meshBasicMaterial color={color} side={THREE.BackSide} toneMapped={false} fog={false} />
     </mesh>
   );
 }
 
-function Treeline({ tint }: { tint: string }) {
-  const texture = useBackdropTexture(TREELINE_SRC, configureTreeline);
-  const geometry = useMemo(
-    () => new THREE.CylinderGeometry(TREELINE.radius, TREELINE.radius, TREELINE.height, 96, 1, true),
-    [],
-  );
-
-  useEffect(() => () => geometry.dispose(), [geometry]);
-
-  if (!texture) return null;
-
+/**
+ * Bruma de suelo: cilindro transparente cuya opacidad cae con la altura, del
+ * color de horizonte. Tapa las puntas de los troncos y la junta recta entre
+ * césped y sotobosque: es el aire que de verdad se acumula a ras de suelo.
+ */
+function GroundMist({ mode, radius, height, strength }: { mode: PlazaMode; radius: number; height: number; strength: number }) {
+  const geometry = useCylinder(radius, height);
+  const map = useMemo(() => getMistTexture(), []);
   return (
-    <mesh geometry={geometry} position={[0, TREELINE.height / 2 - 0.35, 0]}>
-      {/* `BackSide`: se ve desde dentro. `alphaTest` recorta el cielo entre
-          las copas sin entrar en la cola de transparentes. */}
+    <mesh geometry={geometry} position={[0, height / 2, 0]} renderOrder={1}>
       <meshBasicMaterial
-        map={texture}
-        color={tint}
+        map={map}
+        color={plazaHorizon(mode)}
+        opacity={strength}
+        transparent
+        depthWrite={false}
         side={THREE.BackSide}
-        alphaTest={0.5}
         toneMapped={false}
+        fog={false}
       />
     </mesh>
   );
 }
 
+function Treeline({ mode, base, layer, grade }: { mode: PlazaMode; base: THREE.Texture; layer: TreelineLayer; grade: LayerGrade }) {
+  // Clon por fila: comparte la imagen (y la subida a GPU) pero cada una tiene
+  // su propio `repeat` y `offset`. Es lo que permite desfasar la segunda.
+  const texture = useMemo(() => {
+    const tex = base.clone();
+    tex.wrapS = THREE.MirroredRepeatWrapping;
+    tex.repeat.set(treelineRepeat(base, layer), 1);
+    tex.offset.x = layer.shift;
+    tex.needsUpdate = true;
+    return tex;
+  }, [base, layer]);
+  useEffect(() => () => texture.dispose(), [texture]);
+
+  const geometry = useCylinder(layer.radius, layer.height);
+  const material = useMemo(
+    () => createGradedMaterial({ map: texture, grade, haze: plazaHorizon(mode), side: THREE.BackSide }),
+    [texture, grade, mode],
+  );
+  useEffect(() => () => material.dispose(), [material]);
+
+  return <mesh geometry={geometry} material={material} position={[0, layer.height / 2 - 0.3, 0]} />;
+}
+
+/** Setos bajos delante del zócalo: blobs aplastados de un solo InstancedMesh
+ * (una llamada de dibujo). Tapan la junta fachada/césped y apoyan el edificio.
+ * Coordenadas locales del Pazo: x a lo ancho, z hacia la plaza. El hueco
+ * central es la puerta. */
+const HEDGE_BLOBS: ReadonlyArray<readonly [number, number, number, number]> = [
+  // x, z, escala, y-giro
+  [-5.9, 0.85, 0.62, 0.3], [-5.1, 0.95, 0.74, 1.1], [-4.2, 0.85, 0.66, 2.0], [-3.4, 0.95, 0.72, 0.6],
+  [-2.6, 0.85, 0.64, 1.7], [-1.9, 0.95, 0.6, 2.6],
+  [2.2, 0.95, 0.62, 0.9], [2.9, 0.85, 0.7, 2.2], [3.8, 0.95, 0.66, 0.2], [4.6, 0.85, 0.74, 1.4],
+  [5.4, 0.95, 0.66, 2.8], [6.0, 0.85, 0.58, 0.8],
+  [-4.6, 1.5, 0.5, 1.9], [3.4, 1.5, 0.5, 0.4],
+];
+
+function Hedges({ mode }: { mode: PlazaMode }) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const geometry = useMemo(() => new THREE.IcosahedronGeometry(1, 2), []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+
+  useEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const e = new THREE.Euler();
+    const p = new THREE.Vector3();
+    const sc = new THREE.Vector3();
+    HEDGE_BLOBS.forEach(([x, z, s, ry], i) => {
+      e.set(0, ry, 0);
+      q.setFromEuler(e);
+      // Largos y bajos: un seto recortado, no una bola.
+      sc.set(s * 1.25, s * 0.62, s * 0.8);
+      p.set(x, s * 0.5, z);
+      m.compose(p, q, sc);
+      mesh.setMatrixAt(i, m);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+  }, []);
+
+  return (
+    <instancedMesh ref={ref} args={[geometry, undefined, HEDGE_BLOBS.length]}>
+      <meshStandardMaterial color={PLAZA_PALETTES[mode].leafDark} roughness={1} />
+    </instancedMesh>
+  );
+}
+
+/** Explanada de grava + sombra difusa + charco de luz de la puerta: lo que
+ * asienta el Pazo en el suelo en vez de dejarlo como una pegatina. */
+function Grounding({ mode }: { mode: PlazaMode }) {
+  const grade = BACKDROP_GRADES[mode];
+  const gravel = useMemo(() => getGravelTexture(), []);
+  const shadow = useMemo(() => getSoftShadowTexture(), []);
+  const pool = useMemo(() => getLightPoolTexture(), []);
+  const flat: [number, number, number] = [-Math.PI / 2, 0, 0];
+
+  return (
+    <>
+      <mesh rotation={flat} position={[0, 0.012, 2.9]}>
+        <planeGeometry args={[17, 6.4]} />
+        <meshBasicMaterial
+          map={gravel}
+          color={grade.gravel}
+          transparent
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          toneMapped={false}
+        />
+      </mesh>
+      {/* Sombra del edificio sobre la explanada: pegada al zócalo. */}
+      <mesh rotation={flat} position={[0, 0.02, 0.9]}>
+        <planeGeometry args={[14.5, 3.2]} />
+        <meshBasicMaterial
+          map={shadow}
+          color="#000000"
+          opacity={mode === "dia" ? 0.4 : 0.55}
+          transparent
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-3}
+          toneMapped={false}
+        />
+      </mesh>
+      {grade.doorPool > 0 && (
+        <mesh rotation={flat} position={[0.2, 0.03, 2.1]}>
+          <planeGeometry args={[6, 4.4]} />
+          <meshBasicMaterial
+            map={pool}
+            color="#ffb870"
+            opacity={grade.doorPool}
+            transparent
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            polygonOffset
+            polygonOffsetFactor={-4}
+            toneMapped={false}
+          />
+        </mesh>
+      )}
+    </>
+  );
+}
+
 function Pazo({ mode }: { mode: PlazaMode }) {
-  const texture = useBackdropTexture(BACKDROP_SRC[mode]);
+  const texture = useBackdropTexture(PAZO_SRC);
+  const grade = BACKDROP_GRADES[mode];
 
   const geometry = useMemo(() => {
     if (!texture?.image) return null;
     const { width, height } = texture.image as { width: number; height: number };
     return new THREE.PlaneGeometry(BACKDROP_HEIGHT * (width / height), BACKDROP_HEIGHT);
   }, [texture]);
+  useEffect(() => () => geometry?.dispose(), [geometry]);
 
-  useEffect(() => {
-    return () => {
-      geometry?.dispose();
-    };
-  }, [geometry]);
+  const material = useMemo(() => {
+    if (!texture) return null;
+    return createGradedMaterial({
+      map: texture,
+      grade: grade.pazo,
+      haze: plazaHorizon(mode),
+      side: THREE.DoubleSide,
+      baseAO: grade.pazo.baseAO,
+      windowMask: grade.pazo.windows > 0 ? getPazoWindowMask() : null,
+      windowGain: grade.pazo.windows * 1.15,
+    });
+  }, [texture, grade, mode]);
+  useEffect(() => () => material?.dispose(), [material]);
 
-  if (!texture || !geometry) return null;
+  if (!geometry || !material) return null;
 
   const x = Math.cos(PLAZA_FRONT_ANGLE) * BACKDROP_RADIUS;
   const z = Math.sin(PLAZA_FRONT_ANGLE) * BACKDROP_RADIUS;
 
   return (
-    <mesh
-      geometry={geometry}
-      position={[x, BACKDROP_HEIGHT / 2, z]}
-      rotation={[0, Math.atan2(-x, -z), 0]}
-    >
-      {/*
-        Sin sombrear: la imagen ya trae su propia luz pintada (sol de día,
-        ventanas encendidas de noche), y pasarla por las luces de la escena
-        la ensuciaría. El fog SÍ la afecta — es lo que la mete en el fondo.
-        `alphaTest` en vez de `transparent`: el recorte es duro y así no entra
-        en la cola de transparentes ni se pelea por el orden con el arbolado.
-      */}
-      <meshBasicMaterial
-        map={texture}
-        color={PLAZA_PALETTES[mode].backdropTint}
-        alphaTest={0.5}
-        toneMapped={false}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
+    // Grupo local: +z mira a la plaza, +x a lo ancho. Todo lo que apoya el
+    // edificio (grava, sombra, setos) cuelga de aquí y gira con él.
+    <group position={[x, 0, z]} rotation={[0, Math.atan2(-x, -z), 0]}>
+      <mesh geometry={geometry} material={material} position={[0, BACKDROP_HEIGHT / 2, 0]} />
+      <Grounding mode={mode} />
+      <Hedges mode={mode} />
+    </group>
   );
 }
 
 export function PlazaBackdrop({ mode }: { mode: PlazaMode }) {
+  const treeTexture = useBackdropTexture(TREELINE_SRC);
+  const grade = BACKDROP_GRADES[mode];
   return (
     <group>
-      <Understory color={PLAZA_PALETTES[mode].understory} />
-      <Treeline tint={PLAZA_PALETTES[mode].treelineTint} />
+      <Understory mode={mode} />
+      {treeTexture && (
+        <>
+          <Treeline mode={mode} base={treeTexture} layer={TREELINES.far} grade={grade.treelineFar} />
+          <Treeline mode={mode} base={treeTexture} layer={TREELINES.near} grade={grade.treelineNear} />
+        </>
+      )}
+      <GroundMist mode={mode} radius={47.5} height={1.6} strength={grade.groundMist} />
+      <GroundMist mode={mode} radius={43.5} height={1.1} strength={grade.groundMist * 0.7} />
       <Pazo mode={mode} />
     </group>
   );

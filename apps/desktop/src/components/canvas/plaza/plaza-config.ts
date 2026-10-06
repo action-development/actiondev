@@ -6,10 +6,9 @@
  * tipos y layout. Regla dura del proyecto: CERO assets remotos — la sala y las
  * caras se generan con `CanvasTexture` en runtime, nunca con HDR ni GLB.
  *
- * Referencia visual: las salas de personajes de Wii (plaza infinita, muñecos
- * de cabeza grande y cuerpo cápsula), aquí sobre el fondo oscuro del sitio. Copiamos el LENGUAJE visual
- * —proporciones, shading plano, comportamiento— nunca marcas, tipografías ni
- * assets de Nintendo.
+ * Referencia visual: plazas de personajes de consola (plaza abierta, muñecos de
+ * cabeza grande y cuerpo de juguete). Copiamos el LENGUAJE visual —proporciones,
+ * shading mate, comportamiento— nunca marcas, tipografías ni assets de terceros.
  */
 
 /**
@@ -52,17 +51,17 @@ export const FLOOR_RADIUS = 150;
 export const DOLL = {
   /** Esferoide achatado. `scale` es [x, y, z] sobre la esfera unidad. */
   head: { radius: 0.34, scale: [1, 0.92, 0.94] as [number, number, number], y: 0.96 },
-  /** Cápsula tipo kokeshi: sin cintura, sin cuello. */
+  /** Tronco (referencia): el modelado real vive en `doll/doll-geometry.ts` (`DOLL_RIG`). */
   body: { radius: 0.24, length: 0.34, y: 0.5 },
-  /** Cilindro corto + mano esférica; sin dedos. */
+  /** Brazo (referencia de proporciones; mano redondeada con pulgar sugerido). */
   arm: { radius: 0.058, length: 0.22, x: 0.26, y: 0.58 },
   hand: { radius: 0.088 },
-  /** Cápsulas cortas sin rodilla. */
+  /** Piernas cortas sin rodilla (zapato con suela aparte). */
   leg: { radius: 0.075, length: 0.16, x: 0.11, y: 0.17 },
   foot: { radius: 0.085 },
-  /** Único rasgo facial con volumen — el resto de la cara es plano. */
+  /** Rasgo facial con volumen (nariz) — el resto de la cara va en el shader de cara. */
   nose: { radius: 0.042, z: 0.3, y: 0.94 },
-  /** Disco de sombra proyectada (no hay sombras reales). */
+  /** Radio base del disco de contacto bajo cada muñeco (la sombra real la proyecta el sol). */
   shadowRadius: 0.32,
 } as const;
 
@@ -268,32 +267,19 @@ export function buildDolls(
 }
 
 /**
- * Paleta del mobiliario (farolas, bancos, setos). Separada de
- * `PLAZA_PALETTE` porque es mobiliario, no personajes: tonos apagados de
- * metal/madera/hoja, coherentes con el resto del sitio (nada de colores
- * saturados salvo el acento, reservado a la luz de las farolas).
- *
- * Todos varios puntos MÁS CLAROS de lo que pide el papel: sobre un fondo
- * #080808 un gris "realista" (#3a3a3a) con `metalness` alto se va a negro y
- * el mueble desaparece. Aquí no hay environment map — sin IBL, `metalness`
- * solo resta luz — así que el mobiliario es todo dieléctrico y se apoya en el
- * color base para tener presencia.
+ * Paleta del mobiliario con material propio (hierro, madera, luz de farola).
+ * Tonos apagados, coherentes con el sitio. Con IBL (ver `contracts` de luz) el
+ * hierro es semimetálico: su color base es OSCURO a propósito, porque el
+ * reflejo del cielo/granito ya lo aclara. La vegetación tiene su paleta en
+ * `decor/vegetation-palette.ts`.
  */
 export const PLAZA_DECOR_PALETTE = {
-  /** Poste de la farola, patas del banco y aro del alcorque. */
-  metal: "#5b6066",
-  /** Listones del banco. */
-  wood: "#7a6047",
-  /** Tronco del arbolado perimetral. */
-  bark: "#3d3228",
-  /** Estípite de la palmera: mucho más claro y gris que un tronco de árbol
-   * — es fibra seca, no corteza. */
-  palm: "#6c5c46",
-  /** Vidrio del farol apagado (de día): cristal sucio, no fuente de luz. */
-  glassOff: "#cfd6cd",
-  /** Luz de la farola: lima del sitio blanqueado. En aditivo, el acento puro
-   * se lee como un verde chillón; con blanco dentro parece luz. */
-  glow: "#e9ffc0",
+  /** Hierro de farolas, bancos y papeleras. */
+  metal: "#4a5057",
+  /** Listones del banco (multiplica la veta y el tinte por listón). */
+  wood: "#8a6a4c",
+  /** Luz de la farola: cálido coherente con las `pointLight` reales (#ffd8a1). */
+  glow: "#ffe2b0",
 } as const;
 
 /**
@@ -323,6 +309,9 @@ export interface DecorSpec {
   /** Variación de tamaño. 1 en farolas y bancos (mobiliario de catálogo:
    * todas las piezas son iguales); solo varía la vegetación. */
   scale: number;
+  /** Semilla estable de la pieza (`kind:anillo:índice`): para variación
+   * determinista (viento, fase...) sin consumir sorteos del PRNG del layout. */
+  seed: string;
 }
 
 /**
@@ -345,13 +334,26 @@ const DECOR_RINGS: Readonly<
     { radius: number; count: number; offset: number; jitter?: number; scale?: [number, number] }
   >
 > = {
-  bench: { radius: 7, count: 4, offset: Math.PI / 4 },
-  lamp: { radius: 7.6, count: 6, offset: 0 },
+  // Mobiliario anclado al frente (`PLAZA_FRONT_ANGLE`), no a 0°: la cámara vive
+  // en el lado opuesto (FRONT + 180°) y todo lo que cae en su arco se le
+  // plantaba en primer plano, cortado o tapando la fuente. Los anillos llevan
+  // huecos SIMÉTRICOS respecto al eje cámara-telón y `buildDecorLayout`
+  // (`decor/furniture-layout.ts`) retira lo que caiga en el pasillo de cámara
+  // leyendo `ORBIT` en runtime: el hueco es la "entrada" de la plaza, no una
+  // pieza que falta.
+  // Bancos cada 60° desde el eje del telón (0°, ±60°, ±120°, 180°): el de 180°
+  // cae justo en la cámara y se retira, quedan cinco, el central de cara a la
+  // cámara con la fuente delante.
+  bench: { radius: 7, count: 6, offset: PLAZA_FRONT_ANGLE },
+  // Farolas INTERCALADAS con los bancos (a 30° de cada uno; pegadas a ellos se
+  // pisaban): las dos que flanquean la cámara se retiran y quedan cuatro.
+  lamp: { radius: 7.6, count: 6, offset: PLAZA_FRONT_ANGLE + Math.PI / 6 },
   // Papelera: al lado de cada banco, ligeramente desfasada en ángulo. Es el
   // detalle que delata una plaza de verdad — un banco solo en mitad de la nada
   // parece atrezzo.
-  bin: { radius: 7.15, count: 4, offset: Math.PI / 4 + 0.2 },
-  hedge: { radius: 9.2, count: 6, offset: Math.PI / 6, jitter: 0.4, scale: [0.85, 1.15] },
+  bin: { radius: 7.15, count: 6, offset: PLAZA_FRONT_ANGLE + 0.2 },
+  // Seto: detrás de cada banco (mismos ángulos), ya fuera del bordillo.
+  hedge: { radius: 9.2, count: 6, offset: PLAZA_FRONT_ANGLE, jitter: 0.4, scale: [0.85, 1.15] },
   // Arbolado: telón de fondo. Va MUY fuera del anillo de la cámara (11.5)
   // para no barrer el encuadre al pasar por delante, y lo bastante alto para
   // asomar por encima de las farolas desde el otro lado de la plaza. Sin él,
@@ -370,7 +372,8 @@ const DECOR_RINGS: Readonly<
  */
 export function buildDecor(): DecorSpec[] {
   const out: DecorSpec[] = [];
-  for (const kind of ["bench", "lamp", "bin", "hedge", "tree", "palm"] as const) {
+  const kinds = ["bench", "lamp", "bin", "hedge", "tree", "palm"] as const;
+  for (const [ringIndex, kind] of kinds.entries()) {
     const { radius, count, offset, jitter = 0, scale } = DECOR_RINGS[kind];
     const organic = ORGANIC_KINDS.includes(kind);
     for (let i = 0; i < count; i++) {
@@ -388,6 +391,7 @@ export function buildDecor(): DecorSpec[] {
         // solo sirve para que no se repita la misma silueta.
         rotation: Math.atan2(-x, -z) + (kind === "tree" || kind === "palm" ? rnd() * Math.PI : 0),
         scale: scale ? scale[0] + rnd() * (scale[1] - scale[0]) : 1,
+        seed: `${kind}:${ringIndex}:${i}`,
       });
     }
   }
