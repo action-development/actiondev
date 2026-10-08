@@ -478,6 +478,13 @@ test.describe("Landings de campaña", () => {
       await expect(page.getByTestId("lead-step-1")).toBeVisible();
       await expect(page.getByTestId(`lead-field-need-${offer}`)).toBeChecked();
       await expect(page.getByTestId("contact-popup")).toHaveCount(0);
+      // La oferta de los anuncios, justo bajo «Siguiente» y dentro de la primera pantalla.
+      const next = (await page.getByTestId("lead-next").boundingBox())!;
+      const offerLine = page.getByTestId("lead-offer");
+      await expect(offerLine).toHaveText("Primera reunión gratis, en Vigo o por videollamada.");
+      const offerBox = (await offerLine.boundingBox())!;
+      expect(offerBox.y).toBeGreaterThanOrEqual(next.y + next.height);
+      expect(offerBox.y + offerBox.height).toBeLessThanOrEqual(900);
     });
   }
 
@@ -546,9 +553,57 @@ test.describe("Landings de campaña", () => {
     await page.getByTestId("lead-field-budget").selectOption("lt5k");
     await page.getByTestId("lead-submit").click();
 
-    await expect(page.getByTestId("lead-error")).toContainText("No se ha podido enviar");
+    await expect(page.getByTestId("lead-error")).toContainText("No se ha podido enviar. Lo que has escrito sigue aquí");
     await expect(page.getByTestId("lead-whatsapp")).toHaveAttribute("href", /^https:\/\/wa\.me\//);
     await expect(page.getByTestId("lead-submit")).toBeEnabled();
+    await expect(page.getByTestId("lead-field-email")).toHaveValue("ana@empresa.es");
+  });
+
+  test("embudo: lead_form_step, whatsapp_click con link_location y envío descartado (200 sin id) sin generate_lead", async ({ page }) => {
+    // Consentimiento concedido (pisa el `denied` del beforeEach) y GTM fuera de la red.
+    await page.addInitScript(() => window.localStorage.setItem("action-cookie-consent", "granted"));
+    await page.route(/googletagmanager\.com|wa\.me/, (route) => route.abort());
+    // Los clics en WhatsApp no abren pestaña (los listeners de captura sí los ven).
+    await page.addInitScript(() =>
+      document.addEventListener("click", (e) => {
+        if ((e.target as Element | null)?.closest?.('a[href^="https://wa.me/"]')) e.preventDefault();
+      }),
+    );
+    await page.route("**/api/lead", (route) => route.fulfill({ json: { ok: true } }));
+    await page.goto("/hablemos/software");
+    const events = (name: string) =>
+      page.evaluate((n) => ((window as unknown as { dataLayer?: { event?: string }[] }).dataLayer ?? []).filter((e) => e.event === n), name);
+
+    await page.getByTestId("campaign-whatsapp").click();
+    await page.getByTestId("footer-whatsapp").click();
+    expect((await events("whatsapp_click")).map((e) => (e as { link_location?: string }).link_location)).toEqual([
+      "campaign-whatsapp",
+      "footer-whatsapp",
+    ]);
+    expect(await events("click_whatsapp")).toHaveLength(2);
+
+    // De vuelta arriba: al fondo, el formulario fijo queda bajo el bloque de cierre.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.getByTestId("lead-field-stage-existing").check();
+    await page.getByTestId("lead-next").click();
+    expect(await events("lead_form_step")).toEqual([
+      {
+        event: "lead_form_step",
+        form_step: "2",
+        lead_source: "ads_landing",
+        lead_need: "software",
+        lead_stage: "existing",
+        page_path: "/hablemos/software",
+      },
+    ]);
+    await page.getByTestId("lead-field-name").fill("Ana");
+    await page.getByTestId("lead-field-phone").fill("600123456");
+    await page.getByTestId("lead-field-email").fill("ana@empresa.es");
+    await page.getByTestId("lead-field-budget").selectOption("lt5k");
+    await page.getByTestId("lead-submit").click();
+    await expect(page.getByTestId("lead-received")).toHaveText("Recibido. Te contactamos en 24 horas laborables.");
+    expect(new URL(page.url()).pathname).toBe("/hablemos/software");
+    expect(await events("generate_lead")).toHaveLength(0);
   });
 
   test("la barra fija de móvil aparece al salir el hero y se oculta con el formulario", async ({ page }) => {
@@ -591,6 +646,9 @@ test.describe("Landings de campaña", () => {
 
   test("/hablemos/gracias: sin tel:, WhatsApp precargado y casos en pestaña nueva", async ({ page }) => {
     await page.goto("/hablemos/gracias?tipo=app");
+    await expect(page.getByTestId("gracias-contact")).toHaveText(
+      "Te escribimos por WhatsApp o te llamamos desde el 614 02 74 10 (L-V).",
+    );
     await expect(page.getByTestId("gracias-call")).toHaveCount(0);
     await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
     await expect(page.getByTestId("gracias-whatsapp")).toHaveAttribute("href", /\?text=/);
