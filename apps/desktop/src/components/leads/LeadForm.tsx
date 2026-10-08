@@ -18,6 +18,7 @@ import {
 import { HoloButton } from "@/components/ui/HoloButton";
 import { whatsappHref, whatsappTextForNeed } from "@/lib/leads/whatsapp";
 import { LEAD_LIMITS } from "@/lib/leads/validation";
+import { FIRST_MEETING_OFFER, RECEIVED_MESSAGE, SUBMIT_ERROR_MESSAGE } from "./copy";
 import { useLeadForm } from "./useLeadForm";
 
 /**
@@ -198,6 +199,10 @@ export function LeadForm({
           >
             <span className="inline-flex items-center gap-2">Siguiente</span>
           </button>
+          {/* La oferta de los anuncios junto a la decisión (hay hueco libre bajo «Siguiente»). */}
+          <p data-testid={tid("offer")} className="mt-2.5 text-center text-[13px] text-muted">
+            {FIRST_MEETING_OFFER}
+          </p>
         </div>
       ) : (
         <div key="step-2" data-testid={tid("step-2")} className="lead-step">
@@ -446,9 +451,7 @@ export function LeadForm({
 
           {status === "error" && (
             <div data-testid={tid("error")} role="alert" className="lead-step mt-4 border-2 border-foreground p-3.5">
-              <p className="text-sm text-foreground">
-                No se ha podido enviar. Escríbenos por WhatsApp y te atendemos igual
-              </p>
+              <p className="text-sm text-foreground">{SUBMIT_ERROR_MESSAGE}</p>
               <div className="mt-3">
                 <HoloButton href={whatsappHref(whatsappTextForNeed(need))} size="sm" data-testid={tid("whatsapp")}>
                   Escribir por WhatsApp
@@ -457,15 +460,21 @@ export function LeadForm({
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={sending}
-            aria-busy={sending}
-            data-testid={tid("submit")}
-            className="holo-btn holo-btn-solid mt-4 min-h-[52px] w-full text-[13px] disabled:opacity-60"
-          >
-            <span className="inline-flex items-center gap-2">{sending ? "Enviando…" : "Enviar mi proyecto"}</span>
-          </button>
+          {status === "received" ? (
+            <p data-testid={tid("received")} role="status" className="lead-step mt-4 border-2 border-foreground p-3.5 text-sm text-foreground">
+              {RECEIVED_MESSAGE}
+            </p>
+          ) : (
+            <button
+              type="submit"
+              disabled={sending}
+              aria-busy={sending}
+              data-testid={tid("submit")}
+              className="holo-btn holo-btn-solid mt-4 min-h-[52px] w-full text-[13px] disabled:opacity-60"
+            >
+              <span className="inline-flex items-center gap-2">{sending ? "Enviando…" : "Enviar mi proyecto"}</span>
+            </button>
+          )}
           <p className="mt-2.5 text-center text-[13px] text-muted">Primera reunión gratis y sin compromiso. Te respondemos en 24 horas laborables.</p>
         </div>
       )}

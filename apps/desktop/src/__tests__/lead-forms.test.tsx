@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { CONSENT_STORAGE_KEY, LEAD_BUDGET_LABELS, LEAD_NEEDS } from "@actiondev/shared";
 import { LeadForm } from "@/components/leads/LeadForm";
-import { useLeadForm } from "@/components/leads/useLeadForm";
+import { CONTACT_EXPECTATION, FIRST_MEETING_OFFER } from "@/components/leads/copy";
+import { LEAD_SUBMIT_TIMEOUT_MS, useLeadForm } from "@/components/leads/useLeadForm";
+import { WhatsappClickTracking } from "@/components/leads/useWhatsappClickTracking";
 import { MobileLeadForm, MOBILE_NEED_LABELS } from "@/components/m/leads/MobileLeadForm";
 import { GENERIC_WHATSAPP_TEXT, whatsappHref } from "@/lib/leads/whatsapp";
 
@@ -24,6 +26,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 type Win = { dataLayer?: Record<string, unknown>[] };
 const dataLayer = () => (window as unknown as Win).dataLayer ?? [];
 const leadEvents = () => dataLayer().filter((entry) => entry.event === "generate_lead");
+const eventsNamed = (name: string) => dataLayer().filter((entry) => entry.event === name);
 
 const fetchMock = vi.fn();
 
@@ -32,6 +35,17 @@ function respond(status: number, body: unknown) {
 }
 
 const lastPayload = () => JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as { body: string }).body);
+const payloads = () => fetchMock.mock.calls.map((call) => JSON.parse((call[1] as { body: string }).body));
+
+/** `fetch` que no responde nunca: solo se rinde cuando el formulario aborta por tiempo. */
+function hang() {
+  fetchMock.mockImplementationOnce(
+    (_url: string, init: { signal: AbortSignal }) =>
+      new Promise((_resolve, reject) => {
+        init.signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+      }),
+  );
+}
 
 beforeEach(() => {
   (window as unknown as Win).dataLayer = [];
@@ -115,17 +129,24 @@ describe.each(SKINS)("$name", ({ prefix, mount, chooseBudget }) => {
     expect(t("error-email")).toHaveTextContent("Revisa el email");
   });
 
-  it("el honeypot viaja en `website` (el 200 falso de la API lo descarta) y no rompe el flujo", async () => {
+  it("el honeypot viaja en `website` y el 200 falso SIN id no es conversión ni redirige (silencioso)", async () => {
     // El cliente NO descarta el honeypot por su cuenta (un bot no ve el resultado): lo manda en `website`
-    // y la API responde 200 falso. Aquí se comprueba que va en el payload y que ese 200 falso no rompe el flujo.
+    // y la API responde 200 falso sin `id`. Con consentimiento concedido, NO sale `generate_lead`, no se
+    // visita /gracias y el formulario confirma en neutro (el bot no sabe que se le ha descartado).
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, "granted");
     mount();
     toStep2();
     fillStep2();
     change("field-website", "https://spam.example");
     respond(200, { ok: true });
     fireEvent.click(t("submit"));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(await screen.findByTestId(`${prefix}-received`)).toHaveTextContent("Recibido. Te contactamos en 24 horas laborables.");
     expect(lastPayload().website).toBe("https://spam.example");
+    expect(leadEvents()).toHaveLength(0);
+    expect(eventsNamed("lead_submit_error")).toHaveLength(0);
+    expect(push).not.toHaveBeenCalled();
+    expect(q("submit")).toBeNull();
+    expect(q("error")).toBeNull();
   });
 
   it("envía el payload exacto a /api/lead, mide tras el OK con consentimiento y redirige", async () => {
@@ -143,8 +164,9 @@ describe.each(SKINS)("$name", ({ prefix, mount, chooseBudget }) => {
     expect(init.method).toBe("POST");
     expect(init.headers).toEqual({ "Content-Type": "application/json" });
 
-    const { elapsedMs, ...payload } = lastPayload();
+    const { elapsedMs, submissionId, ...payload } = lastPayload();
     expect(typeof elapsedMs).toBe("number");
+    expect(submissionId).toMatch(/^[A-Za-z0-9-]{32,64}$/);
     expect(payload).toEqual({
       source: "ads_landing",
       offer: "app",
@@ -206,7 +228,12 @@ describe.each(SKINS)("$name", ({ prefix, mount, chooseBudget }) => {
     respond(502, { ok: false });
     fireEvent.click(t("submit"));
 
-    expect(await screen.findByTestId(`${prefix}-error`)).toHaveTextContent("No se ha podido enviar");
+    expect(await screen.findByTestId(`${prefix}-error`)).toHaveTextContent(
+      "No se ha podido enviar. Lo que has escrito sigue aquí: vuelve a pulsar «Enviar mi proyecto» o escríbenos por WhatsApp y te atendemos igual.",
+    );
+    expect(eventsNamed("lead_submit_error")).toEqual([
+      { event: "lead_submit_error", error_type: "server", lead_source: "ads_landing", lead_need: "app", page_path: "/hablemos/app" },
+    ]);
     const href = t("whatsapp").getAttribute("href");
     expect(href).toBe(
       whatsappHref("Hola, vengo de vuestra web y quiero hablar de un proyecto de app móvil"),
@@ -226,6 +253,104 @@ describe.each(SKINS)("$name", ({ prefix, mount, chooseBudget }) => {
     fireEvent.click(t("submit"));
     expect(await screen.findByTestId(`${prefix}-error`)).toBeInTheDocument();
     expect(leadEvents()).toHaveLength(0);
+    expect(eventsNamed("lead_submit_error")[0]).toMatchObject({ error_type: "bad_response" });
+  });
+
+  it("sin red: lead_submit_error de tipo network; con 429, rate_limited", async () => {
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, "granted");
+    mount();
+    toStep2();
+    fillStep2();
+    fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    fireEvent.click(t("submit"));
+    expect(await screen.findByTestId(`${prefix}-error`)).toBeInTheDocument();
+    respond(429, { ok: false, error: "rate_limited" });
+    fireEvent.click(t("submit"));
+    await waitFor(() => expect(eventsNamed("lead_submit_error")).toHaveLength(2));
+    expect(eventsNamed("lead_submit_error").map((e) => e.error_type)).toEqual(["network", "rate_limited"]);
+  });
+
+  it("sin respuesta en 20 s: error de reintento, conserva lo escrito y el reintento no duplica (mismo submissionId)", async () => {
+    vi.useFakeTimers();
+    try {
+      window.localStorage.setItem(CONSENT_STORAGE_KEY, "granted");
+      mount();
+      toStep2();
+      fillStep2();
+      hang();
+      fireEvent.click(t("submit"));
+      expect(t("submit")).toBeDisabled();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(LEAD_SUBMIT_TIMEOUT_MS - 1);
+      });
+      expect(q("error")).toBeNull();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      expect(t("error")).toHaveTextContent("Lo que has escrito sigue aquí");
+      expect(t("submit")).not.toBeDisabled();
+      expect(t("field-name")).toHaveValue("  Ana Pérez ");
+      expect(t("field-email")).toHaveValue("Ana@Empresa.es");
+      expect(eventsNamed("lead_submit_error")[0]).toMatchObject({ error_type: "timeout" });
+      expect(leadEvents()).toHaveLength(0);
+
+      respond(200, { ok: true, id: "lead-retry" });
+      fireEvent.click(t("submit"));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(push).toHaveBeenCalledWith("/hablemos/gracias?tipo=app");
+      const [first, second] = payloads();
+      expect(first.submissionId).toBeTruthy();
+      expect(second.submissionId).toBe(first.submissionId);
+      expect(leadEvents()).toHaveLength(1);
+      expect((fetchMock.mock.calls[0][1] as { signal: AbortSignal }).signal).toBeInstanceOf(AbortSignal);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("embudo: lead_form_step al llegar al paso 2, una sola vez y sin datos personales", () => {
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, "granted");
+    mount();
+    fireEvent.click(t("next"));
+    expect(eventsNamed("lead_form_step")).toHaveLength(0);
+    toStep2();
+    fireEvent.click(t("back"));
+    fireEvent.click(t("next"));
+    expect(eventsNamed("lead_form_step")).toEqual([
+      {
+        event: "lead_form_step",
+        form_step: "2",
+        lead_source: "ads_landing",
+        lead_need: "app",
+        lead_stage: "idea",
+        page_path: "/hablemos/app",
+      },
+    ]);
+  });
+
+  it("embudo sin consentimiento: ni lead_form_step ni lead_submit_error", async () => {
+    mount();
+    toStep2();
+    fillStep2();
+    respond(502, { ok: false });
+    fireEvent.click(t("submit"));
+    await screen.findByTestId(`${prefix}-error`);
+    expect(dataLayer()).toHaveLength(0);
+  });
+
+  it("whatsapp_click con link_location en la salida a WhatsApp del error", async () => {
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, "granted");
+    mount();
+    toStep2();
+    fillStep2();
+    respond(502, { ok: false });
+    fireEvent.click(t("submit"));
+    fireEvent.click(await screen.findByTestId(`${prefix}-whatsapp`));
+    expect(eventsNamed("whatsapp_click")).toEqual([
+      { event: "whatsapp_click", link_location: `${prefix}-whatsapp`, page_path: "/hablemos/app" },
+    ]);
   });
 
   it("primera capa RGPD con Supabase/CRM y enlace a privacidad en pestaña nueva", () => {
@@ -240,10 +365,74 @@ describe.each(SKINS)("$name", ({ prefix, mount, chooseBudget }) => {
     );
   });
 
+  it("textos de conversión: oferta y expectativa de contacto con el número público", () => {
+    expect(FIRST_MEETING_OFFER).toBe("Primera reunión gratis, en Vigo o por videollamada.");
+    expect(CONTACT_EXPECTATION).toBe("Te escribimos por WhatsApp o te llamamos desde el 614 02 74 10 (L-V).");
+  });
+
   it("WhatsApp es el canal por defecto", () => {
     mount();
     toStep2();
     expect(t("field-contact-whatsapp")).toBeChecked();
+  });
+});
+
+describe("LeadForm: específico", () => {
+  it("la oferta va bajo «Siguiente» en el paso 1", () => {
+    render(<LeadForm {...PROPS} />);
+    const next = screen.getByTestId("lead-next");
+    const offer = screen.getByTestId("lead-offer");
+    expect(offer).toHaveTextContent(FIRST_MEETING_OFFER);
+    expect(next.compareDocumentPosition(offer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
+describe("whatsapp_click (link_location)", () => {
+  it("el enlace del paso 1 del formulario móvil se identifica y cuenta UNA vez aunque la página también mida", () => {
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, "granted");
+    render(
+      <>
+        <MobileLeadForm {...PROPS} />
+        <WhatsappClickTracking />
+        <a href="https://wa.me/34614027410?text=hola" data-testid="m-header-whatsapp">
+          WhatsApp
+        </a>
+        <a href="mailto:hi@actiondev.es" data-testid="otro">
+          Email
+        </a>
+      </>,
+    );
+    fireEvent.click(screen.getByTestId("m-lead-whatsapp-step-1"));
+    fireEvent.click(screen.getByTestId("m-header-whatsapp"));
+    fireEvent.click(screen.getByTestId("otro"));
+    expect(eventsNamed("whatsapp_click")).toEqual([
+      { event: "whatsapp_click", link_location: "m-lead-whatsapp-step-1", page_path: "/hablemos/app" },
+      { event: "whatsapp_click", link_location: "m-header-whatsapp", page_path: "/hablemos/app" },
+    ]);
+  });
+
+  it("solo el formulario: fuera de él no mide; sin consentimiento, nada; al desmontar, se retira", () => {
+    const { unmount } = render(
+      <>
+        <MobileLeadForm {...PROPS} />
+        <a href="https://wa.me/34614027410" data-testid="fuera">
+          WhatsApp
+        </a>
+      </>,
+    );
+    fireEvent.click(screen.getByTestId("m-lead-whatsapp-step-1"));
+    expect(eventsNamed("whatsapp_click")).toHaveLength(0);
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, "granted");
+    fireEvent.click(screen.getByTestId("fuera"));
+    expect(eventsNamed("whatsapp_click")).toHaveLength(0);
+    fireEvent.click(screen.getByTestId("m-lead-whatsapp-step-1"));
+    expect(eventsNamed("whatsapp_click")).toHaveLength(1);
+    const link = screen.getByTestId("m-lead-whatsapp-step-1");
+    unmount();
+    document.body.appendChild(link);
+    fireEvent.click(link);
+    expect(eventsNamed("whatsapp_click")).toHaveLength(1);
+    link.remove();
   });
 });
 

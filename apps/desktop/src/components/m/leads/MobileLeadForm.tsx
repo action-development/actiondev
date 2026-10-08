@@ -12,6 +12,7 @@ import {
   type LeadNeed,
   type LeadSource,
 } from "@actiondev/shared";
+import { RECEIVED_MESSAGE, SUBMIT_ERROR_MESSAGE } from "@/components/leads/copy";
 import { useLeadForm } from "@/components/leads/useLeadForm";
 import { whatsappHref, whatsappTextForNeed } from "@/lib/leads/whatsapp";
 import { LEAD_LIMITS } from "@/lib/leads/validation";
@@ -523,7 +524,7 @@ export function MobileLeadForm({
 
             {status === "error" && (
               <div data-testid={tid("error")} role="alert" className="grid gap-3 border-[3px] border-ink p-3.5">
-                <p className="text-[15px]">No se ha podido enviar. Escríbenos por WhatsApp y te atendemos igual</p>
+                <p className="text-[15px]">{SUBMIT_ERROR_MESSAGE}</p>
                 <a
                   href={whatsappHref(whatsappTextForNeed(need))}
                   target="_blank"
@@ -536,15 +537,21 @@ export function MobileLeadForm({
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={sending}
-              aria-busy={sending}
-              data-testid={tid("submit")}
-              className={`${buttonBase} bg-lime text-ink hover:bg-ink hover:text-lime active:bg-ink active:text-lime disabled:opacity-50`}
-            >
-              {sending ? "Enviando…" : "Enviar mi proyecto"}
-            </button>
+            {status === "received" ? (
+              <p data-testid={tid("received")} role="status" className="border-[3px] border-ink p-3.5 text-[15px]">
+                {RECEIVED_MESSAGE}
+              </p>
+            ) : (
+              <button
+                type="submit"
+                disabled={sending}
+                aria-busy={sending}
+                data-testid={tid("submit")}
+                className={`${buttonBase} bg-lime text-ink hover:bg-ink hover:text-lime active:bg-ink active:text-lime disabled:opacity-50`}
+              >
+                {sending ? "Enviando…" : "Enviar mi proyecto"}
+              </button>
+            )}
             <p className="text-center text-[15px]">
               Primera reunión gratis y sin compromiso. Te respondemos en 24 horas laborables.
             </p>

@@ -2,6 +2,7 @@ import type { Viewport } from "next";
 import { CampaignBar } from "@/components/layout/CampaignBar";
 import { LegalLinks } from "@/components/layout/LegalLinks";
 import { StickyCta } from "@/components/leads/StickyCta";
+import { WhatsappClickTracking } from "@/components/leads/useWhatsappClickTracking";
 import { adsLandings } from "@/data/ads-landings";
 import { GENERIC_WHATSAPP_TEXT, whatsappHref } from "@/lib/leads/whatsapp";
 import { BUSINESS, LEGAL_ENTITY, OFFICE_ADDRESS_LINE, REGISTERED_ADDRESS_LINE } from "@/lib/seo";
@@ -13,6 +14,9 @@ import { BUSINESS, LEGAL_ENTITY, OFFICE_ADDRESS_LINE, REGISTERED_ADDRESS_LINE } 
  * El root layout sigue envolviendo (GTM tras consentimiento, banner de
  * cookies…), pero aquí no entra ni Lenis ni GSAP ni 3D, y `PageTransition` y
  * `ContactPopup` se apartan de `/hablemos` por su cuenta.
+ *
+ * `WhatsappClickTracking`: `whatsapp_click` con `link_location` (el
+ * `data-testid` de cada enlace) en todos los WhatsApp de la página.
  */
 
 // `cover` hace que `env(safe-area-inset-bottom)` valga algo en iPhone: lo usa
@@ -61,6 +65,7 @@ export default function HablemosLayout({ children }: { children: React.ReactNode
         />
       </footer>
       <StickyCta whatsappTexts={whatsappTexts} />
+      <WhatsappClickTracking />
     </>
   );
 }
