@@ -100,7 +100,7 @@
 
 | Capa | Tecnología | Versión |
 |------|-----------|---------|
-| Framework | Next.js (App Router) | 16.2.3 |
+| Framework | Next.js (App Router) | 16.3.8 (mobile: 15.5.27, con `eslint-config-next` 16.3.8 porque la 15.x no sirve para flat config) |
 | UI | React | 19.2.4 |
 | Lenguaje | TypeScript | ^5 |
 | Estilos | Tailwind CSS v4 | ^4 |
@@ -395,7 +395,7 @@ Componente nav: `layout/Header.tsx` + `Header.module.css` = **cápsula holográf
 
 **Pendiente:** —
 
-`pnpm audit --audit-level=high` → 0 high/critical es bloqueante.
+`pnpm audit --audit-level=high` → 0 high/critical es bloqueante. Excepción aceptada: `braces` 3.0.3 (solo desarrollo, sin versión corregida publicada). El `package.json` raíz lleva `pnpm.overrides` para vulnerabilidades transitivas: revisarlos en cada `pnpm audit` y quitar los que sobren. `vite` va como devDependency explícita en admin y desktop (es peer dependency de vitest y los overrides no la tocan).
 
 ---
 
@@ -408,6 +408,8 @@ Componente nav: `layout/Header.tsx` + `Header.module.css` = **cápsula holográf
   - La CLI sube el directorio de trabajo TAL CUAL: apartar con `git stash` los cambios sin commitear que no deban publicarse.
   - **Variables de entorno: `turbo.json` → `tasks.build.env`** las declara (`NEXT_PUBLIC_*`, `ADMIN_URL`, `MOBILE_ZONE_URL`, `REVALIDATE_SECRET`, `DESKTOP_SITE_URL`, `FIREBASE_*`, `LEAD_*`). Turborepo filtra en el build cualquier variable no declarada ahí: así `/admin` apuntaba a localhost en producción. Variable nueva → añadirla también en `turbo.json`.
   - Crear variables por la API o el panel de Vercel, NO con `printf … | vercel env add` (guardaba valores vacíos).
+  - **`jwks-rsa>jose` fijado a 5.10.0** (override raíz): `jwks-rsa` 4.x (de `firebase-admin`) pide `jose` 6, solo ESM, y el admin daba 500 en Vercel (Node 24) con `ERR_REQUIRE_ESM`. No quitarlo hasta que publiquen versión con CJS. Comprobar sin build: `npx -y node@22.11.0 -e "require('firebase-admin/auth')"` desde `apps/admin`.
+  - Next 16.3 autogenera `AGENTS.md`/`CLAUDE.md` en `next dev`: desactivado con `agentRules: false` en `next.config.ts` de desktop, admin y pablo. Si aparecen en `apps/*`, alguien quitó la opción.
 - Entornos: solo Production en uso.
 - Comandos monorepo: `turbo dev` (todas las apps), `turbo build` (todas las apps)
 - Comandos desktop solo: `pnpm --filter @actiondev/desktop dev`, `pnpm --filter @actiondev/desktop build`
@@ -424,6 +426,7 @@ pnpm lint          → 0 errores
 pnpm build         → exitoso
 ```
 
+- Deuda conocida: el lint de `apps/pablo` da 4 errores previos de `react-hooks` (`LiveClock.tsx`, `UnicornBlob.tsx`, `PixelLoader.tsx`, `use-audio-analyser.ts`).
 - `pnpm --filter @actiondev/admin test` (vitest) y `npx vitest run` en desktop para `src/__tests__/leads.test.ts`.
 - Playwright en esta máquina: `chromium_headless_shell` 1217 no se instala completo; usar `launchOptions.executablePath` con el Chromium 1217 completo en un config temporal. El snapshot `home-above-fold-chromium-darwin.png` no coincide con ese Chromium (diff de entorno): regenerarlo con el navegador oficial, no a mano. CI (`.github/workflows/ci.yml`) solo corre el smoke.
 
