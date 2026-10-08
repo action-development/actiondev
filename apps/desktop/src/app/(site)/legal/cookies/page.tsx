@@ -17,9 +17,13 @@ import { BUSINESS, LEGAL_ENTITY, OG_IMAGE, absoluteUrl } from "@/lib/seo";
  * `localStorage["action-cookie-consent"]` (`@actiondev/shared` → `analytics.ts`),
  * compartida entre desktop y mobile.
  *
- * Además del banner, el sitio usa dos claves de almacenamiento técnico exentas
- * de consentimiento: `locale` en localStorage, `action-loaded` en
- * sessionStorage.
+ * Además del banner, el sitio usa claves de almacenamiento técnico exentas
+ * de consentimiento (apartado 5: `locale`, `action-loaded`,
+ * `action-contact-popup`, `action-contact-popup-shown`) y la cookie técnica
+ * `mv2` de QA de la web móvil v2 (`lib/mobile-v2.ts` + `middleware.ts`): solo
+ * existe con `MOBILE_V2=qa` y un enlace `?mv2=1`; ningún visitante normal la
+ * recibe. Se declara igualmente porque en QA en producción es comportamiento
+ * real del sitio.
  *
  * Fuentes en código: `lib/i18n/index.tsx`, `app/page.tsx`,
  * `components/analytics/GoogleTagManager.tsx`, `packages/shared/src/analytics.ts`.
@@ -284,6 +288,22 @@ export default function CookiesPage() {
             No contiene datos personales.
           </li>
         </ul>
+        <p>
+          Además, hay una cookie técnica,{" "}
+          <strong>
+            <code>mv2</code>
+          </strong>
+          , que solo usa el equipo de Action para probar la nueva versión de la
+          web para móvil antes de publicarla. Solo se instala al abrir un enlace
+          de prueba con el parámetro <code>?mv2=1</code> mientras esa versión
+          está en pruebas: a quien visita la web con normalidad no se le
+          instala. Guarda el valor <code>1</code> para mostrar la versión de
+          prueba, no contiene datos personales ni sirve para seguirte, no es
+          accesible desde JavaScript y caduca a los 30 días o al abrir un
+          enlace con <code>?mv2=0</code>. Es técnica y necesaria para esas
+          pruebas internas, por lo que está exenta de consentimiento (artículo
+          22.2 LSSI-CE).
+        </p>
 
         <h2>6. Servicios de terceros</h2>
         <p>

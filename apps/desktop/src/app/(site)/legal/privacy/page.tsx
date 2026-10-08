@@ -14,8 +14,8 @@ import {
  *
  * Describe el tratamiento REAL del sitio: WhatsApp y email abren la app del
  * visitante sin formulario; lo que se guarda en un servidor nuestro son las
- * solicitudes de `/api/lead` (formulario de proyecto de `/hablemos/*` y
- * "llámame tú" de `/contact`) en Firestore `leads` (base de datos en `nam5` =
+ * solicitudes de `/api/lead` (formulario de proyecto de `/hablemos/*`, de las
+ * landings SEO y de `/contact` en la web móvil, y "llámame tú" de `/contact`) en Firestore `leads` (base de datos en `nam5` =
  * EE. UU.: de ahí la transferencia internacional del apartado 5), con su
  * atribución publicitaria (UTM, gclid, fbclid). Aviso interno por SMTP de
  * one.com y, si hay variables de entorno, Telegram. Copia en el CRM interno
@@ -120,8 +120,12 @@ export default function PrivacyPage() {
         <h2>2. Qué datos tratamos y de dónde salen</h2>
         <h3>2.1. Formulario de proyecto y solicitud de llamada</h3>
         <p>
-          En las páginas de contacto de proyecto (<code>/hablemos/*</code>)
-          puedes contarnos qué necesitas mediante un formulario. Recoge tu{" "}
+          Puedes contarnos qué necesitas mediante un formulario de proyecto.
+          Está en las páginas de contacto de proyecto (
+          <code>/hablemos/*</code>), en las páginas de cada servicio (por
+          ejemplo, <code>/desarrollo-de-aplicaciones-vigo</code>) y, en la
+          versión para móvil de la web, en la página de contacto (
+          <code>/contact</code>). Recoge tu{" "}
           <strong>nombre</strong>, tu <strong>teléfono</strong> y tu{" "}
           <strong>correo electrónico</strong>; opcionalmente, tu{" "}
           <strong>empresa</strong> y un <strong>mensaje</strong>; y, para que
@@ -229,8 +233,10 @@ export default function PrivacyPage() {
           <li>
             <strong>
               Atender tu consulta, devolverte la llamada que nos pidas,
-              valorar tu proyecto (formulario de <code>/hablemos/*</code>) y
-              elaborar una propuesta
+              valorar tu proyecto (formulario de proyecto de{" "}
+              <code>/hablemos/*</code>, de las páginas de servicio y de{" "}
+              <code>/contact</code> en la versión para móvil) y elaborar una
+              propuesta
             </strong>{" "}
             — base
             legal: aplicación de medidas precontractuales a petición del
