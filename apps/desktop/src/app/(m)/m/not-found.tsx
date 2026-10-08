@@ -1,12 +1,17 @@
+import type { Metadata } from "next";
 import { Button } from "@/components/m/Button";
 import { MobileFooter } from "@/components/m/MobileFooter";
 import { MobileHeader } from "@/components/m/MobileHeader";
+import { NOT_FOUND_METADATA } from "@/lib/site-metadata";
 
 /**
  * 404 del árbol móvil: lo pintan los `notFound()` de sus páginas (p. ej. una
- * ficha `/projects/<slug>` que no existe). Next añade `noindex` solo. Las URLs
+ * ficha `/projects/<slug>` que no existe). Mismos metadatos que todo 404
+ * (`NOT_FOUND_METADATA`: título propio, `noindex`, sin canonical). Las URLs
  * que no casan con ninguna ruta van a `app/global-not-found.tsx` (escritorio).
  */
+export const metadata: Metadata = NOT_FOUND_METADATA;
+
 export default function MobileNotFound() {
   return (
     <>
