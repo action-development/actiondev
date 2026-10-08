@@ -170,7 +170,7 @@ export const en: Translations = {
     },
     whatsappCta: "Message us on WhatsApp",
     emailPrefix: "or by email:",
-    reassurance: "Reply within 24 business hours · Team in Vigo · No forms",
+    reassurance: "Reply within 24 business hours · First meeting free · Team in Vigo",
     askAI: "Still unsure? Ask an AI",
     close: "Close",
   },

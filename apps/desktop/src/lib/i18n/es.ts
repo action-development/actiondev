@@ -175,7 +175,7 @@ export const es: Translations = {
     },
     whatsappCta: "Escribir por WhatsApp",
     emailPrefix: "o por email:",
-    reassurance: "Respuesta en 24 h laborables · Equipo en Vigo · Sin formularios",
+    reassurance: "Respuesta en 24 h laborables · Primera reunión gratis · Equipo en Vigo",
     askAI: "¿Aún con dudas? Pregunta a la IA",
     close: "Cerrar",
   },
