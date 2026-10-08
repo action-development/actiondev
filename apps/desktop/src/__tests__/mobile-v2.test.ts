@@ -1,11 +1,14 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { landings } from "@/data/landings";
 import {
+  LANDING_ROUTES,
   MOBILE_TREE_ROUTES,
   enabledRoutes,
   hasMobileTree,
   mobileV2Mode,
+  navigatesWithinMobileTree,
   servesMobileTree,
 } from "@/lib/mobile-v2";
 
@@ -21,7 +24,7 @@ describe("enabledRoutes (rutas públicas)", () => {
     expect(enabledRoutes("*")).toEqual([...MOBILE_TREE_ROUTES]);
   });
   it("lista: normaliza barras finales e ignora lo que no tiene árbol", () => {
-    expect(enabledRoutes("/hablemos/, /contact ,/blog,/legal/cookies")).toEqual(["/hablemos", "/contact"]);
+    expect(enabledRoutes("/hablemos/, /contact ,/legal/cookies,/no-existe")).toEqual(["/hablemos", "/contact"]);
     expect(enabledRoutes("/projects/fase")).toEqual(["/projects/fase"]);
   });
 });
@@ -48,14 +51,60 @@ describe("servesMobileTree", () => {
     expect(servesMobileTree("on", "/servicios", true, publicRoutes)).toBe(true);
   });
   it("rutas sin árbol nunca, ni con cookie", () => {
-    expect(hasMobileTree("/blog")).toBe(false);
-    expect(servesMobileTree("on", "/blog", true, ALL)).toBe(false);
-    expect(servesMobileTree("qa", "/desarrollo-web-vigo", true, ALL)).toBe(false);
+    expect(hasMobileTree("/legal/cookies")).toBe(false);
+    expect(servesMobileTree("on", "/legal/cookies", true, ALL)).toBe(false);
+    expect(servesMobileTree("qa", "/reviews", true, ALL)).toBe(false);
   });
   it("`/` casa solo consigo misma", () => {
     expect(hasMobileTree("/")).toBe(true);
     expect(hasMobileTree("/otra")).toBe(false);
     expect(hasMobileTree("/contactar")).toBe(false);
+  });
+});
+
+describe("fase 2: landings SEO y blog", () => {
+  it("LANDING_ROUTES casa una a una con landings.ts", () => {
+    expect([...LANDING_ROUTES].sort()).toEqual(landings.map((l) => `/${l.slug}`).sort());
+  });
+  it("las landings y el blog (con sus artículos) tienen árbol; sus vecinas no", () => {
+    for (const route of LANDING_ROUTES) expect(hasMobileTree(route), route).toBe(true);
+    expect(hasMobileTree("/blog")).toBe(true);
+    expect(hasMobileTree("/blog/mvp-de-una-app")).toBe(true);
+    expect(hasMobileTree("/desarrollo-web-vigo-2")).toBe(false);
+    expect(hasMobileTree("/diseno-web-pontevedra")).toBe(false);
+  });
+  it("qa con cookie: vista previa de las rutas de fase 2", () => {
+    expect(servesMobileTree("qa", "/desarrollo-web-vigo", true, [])).toBe(true);
+    expect(servesMobileTree("qa", "/blog/mvp-de-una-app", true, [])).toBe(true);
+  });
+  it("on con la lista de fase 1: sin cookie siguen en escritorio", () => {
+    const phase1 = enabledRoutes("/,/servicios,/projects,/resenas,/contact,/hablemos");
+    expect(servesMobileTree("on", "/desarrollo-web-vigo", false, phase1)).toBe(false);
+    expect(servesMobileTree("on", "/blog", false, phase1)).toBe(false);
+    expect(servesMobileTree("on", "/blog", true, phase1)).toBe(true);
+  });
+});
+
+describe("navigatesWithinMobileTree (next/link o <a> en MLink)", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("sin árbol: nunca", () => {
+    expect(navigatesWithinMobileTree("/legal/privacy")).toBe(false);
+  });
+  it("qa (o entorno desconocido, como el navegador): todo el árbol", () => {
+    vi.stubEnv("MOBILE_V2", "qa");
+    expect(navigatesWithinMobileTree("/desarrollo-web-vigo")).toBe(true);
+    vi.stubEnv("MOBILE_V2", "");
+    expect(navigatesWithinMobileTree("/blog")).toBe(true);
+  });
+  it("on: solo las rutas públicas; una con árbol sin publicar va por <a>", () => {
+    vi.stubEnv("MOBILE_V2", "on");
+    vi.stubEnv("MOBILE_V2_ROUTES", "/,/servicios,/projects,/resenas,/contact,/hablemos");
+    expect(navigatesWithinMobileTree("/projects/fase")).toBe(true);
+    expect(navigatesWithinMobileTree("/desarrollo-web-vigo")).toBe(false);
+    expect(navigatesWithinMobileTree("/blog")).toBe(false);
+    vi.stubEnv("MOBILE_V2_ROUTES", "*");
+    expect(navigatesWithinMobileTree("/blog")).toBe(true);
   });
 });
 
@@ -92,7 +141,20 @@ describe("middleware", () => {
     expect(rewriteOf(await runMiddleware(env, "http://x.test/servicios", IPHONE))).toContain("/m/servicios");
     expect(rewriteOf(await runMiddleware(env, "http://x.test/", IPHONE))).toMatch(/\/m$/);
     expect(rewriteOf(await runMiddleware(env, "http://x.test/servicios", DESKTOP))).toBeNull();
-    expect(rewriteOf(await runMiddleware(env, "http://x.test/blog", IPHONE))).toBeNull();
+    expect(rewriteOf(await runMiddleware(env, "http://x.test/blog", IPHONE))).toContain("/m/blog");
+    expect(rewriteOf(await runMiddleware(env, "http://x.test/legal/cookies", IPHONE))).toBeNull();
+  });
+
+  it("on + lista de fase 1: landing y blog en escritorio salvo con la cookie", async () => {
+    const env = { MOBILE_V2: "on", MOBILE_V2_ROUTES: "/,/servicios,/projects,/resenas,/contact,/hablemos" };
+    expect(rewriteOf(await runMiddleware(env, "http://x.test/desarrollo-web-vigo", IPHONE))).toBeNull();
+    expect(rewriteOf(await runMiddleware(env, "http://x.test/blog/mvp-de-una-app", IPHONE))).toBeNull();
+    expect(rewriteOf(await runMiddleware(env, "http://x.test/desarrollo-web-vigo", IPHONE, "mv2=1"))).toContain(
+      "/m/desarrollo-web-vigo",
+    );
+    expect(rewriteOf(await runMiddleware(env, "http://x.test/blog/mvp-de-una-app", IPHONE, "mv2=1"))).toContain(
+      "/m/blog/mvp-de-una-app",
+    );
   });
 
   it("on + lista parcial: la cookie previsualiza lo no publicado", async () => {

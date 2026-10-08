@@ -6,8 +6,9 @@
  *
  * Dos conceptos distintos (`[DEPLOY]` de CLAUDE.md):
  * - RUTAS CON ÁRBOL MÓVIL (`MOBILE_TREE_ROUTES`): las que tienen página en
- *   `app/(m)/m`. Hoy, las de fase 1; las de fase 2 (landings SEO, `/blog`,
- *   `/legal/*`) se añaden aquí cuando existan.
+ *   `app/(m)/m`. Fase 1 (`/`, `/servicios`, `/projects`, `/resenas`,
+ *   `/contact`, `/hablemos`) y fase 2 (las landings SEO y `/blog`; `/legal/*`
+ *   se añade cuando exista).
  * - RUTAS PÚBLICAS (`MOBILE_V2_ROUTES`): las que ve cualquier visitante móvil.
  *
  * Flag `MOBILE_V2` = `off` (por defecto) | `qa` | `on`:
@@ -24,8 +25,38 @@
  *   la quita (en `qa` y en `on`).
  */
 
+/**
+ * Landings SEO (`data/landings.ts` → `/${slug}`). Escritas a mano porque este
+ * módulo corre en el middleware y no debe arrastrar el copy de las landings;
+ * `__tests__/mobile-v2.test.ts` comprueba que casan una a una con `landings.ts`
+ * (landing nueva = añadirla aquí también).
+ */
+export const LANDING_ROUTES = [
+  "/desarrollo-de-aplicaciones-vigo",
+  "/desarrollo-web-vigo",
+  "/diseno-web-vigo",
+  "/tienda-online-vigo",
+  "/software-a-medida-vigo",
+  "/desarrollo-de-aplicaciones-pontevedra",
+  "/desarrollo-web-pontevedra",
+  "/desarrollo-web-redondela",
+  "/desarrollo-de-aplicaciones-galicia",
+  "/agencia-desarrollo-web-galicia",
+] as const;
+
 /** Rutas con árbol móvil. `/` casa solo consigo misma; el resto, también sus hijas. */
-export const MOBILE_TREE_ROUTES = ["/", "/servicios", "/projects", "/resenas", "/contact", "/hablemos"] as const;
+export const MOBILE_TREE_ROUTES = [
+  // Fase 1
+  "/",
+  "/servicios",
+  "/projects",
+  "/resenas",
+  "/contact",
+  "/hablemos",
+  // Fase 2
+  ...LANDING_ROUTES,
+  "/blog",
+] as const;
 
 export type MobileV2Mode = "off" | "qa" | "on";
 
@@ -75,6 +106,22 @@ export function servesMobileTree(
   if (mode === "off" || !hasMobileTree(pathname)) return false;
   if (hasPreviewCookie) return true;
   return mode === "on" && publicRoutes.some((prefix) => matchesRoute(pathname, prefix));
+}
+
+/**
+ * ¿Un enlace del árbol móvil a `pathname` puede navegar con `next/link` (mismo
+ * layout raíz)? Solo si la ruta tiene árbol móvil y, en `on`, además es
+ * PÚBLICA: una ruta con árbol pero sin publicar la sirve el escritorio a quien
+ * no tiene la cookie, y con `<Link>` Next precargaría el RSC del otro layout
+ * raíz para acabar igualmente en una carga completa (datos tirados en cada
+ * enlace visible). En `qa`/`off`, o donde el entorno no se conoce (el
+ * navegador: `MOBILE_V2` no es `NEXT_PUBLIC_`), vale el árbol entero: ahí solo
+ * lo ve quien tiene la vista previa.
+ */
+export function navigatesWithinMobileTree(pathname: string): boolean {
+  if (!hasMobileTree(pathname)) return false;
+  if (mobileV2Mode(process.env.MOBILE_V2) !== "on") return true;
+  return enabledRoutes(process.env.MOBILE_V2_ROUTES).some((prefix) => matchesRoute(pathname, prefix));
 }
 
 /** Prefijo interno del árbol móvil. Público nunca: `/m/*` directo responde 308. */
