@@ -6,6 +6,7 @@ import { PostBody, PostToc, renderInline } from "@/components/m/blog/PostBody";
 import { Label } from "@/components/m/Cell";
 import { Faq } from "@/components/m/Faq";
 import { FinalCta } from "@/components/m/FinalCta";
+import { GuideList } from "@/components/m/GuideList";
 import { Icon } from "@/components/m/Icon";
 import { MLink } from "@/components/m/MLink";
 import { MobileFooter } from "@/components/m/MobileFooter";
@@ -15,7 +16,15 @@ import { Section } from "@/components/m/Section";
 import { StickyCta } from "@/components/m/StickyCta";
 import { getLanding } from "@/data/landings";
 import { getPost, getPosts } from "@/lib/blog";
-import { BLOG_POST_CTA, buildPostJsonLd, headingIds, humanizeSlug, postMetadata, postToc } from "@/lib/blog-seo";
+import {
+  BLOG_POST_CTA,
+  buildPostJsonLd,
+  headingIds,
+  humanizeSlug,
+  postMetadata,
+  postToc,
+  relatedPosts,
+} from "@/lib/blog-seo";
 
 /**
  * Artículo del blog en la web móvil v2 (/blog/[slug]): página de LECTURA.
@@ -24,8 +33,8 @@ import { BLOG_POST_CTA, buildPostJsonLd, headingIds, humanizeSlug, postMetadata,
  * los MISMOS que escritorio, igual que las anclas del índice y el troceado de
  * los enlaces en línea. Todo lo que pinta escritorio está aquí, visible:
  * categoría y minutos, H1, entradilla, firma del autor (`rel="author"`),
- * índice (3+ subtítulos), cuerpo, FAQ, servicio relacionado, CTA y vuelta al
- * blog. Sin fecha visible (decisión del cliente): solo en el JSON-LD y en OG.
+ * índice (3+ subtítulos), cuerpo, FAQ, servicio relacionado, «Sigue leyendo»
+ * (`relatedPosts`), CTA y vuelta al blog. Sin fecha visible (decisión del cliente): solo en el JSON-LD y en OG.
  *
  * Lectura: Semi Condensed de 18 px / 1,6 en una columna de ~50 caracteres
  * (`.m-prose` de mobile.css), subtítulos en Condensed caja alta, sin nada que
@@ -59,6 +68,7 @@ export default async function MobileBlogPostPage({ params }: PageProps) {
   const landing = post.targetLanding ? getLanding(post.targetLanding) : undefined;
   const ids = headingIds(post.content);
   const toc = postToc(post.content, ids);
+  const related = relatedPosts(await getPosts(), post);
   const whatsappText = `Hola, he leído vuestro artículo «${post.title}» y quiero contaros mi proyecto`;
 
   return (
@@ -136,6 +146,8 @@ export default async function MobileBlogPostPage({ params }: PageProps) {
               </MLink>
             </section>
           )}
+
+          <GuideList id="post-related" title="Sigue leyendo" posts={related} data-testid="m-post-related" />
 
           <FinalCta
             id={CTA_ID}

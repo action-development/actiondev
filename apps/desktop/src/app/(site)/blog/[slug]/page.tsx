@@ -11,6 +11,7 @@ import {
   parseInline,
   postMetadata,
   postToc,
+  relatedPosts,
 } from "@/lib/blog-seo";
 import { BUSINESS } from "@/lib/seo";
 import { getLanding } from "@/data/landings";
@@ -32,8 +33,9 @@ import { LegalLinks } from "@/components/layout/LegalLinks";
  * SEO por post (campos opcionales de `BlogPost`, retrocompatibles): firma del
  * autor (`author` → `AUTHORS` de shared, mismo `@id` Person que
  * pablo.actiondev.es), tarjeta de "Servicio relacionado" (`targetLanding` →
- * `landings.ts`), FAQs visibles + FAQPage, e índice con anclas a partir de 3
- * subtítulos. Todo lo que va al JSON-LD está también pintado en el HTML, salvo
+ * `landings.ts`), FAQs visibles + FAQPage, índice con anclas a partir de 3
+ * subtítulos y «Sigue leyendo» (`relatedPosts`: misma landing, misma
+ * categoría, recientes). Todo lo que va al JSON-LD está también pintado en el HTML, salvo
  * las fechas: no se muestran (decisión del cliente), pero `date`/`updatedAt`
  * siguen en `datePublished`/`dateModified` y en el `article:*_time` de Open
  * Graph, que es donde Google y las redes las leen. Metadatos, JSON-LD, anclas
@@ -112,6 +114,7 @@ export default async function BlogPostPage({ params }: PostPageProps) {
   const landing = post.targetLanding ? getLanding(post.targetLanding) : undefined;
   const ids = headingIds(post.content);
   const toc = postToc(post.content, ids);
+  const related = relatedPosts(await getPosts(), post);
 
   return (
     <>
@@ -261,6 +264,34 @@ export default async function BlogPostPage({ params }: PostPageProps) {
                   )}
                 </Link>
               </section>
+            )}
+
+            {/* Sigue leyendo: enlazado entre artículos */}
+            {related.length > 0 && (
+              <nav
+                aria-labelledby="post-related-title"
+                className="mt-20 border-t border-border pt-16"
+                data-testid="post-related"
+              >
+                <h2 id="post-related-title" className="text-2xl font-semibold text-foreground">
+                  Sigue leyendo
+                </h2>
+                <ul className="mt-8 divide-y divide-border border-y border-border">
+                  {related.map((item) => (
+                    <li key={item.slug}>
+                      <Link href={`/blog/${item.slug}`} className="group block py-6">
+                        <p className="text-sm text-muted">{item.category}</p>
+                        <h3 className="mt-2 text-lg font-medium text-foreground underline decoration-transparent decoration-2 underline-offset-4 transition-colors duration-[var(--duration)] ease-[var(--ease)] group-hover:decoration-foreground">
+                          {item.title}
+                        </h3>
+                        <p className="mt-2 max-w-[62ch] text-[1.05rem] leading-relaxed text-muted">
+                          {item.excerpt}
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
             )}
 
             {/* CTA */}

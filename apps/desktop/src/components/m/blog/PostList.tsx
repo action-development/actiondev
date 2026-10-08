@@ -2,6 +2,7 @@ import type { BlogPost } from "@actiondev/shared";
 import { Label } from "../Cell";
 import { Icon } from "../Icon";
 import { MLink } from "../MLink";
+import { PostRow } from "../PostRow";
 
 /**
  * Lista de artículos del blog (el tablero de pósits de escritorio, en móvil):
@@ -39,25 +40,7 @@ export function PostList({ posts }: { posts: BlogPost[] }) {
         </MLink>
       </li>
       {rest.map((post) => (
-        <li key={post.slug} className="border-b border-ink last:border-b-2">
-          <MLink
-            href={`/blog/${post.slug}`}
-            data-testid="m-blog-post"
-            className="group grid grid-cols-[1fr_52px] bg-paper text-ink hover:bg-ink hover:text-paper active:bg-ink active:text-paper"
-          >
-            <span className="grid min-w-0 content-start gap-2 px-4 pt-[18px] pb-5">
-              <Label className="group-hover:text-muted-dark group-active:text-muted-dark">{post.category}</Label>
-              <h2 className="font-display text-h4 break-words uppercase">{post.title}</h2>
-              <span className="text-base leading-[1.42]">{post.excerpt}</span>
-              <Label className="group-hover:text-muted-dark group-active:text-muted-dark">
-                {post.readingTime} min de lectura
-              </Label>
-            </span>
-            <span className="flex items-start justify-center pt-[18px]">
-              <Icon name="arrow_outward" size={26} />
-            </span>
-          </MLink>
-        </li>
+        <PostRow key={post.slug} post={post} readingTime />
       ))}
     </ul>
   );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Faq } from "@/components/m/Faq";
+import { GuideList } from "@/components/m/GuideList";
 import { LandingCase } from "@/components/m/landing/LandingCase";
 import { LandingHero } from "@/components/m/landing/LandingHero";
 import { LandingRelated } from "@/components/m/landing/LandingRelated";
@@ -15,6 +16,8 @@ import { Section } from "@/components/m/Section";
 import { Steps } from "@/components/m/Steps";
 import { StickyCta } from "@/components/m/StickyCta";
 import { getLanding, landings } from "@/data/landings";
+import { getPosts } from "@/lib/blog";
+import { landingGuides } from "@/lib/blog-seo";
 import { LANDING_FORM_ID, buildLandingJsonLd, landingMetadata, resolveLandingContent } from "@/lib/landing-seo";
 
 /**
@@ -30,7 +33,8 @@ import { LANDING_FORM_ID, buildLandingJsonLd, landingMetadata, resolveLandingCon
  * prueba (casos reales y reseñas) → contexto y secciones propias → proceso →
  * preguntas → el formulario cualificador (`MobileLeadForm`, `seo_landing`,
  * `offer` = slug, como `LeadForm` en escritorio; debajo, su enlace a WhatsApp)
- * → servicios relacionados. WhatsApp, email y oficina, en el pie. «Contar mi proyecto» (hero, menú y barra fija) baja
+ * → guías del blog que empujan a esta landing (`landingGuides`) → servicios
+ * relacionados. WhatsApp, email y oficina, en el pie. «Contar mi proyecto» (hero, menú y barra fija) baja
  * al formulario de la propia página.
  *
  * Server component: el único JS propio es el menú, el formulario y la barra.
@@ -41,6 +45,9 @@ interface PageProps {
 }
 
 export const dynamicParams = false;
+
+/** Las guías salen de Firestore: misma red de seguridad que el blog (y el webhook `/api/revalidate`). */
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return landings.map((l) => ({ landing: l.slug }));
@@ -58,6 +65,7 @@ export default async function MobileLandingPage({ params }: PageProps) {
   if (!landing) notFound();
 
   const { cases, quotes } = resolveLandingContent(landing);
+  const guides = landingGuides(await getPosts(), landing.slug);
   const whatsappText = landingWhatsappText(landing);
   const formHref = `#${LANDING_FORM_ID}`;
 
@@ -139,6 +147,8 @@ export default async function MobileLandingPage({ params }: PageProps) {
             offer={landing.slug}
           />
         </section>
+
+        <GuideList id="guias" title="Guías relacionadas" posts={guides} data-testid="m-landing-guides" />
 
         <LandingRelated landing={landing} />
       </main>

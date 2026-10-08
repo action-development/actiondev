@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLanding, landings } from "@/data/landings";
 import { testimonials } from "@/data/testimonials";
+import { getPosts } from "@/lib/blog";
+import { landingGuides } from "@/lib/blog-seo";
 import { LANDING_FORM_ID, buildLandingJsonLd, landingMetadata, resolveLandingContent } from "@/lib/landing-seo";
 import { BUSINESS } from "@/lib/seo";
 import { HoloButton } from "@/components/ui/HoloButton";
@@ -23,7 +25,9 @@ const PROJECT_FORM_ID = LANDING_FORM_ID;
  * se descubren vía sitemap.xml, /servicios, llms.txt, el nav sr-only de la
  * home y el enlazado entre landings. El contenido vive en `data/landings.ts`:
  * contexto local, casos reales (enlazados a `/projects/{slug}`), secciones
- * propias, proceso, reseñas citadas por id, FAQ y relacionadas.
+ * propias, proceso, reseñas citadas por id, FAQ y relacionadas. Las «Guías
+ * relacionadas» son los posts del blog con `targetLanding` = esta landing
+ * (`landingGuides`): por eso la página revalida como el blog.
  * Metadatos, JSON-LD y contenido resuelto salen de `lib/landing-seo.ts`, la
  * misma fuente que la versión de la web móvil v2 (`app/(m)/m/[landing]`), que
  * el middleware sirve en móvil cuando la ruta está publicada (o con la cookie
@@ -35,6 +39,9 @@ interface LandingPageProps {
 }
 
 export const dynamicParams = false;
+
+/** Las guías salen de Firestore: misma red de seguridad que el blog (y el webhook `/api/revalidate`). */
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return landings.map((l) => ({ landing: l.slug }));
@@ -54,6 +61,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
   if (!landing) notFound();
 
   const { cases, quotes } = resolveLandingContent(landing);
+  const guides = landingGuides(await getPosts(), landing.slug);
 
   return (
     <>
@@ -351,6 +359,31 @@ export default async function LandingPage({ params }: LandingPageProps) {
               </div>
             </div>
           </section>
+
+          {/* Guías del blog que empujan a esta landing (enlazado landing → blog) */}
+          {guides.length > 0 && (
+            <nav aria-labelledby="guias" className="mt-20" data-testid="landing-guides">
+              <h2 id="guias" className="micro-label">
+                Guías relacionadas
+              </h2>
+              <ul className="mt-5 grid gap-4 md:grid-cols-3">
+                {guides.map((post) => (
+                  <li key={post.slug}>
+                    <Link
+                      href={`/blog/${post.slug}`}
+                      className="holo-surface holo-corners holo-link group h-full p-6"
+                    >
+                      <p className="micro-label">{post.category}</p>
+                      <h3 className="mt-3 font-semibold text-foreground transition-colors group-hover:text-accent">
+                        {post.title}
+                      </h3>
+                      <p className="mt-3 text-sm leading-relaxed text-muted">{post.excerpt}</p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
 
           {/* Enlazado interno */}
           <nav aria-label="Servicios relacionados" className="mt-20">

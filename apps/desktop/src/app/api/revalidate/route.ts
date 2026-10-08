@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import { landings } from "@/data/landings";
 
 /**
  * Webhook llamado por `apps/admin` justo después de escribir un post en
@@ -21,6 +22,14 @@ export async function POST(request: Request) {
   for (const base of ["/blog", "/m/blog"]) {
     revalidatePath(base);
     if (typeof slug === "string" && slug) revalidatePath(`${base}/${slug}`);
+  }
+  // Los artículos se enlazan entre sí («Sigue leyendo») y desde las landings
+  // («Guías relacionadas»): un post nuevo o retocado cambia esas listas. El
+  // webhook no sabe a qué landing apuntaba ANTES el post, así que van todas
+  // (10 × 2 árboles; el resto de artículos se refresca con su `revalidate`).
+  for (const landing of landings) {
+    revalidatePath(`/${landing.slug}`);
+    revalidatePath(`/m/${landing.slug}`);
   }
   // El post nuevo tiene que aparecer también en el sitemap (y en IndexNow).
   revalidatePath("/sitemap.xml");
