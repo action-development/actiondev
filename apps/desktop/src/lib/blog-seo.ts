@@ -13,10 +13,13 @@ import { OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 
 /* ── Índice ─────────────────────────────────────────────────────────────── */
 
+/** Meta description del índice; la web móvil la pinta además como entradilla. */
+export const BLOG_DESCRIPTION =
+  "Guías y artículos de Action sobre desarrollo de aplicaciones, desarrollo web y diseño digital para empresas de Vigo, Pontevedra y Galicia.";
+
 export const BLOG_METADATA: Metadata = {
   title: "Blog",
-  description:
-    "Guías y artículos de Action sobre desarrollo de aplicaciones, desarrollo web y diseño digital para empresas de Vigo, Pontevedra y Galicia.",
+  description: BLOG_DESCRIPTION,
   alternates: { canonical: "/blog" },
   openGraph: {
     type: "website",
@@ -50,6 +53,20 @@ export const BLOG_JSON_LD = {
     },
   ],
 };
+
+/**
+ * Llamadas a la acción del blog, con el MISMO texto en escritorio (tarjeta del
+ * corcho y cierre del artículo) y en la web móvil v2.
+ */
+export const BLOG_INDEX_CTA = {
+  title: "¿Hablamos de tu proyecto?",
+  text: "Respuesta en 24 horas laborables, presupuesto cerrado y trato directo con el equipo que desarrolla.",
+} as const;
+
+export const BLOG_POST_CTA = {
+  title: "Cuéntanos tu proyecto",
+  text: "Escríbenos y te respondemos en 24 horas laborables. Sin compromiso y sin letra pequeña.",
+} as const;
 
 /** Posts del más reciente al más antiguo (el orden del tablero y de la lista móvil). */
 export function sortPostsByDate(posts: BlogPost[]): BlogPost[] {

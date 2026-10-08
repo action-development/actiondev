@@ -3,7 +3,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAuthor, type BlogContentBlock } from "@actiondev/shared";
 import { getPost, getPosts } from "@/lib/blog";
-import { buildPostJsonLd, headingIds, humanizeSlug, parseInline, postMetadata, postToc } from "@/lib/blog-seo";
+import {
+  BLOG_POST_CTA,
+  buildPostJsonLd,
+  headingIds,
+  humanizeSlug,
+  parseInline,
+  postMetadata,
+  postToc,
+} from "@/lib/blog-seo";
 import { BUSINESS } from "@/lib/seo";
 import { getLanding } from "@/data/landings";
 import { Header } from "@/components/layout/Header";
@@ -258,11 +266,10 @@ export default async function BlogPostPage({ params }: PostPageProps) {
             {/* CTA */}
             <section className="mt-20 border-t border-border pt-16">
               <h2 className="text-2xl font-semibold text-foreground">
-                Cuéntanos tu proyecto
+                {BLOG_POST_CTA.title}
               </h2>
               <p className="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
-                Escríbenos y te respondemos en 24 horas laborables. Sin
-                compromiso y sin letra pequeña.
+                {BLOG_POST_CTA.text}
               </p>
               <p className="mt-8 text-lg">
                 <a

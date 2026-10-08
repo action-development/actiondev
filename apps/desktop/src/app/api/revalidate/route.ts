@@ -16,8 +16,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ revalidated: false }, { status: 401 });
   }
 
-  revalidatePath("/blog");
-  if (typeof slug === "string" && slug) revalidatePath(`/blog/${slug}`);
+  // Cada página del blog existe dos veces: la de escritorio y la de la web
+  // móvil v2, que el middleware sirve desde `/m/blog/*` (ruta interna).
+  for (const base of ["/blog", "/m/blog"]) {
+    revalidatePath(base);
+    if (typeof slug === "string" && slug) revalidatePath(`${base}/${slug}`);
+  }
   // El post nuevo tiene que aparecer también en el sitemap (y en IndexNow).
   revalidatePath("/sitemap.xml");
 

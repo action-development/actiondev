@@ -5,7 +5,7 @@ import { CorkBoard } from "@/components/blog/CorkBoard";
 import { PinBoard } from "@/components/blog/PinBoard";
 import { Pinned } from "@/components/blog/Pinned";
 import board from "@/components/blog/CorkBoard.module.css";
-import { BLOG_JSON_LD, BLOG_METADATA, sortPostsByDate } from "@/lib/blog-seo";
+import { BLOG_INDEX_CTA, BLOG_JSON_LD, BLOG_METADATA, sortPostsByDate } from "@/lib/blog-seo";
 import { BUSINESS } from "@/lib/seo";
 import { LegalLinks } from "@/components/layout/LegalLinks";
 
@@ -68,12 +68,9 @@ export default async function BlogPage() {
               aria-labelledby="blog-cta"
             >
               <h2 id="blog-cta" className={board.cardHeading}>
-                ¿Hablamos de tu proyecto?
+                {BLOG_INDEX_CTA.title}
               </h2>
-              <p className={board.cardText}>
-                Respuesta en 24 horas laborables, presupuesto cerrado y trato directo
-                con el equipo que desarrolla.
-              </p>
+              <p className={board.cardText}>{BLOG_INDEX_CTA.text}</p>
               <p className={board.cardLinks}>
                 <a href={BUSINESS.whatsappUrl} className={board.inkLink}>
                   Hablar por WhatsApp
