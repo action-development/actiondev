@@ -6,7 +6,7 @@
  * un estado inconsistente si algún día comparten dominio de verdad.
  */
 
-export const GTM_ID = "GTM-PF295VK8";
+export const GTM_ID = "GTM-T9766P5S";
 
 export const CONSENT_STORAGE_KEY = "action-cookie-consent";
 
@@ -105,13 +105,64 @@ export function applyConsent(value: ConsentValue | null): void {
 }
 
 /**
- * Empuja un evento al `dataLayer` SOLO con consentimiento concedido. El
+ * Única puerta de salida al `dataLayer` para eventos de medición. El
  * `dataLayer` existe ya sin GTM (lo crea el `default` de consentimiento), así
- * que "hay dataLayer" ya no significa "hay consentimiento": se mira la decisión.
+ * que "hay dataLayer" ya no significa "hay consentimiento": se mira la decisión
+ * guardada y, sin un "granted", no se empuja nada.
  */
-export function track(event: string, params: Record<string, string> = {}): void {
+function pushIfGranted(payload: Record<string, unknown>): void {
   if (typeof window === "undefined" || readStoredConsent() !== "granted") return;
-  dataLayer().push({ event, ...params });
+  dataLayer().push(payload);
+}
+
+/** Empuja un evento al `dataLayer` SOLO con consentimiento concedido. */
+export function track(event: string, params: Record<string, string> = {}): void {
+  pushIfGranted({ event, ...params });
+}
+
+/**
+ * Teléfono en E.164 (`+34600123456`) o `undefined` si no hay forma fiable de
+ * saberlo. Nueve dígitos españoles (empiezan por 6-9) → `+34…`; con `+` o
+ * `00` delante se respeta el prefijo que ya trae. Lo usan las conversiones
+ * mejoradas de Google Ads (`user_data.phone_number`) y el aviso por email
+ * (enlace `wa.me`). No valida que el número exista.
+ */
+export function toE164(phone: string): string | undefined {
+  const raw = phone.trim();
+  let digits = raw.replace(/\D/g, "");
+  if (!digits) return undefined;
+  const international = raw.startsWith("+") || digits.startsWith("00");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (international) return digits.length >= 8 && digits.length <= 15 ? `+${digits}` : undefined;
+  if (digits.length === 9 && /^[6-9]/.test(digits)) return `+34${digits}`;
+  if (digits.length === 11 && digits.startsWith("34") && /^[6-9]/.test(digits.slice(2))) return `+${digits}`;
+  return undefined;
+}
+
+/**
+ * Conversión de lead: `generate_lead` con los parámetros de la campaña y, para
+ * las conversiones mejoradas, el email y el teléfono (E.164) del lead. SOLO con
+ * consentimiento `granted` (misma puerta que `track`).
+ *
+ * El contrato de `params` lo consume GTM por nombre: `lead_id`,
+ * `transaction_id` (= `lead_id`, desduplica), `lead_source`, `lead_need`,
+ * `lead_budget` y `page_path`. Si se cambia uno, cambiar GTM a la vez.
+ */
+export function trackLead(
+  params: Record<string, string>,
+  userData?: { email?: string; phone_number?: string },
+): void {
+  const email = userData?.email?.trim().toLowerCase();
+  const phone = userData?.phone_number ? toE164(userData.phone_number) : undefined;
+  const user_data = {
+    ...(email && { email }),
+    ...(phone && { phone_number: phone }),
+  };
+  pushIfGranted({
+    event: "generate_lead",
+    ...params,
+    ...(Object.keys(user_data).length > 0 && { user_data }),
+  });
 }
 
 /** Canal de contacto de un `href`, o `null` si no es una conversión. */
