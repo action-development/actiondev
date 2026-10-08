@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { BRAND, SITE_URL, SOCIAL, OG_IMAGE } from "@/lib/seo";
 
 /**
@@ -102,4 +102,35 @@ export const ROOT_METADATA: Metadata = {
   verification: {
     other: { "facebook-domain-verification": "e71wok1pdzangvflowbby1m7b98t1m" },
   },
+};
+
+/**
+ * Viewport del árbol de escritorio: lo usan `app/(site)/layout.tsx` y
+ * `app/global-not-found.tsx`. Vive aquí (y no se importa del layout) para que
+ * el 404 global no arrastre el módulo del layout: ver `SiteDocument`.
+ */
+export const SITE_VIEWPORT: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#0a0a0a" },
+  ],
+  colorScheme: "dark",
+  width: "device-width",
+  initialScale: 1,
+};
+
+/**
+ * Metadatos de TODO 404: el global (`app/global-not-found.tsx`) y los de cada
+ * árbol (`(site)/not-found.tsx`, `(m)/m/not-found.tsx`, que pintan los
+ * `notFound()` de las páginas). Next lee el `metadata` del `not-found.tsx`
+ * (server component) y lo pone encima del heredado: sin esto, un
+ * `/blog/no-existe` salía con el title, la descripción, el canonical y el Open
+ * Graph de la HOME e `index, follow` junto al `noindex` que añade Next.
+ */
+export const NOT_FOUND_METADATA: Metadata = {
+  title: { absolute: "Página no encontrada — Action" },
+  description: null,
+  alternates: null,
+  openGraph: null,
+  robots: { index: false, follow: true },
 };

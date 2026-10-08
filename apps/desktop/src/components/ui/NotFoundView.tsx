@@ -5,12 +5,13 @@ import { useT } from "@/lib/i18n";
 import { HoloButton } from "@/components/ui/HoloButton";
 
 /**
- * 404 de escritorio (también lo monta `app/global-not-found.tsx`). `<main
- * id="main-content">` (destino del «Saltar al contenido» del layout) y el
- * mensaje como `<h1>`: antes la página no tenía ni una ni otro. Mismas clases,
- * mismo aspecto: Tailwind deja `h1` y `main` sin estilo propio.
+ * Cuerpo del 404 de escritorio: lo pintan `app/(site)/not-found.tsx` y
+ * `app/global-not-found.tsx` (cliente por `useT()`; los metadatos van en esos
+ * dos archivos, que son server components). `<main id="main-content">`
+ * (destino del «Saltar al contenido» del layout) y el mensaje como `<h1>`:
+ * mismas clases, mismo aspecto (Tailwind deja `h1` y `main` sin estilo propio).
  */
-export default function NotFound() {
+export function NotFoundView() {
   const t = useT();
 
   return (
