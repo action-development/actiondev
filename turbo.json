@@ -3,6 +3,15 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "NEXT_PUBLIC_*",
+        "ADMIN_URL",
+        "MOBILE_ZONE_URL",
+        "REVALIDATE_SECRET",
+        "DESKTOP_SITE_URL",
+        "FIREBASE_*",
+        "LEAD_*"
+      ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "dev": {

@@ -399,8 +399,14 @@ Componente nav: `layout/Header.tsx` + `Header.module.css` = **cápsula holográf
 
 ## [DEPLOY] Deploy
 
-- Plataforma: pendiente de definir (Vercel recomendado para Next.js)
-- Entornos: pendiente
+- **Plataforma: Vercel**, equipo `pablocs2396s-projects`. **Ningún proyecto de la web se despliega solo al hacer push** (solo `actiondev-pablo`, que sí está conectado a git): se despliegan con la CLI desde la raíz del monorepo.
+  - `actiondev-v2` → `actiondev.es` (Root Directory `apps/desktop`; enlazado en `.vercel/project.json`): `vercel deploy --prod --yes`.
+  - `actiondev-mobile` → zona mobile de `/` (Root Directory `apps/mobile`): `VERCEL_ORG_ID=team_vfwZpRb4nEpIehkxp07LCC8h VERCEL_PROJECT_ID=prj_dwhOZAGz7Cn3bC2x47WrzoD9zl33 vercel deploy --prod --yes`.
+  - `actiondev-admin` → `https://actiondev-admin.vercel.app`, servido en `actiondev.es/admin` vía `ADMIN_URL` (Root Directory `apps/admin`): mismo patrón con `VERCEL_PROJECT_ID=prj_ow7ItbibOfiObwPCTU6LlYmAlKMe`. Cuenta de servicio `firebase-adminsdk-fbsvc@action-dev-1a531.iam.gserviceaccount.com` en sus variables. (El proyecto Vercel llamado `admin` es OTRO, en Vite: no tocar.)
+  - La CLI sube el directorio de trabajo TAL CUAL: apartar con `git stash` los cambios sin commitear que no deban publicarse.
+  - **Variables de entorno: `turbo.json` → `tasks.build.env`** las declara (`NEXT_PUBLIC_*`, `ADMIN_URL`, `MOBILE_ZONE_URL`, `REVALIDATE_SECRET`, `DESKTOP_SITE_URL`, `FIREBASE_*`, `LEAD_*`). Turborepo filtra en el build cualquier variable no declarada ahí: así `/admin` apuntaba a localhost en producción. Variable nueva → añadirla también en `turbo.json`.
+  - Crear variables por la API o el panel de Vercel, NO con `printf … | vercel env add` (guardaba valores vacíos).
+- Entornos: solo Production en uso.
 - Comandos monorepo: `turbo dev` (todas las apps), `turbo build` (todas las apps)
 - Comandos desktop solo: `pnpm --filter @actiondev/desktop dev`, `pnpm --filter @actiondev/desktop build`
 - Comandos admin solo: `pnpm --filter @actiondev/admin dev`, `pnpm --filter @actiondev/admin build`
