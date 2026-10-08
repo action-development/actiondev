@@ -1,7 +1,7 @@
 import { Label } from "../Cell";
 import { REVIEW_COUNT, RatingBand, Stars } from "../Rating";
 import { HOME_REVIEWS } from "./home-data";
-import { MoreRow } from "./parts";
+import { MoreRow } from "../MoreRow";
 
 /**
  * Reseñas (DESIGN.md §7, `.rating` + `.review`): la banda de tinta con

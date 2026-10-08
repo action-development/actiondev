@@ -3,6 +3,7 @@ import { MLink } from "../MLink";
 import { Section } from "../Section";
 import { SERVICE_STYLE, Shape } from "../Shape";
 import { UnderlineLink } from "../UnderlineLink";
+import { Steps } from "../Steps";
 import { HOME_SERVICES, HOME_STEPS } from "./home-data";
 
 /**
@@ -66,23 +67,7 @@ export function HomeProcess() {
       lead="Cuatro pasos. En cada uno sabes qué viene después."
       data-testid="m-home-process"
     >
-      <ol className="border-b-2 border-ink">
-        {HOME_STEPS.map((step, i) => (
-          <li key={step.title} className="grid grid-cols-[72px_1fr] border-b border-ink last:border-b-0">
-            <span
-              className={`flex justify-center border-r border-ink pt-[18px] font-display text-[40px] font-black leading-[0.9] ${
-                i === 0 ? "bg-lime" : ""
-              }`}
-            >
-              {String(i + 1).padStart(2, "0")}
-            </span>
-            <div className="grid content-start gap-1.5 px-4 pt-[18px] pb-5">
-              <h3 className="font-display text-h4 uppercase">{step.title}</h3>
-              <p className="text-base leading-[1.42]">{step.text}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
+      <Steps steps={HOME_STEPS} />
     </Section>
   );
 }

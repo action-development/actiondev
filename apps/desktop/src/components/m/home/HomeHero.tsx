@@ -1,9 +1,9 @@
-import { whatsappHref } from "@/lib/leads/whatsapp";
 import { Cell, Cells } from "../Cell";
 import { CtaBlock } from "../CtaBlock";
-import { Icon } from "../Icon";
+import { OFFICE_SHORT } from "../nav";
 import { RATING_SUMMARY, Stars } from "../Rating";
-import { HOME_HERO_CTA_ID, HOME_WHATSAPP_TEXT, OFFICE_SHORT, PHONE_SHORT } from "./home-data";
+import { WhatsappRow } from "../WhatsappRow";
+import { HOME_HERO_CTA_ID, HOME_WHATSAPP_TEXT } from "./home-data";
 
 /**
  * Primera pantalla de la home (DESIGN.md §7, «Hero de inicio»): el ÚNICO
@@ -30,21 +30,7 @@ export function HomeHero() {
         sub="La primera reunión es gratis y sin compromiso. Te respondemos en 24 horas laborables."
       />
 
-      <a
-        href={whatsappHref(HOME_WHATSAPP_TEXT)}
-        target="_blank"
-        rel="noopener noreferrer"
-        data-testid="m-hero-whatsapp"
-        className="on-ink group flex min-h-[58px] items-center gap-3 bg-ink px-4 py-2 text-paper hover:bg-paper hover:text-ink active:bg-paper active:text-ink"
-      >
-        <Icon name="whatsapp" size={28} />
-        <span className="min-w-0 font-display text-[19px] font-extrabold uppercase leading-[1.05] tracking-[0.05em]">
-          Escribir por WhatsApp
-        </span>
-        <span className="ml-auto whitespace-nowrap font-display text-base font-bold tracking-[0.04em] text-muted-dark group-hover:text-muted group-active:text-muted">
-          {PHONE_SHORT}
-        </span>
-      </a>
+      <WhatsappRow text={HOME_WHATSAPP_TEXT} data-testid="m-hero-whatsapp" />
 
       <Cells>
         <Cell label="Reseñas" href="#resenas" full data-testid="m-hero-reviews">

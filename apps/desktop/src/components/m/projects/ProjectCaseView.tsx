@@ -7,7 +7,7 @@ import { MLink } from "../MLink";
 import { PROJECT_CTA_HREF, PROJECT_CTA_LABEL } from "../nav";
 import { KIND_INFO, KindChips, projectKinds } from "../ProjectKind";
 import { ResultBand } from "../ResultBand";
-import { BeforeAfter, ProjectCover } from "./ProjectParts";
+import { BeforeAfter, ProjectCover } from "../ProjectParts";
 import { hasRealImage } from "../project-media";
 
 /** Id del CTA final: `StickyCta` (`formId`) oculta la barra mientras está a la vista. */

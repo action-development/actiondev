@@ -1,7 +1,7 @@
 import type { Testimonial } from "@/data/testimonials";
-import { Icon } from "../Icon";
-import { MLink } from "../MLink";
-import { Stars } from "../Rating";
+import { Icon } from "./Icon";
+import { MLink } from "./MLink";
+import { Stars } from "./Rating";
 import { projectSlugOf, reviewLabel } from "./review-meta";
 
 /**

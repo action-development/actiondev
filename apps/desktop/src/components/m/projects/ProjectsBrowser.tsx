@@ -6,7 +6,7 @@ import { KIND_INFO, KIND_ORDER, KindChips, projectKind, projectKinds } from "../
 import { ResultBand } from "../ResultBand";
 import { Section } from "../Section";
 import { Shape } from "../Shape";
-import { BeforeAfter, ProjectCover } from "./ProjectParts";
+import { BeforeAfter, ProjectCover } from "../ProjectParts";
 import { projectSubtitle, projectTiers } from "./kinds";
 import "./projects.css";
 

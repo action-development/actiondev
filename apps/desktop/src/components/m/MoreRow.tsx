@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { Label } from "../Cell";
-import { Icon } from "../Icon";
-import { MLink } from "../MLink";
+import { Label } from "./Cell";
+import { Icon } from "./Icon";
+import { MLink } from "./MLink";
 
 /**
  * Fila «siguiente» de la maqueta de proyectos (`.next`): etiqueta + valor a

@@ -2,7 +2,7 @@ import { CtaBlock } from "@/components/m/CtaBlock";
 import { MobileFooter } from "@/components/m/MobileFooter";
 import { MobileHeader } from "@/components/m/MobileHeader";
 import { RatingBand } from "@/components/m/Rating";
-import { ReviewItem } from "@/components/m/reviews/ReviewItem";
+import { ReviewItem } from "@/components/m/ReviewItem";
 import { StickyCta } from "@/components/m/StickyCta";
 import { testimonials } from "@/data/testimonials";
 import { RESENAS_METADATA } from "@/lib/resenas-seo";

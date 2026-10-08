@@ -31,12 +31,6 @@ export const HOME_REVIEWS: Testimonial[] = HOME_REVIEW_IDS.map((id) => testimoni
   (t): t is Testimonial => Boolean(t),
 );
 
-/** «Rúa Colón 20, Vigo», como en la celda de la maqueta. */
-export const OFFICE_SHORT = `${BUSINESS.address.street.replace(",", "")}, ${BUSINESS.address.locality}`;
-
-/** «614 02 74 10»: el número sin prefijo, para la fila de WhatsApp del hero. */
-export const PHONE_SHORT = BUSINESS.phoneDisplay.replace(/^\+34\s*/, "");
-
 /* ── Casos ───────────────────────────────────────────────────────────────── */
 
 /**

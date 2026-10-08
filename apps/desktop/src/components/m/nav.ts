@@ -8,6 +8,12 @@ import { BUSINESS } from "@actiondev/shared";
 /** Oficina en una línea, como en las maquetas: «Rúa Colón, 20. 36201 Vigo (Pontevedra)». */
 export const OFFICE_LINE = `${BUSINESS.address.street}. ${BUSINESS.address.postalCode} ${BUSINESS.address.locality} (${BUSINESS.address.region})`;
 
+/** «Rúa Colón 20, Vigo», como en la celda «Oficina» de las maquetas. */
+export const OFFICE_SHORT = `${BUSINESS.address.street.replace(",", "")}, ${BUSINESS.address.locality}`;
+
+/** «614 02 74 10»: el número sin prefijo, para la fila de WhatsApp de los héroes. */
+export const PHONE_SHORT = BUSINESS.phoneDisplay.replace(/^\+34\s*/, "");
+
 /** Las cinco entradas del menú (DESIGN.md §7, «Menú a pantalla completa»). */
 export const MOBILE_NAV = [
   { href: "/", label: "Inicio" },
