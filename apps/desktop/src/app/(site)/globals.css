@@ -1,4 +1,8 @@
 @import "tailwindcss";
+/* El árbol móvil v2 tiene su propio CSS (`app/(m)/m/mobile.css`, otro @theme):
+   sus clases no tienen que acabar en el CSS del escritorio. */
+@source not "../../components/m";
+@source not "../(m)";
 
 /* ─────────────────────────────────────────────────────────────── */
 /*  BRAND TOKENS — single source of truth                          */

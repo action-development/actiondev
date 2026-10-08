@@ -1,6 +1,20 @@
 import { NextResponse, userAgent, type NextRequest } from "next/server";
+import {
+  MOBILE_PREFIX,
+  MV2_COOKIE,
+  MV2_PARAM,
+  enabledRoutes,
+  matchesRoute,
+  mobileV2Mode,
+} from "@/lib/mobile-v2";
 
 const MOBILE_ZONE_URL = process.env.MOBILE_ZONE_URL;
+
+// Web móvil v2 (árbol `app/(m)/m`): flag + rutas abiertas. Ver `lib/mobile-v2.ts`.
+const MOBILE_V2 = mobileV2Mode(process.env.MOBILE_V2);
+const MOBILE_V2_ROUTES = enabledRoutes(process.env.MOBILE_V2_ROUTES, MOBILE_V2);
+/** La cookie de QA dura 30 días: se quita con `?mv2=0`. */
+const MV2_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
 // Assets estáticos que SOLO existen en `apps/mobile/public` y que pide la
 // home mobile. Todo lo demás lo sirve desktop también con UA móvil: antes se
@@ -16,10 +30,71 @@ function isMobileAsset(pathname: string) {
   return MOBILE_ONLY_ASSETS.some((prefix) => pathname.startsWith(prefix));
 }
 
+/** Último segmento con punto = archivo (`/projects/fase.webp`), nunca una página. */
+function isFile(pathname: string) {
+  return /\.[^/]+$/.test(pathname);
+}
+
+/**
+ * ¿Esta petición se sirve con el árbol móvil v2? Las TRES condiciones: UA
+ * `mobile` (las tablets son `tablet` y siguen en escritorio), flag activo (`on`,
+ * o `qa` + cookie `mv2=1`) y ruta abierta en `MOBILE_V2_ROUTES`. `/projects` es
+ * a la vez página y carpeta de `public/`: sus imágenes no se reescriben.
+ */
+function servesMobileV2(request: NextRequest, pathname: string) {
+  if (MOBILE_V2 === "off" || isFile(pathname)) return false;
+  if (!MOBILE_V2_ROUTES.some((prefix) => matchesRoute(pathname, prefix))) return false;
+  if (MOBILE_V2 === "qa" && request.cookies.get(MV2_COOKIE)?.value !== "1") return false;
+  return userAgent(request).device.type === "mobile";
+}
+
 export function middleware(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+
+  // `/m/*` es interno: el HTML que se indexa es el de la URL PÚBLICA. Entrar
+  // directo (enlace, rastreador, a mano) → 308 a la pública, con o sin flag.
+  // El rewrite de abajo no vuelve a pasar por aquí.
+  if (pathname === MOBILE_PREFIX || pathname.startsWith(`${MOBILE_PREFIX}/`)) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.slice(MOBILE_PREFIX.length) || "/";
+    return NextResponse.redirect(url, 308);
+  }
+
+  // QA en producción: `?mv2=1` pone la cookie, `?mv2=0` la quita, y se
+  // redirige a la misma URL sin el parámetro (307: no se cachea).
+  if (MOBILE_V2 === "qa") {
+    const flag = request.nextUrl.searchParams.get(MV2_PARAM);
+    if (flag === "1" || flag === "0") {
+      const url = request.nextUrl.clone();
+      url.searchParams.delete(MV2_PARAM);
+      const response = NextResponse.redirect(url, 307);
+      if (flag === "1") {
+        response.cookies.set(MV2_COOKIE, "1", {
+          path: "/",
+          maxAge: MV2_COOKIE_MAX_AGE,
+          sameSite: "lax",
+          httpOnly: true,
+          secure: request.nextUrl.protocol === "https:",
+        });
+      } else {
+        response.cookies.delete(MV2_COOKIE);
+      }
+      return response;
+    }
+  }
+
+  if (servesMobileV2(request, pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname === "/" ? MOBILE_PREFIX : `${MOBILE_PREFIX}${pathname}`;
+    // `Vary` también va en `headers()` de next.config.ts: aquí Next lo pisa en
+    // algunas respuestas.
+    const response = NextResponse.rewrite(url);
+    response.headers.set("Vary", "User-Agent");
+    return response;
+  }
+
   if (!MOBILE_ZONE_URL) return NextResponse.next();
 
-  const { pathname, search } = request.nextUrl;
   const isHome = pathname === "/";
   // Solo `/` y sus assets propios salen de la zona mobile. Las rutas de
   // página (landings SEO, /contact, /projects…) se sirven desde desktop en

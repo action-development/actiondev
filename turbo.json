@@ -7,6 +7,7 @@
         "NEXT_PUBLIC_*",
         "ADMIN_URL",
         "MOBILE_ZONE_URL",
+        "MOBILE_V2*",
         "REVALIDATE_SECRET",
         "DESKTOP_SITE_URL",
         "FIREBASE_*",

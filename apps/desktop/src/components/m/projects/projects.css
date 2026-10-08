@@ -1,0 +1,19 @@
+/* Filtro por tipo de la lista de proyectos (móvil v2), SIN JavaScript.
+   Los radios van antes de la lista dentro de `.pf`; `:has(:checked)` oculta lo
+   que no casa. Todos los enlaces siguen en el HTML (SEO) y, con «Todos», a la
+   vista. Un bloque (`[data-block]`) se oculta si se queda sin ningún proyecto.
+   `data-kind` es una lista (`~=`): un caso con dos servicios sale en los dos
+   filtros (`projectKinds` de `components/m/ProjectKind.tsx`). */
+.pf:has(#pf-app:checked) [data-kind]:not([data-kind~="app"]),
+.pf:has(#pf-software:checked) [data-kind]:not([data-kind~="software"]),
+.pf:has(#pf-web:checked) [data-kind]:not([data-kind~="web"]),
+.pf:has(#pf-shop:checked) [data-kind]:not([data-kind~="shop"]) {
+  display: none;
+}
+
+.pf:has(#pf-app:checked) [data-block]:not(:has([data-kind~="app"])),
+.pf:has(#pf-software:checked) [data-block]:not(:has([data-kind~="software"])),
+.pf:has(#pf-web:checked) [data-block]:not(:has([data-kind~="web"])),
+.pf:has(#pf-shop:checked) [data-block]:not(:has([data-kind~="shop"])) {
+  display: none;
+}

@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
   experimental: {
+    // Dos layouts raíz (`app/(site)` y `app/(m)`): el 404 de URLs sin ruta
+    // necesita `app/global-not-found.tsx`.
+    globalNotFound: true,
     optimizePackageImports: [
       "three",
       "@react-three/fiber",
@@ -69,6 +72,13 @@ const nextConfig: NextConfig = {
         source: "/",
         headers: [{ key: "Vary", value: "User-Agent" }],
       },
+      // Lo mismo en las rutas de fase 1 de la web móvil v2 (`lib/mobile-v2.ts`):
+      // con UA móvil + flag el middleware las sirve desde `app/(m)/m`. Las
+      // fichas, solo slugs sin punto: las imágenes de `public/projects/` no
+      // varían por dispositivo.
+      ...["/servicios", "/projects", "/projects/:slug([^/.]+)", "/resenas", "/contact", "/hablemos/:path*"].map(
+        (source) => ({ source, headers: [{ key: "Vary", value: "User-Agent" }] }),
+      ),
       // Static assets — content-addressed via filename, safe to cache for 1 year
       {
         source: "/fonts/:path*",

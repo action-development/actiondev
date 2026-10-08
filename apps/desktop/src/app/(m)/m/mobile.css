@@ -1,0 +1,141 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Web móvil v2 — CSS propio del árbol `app/(m)/m` (layout raíz aparte).
+   Sistema: docs/mobile-v2/DESIGN.md. Papel, tinta y UN lima; radio 0, sin
+   sombras, sin degradados, sin transparencias.
+
+   `source(none)`: este CSS solo escanea el árbol móvil. Con la detección
+   automática se traía todas las utilidades del escritorio (3D, holo…).
+   Clase nueva en otro sitio → añadir aquí su `@source`.
+   ───────────────────────────────────────────────────────────────────────── */
+@import "tailwindcss" source(none);
+@source "../../../components/m";
+@source "./";
+
+/* Tokens de DESIGN.md §3 con sus NOMBRES EXACTOS (`bg-paper`, `text-ink`,
+   `bg-lime`, `text-muted`, `text-muted-dark`, `border-line-dark`…). Se borra la
+   paleta de Tailwind, el radio y las sombras para que no se usen por
+   accidente. */
+@theme {
+  --color-*: initial;
+  --color-ink: #121212;
+  --color-paper: #edeae3;
+  --color-grey: #d9d5cc;
+  --color-lime: #c8ff00;
+  --color-muted: #4a4741;
+  --color-muted-dark: #b9b5ac;
+  --color-line-dark: #5a5750;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+
+  /* Escala tipográfica de DESIGN.md §5 (tamaño + interlineado + tracking +
+     peso en UNA clase). Se combinan con `font-display uppercase` o
+     `font-body`: `font-display text-h2 uppercase`. */
+  /* Hero y H1 son 66/56 px a 390 (DESIGN.md §5) y encogen con el ancho para
+     que «PROGRAMAS» quepa a 320 sin desbordar. El resto, fijo. */
+  --text-hero: clamp(52px, 16.92vw, 66px);
+  --text-hero--line-height: 0.84;
+  --text-hero--letter-spacing: -0.02em;
+  --text-hero--font-weight: 900;
+  --text-h1: clamp(46px, 14.36vw, 56px);
+  --text-h1--line-height: 0.86;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h1--font-weight: 900;
+  --text-h2: 46px;
+  --text-h2--line-height: 0.88;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h2--font-weight: 900;
+  --text-h3: 32px;
+  --text-h3--line-height: 0.92;
+  --text-h3--letter-spacing: -0.01em;
+  --text-h3--font-weight: 900;
+  --text-h4: 24px;
+  --text-h4--line-height: 0.95;
+  --text-h4--letter-spacing: -0.01em;
+  --text-h4--font-weight: 900;
+  --text-value: 21px;
+  --text-value--line-height: 1.1;
+  --text-value--font-weight: 800;
+  --text-label: 12px;
+  --text-label--line-height: 1.2;
+  --text-label--letter-spacing: 0.1em;
+  --text-label--font-weight: 600;
+  --text-lead: 19px;
+  --text-lead--line-height: 1.4;
+  --text-lead--font-weight: 500;
+  --text-quote: 20px;
+  --text-quote--line-height: 1.38;
+  --text-quote--font-weight: 500;
+
+  /* Barra fija inferior (DESIGN.md §6): 64 px + safe area. */
+  --spacing-bar: 64px;
+}
+
+/* Familias: las inyecta `next/font/google` en el `<html>` (layout.tsx). */
+@theme inline {
+  --font-display: var(--font-saira-condensed), "Arial Narrow", sans-serif;
+  --font-body: var(--font-saira-semi-condensed), "Arial Narrow", sans-serif;
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  /* Foco (DESIGN.md §8): contorno tinta sobre claro, lima sobre tinta
+     (`.on-ink` en el contenedor oscuro). En tiles, contorno interior: lo pone
+     el propio componente. */
+  :focus-visible {
+    outline: 3px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  .on-ink :focus-visible,
+  .on-ink:focus-visible {
+    outline-color: var(--color-lime);
+  }
+
+  ::selection {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+
+  /* El menú es un `<dialog>` a pantalla completa: sin el velo gris por defecto. */
+  dialog::backdrop {
+    background: var(--color-ink);
+  }
+}
+
+/* DESIGN.md §9: nada se mueve con `prefers-reduced-motion`. Va FUERA de capa
+   a propósito: el CSS sin capa gana a cualquier utilidad de Tailwind (que vive
+   en `@layer utilities`), así que no hace falta `!important`. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s;
+    animation-duration: 0s;
+    scroll-behavior: auto;
+  }
+}
