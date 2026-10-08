@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { PLACEHOLDER_IMAGE } from "@actiondev/shared";
+import { CONTACT_EXPECTATION } from "@/components/leads/copy";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { WhatsappIcon } from "@/components/icons/channel-icons";
 import { BUSINESS } from "@/lib/seo";
@@ -15,6 +16,8 @@ import { THANKS_METADATA, thanksCases, thanksNeed, thanksWhatsappText } from "@/
  * recarga o enlace compartido como un lead más.
  *
  * Metadatos, `?tipo=`, mensaje y casos: `lib/leads/thanks.ts` (compartido con móvil).
+ * Expectativa bajo el H1 (`CONTACT_EXPECTATION`, misma que móvil): por dónde y
+ * desde qué número llega el contacto.
  */
 
 export const metadata: Metadata = THANKS_METADATA;
@@ -42,6 +45,9 @@ export default async function GraciasPage({
           >
             Recibido. Te contactamos en 24 horas laborables.
           </h1>
+          <p data-testid="gracias-contact" className="mt-5 max-w-[56ch] text-lg font-semibold leading-relaxed text-foreground">
+            {CONTACT_EXPECTATION}
+          </p>
           <p className="mt-6 max-w-[56ch] text-lg leading-relaxed text-foreground/80">
             Para aprovechar la primera llamada, ten a mano quién lo va a usar, qué hacéis hoy a mano y con qué programas
             trabajáis.

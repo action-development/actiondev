@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LEAD_NEEDS_CAMPAIGN } from "@actiondev/shared";
+import { FIRST_MEETING_OFFER } from "@/components/leads/copy";
 import { CampaignLeadForm } from "@/components/m/campaign/CampaignLeadForm";
 import { CaseCard } from "@/components/m/campaign/CaseCard";
 import { Checklist, CtaFinal, FaqList, ProcessSteps, ReviewQuote, SectionTitle } from "@/components/m/campaign/parts";
@@ -63,10 +64,12 @@ export default async function MobileAdsLandingPage({ params }: PageProps) {
       <MobileHeader menu={false} logoHref={null} whatsappText={landing.whatsappText} />
       <main id="main-content">
         {/*
-          Hero corto a propósito: H1 (el mismo del anuncio), la valoración y la
-          reseña. Así el paso 1 del formulario entra entero en la primera
-          pantalla aun con el banner de cookies abierto. La entradilla
-          (`subtitle`) abre «Cómo lo hacemos», justo debajo del formulario.
+          Hero corto a propósito: H1 (el mismo del anuncio), la valoración, la
+          oferta de los anuncios («Primera reunión gratis», «Oficina en Vigo»)
+          y la reseña. Lo que vende cabe en la primera pantalla real de Safari
+          con el banner de cookies abierto; a pantalla completa (390×844),
+          también el paso 1 entero. La entradilla (`subtitle`) abre «Cómo lo
+          hacemos», justo debajo del formulario.
         */}
         <section id={HERO_ID} aria-labelledby="m-ads-h1" className="grid gap-2 border-b-2 border-ink px-4 pt-4 pb-3.5">
           <h1
@@ -82,6 +85,9 @@ export default async function MobileAdsLandingPage({ params }: PageProps) {
           >
             <Stars size={15} />
             {RATING_SUMMARY}
+          </p>
+          <p data-testid="m-ads-offer" className="text-[15px] font-semibold leading-[1.35]">
+            {FIRST_MEETING_OFFER}
           </p>
           {heroReview && (
             <figure data-testid="m-ads-hero-review" className="text-[15px] leading-[1.35]">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BUSINESS } from "@actiondev/shared";
+import { CONTACT_EXPECTATION } from "@/components/leads/copy";
 import { buttonClass } from "@/components/m/Button";
 import { CaseCard } from "@/components/m/campaign/CaseCard";
 import { ProcessSteps, SectionTitle, linkUnderlineClass } from "@/components/m/campaign/parts";
@@ -18,6 +19,9 @@ import { whatsappHref } from "@/lib/leads/whatsapp";
  * NO mide nada al cargar: `generate_lead` sale del formulario con el lead ya
  * guardado (contarlo aquí sumaría cada recarga). Página de campaña: cabecera
  * sin menú ni enlace en el logo, ningún `tel:` y casos en pestaña nueva.
+ *
+ * Expectativa concreta bajo el H1 (`CONTACT_EXPECTATION`): por dónde y desde
+ * qué número llega el contacto, para que el lead no ignore la llamada.
  */
 
 export const metadata: Metadata = THANKS_METADATA;
@@ -58,6 +62,9 @@ export default async function MobileThanksPage({
             <h1 id="m-gracias-h1" data-testid="m-gracias-h1" className="font-display text-h1 uppercase">
               Recibido. Te contactamos en 24 horas laborables.
             </h1>
+            <p data-testid="m-gracias-contact" className="max-w-[34ch] text-lead">
+              {CONTACT_EXPECTATION}
+            </p>
             <p className="max-w-[34ch] text-lead">
               Para aprovechar la primera llamada, ten a mano quién lo va a usar, qué hacéis hoy a mano y con qué
               programas trabajáis.
