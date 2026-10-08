@@ -4,8 +4,8 @@ import { MLink } from "../MLink";
 
 /**
  * Enlaces a las landings SEO de un grupo, todos visibles (regla de oro SEO).
- * `MLink` → `<a>`: las landings no tienen árbol móvil y son del layout raíz
- * de escritorio. Cada fila: H3 + `hubSummary` (NO la meta description) +
+ * `MLink` elige: `<Link>` si la landing tiene árbol móvil publicado, `<a>` si
+ * aún la sirve el escritorio. Cada fila: H3 + `hubSummary` (NO la meta description) +
  * flecha. Al pulsar se invierte a tinta (DESIGN.md §8).
  */
 export function LandingLinks({ landings, groupId }: { landings: Landing[]; groupId: string }) {
