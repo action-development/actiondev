@@ -12,8 +12,10 @@ const CORE_LANDING = "desarrollo-de-aplicaciones-vigo";
 // editar contenido de esa ruta. 2026-10-08: la web móvil v2 (lo que indexa
 // Googlebot Smartphone) se hizo pública en `/`, `/servicios`, `/projects` +
 // fichas, `/resenas` y `/contact`; las landings estrenaron formulario y
-// guías del blog, y `projects.ts` sumó proyectos y mockups.
-const CONTENT_UPDATED = new Date("2026-10-08");
+// guías del blog, y `projects.ts` sumó proyectos y mockups. 2026-10-09: copy
+// de las landings (títulos, FAQs, casos), H1 de los hubs y fichas corregidas
+// contra las webs de los clientes en vivo.
+const CONTENT_UPDATED = new Date("2026-10-09");
 const LEGAL_LAST_MODIFIED = new Date(LEGAL_UPDATED);
 
 // Se genera en el build: sin esto, un post publicado desde el admin no
