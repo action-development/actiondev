@@ -264,7 +264,7 @@ export const projects: Project[] = [
     description:
       "Real estate platform only between private individuals: an iOS and Android app where buyers and tenants talk directly to the owner, with verified identities.",
     descriptionEs:
-      "Plataforma inmobiliaria solo entre particulares: app para iOS y Android donde se habla directamente con la persona propietaria, con la identidad verificada.",
+      "Plataforma inmobiliaria solo entre particulares: app para iOS y Android donde se habla con la persona propietaria, con la identidad verificada.",
     category: "Mobile App",
     categoryEs: "Aplicación Móvil",
     niche: "Real estate",
@@ -330,13 +330,13 @@ export const projects: Project[] = [
     location: "Redondela",
     title: "Ticketera La Fábrica",
     description:
-      "Online ticketing for La Fábrica, an events venue in Redondela, with customer profiles, purchase history and real-time capacity management.",
+      "Online ticketing for La Fábrica, a nightclub in Redondela, with customer profiles, purchase history and real-time capacity management.",
     descriptionEs:
-      "Venta de entradas online para La Fábrica, recinto de eventos de Redondela: perfil con historial de compras y aforo gestionado en tiempo real.",
+      "Venta de entradas online para La Fábrica, discoteca de Redondela: perfil con historial de compras y aforo gestionado en tiempo real.",
     category: "Web Application",
     categoryEs: "Aplicación Web",
-    niche: "Entertainment & Events",
-    nicheEs: "Ocio y eventos",
+    niche: "Nightlife",
+    nicheEs: "Ocio nocturno",
     image: PLACEHOLDER_IMAGE,
     mockup: "/projects/ticketera-la-fabrica-mockup.webp",
     mockupOrientation: "landscape",
@@ -348,12 +348,12 @@ export const projects: Project[] = [
     color: "#0a0a0a",
     relatedLanding: "desarrollo-web-redondela",
     brief: [
-      "Sell tickets online for every event at the venue",
+      "Sell tickets online for every event at the club",
       "A profile system with a history of purchased tickets",
       "Real-time capacity and event management",
     ],
     briefEs: [
-      "Vender entradas online para los eventos del recinto",
+      "Vender entradas online para los eventos de la discoteca",
       "Sistema de perfil con historial de entradas compradas",
       "Gestión de aforo y eventos en tiempo real",
     ],
@@ -381,7 +381,8 @@ export const projects: Project[] = [
     video: "/projects_video/musa-pot.webm",
     url: "https://www.musavigo.es/",
     year: 2024,
-    technologies: ["Next.js", "GSAP", "Three.js"],
+    // Comprobado en vivo (2026-10-09): SPA de React con Vite, sin WebGL.
+    technologies: ["React", "Vite"],
     featured: true,
     color: "#0f172a",
     brief: [
@@ -500,36 +501,38 @@ export const projects: Project[] = [
     id: "fang-tours",
     slug: "fang-tours",
     title: "Fang Tours",
+    // Comprobado en vivo (fangtours.com, 2026-10-09): rutas, preguntas
+    // frecuentes y solicitud de plaza por formulario o WhatsApp. Sin calendario,
+    // pago online ni panel: no afirmarlos.
     description:
-      "Booking platform with interactive calendar, payment gateway, and real-time tour management.",
+      "Website for Fang Tours, 4x4 expeditions: routes, FAQs on vehicles, insurance and payments, and seat requests through a form or WhatsApp.",
     descriptionEs:
-      "Plataforma de reservas con calendario interactivo, pasarela de pago y gestión de tours en tiempo real.",
-    // Reservas, Stripe, Supabase y panel propio: una aplicación web, no una landing.
-    category: "Web Application",
-    categoryEs: "Aplicación Web",
+      "Web de Fang Tours, expediciones en 4x4: rutas, preguntas frecuentes sobre vehículos, seguros y pagos, y solicitud de plaza por formulario o WhatsApp.",
+    category: "Landing Page",
+    categoryEs: "Landing Page",
     niche: "Tourism",
     nicheEs: "Turismo",
     image: "/projects/fang-tours.webp",
     video: "/projects_video/fang-tours.webm",
     url: "#",
     year: 2024,
-    technologies: ["Next.js", "Supabase", "Stripe"],
+    technologies: ["React", "Vite"],
     featured: true,
     color: "#1c1917",
     brief: [
-      "A landing page with a booking calendar and integrated payment gateway",
-      "Convey closeness and trust, so booking a tour felt as easy as messaging a friend",
-      "Manage tour availability and slots in real time from an internal panel",
+      "A website presenting the 4x4 expeditions and each route",
+      "Answer the usual questions before booking: vehicles, insurance, requirements and payments",
+      "Let travellers request a seat through a form or WhatsApp",
     ],
     briefEs: [
-      "Landing con calendario de disponibilidad y pasarela de pago integrada",
-      "Transmitir cercanía y confianza para reservar una excursión sin tener que llamar",
-      "Gestionar los tours y su disponibilidad en tiempo real desde un panel propio",
+      "Una web que presente las expediciones en 4x4 y cada una de sus rutas",
+      "Resolver antes de reservar las dudas habituales: vehículos, seguros, requisitos y pagos",
+      "Que el viajero pueda pedir plaza por formulario o por WhatsApp",
     ],
     result:
-      "Online booking replaced the phone as the main sales channel, multiplying the flow of tours booked without a single call handled manually.",
+      "The website brings the routes, the travel conditions and the seat request together in one place.",
     resultEs:
-      "La reserva online sustituyó casi por completo al teléfono como canal de contratación, multiplicando el flujo de tours reservados sin intervención manual.",
+      "La web reúne en un solo sitio las rutas, las condiciones de cada viaje y la solicitud de plaza.",
   },
   {
     id: "pro-lift-formacion",
@@ -614,7 +617,8 @@ export const projects: Project[] = [
     video: "/projects_video/samoa.webm",
     url: "https://www.samoaredondela.com/",
     year: 2024,
-    technologies: ["Next.js", "Tailwind", "Figma"],
+    // Comprobado en vivo (2026-10-09): SPA de React con Vite.
+    technologies: ["React", "Vite"],
     featured: true,
     color: "#1a1a2e",
     relatedLanding: "desarrollo-web-redondela",
@@ -703,9 +707,9 @@ export const projects: Project[] = [
     slug: "patricia-avendano",
     title: "Patricia Avendaño | Diseñadora",
     description:
-      "Bilingual website for an internationally established bridal-wear designer — 100+ stores across Spain and reach in Mexico, Japan and Europe — with interactive lookbook, fullscreen runway videos, and press section.",
+      "Bilingual website for Patricia Avendaño, a Vigo-born bridal and evening wear designer: full-screen collections, her story and atelier appointments.",
     descriptionEs:
-      "Web bilingüe para una diseñadora de moda nupcial consolidada internacionalmente —más de 100 tiendas en España y presencia en México, Japón y Europa— con lookbook interactivo, vídeos de pasarela a pantalla completa y sección de prensa.",
+      "Web bilingüe para Patricia Avendaño, diseñadora de novia y fiesta nacida en Vigo: colecciones a pantalla completa, su historia y cita en el atelier.",
     category: "Website",
     categoryEs: "Web",
     niche: "Fashion",
@@ -713,22 +717,23 @@ export const projects: Project[] = [
     image: "/projects/patricia-avendano.webp",
     mockup: "/projects/patricia-avendano-mockup.webp",
     mockupOrientation: "landscape",
-    afterEs: "Web bilingüe con lookbook interactivo, vídeos de pasarela a pantalla completa y sección de prensa.",
+    afterEs: "Web bilingüe con sus colecciones de novia y de fiesta, su historia y la cita en el atelier.",
     video: "/projects_video/patricia-avendano.webm",
     url: "https://www.patricia-avendano.com/",
     year: 2024,
-    technologies: ["Next.js", "Framer Motion", "i18n"],
+    // Comprobado en vivo (2026-10-09): SPA de React con Vite, español e inglés.
+    technologies: ["React", "Vite", "i18n"],
     featured: true,
     color: "#171717",
     brief: [
       "A bilingual website that conveyed her international trajectory — 100+ stores across Spain and expansion into Mexico, Japan and Europe",
-      "An interactive lookbook and fullscreen runway videos",
-      "A press section to reinforce her professional trajectory",
+      "Bridal and evening collections presented full screen",
+      "Her story and an atelier appointment, straight from the website",
     ],
     briefEs: [
       "Web bilingüe que transmitiera su trayectoria internacional —más de 100 tiendas en España y expansión a México, Japón y Europa",
-      "Lookbook interactivo y vídeos de pasarela a pantalla completa",
-      "Sección de prensa que respaldara su recorrido profesional",
+      "Colecciones de novia y de fiesta presentadas a pantalla completa",
+      "Su historia y la cita en el atelier, desde la propia web",
     ],
     result:
       "The site positioned her as an established name in the industry, pairing years of trajectory with an editorial-grade bilingual presentation.",
@@ -740,9 +745,9 @@ export const projects: Project[] = [
     slug: "koopey",
     title: "Koopey",
     description:
-      "Online store with a real-time layer (React, Node.js, WebSocket) for Koopey, the menswear-and-womenswear brand that went viral nationally at launch, with coverage in Modaes and El Español.",
+      "Online store for Koopey, the menswear and womenswear brand that went viral at launch, with coverage in Modaes and El Español.",
     descriptionEs:
-      "Tienda online con capa en tiempo real (React, Node.js, WebSocket) para Koopey, la marca de moda para hombre y mujer que se volvió viral a nivel nacional en su lanzamiento, con cobertura en Modaes y El Español.",
+      "Tienda online para Koopey, la marca de moda para hombre y mujer que se volvió viral en su lanzamiento, con cobertura en Modaes y El Español.",
     category: "E-commerce",
     categoryEs: "E-commerce",
     niche: "Fashion Retail",
@@ -823,18 +828,19 @@ export const projects: Project[] = [
     video: "/projects_video/almudena-muhle.webm",
     url: "https://www.almudenamuhle.com/",
     year: 2025,
-    technologies: ["Next.js", "GSAP", "Tailwind"],
+    // Comprobado en vivo (2026-10-09): SPA de React con Vite.
+    technologies: ["React", "Vite"],
     featured: true,
     color: "#111827",
     brief: [
       "An elegant website presenting each project as an immersive story",
       "Convey the studio's level to a higher-end clientele",
-      "Fluid navigation between projects with video and motion",
+      "Fluid navigation between projects",
     ],
     briefEs: [
       "Web elegante que presentara cada proyecto como una historia inmersiva",
       "Transmitir el nivel del estudio a un cliente de mayor poder adquisitivo",
-      "Navegación fluida entre proyectos con vídeo y motion",
+      "Navegación fluida entre proyectos",
     ],
     result:
       "The immersive project storytelling elevated the studio's brand perception, drawing inquiries from a higher tier of clients than social media alone used to bring in.",
@@ -1038,9 +1044,9 @@ export const projects: Project[] = [
     location: "Noia",
     title: "Cervecería Equs",
     description:
-      "Landing page for a craft brewery: the character of its beer, clear location and contact details, and a home of its own beyond social media.",
+      "Website for Cervecería Equs, a burger and tapas bar in Noia: menu by sections, the venue, opening hours and how to book.",
     descriptionEs:
-      "Landing para una cervecería artesana: el carácter de su cerveza, ubicación y contacto claros, y una presencia propia más allá de las redes.",
+      "Web de Cervecería Equs, hamburguesería y tapería de Noia: carta por secciones, el local, el horario y cómo reservar.",
     category: "Website",
     categoryEs: "Web",
     niche: "Hospitality",
@@ -1051,19 +1057,19 @@ export const projects: Project[] = [
     technologies: ["TBD"],
     color: "#1c1917",
     brief: [
-      "A landing page introducing the brewery",
-      "Convey the craft, hand-made character of the beer",
+      "A website introducing the bar",
+      "Menu, venue and opening hours in plain sight",
       "Clear contact details and location",
     ],
     briefEs: [
-      "Landing de presentación de la cervecería",
-      "Transmitir el carácter artesanal de la cerveza",
+      "Web de presentación de la cervecería",
+      "Carta, local y horario a la vista",
       "Datos de contacto y ubicación claros",
     ],
     result:
-      "The landing page gave the brewery a digital presence of its own, sharpening the first impression for customers who previously only knew it through social media.",
+      "The website gave the bar a digital presence of its own, sharpening the first impression for customers who previously only knew it through social media.",
     resultEs:
-      "La landing le dio a la cervecería una presencia digital propia, mejorando la primera impresión de clientes que antes solo la conocían por redes sociales.",
+      "La web le dio a la cervecería una presencia digital propia, mejorando la primera impresión de clientes que antes solo la conocían por redes sociales.",
   },
   {
     id: "fisioterapia-noia",

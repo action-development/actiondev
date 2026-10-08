@@ -26,7 +26,7 @@ No confundir con la cadena de tiendas de descuento Action (action.com) ni con ot
 Por servicio:
 
 - [Desarrollo de aplicaciones en Vigo](https://actiondev.es/desarrollo-de-aplicaciones-vigo) — apps iOS y Android multiplataforma (React Native), app + panel de gestión, backend y publicación en tiendas. Casos: Autoescuela GTI (ERP + app de alumnos), XauLabs, True Trading.
-- [Desarrollo web en Vigo](https://actiondev.es/desarrollo-web-vigo) — webs y aplicaciones web a medida con React y Next.js que venden entradas, cobran cuotas o gestionan reservas. Casos: Musa (Vigo), PBB (O Porriño), Nautirent.
+- [Desarrollo web en Vigo](https://actiondev.es/desarrollo-web-vigo) — webs y aplicaciones web a medida, con código propio en React, que venden entradas, cobran cuotas o gestionan reservas. Casos: Musa (Vigo), PBB (O Porriño), Nautirent.
 - [Diseño web en Vigo](https://actiondev.es/diseno-web-vigo) — dirección de arte, motion design (GSAP) y experiencias 3D (Three.js). Casos: Samoa Café, Almudena Muhle, Patricia Avendaño.
 - [Tiendas online en Vigo](https://actiondev.es/tienda-online-vigo) — Shopify o ecommerce a medida (React, Node.js). Casos: Canelita, Cliché, Koopey, Licentia.
 - [Software a medida en Vigo](https://actiondev.es/software-a-medida-vigo) — ERP, control horario, paneles internos, integraciones y automatización para pymes. Casos: Autoescuela GTI, Timetracker, Nautirent (web conectada al software interno de la flota).
@@ -49,7 +49,7 @@ Capacidades transversales:
 - **Type**: Digital product studio (multi-platform apps + web design and development)
 - **Primary focus**: Multi-platform application development (iOS, Android, cross-platform, web)
 - **Secondary focus**: Custom business software (ERP, time tracking, internal dashboards), premium brand websites, e-commerce, 3D / interactive experiences, integrations
-- **Stack used in published projects**: React Native, Next.js, React, TypeScript, Node.js, WebSocket, Supabase, Stripe, Shopify, Three.js / React Three Fiber, GSAP, Framer Motion, Tailwind CSS
+- **Stack used in published projects**: React Native, React, Next.js, Vite, TypeScript, Node.js, WebSocket, Supabase, Shopify, Three.js / React Three Fiber (this site), GSAP, Framer Motion, Tailwind CSS
 - **Based in**: Rúa Colón 20, 36201 Vigo, Galicia (Spain) — in person across Vigo and the province of Pontevedra, remotely across Spain
 
 ## Why teams pick Action

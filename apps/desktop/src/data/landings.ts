@@ -273,18 +273,18 @@ export const landings: Landing[] = [
     ],
     title: "Desarrollo Web en Vigo | Webs y Aplicaciones a Medida",
     metaDescription:
-      "Desarrollo web a medida en Vigo con Next.js: webs que venden entradas, cobran cuotas o gestionan reservas. Casos reales: Musa y PBB. Oficina en Colón 20.",
+      "Desarrollo web a medida en Vigo: webs que venden entradas, cobran cuotas o gestionan reservas, con código propio. Casos: Musa y PBB. Oficina en Colón 20.",
     h1: "Desarrollo web en Vigo",
     intro: [
       "Desarrollamos páginas y aplicaciones web a medida desde nuestra oficina de la Rúa Colón, en el centro de Vigo. Webs que hacen algo más que estar: venden entradas, cobran cuotas, reciben reservas o se conectan con el software con el que ya trabajas.",
-      "Programamos con React y Next.js, sin plantillas ni constructores visuales. No es una cuestión de moda: el código propio nos deja decidir cómo carga cada página, cómo la lee Google y qué pasa cuando tu negocio necesita una función que ningún plugin trae.",
+      "Programamos con React y, cuando el proyecto lo pide, Next.js, sin plantillas ni constructores visuales. No es una cuestión de moda: el código propio nos deja decidir cómo carga cada página, cómo la lee Google y qué pasa cuando tu negocio necesita una función que ningún plugin trae.",
     ],
     localContext: {
       title: "Lo que vemos en las webs de Vigo",
       paragraphs: [
         "En Vigo hay mucha oferta de webs y buena parte se parece: la misma plantilla con otra foto de la ría. En la ciudad más poblada de Galicia, con competencia en cada barrio y en cada sector, parecerse a los demás sale caro.",
         "Cuando un negocio de Vigo nos llama, los problemas suelen ser otros que la estética: webs que no se pueden actualizar sin llamar al informático, formularios que no llegan a nadie, reservas que siguen entrando por teléfono y fichas de Google Business sin una web decente detrás. La web existe, pero no hace ningún trabajo.",
-        "Por eso empezamos preguntando qué tarea debería quitarte la web: la taquilla de una sala de ocio nocturno, el papeleo de inscripciones de un club deportivo, las llamadas para consultar disponibilidad. A partir de ahí se decide la tecnología, no al revés.",
+        "Por eso empezamos preguntando qué tarea debería quitarte la web: la taquilla de una discoteca, el papeleo de inscripciones de un club deportivo, las llamadas para consultar disponibilidad. A partir de ahí se decide la tecnología, no al revés.",
       ],
     },
     offersTitle: "Qué construimos",
@@ -314,7 +314,7 @@ export const landings: Landing[] = [
     cases: [
       {
         slug: "musa",
-        note: "Sala de ocio nocturno de Vigo. Venta de entradas desde su propia web, sin ticketera externa, y perfil de cliente con sus entradas. Las reservas online subieron un 40%.",
+        note: "Discoteca de Vigo. Venta de entradas desde su propia web, sin ticketera externa, y perfil de cliente con sus entradas. Las reservas online subieron un 40%.",
       },
       {
         slug: "pbb-porrino",
@@ -324,17 +324,13 @@ export const landings: Landing[] = [
         slug: "nautirent",
         note: "Alquiler de embarcaciones. La web lee la disponibilidad de la flota desde el software interno y permite reservar sin llamadas ni intermediarios.",
       },
-      {
-        slug: "fang-tours",
-        note: "Landing con calendario de disponibilidad, pago con Stripe y un panel propio para gestionar los tours en tiempo real.",
-      },
     ],
     sections: [
       {
         title: "¿Por qué no WordPress?",
         paragraphs: [
           "WordPress sirve para muchas cosas y no tenemos nada contra él. Pero para una web que tiene que vender o conectarse con otros sistemas, depender de una cadena de plugins de terceros significa actualizaciones que rompen cosas, fallos de seguridad conocidos y una web que se vuelve más lenta con cada añadido.",
-          "Con Next.js la web se genera como páginas estáticas o renderizadas en servidor, sin un panel de administración expuesto ni plugins que parchear. Cuando necesitas editar contenidos tú mismo, preparamos un editor a medida de lo que de verdad vas a cambiar — como la carta que Samoa Café actualiza desde su web — en lugar de un panel con doscientas opciones.",
+          "Con código propio la web se genera como páginas estáticas o renderizadas en servidor, sin un panel de administración expuesto ni plugins que parchear. Y cuando necesitas editar contenidos tú mismo, preparamos un editor a medida de lo que de verdad vas a cambiar, en lugar de un panel con doscientas opciones: así actualiza Samoa Café su carta desde su web.",
           "Si ya tienes WordPress y te funciona, no te diremos que lo tires. Si se ha convertido en un problema, planificamos la migración para no perder posicionamiento por el camino.",
         ],
       },
@@ -404,7 +400,7 @@ export const landings: Landing[] = [
       { slug: "desarrollo-web-pontevedra", label: "Diseño web en Pontevedra" },
     ],
     hubSummary:
-      "Webs corporativas y aplicaciones web con Next.js que venden, reservan o cobran. Casos: Musa (Vigo) y PBB (O Porriño).",
+      "Webs corporativas y aplicaciones web a medida que venden, reservan o cobran. Casos: Musa (Vigo) y PBB (O Porriño).",
   },
 
   // ───────────────────────────────────────────────────────────────────
@@ -430,7 +426,7 @@ export const landings: Landing[] = [
       title: "Diseñar para marcas con carácter",
       paragraphs: [
         "Vigo es una ciudad de marcas con personalidad: hostelería que cambia de ambiente del día a la noche, moda, interiorismo, industria que exporta y comercio que se defiende de las grandes cadenas. Lo que tienen en común es que su producto se ve y se toca, y una web genérica lo aplana.",
-        "Nuestro trabajo consiste en trasladar ese carácter a la pantalla sin sacrificar lo práctico. Una carta que cambia sola entre la versión de día y la de noche, como la de Samoa Café, en Redondela. Un lookbook de pasarela a pantalla completa, como el de la diseñadora viguesa Patricia Avendaño. Proyectos de interiorismo contados como historias, como en la web del estudio mallorquín de Almudena Muhle. El diseño tiene que servir al negocio, no al porfolio del estudio.",
+        "Nuestro trabajo consiste en trasladar ese carácter a la pantalla sin sacrificar lo práctico. Una carta que cambia sola entre la versión de día y la de noche, como la de Samoa Café, en Redondela. Las colecciones de novia y de fiesta a pantalla completa, como en la web de la diseñadora viguesa Patricia Avendaño. Proyectos de interiorismo contados como historias, como en la web del estudio mallorquín de Almudena Muhle. El diseño tiene que servir al negocio, no al porfolio del estudio.",
         "Y lo hacemos con los pies en el suelo: un diseño que tarda en cargar en el móvil de alguien que está en la calle buscando dónde cenar no es un buen diseño, por bonito que sea en una pantalla grande.",
       ],
     },
@@ -465,15 +461,15 @@ export const landings: Landing[] = [
       },
       {
         slug: "almudena-muhle",
-        note: "Estudio de interiorismo. Cada proyecto se presenta como una historia inmersiva con vídeo y motion, pensada para un cliente de mayor poder adquisitivo.",
+        note: "Estudio de interiorismo de Mallorca. Cada proyecto se presenta como una historia, pensada para un cliente de mayor poder adquisitivo.",
       },
       {
         slug: "patricia-avendano",
-        note: "Diseñadora de moda nupcial con más de 100 tiendas en España. Web bilingüe con lookbook interactivo, vídeos de pasarela a pantalla completa y sección de prensa.",
+        note: "Diseñadora de novia y de fiesta nacida en Vigo. Web en español e inglés con sus colecciones a pantalla completa, su historia y la cita en el atelier.",
       },
       {
         slug: "cerveceria-equs",
-        note: "Landing de presentación para una cervecería que transmite el carácter artesanal de su producto y deja claros el contacto y la ubicación.",
+        note: "Hamburguesería y tapería de Noia. Web con la carta por secciones, el local, el horario y cómo reservar, todo a mano en el móvil.",
       },
     ],
     sections: [
@@ -599,7 +595,7 @@ export const landings: Landing[] = [
       },
       {
         title: "Pagos y checkout",
-        text: "Pasarela de pago integrada y un proceso de compra corto, pensado para el móvil. En Fang Tours cobramos con Stripe; si tu banco te ofrece su propia pasarela, valoramos cuál te conviene.",
+        text: "Pasarela de pago integrada y un proceso de compra corto, pensado para el móvil: el TPV virtual de tu banco, Bizum o Stripe, según lo que te convenga.",
       },
       {
         title: "Catálogo que vende",
@@ -887,7 +883,7 @@ export const landings: Landing[] = [
       paragraphs: [
         "La economía de la provincia de Pontevedra tiene dos ritmos. El de la costa, marcado por el turismo de las Rías Baixas, el mar y la hostelería, donde la temporada alta concentra buena parte del año en pocos meses. Y el de la capital y el interior, con industria, servicios, comercio y un peso importante de la administración: Pontevedra es capital provincial y sede de la Diputación.",
         "Cada ritmo pide apps distintas. En la costa, reservas y disponibilidad en tiempo real para quien alquila embarcaciones, organiza excursiones o gestiona alojamientos, porque en agosto nadie tiene tiempo de contestar el teléfono. En la capital y el interior, herramientas de gestión: socios de un club, alumnos de una academia, citas de una clínica, partes de trabajo de una empresa de servicios.",
-        "Tenemos casos reales en los dos lados: un club deportivo de O Porriño que gestiona inscripciones y pagos de las familias desde su plataforma, y proyectos de náutica y turismo con reservas conectadas a la disponibilidad real.",
+        "Tenemos casos reales en los dos lados: un club deportivo de O Porriño que gestiona inscripciones y pagos de las familias desde su plataforma, y una web de náutica con reservas conectadas a la disponibilidad real de la flota.",
       ],
     },
     offersTitle: "Apps para empresas de la provincia",
@@ -918,10 +914,6 @@ export const landings: Landing[] = [
       {
         slug: "nautirent",
         note: "Náutica: reservas de embarcaciones desde la web con la disponibilidad real de la flota, sin llamadas ni intermediarios.",
-      },
-      {
-        slug: "fang-tours",
-        note: "Turismo: calendario de disponibilidad, pago online y panel propio para gestionar las excursiones en tiempo real.",
       },
       {
         slug: "kairos-futures",
@@ -1005,7 +997,7 @@ export const landings: Landing[] = [
       { slug: "software-a-medida-vigo", label: "Software de gestión a medida" },
     ],
     hubSummary:
-      "Apps de reservas, socios y gestión para la capital y las Rías Baixas, con casos de náutica, turismo y el club PBB de O Porriño.",
+      "Apps de reservas, socios y gestión para la capital y las Rías Baixas, con casos de náutica, formación y el club PBB de O Porriño.",
   },
 
   // ───────────────────────────────────────────────────────────────────
@@ -1028,7 +1020,7 @@ export const landings: Landing[] = [
     h1: "Diseño y desarrollo web en Pontevedra",
     intro: [
       "Diseñamos y desarrollamos páginas web a medida para negocios de la provincia de Pontevedra. El mismo equipo hace las dos cosas, la dirección de arte y la programación, así que lo que apruebas en el diseño es exactamente lo que se publica.",
-      "Nuestra oficina está en Vigo, y buena parte de los clientes con web publicada que puedes visitar están repartidos por la provincia: una sala de eventos en Redondela, un club de baloncesto en O Porriño y una empresa de instalaciones eléctricas navales que trabaja desde Vigo y el puerto de Marín. Conocemos el tipo de negocio que hay aquí porque trabajamos para él.",
+      "Nuestra oficina está en Vigo, y buena parte de los clientes con web publicada que puedes visitar están repartidos por la provincia: una discoteca en Redondela, un club de baloncesto en O Porriño y una empresa de instalaciones eléctricas navales que trabaja desde Vigo y el puerto de Marín. Conocemos el tipo de negocio que hay aquí porque trabajamos para él.",
     ],
     localContext: {
       title: "Webs para la economía de las Rías Baixas",
@@ -1067,7 +1059,7 @@ export const landings: Landing[] = [
     cases: [
       {
         slug: "ticketera-la-fabrica",
-        note: "Recinto de ocio y eventos de Redondela. Venta de entradas online con perfil de usuario e historial, y gestión del aforo en tiempo real.",
+        note: "Discoteca de Redondela. Venta de entradas online con perfil de usuario e historial, y gestión del aforo en tiempo real.",
       },
       {
         slug: "pbb-porrino",
@@ -1174,7 +1166,7 @@ export const landings: Landing[] = [
       "Páginas web y tiendas online para negocios de Redondela, Chapela y Cesantes, a 15 minutos de nuestra oficina de Vigo. Casos: Samoa, La Fábrica y Canelita.",
     h1: "Diseño y desarrollo web en Redondela",
     intro: [
-      "Hacemos páginas web y tiendas online para negocios de Redondela. No es una página de ciudad más: Redondela es uno de los municipios donde más clientes tenemos. Samoa Café, la sala La Fábrica y la tienda Canelita tienen su web hecha por nosotros.",
+      "Hacemos páginas web y tiendas online para negocios de Redondela. No es una página de ciudad más: Redondela es uno de los municipios donde más clientes tenemos. Samoa Café, la discoteca La Fábrica y la tienda Canelita tienen su web hecha por nosotros.",
       "Estamos en Vigo, en la Rúa Colón, a unos quince minutos en coche del centro de Redondela. Lo bastante cerca para pasarnos por tu local a ver cómo trabajas, que es la mejor forma de entender qué necesita tu web.",
     ],
     localContext: {
@@ -1223,7 +1215,7 @@ export const landings: Landing[] = [
       {
         title: "Por qué una web a medida para un negocio de villa",
         paragraphs: [
-          "Es razonable pensar que un café, una tienda o una sala de conciertos de Redondela no necesita una web a medida. Pero los tres casos de esta página tenían problemas muy concretos que una plantilla no resolvía: una carta que cambia según la hora, entradas que se vendían en taquilla con colas, ventas que dependían de que el cliente cruzase la puerta.",
+          "Es razonable pensar que un café, una tienda o una discoteca de Redondela no necesita una web a medida. Pero los tres casos de esta página tenían problemas muy concretos que una plantilla no resolvía: una carta que cambia según la hora, entradas que se vendían en taquilla con colas, ventas que dependían de que el cliente cruzase la puerta.",
           "La web a medida no es un lujo cuando cada función que añade te ahorra trabajo todas las semanas. Y la dimensionamos al tamaño del negocio: una web de hostelería no necesita lo mismo que una ticketera, y no te vamos a vender lo que no vas a usar.",
         ],
       },
