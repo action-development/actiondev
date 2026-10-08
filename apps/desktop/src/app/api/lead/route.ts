@@ -1,6 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { parseLeadRequest } from "@/lib/leads/parse";
-import { isFirestoreConfigured, saveLead } from "@/lib/leads/firestore";
+import { createLeadWithId, isFirestoreConfigured, saveLead } from "@/lib/leads/firestore";
 import { dispatchLead } from "@/lib/leads/dispatch";
 import { allowRequest, clientIp } from "@/lib/leads/rate-limit";
 
@@ -11,6 +11,12 @@ import { allowRequest, clientIp } from "@/lib/leads/rate-limit";
  * Valida, guarda en Firestore por REST (sin SDK ni cuenta de servicio) y avisa
  * por email/Telegram y reenvía al ERP DESPUÉS de responder (`after`). El lead solo se da por
  * enviado si Firestore responde: si falla, 502.
+ *
+ * Idempotente con `submissionId` (el formulario repite el mismo en cada
+ * reintento): el documento se crea con ID `web_<submissionId>` y, si ya existía
+ * (409 de Firestore), se responde lo mismo que la primera vez SIN volver a
+ * avisar ni reenviar al ERP. Sin `submissionId` (p. ej. el «llámame tú»), ID
+ * automático como siempre.
  */
 
 export const runtime = "nodejs";
@@ -56,7 +62,7 @@ export async function POST(request: Request) {
 
   const parsed = parseLeadRequest(body);
   if (!parsed.ok) return json({ ok: false, error: parsed.error }, 400);
-  const { lead, honeypot, elapsedMs } = parsed.value;
+  const { lead, honeypot, elapsedMs, submissionId } = parsed.value;
 
   // Bot (honeypot relleno o demasiado rápido): éxito FALSO y sin guardar, para
   // no darle pistas de qué lo ha delatado.
@@ -80,13 +86,20 @@ export async function POST(request: Request) {
   // Mismo instante en Firestore y en el ERP.
   const createdAt = new Date().toISOString();
   let id: string;
+  let isNew = true;
   try {
-    id = await saveLead(lead, createdAt);
+    if (submissionId) {
+      id = `web_${submissionId}`;
+      isNew = (await createLeadWithId(lead, id, createdAt)) === "created";
+    } else {
+      id = await saveLead(lead, createdAt);
+    }
   } catch (error) {
     console.error("[lead] no se pudo guardar:", error instanceof Error ? error.message : error);
     return json({ ok: false, error: "storage_failed" }, 502);
   }
 
-  after(() => dispatchLead(lead, id, createdAt));
+  // Reintento de un envío que ya llegó: misma respuesta, sin segundo aviso ni segunda copia en el ERP.
+  if (isNew) after(() => dispatchLead(lead, id, createdAt));
   return json({ ok: true, id });
 }

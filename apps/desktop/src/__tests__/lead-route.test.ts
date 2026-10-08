@@ -2,9 +2,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * `POST /api/lead` tras extraer `dispatchLead` para compartirlo con los leads de
- * Meta: mismo contrato (guardar → 200 con id → aviso + ERP en `after()`),
- * mismas defensas (honeypot, Origin, origen desconocido).
+ * `POST /api/lead`: contrato (guardar → 200 con id → aviso + ERP en `after()`),
+ * defensas (honeypot, Origin, origen desconocido) e idempotencia por
+ * `submissionId` (reintento del formulario tras el tiempo límite).
  */
 
 const mocks = vi.hoisted(() => ({
@@ -47,8 +47,12 @@ const send = (body: unknown, headers: Record<string, string> = {}) =>
     }),
   );
 
+const SUBMISSION_ID = "3f2b8c1e-9a4d-4e7f-b6c5-2d1a0e9f8b7c";
+
 describe("POST /api/lead", () => {
   let firestoreBodies: Array<{ url: string; fields: Record<string, { stringValue?: string }> }>;
+  /** IDs deterministas ya creados (simula la precondición «no existe» de Firestore). */
+  let docs: Set<string>;
 
   beforeEach(() => {
     resetRateLimit();
@@ -56,6 +60,7 @@ describe("POST /api/lead", () => {
     mocks.notify.mockClear();
     mocks.erp.mockClear();
     firestoreBodies = [];
+    docs = new Set();
     vi.stubEnv("NEXT_PUBLIC_FIREBASE_PROJECT_ID", "demo");
     vi.stubEnv("NEXT_PUBLIC_FIREBASE_API_KEY", "web-key");
     vi.stubGlobal(
@@ -63,7 +68,13 @@ describe("POST /api/lead", () => {
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
         firestoreBodies.push({ url, fields: JSON.parse(String(init?.body)).fields });
-        return Response.json({ name: "projects/demo/databases/(default)/documents/leads/abc123" });
+        const documentId = new URL(url).searchParams.get("documentId");
+        if (!documentId) return Response.json({ name: "projects/demo/databases/(default)/documents/leads/abc123" });
+        if (docs.has(documentId)) {
+          return Response.json({ error: { code: 409, status: "ALREADY_EXISTS" } }, { status: 409 });
+        }
+        docs.add(documentId);
+        return Response.json({ name: `projects/demo/databases/(default)/documents/leads/${documentId}` });
       }),
     );
   });
@@ -73,7 +84,7 @@ describe("POST /api/lead", () => {
     vi.unstubAllGlobals();
   });
 
-  it("guarda con ID automático, responde el id y avisa + reenvía en after()", async () => {
+  it("sin submissionId: ID automático, responde el id y avisa + reenvía en after()", async () => {
     const res = await send(valid);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, id: "abc123" });
@@ -87,6 +98,47 @@ describe("POST /api/lead", () => {
     expect(mocks.notify).toHaveBeenCalledWith(expect.objectContaining({ source: "ads_landing" }), "abc123");
     const createdAt = firestoreBodies[0].fields.createdAt.stringValue;
     expect(mocks.erp).toHaveBeenCalledWith(expect.objectContaining({ source: "ads_landing" }), "abc123", createdAt);
+  });
+
+  it("con submissionId: ID determinista web_<submissionId>, aviso y ERP una vez", async () => {
+    const res = await send({ ...valid, submissionId: SUBMISSION_ID });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, id: `web_${SUBMISSION_ID}` });
+    expect(firestoreBodies[0].url).toContain(`documentId=web_${SUBMISSION_ID}`);
+    expect(mocks.after).toHaveLength(1);
+    await mocks.after[0]();
+    expect(mocks.notify).toHaveBeenCalledWith(expect.anything(), `web_${SUBMISSION_ID}`);
+    expect(mocks.erp).toHaveBeenCalledWith(expect.anything(), `web_${SUBMISSION_ID}`, expect.any(String));
+  });
+
+  it("reintento con el mismo submissionId (409): misma respuesta, sin segundo aviso ni ERP", async () => {
+    const first = await send({ ...valid, submissionId: SUBMISSION_ID });
+    for (const fn of mocks.after.splice(0)) await fn();
+    const retry = await send({ ...valid, submissionId: SUBMISSION_ID, elapsedMs: 31000 });
+    expect(retry.status).toBe(200);
+    expect(await retry.json()).toEqual(await first.json());
+    expect(mocks.after).toHaveLength(0);
+    expect(mocks.notify).toHaveBeenCalledTimes(1);
+    expect(mocks.erp).toHaveBeenCalledTimes(1);
+    expect(docs.size).toBe(1);
+
+    // Otro envío (otro submissionId) sí es un lead nuevo.
+    await send({ ...valid, submissionId: "a".repeat(32) });
+    expect(mocks.after).toHaveLength(1);
+  });
+
+  it("un submissionId mal formado se ignora: ID automático, el lead no se pierde", async () => {
+    for (const submissionId of ["../leads/x", "corto", "a".repeat(65), 123]) {
+      const res = await send({ ...valid, submissionId });
+      expect(await res.json()).toEqual({ ok: true, id: "abc123" });
+    }
+    expect(firestoreBodies.every((b) => !b.url.includes("documentId="))).toBe(true);
+  });
+
+  it("502 si Firestore falla con submissionId (no es un 409), sin avisar", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("no", { status: 403 })));
+    expect((await send({ ...valid, submissionId: SUBMISSION_ID })).status).toBe(502);
+    expect(mocks.after).toHaveLength(0);
   });
 
   it("bot (honeypot o demasiado rápido): ok falso sin guardar", async () => {

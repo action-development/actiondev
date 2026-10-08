@@ -45,6 +45,12 @@ export interface ParsedRequest {
   honeypot: string;
   /** `null` si no vino o no es un número finito. */
   elapsedMs: number | null;
+  /**
+   * Clave de idempotencia del formulario (la misma en cada reintento, ver
+   * `useLeadForm`). Solo si tiene forma de ID aleatorio seguro; si no, se
+   * ignora (el lead se guarda igual, con ID automático).
+   */
+  submissionId?: string;
 }
 
 export type ParseResult = { ok: true; value: ParsedRequest } | { ok: false; error: string };
@@ -61,6 +67,9 @@ const ATTRIBUTION_KEYS = [
   "fbclid",
   "landingPath",
 ] as const satisfies readonly (keyof LeadAttribution)[];
+
+/** `crypto.randomUUID()` (36) o 32 hex del respaldo: letras, dígitos y guiones. Nada de `/` ni `.`. */
+const SUBMISSION_ID_RE = /^[A-Za-z0-9-]{32,64}$/;
 
 /** Caracteres de control (salvo salto de línea y tabulador) fuera: cabeceras y logs limpios. */
 const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
@@ -90,6 +99,8 @@ export function parseLeadRequest(body: unknown): ParseResult {
 
   const honeypot = typeof raw.website === "string" ? raw.website : "";
   const elapsedMs = typeof raw.elapsedMs === "number" && Number.isFinite(raw.elapsedMs) ? raw.elapsedMs : null;
+  const submissionId =
+    typeof raw.submissionId === "string" && SUBMISSION_ID_RE.test(raw.submissionId) ? raw.submissionId : undefined;
 
   const str = (key: string, max: number, multiline = false): string | undefined | null => {
     const v = raw[key];
@@ -154,5 +165,5 @@ export function parseLeadRequest(body: unknown): ParseResult {
     }
   }
 
-  return { ok: true, value: { lead, honeypot, elapsedMs } };
+  return { ok: true, value: { lead, honeypot, elapsedMs, ...(submissionId && { submissionId }) } };
 }
