@@ -41,6 +41,20 @@ const nextConfig: NextConfig = {
       { source: "/reviews", destination: "/resenas", permanent: true },
       // `/legal` no tiene página propia (daba 404): el índice de los documentos es el aviso legal.
       { source: "/legal", destination: "/legal/aviso-legal", permanent: true },
+      // Posts cortos fusionados en su gemelo largo (plan de contenidos
+      // 2026-10-08, §3.1): su contenido útil vive ya en el destino. 301
+      // explícito (no el 308 de `permanent`), el código que entiende todo bot.
+      // El documento de Firestore se despublica DESPUÉS de desplegar esto.
+      {
+        source: "/blog/que-mirar-antes-de-contratar-agencia-vigo",
+        destination: "/blog/como-elegir-agencia-desarrollo-web-galicia",
+        statusCode: 301,
+      },
+      {
+        source: "/blog/como-hacer-que-tu-web-tenga-visitas-y-convierta",
+        destination: "/blog/senales-web-pierde-clientes",
+        statusCode: 301,
+      },
     ];
   },
   // /admin es la app `@actiondev/admin` (basePath "/admin"), proxeada para

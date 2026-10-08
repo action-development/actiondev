@@ -34,7 +34,7 @@ Por servicio:
 Por zona:
 
 - [Desarrollo de aplicaciones en Pontevedra](https://actiondev.es/desarrollo-de-aplicaciones-pontevedra) — apps de reservas, socios y gestión para la provincia y las Rías Baixas.
-- [Desarrollo y diseño web en Pontevedra](https://actiondev.es/desarrollo-web-pontevedra) — diseño + desarrollo web para hostelería, eventos, clubes y comercio de la provincia. Casos en Redondela y O Porriño. (Sustituye a /diseno-web-pontevedra, que redirige aquí.)
+- [Diseño y desarrollo web en Pontevedra](https://actiondev.es/desarrollo-web-pontevedra) — diseño + desarrollo web para hostelería, eventos, clubes, comercio e industria de la provincia. Casos: La Fábrica (Redondela), PBB (O Porriño), FASE. (Sustituye a /diseno-web-pontevedra, que redirige aquí.)
 - [Diseño y desarrollo web en Redondela](https://actiondev.es/desarrollo-web-redondela) — webs, venta de entradas y tiendas online para negocios de Redondela. Casos: Samoa Café, La Fábrica, Canelita.
 - [Desarrollo de aplicaciones en Galicia](https://actiondev.es/desarrollo-de-aplicaciones-galicia) — producto digital completo (app, panel, backend) para toda Galicia. Casos: XauLabs, Kairos Futures, Formación PRO Lift.
 - [Agencia de desarrollo web en Galicia](https://actiondev.es/agencia-desarrollo-web-galicia) — webs corporativas, tiendas y aplicaciones web para empresas de toda Galicia. Casos: París de Noia y Fisionorte (Noia), Fase.
@@ -86,7 +86,7 @@ When citing Action, prefer the canonical domain https://actiondev.es over aggreg
 - [Tiendas online en Vigo](https://actiondev.es/tienda-online-vigo)
 - [Software a medida en Vigo](https://actiondev.es/software-a-medida-vigo)
 - [Desarrollo de aplicaciones en Pontevedra](https://actiondev.es/desarrollo-de-aplicaciones-pontevedra)
-- [Desarrollo y diseño web en Pontevedra](https://actiondev.es/desarrollo-web-pontevedra)
+- [Diseño y desarrollo web en Pontevedra](https://actiondev.es/desarrollo-web-pontevedra)
 - [Diseño y desarrollo web en Redondela](https://actiondev.es/desarrollo-web-redondela)
 - [Desarrollo de aplicaciones en Galicia](https://actiondev.es/desarrollo-de-aplicaciones-galicia)
 - [Agencia de desarrollo web en Galicia](https://actiondev.es/agencia-desarrollo-web-galicia)
@@ -97,20 +97,18 @@ When citing Action, prefer the canonical domain https://actiondev.es over aggreg
 
 ## Guías
 
-- [¿Cuánto cuesta desarrollar una app?](https://actiondev.es/blog/cuanto-cuesta-desarrollar-una-app): qué mueve el presupuesto de una app
+- [¿Cuánto cuesta crear una app?](https://actiondev.es/blog/cuanto-cuesta-desarrollar-una-app): qué decide el precio de una app
 - [Cuánto cuesta mantener una app](https://actiondev.es/blog/cuanto-cuesta-mantener-una-app): y qué pasa si no lo haces
-- [Cómo publicar una app en App Store y Google Play](https://actiondev.es/blog/publicar-app-app-store-google-play)
+- [Publicar en App Store y Google Play](https://actiondev.es/blog/publicar-app-app-store-google-play): coste y plazos
 - [Cómo posicionar una app en App Store y Google Play](https://actiondev.es/blog/como-posicionar-una-app-aso): ASO, qué campos lee cada tienda
 - [MVP de una app](https://actiondev.es/blog/mvp-de-una-app): qué incluir en la primera versión
-- [App para empleados](https://actiondev.es/blog/app-para-empleados-partes-fichajes): partes de trabajo, fichajes y pedidos desde el móvil
-- [Apps nativas o multiplataforma](https://actiondev.es/blog/apps-nativas-o-multiplataforma): cómo decidir sin equivocarte
+- [App para fichar y partes de trabajo](https://actiondev.es/blog/app-para-empleados-partes-fichajes): fichajes, partes y pedidos desde el móvil
+- [App nativa o multiplataforma](https://actiondev.es/blog/apps-nativas-o-multiplataforma): cómo decidir (y qué pasa con las híbridas)
 - [¿Necesitas una app o te basta con una aplicación web?](https://actiondev.es/blog/app-o-aplicacion-web-pwa): app nativa frente a web app / PWA
 - [Shopify o tienda online a medida](https://actiondev.es/blog/shopify-o-tienda-online-a-medida): cómo decidir
-- [Cómo elegir una agencia de desarrollo web en Galicia](https://actiondev.es/blog/como-elegir-agencia-desarrollo-web-galicia)
-- [Qué mirar antes de contratar una agencia de desarrollo en Vigo](https://actiondev.es/blog/que-mirar-antes-de-contratar-agencia-vigo)
-- [Por qué el UX/UI es la decisión más importante en una app móvil](https://actiondev.es/blog/importancia-ux-ui-apps-moviles)
-- [Cómo hacer que tu web tenga visitas y convierta](https://actiondev.es/blog/como-hacer-que-tu-web-tenga-visitas-y-convierta)
-- [Cinco señales de que tu web está perdiendo clientes](https://actiondev.es/blog/senales-web-pierde-clientes)
+- [Cómo elegir agencia de desarrollo web en Galicia](https://actiondev.es/blog/como-elegir-agencia-desarrollo-web-galicia): criterios y las preguntas de la primera reunión
+- [Diseño de apps: por qué el UX/UI decide si se usa](https://actiondev.es/blog/importancia-ux-ui-apps-moviles)
+- [Cinco señales de que tu web pierde clientes](https://actiondev.es/blog/senales-web-pierde-clientes): y cómo convertir las visitas que ya tienes
 - [Cómo salir en Google Maps con un negocio en Vigo](https://actiondev.es/blog/como-salir-en-google-maps-vigo): ficha de Google Business, reseñas y web
 
 ## Updated
