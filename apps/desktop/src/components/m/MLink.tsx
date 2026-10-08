@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { isPhase1Route } from "@/lib/mobile-v2";
+import { hasMobileTree } from "@/lib/mobile-v2";
 
 export type MLinkProps = {
   href: string;
@@ -23,7 +23,7 @@ export function isExternalHref(href: string): boolean {
  * - Externo (`wa.me`, `mailto:`, Google…): `<a>`; los `https://` en pestaña
  *   nueva. Los `wa.me` son SIEMPRE `<a href>` reales: `listenContactClicks`
  *   mide `click_whatsapp` por el `href`, no por un `onClick`.
- * - Ruta con versión móvil (`lib/mobile-v2.ts` → `PHASE1_ROUTES`):
+ * - Ruta con versión móvil (`lib/mobile-v2.ts` → `MOBILE_TREE_ROUTES`):
  *   `next/link`, navegación suave dentro del mismo layout raíz.
  * - Resto (`/legal/*`, landings, blog, anclas `#…`): `<a>` normal. Son del
  *   layout raíz de escritorio: con `<Link>` Next prefetchea su árbol para
@@ -39,7 +39,7 @@ export function MLink({ href, children, ...rest }: MLinkProps) {
     );
   }
   const path = href.split(/[?#]/)[0];
-  if (path && isPhase1Route(path)) {
+  if (path && hasMobileTree(path)) {
     return (
       <Link href={href} {...rest}>
         {children}

@@ -66,13 +66,13 @@ const nextConfig: NextConfig = {
         ],
       },
       // `/` sirve HTML distinto a móvil (zona mobile vía middleware) y a
-      // desktop: dynamic serving. El middleware solo consigue fijar `Vary`
-      // en la rama móvil (en la desktop lo pisa Next), así que va aquí.
+      // desktop: dynamic serving. OJO: en Vercel la `vary` del origen (Next)
+      // gana a esta y a la del middleware; ver `[DEPLOY]` de CLAUDE.md.
       {
         source: "/",
         headers: [{ key: "Vary", value: "User-Agent" }],
       },
-      // Lo mismo en las rutas de fase 1 de la web móvil v2 (`lib/mobile-v2.ts`):
+      // Lo mismo en las rutas con árbol de la web móvil v2 (`lib/mobile-v2.ts`):
       // con UA móvil + flag el middleware las sirve desde `app/(m)/m`. Las
       // fichas, solo slugs sin punto: las imágenes de `public/projects/` no
       // varían por dispositivo.

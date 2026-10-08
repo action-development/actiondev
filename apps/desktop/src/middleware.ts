@@ -4,16 +4,16 @@ import {
   MV2_COOKIE,
   MV2_PARAM,
   enabledRoutes,
-  matchesRoute,
   mobileV2Mode,
+  servesMobileTree,
 } from "@/lib/mobile-v2";
 
 const MOBILE_ZONE_URL = process.env.MOBILE_ZONE_URL;
 
-// Web móvil v2 (árbol `app/(m)/m`): flag + rutas abiertas. Ver `lib/mobile-v2.ts`.
+// Web móvil v2 (árbol `app/(m)/m`): flag + rutas públicas. Ver `lib/mobile-v2.ts`.
 const MOBILE_V2 = mobileV2Mode(process.env.MOBILE_V2);
-const MOBILE_V2_ROUTES = enabledRoutes(process.env.MOBILE_V2_ROUTES, MOBILE_V2);
-/** La cookie de QA dura 30 días: se quita con `?mv2=0`. */
+const MOBILE_V2_ROUTES = enabledRoutes(process.env.MOBILE_V2_ROUTES);
+/** La cookie de vista previa dura 30 días: se quita con `?mv2=0`. */
 const MV2_COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
 // Assets estáticos que SOLO existen en `apps/mobile/public` y que pide la
@@ -36,15 +36,15 @@ function isFile(pathname: string) {
 }
 
 /**
- * ¿Esta petición se sirve con el árbol móvil v2? Las TRES condiciones: UA
- * `mobile` (las tablets son `tablet` y siguen en escritorio), flag activo (`on`,
- * o `qa` + cookie `mv2=1`) y ruta abierta en `MOBILE_V2_ROUTES`. `/projects` es
- * a la vez página y carpeta de `public/`: sus imágenes no se reescriben.
+ * ¿Esta petición se sirve con el árbol móvil v2? UA `mobile` (las tablets son
+ * `tablet` y siguen en escritorio) + decisión de `servesMobileTree` (flag,
+ * cookie de vista previa `mv2=1` y rutas públicas). `/projects` es a la vez
+ * página y carpeta de `public/`: sus imágenes no se reescriben.
  */
 function servesMobileV2(request: NextRequest, pathname: string) {
-  if (MOBILE_V2 === "off" || isFile(pathname)) return false;
-  if (!MOBILE_V2_ROUTES.some((prefix) => matchesRoute(pathname, prefix))) return false;
-  if (MOBILE_V2 === "qa" && request.cookies.get(MV2_COOKIE)?.value !== "1") return false;
+  if (isFile(pathname)) return false;
+  const preview = request.cookies.get(MV2_COOKIE)?.value === "1";
+  if (!servesMobileTree(MOBILE_V2, pathname, preview, MOBILE_V2_ROUTES)) return false;
   return userAgent(request).device.type === "mobile";
 }
 
@@ -60,9 +60,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
-  // QA en producción: `?mv2=1` pone la cookie, `?mv2=0` la quita, y se
-  // redirige a la misma URL sin el parámetro (307: no se cachea).
-  if (MOBILE_V2 === "qa") {
+  // Vista previa (`qa` y `on`): `?mv2=1` pone la cookie, `?mv2=0` la quita, y
+  // se redirige a la misma URL sin el parámetro (307: no se cachea).
+  if (MOBILE_V2 !== "off") {
     const flag = request.nextUrl.searchParams.get(MV2_PARAM);
     if (flag === "1" || flag === "0") {
       const url = request.nextUrl.clone();

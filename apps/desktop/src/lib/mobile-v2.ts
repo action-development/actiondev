@@ -1,24 +1,31 @@
 /**
- * Web móvil v2: qué rutas PÚBLICAS tienen versión en el árbol `app/(m)/m` y
- * cómo se decide servirla. Lo usan el middleware (rewrite por UA + flag) y los
- * enlaces del árbol móvil (`components/m/MLink.tsx`). Sin dependencias: corre
- * en el runtime del middleware.
+ * Web móvil v2: qué rutas tienen versión en el árbol `app/(m)/m` y cuándo se
+ * sirve. Lo usan el middleware (rewrite por UA + flag + cookie) y los enlaces
+ * del árbol móvil (`components/m/MLink.tsx`). Sin dependencias: corre en el
+ * runtime del middleware.
  *
- * Flag (`[DEPLOY]` de CLAUDE.md):
- * - `MOBILE_V2` = `off` (por defecto) | `qa` | `on`.
- *   - `off`: nada cambia; `/` en móvil sigue yendo a la zona `apps/mobile`.
- *   - `qa`: solo con la cookie `mv2=1` (`?mv2=1` la pone, `?mv2=0` la quita).
- *   - `on`: para todo dispositivo `mobile` (las tablets siguen en escritorio).
- * - `MOBILE_V2_ROUTES` = prefijos separados por comas (`/hablemos,/contact`)
- *   para abrir ruta a ruta. Sin definir: TODAS las de fase 1 en `qa` y
- *   NINGUNA en `on` (en público solo se abre lo que se nombra: así encender
- *   `on` sin lista no publica páginas a medio hacer). `*` = todas. Solo
- *   cuentan las de `PHASE1_ROUTES`: un prefijo fuera de esa lista se ignora
- *   (no hay página móvil detrás y daría 404).
+ * Dos conceptos distintos (`[DEPLOY]` de CLAUDE.md):
+ * - RUTAS CON ÁRBOL MÓVIL (`MOBILE_TREE_ROUTES`): las que tienen página en
+ *   `app/(m)/m`. Hoy, las de fase 1; las de fase 2 (landings SEO, `/blog`,
+ *   `/legal/*`) se añaden aquí cuando existan.
+ * - RUTAS PÚBLICAS (`MOBILE_V2_ROUTES`): las que ve cualquier visitante móvil.
+ *
+ * Flag `MOBILE_V2` = `off` (por defecto) | `qa` | `on`:
+ * - `off`: nada cambia; `/` en móvil sigue yendo a la zona `apps/mobile`.
+ * - `qa`: nadie ve nada sin la cookie `mv2=1`.
+ * - `on`: las rutas de `MOBILE_V2_ROUTES` son públicas para todo dispositivo
+ *   `mobile` (las tablets siguen en escritorio).
+ * - `MOBILE_V2_ROUTES` (solo cuenta en `on`) = prefijos separados por comas
+ *   (`/hablemos,/contact`), o `*` = todas las rutas con árbol. Sin definir o
+ *   vacía: NINGUNA (encender `on` sin lista no publica nada). Un prefijo fuera
+ *   de `MOBILE_TREE_ROUTES` se ignora (no hay página móvil detrás y daría 404).
+ * - Vista previa: con la cookie `mv2=1`, en `qa` y en `on`, se sirven TODAS las
+ *   rutas con árbol, estén o no publicadas. `?mv2=1` pone la cookie y `?mv2=0`
+ *   la quita (en `qa` y en `on`).
  */
 
-/** Rutas de fase 1 con árbol móvil. `/` casa solo consigo misma; el resto, también sus hijas. */
-export const PHASE1_ROUTES = ["/", "/servicios", "/projects", "/resenas", "/contact", "/hablemos"] as const;
+/** Rutas con árbol móvil. `/` casa solo consigo misma; el resto, también sus hijas. */
+export const MOBILE_TREE_ROUTES = ["/", "/servicios", "/projects", "/resenas", "/contact", "/hablemos"] as const;
 
 export type MobileV2Mode = "off" | "qa" | "on";
 
@@ -36,22 +43,38 @@ export function matchesRoute(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
-/** ¿La ruta pública tiene página en el árbol móvil (fase 1)? */
-export function isPhase1Route(pathname: string): boolean {
-  return PHASE1_ROUTES.some((prefix) => matchesRoute(pathname, prefix));
+/** ¿La ruta pública tiene página en el árbol móvil (publicada o no)? */
+export function hasMobileTree(pathname: string): boolean {
+  return MOBILE_TREE_ROUTES.some((prefix) => matchesRoute(pathname, prefix));
 }
 
-/** Prefijos habilitados por `MOBILE_V2_ROUTES` (ver arriba qué pasa sin definir). */
-export function enabledRoutes(raw: string | undefined, mode: MobileV2Mode): string[] {
+/** Prefijos PÚBLICOS según `MOBILE_V2_ROUTES` (ver arriba). */
+export function enabledRoutes(raw: string | undefined): string[] {
   const value = raw?.trim();
-  if (!value) return mode === "qa" ? [...PHASE1_ROUTES] : [];
-  if (value === "*") return [...PHASE1_ROUTES];
+  if (!value) return [];
+  if (value === "*") return [...MOBILE_TREE_ROUTES];
   return value
     .split(",")
     .map((p) => p.trim())
     .filter(Boolean)
     .map((p) => (p.length > 1 ? p.replace(/\/+$/, "") : p))
-    .filter((p) => PHASE1_ROUTES.some((phase) => matchesRoute(p, phase)));
+    .filter(hasMobileTree);
+}
+
+/**
+ * ¿Esta ruta se sirve con el árbol móvil? (El UA `mobile` se comprueba aparte.)
+ * Con la cookie de vista previa, en `qa` y `on`: toda ruta con árbol. Sin
+ * cookie: solo en `on` y si la ruta está en `publicRoutes`.
+ */
+export function servesMobileTree(
+  mode: MobileV2Mode,
+  pathname: string,
+  hasPreviewCookie: boolean,
+  publicRoutes: readonly string[],
+): boolean {
+  if (mode === "off" || !hasMobileTree(pathname)) return false;
+  if (hasPreviewCookie) return true;
+  return mode === "on" && publicRoutes.some((prefix) => matchesRoute(pathname, prefix));
 }
 
 /** Prefijo interno del árbol móvil. Público nunca: `/m/*` directo responde 308. */
