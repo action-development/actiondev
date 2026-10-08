@@ -49,6 +49,18 @@ describe("parseLeadRequest", () => {
   it("el «llámame tú» solo exige teléfono", () => {
     expect(parseLeadRequest({ source: "callback_form", phone: "600123456" }).ok).toBe(true);
   });
+  it("contact_page (formulario de /contact en móvil) es el cualificador completo", () => {
+    const r = parseLeadRequest({ ...full, source: "contact_page", offer: "contact" });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.value.lead).toMatchObject({ source: "contact_page", need: "app", stage: "idea", name: "Ana", offer: "contact" });
+    // Sin los campos del cualificador no vale como «llámame tú».
+    expect(parseLeadRequest({ source: "contact_page", phone: "600123456" }).ok).toBe(false);
+    expect(parseLeadRequest({ ...full, source: "contact_page", stage: undefined }).ok).toBe(false);
+  });
+  it("rechaza un origen desconocido", () => {
+    expect(parseLeadRequest({ ...full, source: "contact" }).ok).toBe(false);
+  });
 });
 
 describe("buildLeadFields", () => {
@@ -76,6 +88,12 @@ describe("aviso", () => {
     expect(text).toContain("https://wa.me/34600123456");
     expect(text).toContain("mailto:ana@empresa.es");
     expect(text).toContain("https://actiondev.es/admin/leads");
+  });
+  it("nombra el formulario de contacto como origen", () => {
+    const r = parseLeadRequest({ ...full, source: "contact_page" });
+    if (!r.ok) throw new Error("parse");
+    expect(leadEmailText(r.value.lead, "abc")).toContain("Nuevo lead (Formulario de contacto)");
+    expect(buildLeadFields(r.value.lead, "2026-10-08T00:00:00.000Z").source).toEqual({ stringValue: "contact_page" });
   });
 });
 

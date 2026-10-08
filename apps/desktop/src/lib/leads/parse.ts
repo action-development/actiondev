@@ -113,7 +113,8 @@ export function parseLeadRequest(body: unknown): ParseResult {
     consent: oneOf(["granted", "denied", "unknown"] as const, raw.consent) ?? "unknown",
   };
 
-  // El «llámame tú» solo trae teléfono y notas; el cualificador, todo lo demás.
+  // El «llámame tú» solo trae teléfono y notas; el cualificador de dos pasos
+  // (`ads_landing`, `seo_landing` y `contact_page`), todo lo demás.
   if (source !== "callback_form") {
     const name = str("name", LEAD_LIMITS.name);
     if (!name) return { ok: false, error: "invalid_name" };

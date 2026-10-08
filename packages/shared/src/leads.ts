@@ -1,9 +1,10 @@
 /**
  * Lead = documento de la colección `leads` de Firestore (el `id` es el ID del
- * documento, no un campo). Dos orígenes escriben aquí:
- * - `callback_form`: el «llámame tú» de /contact — solo `phone` + `notes`.
- * - `ads_landing` / `seo_landing`: el formulario cualificador de dos pasos
- *   (landings de campaña `/hablemos/*` y landings SEO) — rellena el resto.
+ * documento, no un campo). Dos tipos de formulario escriben aquí:
+ * - `callback_form`: el «llámame tú» de /contact (escritorio) — solo `phone` + `notes`.
+ * - `ads_landing` / `seo_landing` / `contact_page`: el formulario cualificador
+ *   de dos pasos (landings de campaña `/hablemos/*`, landings SEO y el
+ *   `/contact` de la web móvil) — rellena el resto.
  * Todo lo que no sea del «llámame tú» es opcional para que los documentos
  * antiguos sigan cumpliendo el tipo. `firestore.rules` valida las mismas
  * claves: si se añade un campo aquí, añadirlo también allí.
@@ -13,7 +14,7 @@
 export const LEAD_STATUSES = ["new", "contacted", "qualified", "meeting", "proposal", "won", "lost"] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
-export const LEAD_SOURCES = ["callback_form", "ads_landing", "seo_landing"] as const;
+export const LEAD_SOURCES = ["callback_form", "ads_landing", "seo_landing", "contact_page"] as const;
 export type LeadSource = (typeof LEAD_SOURCES)[number];
 
 /**
@@ -52,6 +53,7 @@ export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
   callback_form: "Llámame tú (/contact)",
   ads_landing: "Landing de campaña",
   seo_landing: "Landing SEO",
+  contact_page: "Formulario de contacto",
 };
 
 export const LEAD_NEED_LABELS: Record<LeadNeed, string> = {
