@@ -6,6 +6,8 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  // Next 16.3 autogenera AGENTS.md/CLAUDE.md en `next dev` si detecta un agente de IA; el CLAUDE.md del monorepo manda.
+  agentRules: false,
   distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
   compress: true,

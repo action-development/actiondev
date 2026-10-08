@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Next 16.3 autogenera AGENTS.md/CLAUDE.md en `next dev` si detecta un agente de IA; el CLAUDE.md del monorepo manda.
+  agentRules: false,
   // Se sirve en actiondev.es/admin: desktop proxea /admin/* hacia esta app.
   basePath: "/admin",
   poweredByHeader: false,
