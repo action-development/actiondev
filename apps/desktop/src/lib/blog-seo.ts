@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
-import { ORGANIZATION_ID, getAuthor, type Author, type BlogContentBlock, type BlogPost } from "@actiondev/shared";
+import {
+  ORGANIZATION_ID,
+  WEBSITE_ID,
+  getAuthor,
+  type Author,
+  type BlogContentBlock,
+  type BlogPost,
+} from "@actiondev/shared";
 import type { Landing } from "@/data/landings";
-import { OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
+import { OG_IMAGE, SITE_URL, absoluteUrl, metaDescription, ogImage } from "@/lib/seo";
 
 /**
  * Blog (`/blog` y `/blog/[slug]`): metadatos, JSON-LD y utilidades del cuerpo
@@ -29,30 +36,61 @@ export const BLOG_METADATA: Metadata = {
     title: "Blog — Action",
     description:
       "Guías y artículos sobre desarrollo de aplicaciones, desarrollo web y diseño digital.",
-    images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+    images: [ogImage("Blog — Action")],
   },
 };
 
-export const BLOG_JSON_LD = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "CollectionPage",
-      "@id": absoluteUrl("/blog"),
-      url: absoluteUrl("/blog"),
-      name: "Blog de Action",
-      inLanguage: "es",
-      isPartOf: { "@id": absoluteUrl("#website") },
-    },
-    {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Inicio", item: absoluteUrl("/") },
-        { "@type": "ListItem", position: 2, name: "Blog", item: absoluteUrl("/blog") },
-      ],
-    },
-  ],
-};
+/**
+ * JSON-LD del índice: `CollectionPage` cuyo `mainEntity` es la lista de
+ * artículos (`ItemList` de `BlogPosting` con URL, titular y fechas, en el
+ * mismo orden que el tablero y la lista móvil) + `BreadcrumbList`. Recibe los
+ * posts ya ordenados (`sortPostsByDate`).
+ */
+export function buildBlogJsonLd(posts: BlogPost[]) {
+  const url = absoluteUrl("/blog");
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": url,
+        url,
+        name: "Blog de Action",
+        description: BLOG_DESCRIPTION,
+        inLanguage: "es",
+        isPartOf: { "@id": WEBSITE_ID },
+        publisher: { "@id": ORGANIZATION_ID },
+        breadcrumb: { "@id": `${url}#breadcrumb` },
+        mainEntity: { "@id": `${url}#posts` },
+      },
+      {
+        "@type": "ItemList",
+        "@id": `${url}#posts`,
+        numberOfItems: posts.length,
+        itemListElement: posts.map((post, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "BlogPosting",
+            "@id": `${postUrl(post)}#article`,
+            url: postUrl(post),
+            headline: post.h1,
+            datePublished: post.date,
+            dateModified: post.updatedAt ?? post.date,
+          },
+        })),
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${url}#breadcrumb`,
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Blog", item: url },
+        ],
+      },
+    ],
+  };
+}
 
 /**
  * Llamadas a la acción del blog, con el MISMO texto en escritorio (tarjeta del
@@ -73,7 +111,38 @@ export function sortPostsByDate(posts: BlogPost[]): BlogPost[] {
   return [...posts].sort((a, b) => b.date.localeCompare(a.date));
 }
 
+/* ── Enlazado interno ───────────────────────────────────────────────────── */
+
+/** Cuántas guías se enlazan desde una landing o desde el final de un artículo. */
+export const RELATED_POSTS_MAX = 3;
+
+/**
+ * Guías de una landing: los posts que empujan a ella (`targetLanding`), del
+ * más reciente al más antiguo. Es la vía para que las landings enlacen al
+ * blog (auditoría SEO M4): sin ella, la mayoría de los artículos solo
+ * recibían un enlace, el del índice.
+ */
+export function landingGuides(posts: BlogPost[], landingSlug: string, max = RELATED_POSTS_MAX): BlogPost[] {
+  return sortPostsByDate(posts.filter((p) => p.targetLanding === landingSlug)).slice(0, max);
+}
+
+/**
+ * «Sigue leyendo» al final de un artículo: primero los que empujan a la misma
+ * landing, después los de la misma categoría y, para completar, los más
+ * recientes. Determinista (mismo orden en escritorio y en móvil).
+ */
+export function relatedPosts(posts: BlogPost[], post: BlogPost, max = RELATED_POSTS_MAX): BlogPost[] {
+  const others = sortPostsByDate(posts.filter((p) => p.slug !== post.slug));
+  const rank = (p: BlogPost) =>
+    post.targetLanding && p.targetLanding === post.targetLanding ? 0 : p.category === post.category ? 1 : 2;
+  return [...others].sort((a, b) => rank(a) - rank(b)).slice(0, max);
+}
+
 /* ── Artículo ───────────────────────────────────────────────────────────── */
+
+function postUrl(post: BlogPost): string {
+  return absoluteUrl(`/blog/${post.slug}`);
+}
 
 /** Imagen del post: la suya si la tiene (absolutizada), si no la OG dinámica. */
 export function postImage(post: BlogPost): string {
@@ -81,13 +150,30 @@ export function postImage(post: BlogPost): string {
   return `${OG_IMAGE.url}?title=${encodeURIComponent(post.h1)}`;
 }
 
+/** Sufijo que añade el `template` del layout raíz a todo `<title>`. */
+const TITLE_SUFFIX = " — Action";
+/** A partir de aquí Google corta el título en el resultado (≈ 580 px). */
+const TITLE_MAX = 60;
+
+/**
+ * `<title>` del artículo. Los títulos del panel son largos (hasta 68
+ * caracteres sin marca): con el « — Action» del template, Google los cortaba
+ * y la marca no llegaba a verse. Si el título con sufijo pasa de 60, va sin
+ * él (`absolute`); si cabe, con él, como el resto del sitio.
+ */
+export function postTitle(post: BlogPost): Metadata["title"] {
+  return post.title.length + TITLE_SUFFIX.length > TITLE_MAX ? { absolute: post.title } : post.title;
+}
+
 export function postMetadata(post: BlogPost): Metadata {
   const ogUrl = postImage(post);
   const author = getAuthor(post.author);
+  // ≤155: el panel deja escribir más y Google cortaba a media palabra.
+  const description = metaDescription(post.metaDescription);
 
   return {
-    title: post.title,
-    description: post.metaDescription,
+    title: postTitle(post),
+    description,
     alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
       type: "article",
@@ -95,23 +181,23 @@ export function postMetadata(post: BlogPost): Metadata {
       url: absoluteUrl(`/blog/${post.slug}`),
       siteName: "Action",
       title: post.title,
-      description: post.metaDescription,
+      description,
       publishedTime: post.date,
       modifiedTime: post.updatedAt ?? post.date,
       authors: author ? [author.url] : undefined,
       section: post.category,
       images: [
         post.image
-          ? { url: ogUrl }
-          : { url: ogUrl, width: OG_IMAGE.width, height: OG_IMAGE.height },
+          ? { url: ogUrl, alt: post.h1 }
+          : { url: ogUrl, width: OG_IMAGE.width, height: OG_IMAGE.height, alt: post.h1 },
       ],
     },
     authors: author ? [{ name: author.name, url: author.url }] : undefined,
     twitter: {
       card: "summary_large_image",
       title: post.title,
-      description: post.metaDescription,
-      images: [ogUrl],
+      description,
+      images: [{ url: ogUrl, alt: post.h1 }],
     },
   };
 }
@@ -119,6 +205,15 @@ export function postMetadata(post: BlogPost): Metadata {
 /** Texto plano para el JSON-LD: quita `**` y deja solo el texto de los enlaces. */
 function stripInline(text: string): string {
   return text.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
+}
+
+/** Palabras del cuerpo (subtítulos, párrafos, listas y citas): `wordCount`. */
+function postWordCount(content: BlogContentBlock[]): number {
+  const text = content
+    .flatMap((block) => (block.type === "list" ? block.items : [block.text]))
+    .map(stripInline)
+    .join(" ");
+  return text.split(/\s+/).filter(Boolean).length;
 }
 
 function personSchema(author: Author) {
@@ -134,7 +229,7 @@ function personSchema(author: Author) {
 }
 
 export function buildPostJsonLd(post: BlogPost, author: Author | undefined, landing: Landing | undefined) {
-  const url = absoluteUrl(`/blog/${post.slug}`);
+  const url = postUrl(post);
   const service = landing
     ? {
         "@type": "Service",
@@ -153,19 +248,24 @@ export function buildPostJsonLd(post: BlogPost, author: Author | undefined, land
         url,
         mainEntityOfPage: { "@type": "WebPage", "@id": url },
         headline: post.h1,
-        description: post.metaDescription,
-        image: postImage(post),
+        description: metaDescription(post.metaDescription),
+        image: post.image
+          ? postImage(post)
+          : { "@type": "ImageObject", url: postImage(post), width: OG_IMAGE.width, height: OG_IMAGE.height },
         datePublished: post.date,
         dateModified: post.updatedAt ?? post.date,
         inLanguage: "es",
         articleSection: post.category,
+        wordCount: postWordCount(post.content),
+        ...(post.readingTime > 0 && { timeRequired: `PT${post.readingTime}M` }),
         author: author ? personSchema(author) : { "@id": ORGANIZATION_ID },
         publisher: { "@id": ORGANIZATION_ID },
-        isPartOf: { "@id": absoluteUrl("#website") },
-        ...(service ? { about: service, mentions: service } : {}),
+        isPartOf: [{ "@id": WEBSITE_ID }, { "@id": absoluteUrl("/blog") }],
+        ...(service ? { about: service } : {}),
       },
       {
         "@type": "BreadcrumbList",
+        "@id": `${url}#breadcrumb`,
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL },
           { "@type": "ListItem", position: 2, name: "Blog", item: absoluteUrl("/blog") },

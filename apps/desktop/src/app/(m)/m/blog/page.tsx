@@ -4,12 +4,12 @@ import { MobileFooter } from "@/components/m/MobileFooter";
 import { MobileHeader } from "@/components/m/MobileHeader";
 import { StickyCta } from "@/components/m/StickyCta";
 import { getPosts } from "@/lib/blog";
-import { BLOG_DESCRIPTION, BLOG_INDEX_CTA, BLOG_JSON_LD, BLOG_METADATA, sortPostsByDate } from "@/lib/blog-seo";
+import { BLOG_DESCRIPTION, BLOG_INDEX_CTA, BLOG_METADATA, buildBlogJsonLd, sortPostsByDate } from "@/lib/blog-seo";
 
 /**
  * /blog en la web móvil v2: el corcho de escritorio pasa a una lista de
  * lectura (el más reciente destacado en tinta). Title, description,
- * canonical, Open Graph y JSON-LD (CollectionPage + BreadcrumbList) salen de
+ * canonical, Open Graph y JSON-LD (CollectionPage + ItemList de artículos + BreadcrumbList) salen de
  * `lib/blog-seo.ts`, los MISMOS que escritorio; los posts, de Firestore
  * (`getPosts`), igual que allí. Todo lo indexable del corcho está aquí,
  * visible: el H1 «Nuestro Blog», cada pósit (categoría, título en `<h2>`,
@@ -31,7 +31,7 @@ export default async function MobileBlogPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(BLOG_JSON_LD) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBlogJsonLd(posts)) }} />
       <MobileHeader />
       <main id="main-content">
         <section id={HERO_ID} aria-labelledby="m-blog-h1" className="grid gap-[18px] border-b-2 border-ink px-4 pt-[26px] pb-7">

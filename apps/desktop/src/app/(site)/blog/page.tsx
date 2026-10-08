@@ -5,7 +5,7 @@ import { CorkBoard } from "@/components/blog/CorkBoard";
 import { PinBoard } from "@/components/blog/PinBoard";
 import { Pinned } from "@/components/blog/Pinned";
 import board from "@/components/blog/CorkBoard.module.css";
-import { BLOG_INDEX_CTA, BLOG_JSON_LD, BLOG_METADATA, sortPostsByDate } from "@/lib/blog-seo";
+import { BLOG_INDEX_CTA, BLOG_METADATA, buildBlogJsonLd, sortPostsByDate } from "@/lib/blog-seo";
 import { BUSINESS } from "@/lib/seo";
 import { LegalLinks } from "@/components/layout/LegalLinks";
 
@@ -32,7 +32,7 @@ export default async function BlogPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(BLOG_JSON_LD) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBlogJsonLd(sorted)) }}
       />
 
       <Header />
