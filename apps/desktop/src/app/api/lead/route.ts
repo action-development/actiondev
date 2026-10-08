@@ -2,6 +2,7 @@ import { after, NextResponse } from "next/server";
 import { parseLeadRequest } from "@/lib/leads/parse";
 import { isFirestoreConfigured, saveLead } from "@/lib/leads/firestore";
 import { notifyLead } from "@/lib/leads/notify";
+import { forwardLeadToErp } from "@/lib/leads/erp";
 import { allowRequest, clientIp } from "@/lib/leads/rate-limit";
 
 /**
@@ -9,7 +10,7 @@ import { allowRequest, clientIp } from "@/lib/leads/rate-limit";
  * `/hablemos/*`, landings SEO y «llámame tú» de `/contact`).
  *
  * Valida, guarda en Firestore por REST (sin SDK ni cuenta de servicio) y avisa
- * por email/Telegram DESPUÉS de responder (`after`). El lead solo se da por
+ * por email/Telegram y reenvía al ERP DESPUÉS de responder (`after`). El lead solo se da por
  * enviado si Firestore responde: si falla, 502.
  */
 
@@ -77,14 +78,16 @@ export async function POST(request: Request) {
     return json({ ok: true, id: `dev-${Date.now()}` });
   }
 
+  // Mismo instante en Firestore y en el ERP.
+  const createdAt = new Date().toISOString();
   let id: string;
   try {
-    id = await saveLead(lead);
+    id = await saveLead(lead, createdAt);
   } catch (error) {
     console.error("[lead] no se pudo guardar:", error instanceof Error ? error.message : error);
     return json({ ok: false, error: "storage_failed" }, 502);
   }
 
-  after(() => notifyLead(lead, id));
+  after(() => Promise.allSettled([notifyLead(lead, id), forwardLeadToErp(lead, id, createdAt)]));
   return json({ ok: true, id });
 }

@@ -56,7 +56,7 @@ export function isFirestoreConfigured(): boolean {
 }
 
 /** Crea el lead y devuelve el ID del documento (último segmento de `name`). Lanza si Firestore falla. */
-export async function saveLead(lead: ParsedLead): Promise<string> {
+export async function saveLead(lead: ParsedLead, createdAt?: string): Promise<string> {
   const project = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const key = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   if (!project || !key) throw new Error("Firebase no configurado");
@@ -70,7 +70,7 @@ export async function saveLead(lead: ParsedLead): Promise<string> {
       // identifica la web propia (la restricción es de la clave, no un secreto).
       Referer: `${SITE_URL}/`,
     },
-    body: JSON.stringify({ fields: buildLeadFields(lead) }),
+    body: JSON.stringify({ fields: buildLeadFields(lead, createdAt) }),
     cache: "no-store",
     signal: AbortSignal.timeout(8000),
   });
