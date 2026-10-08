@@ -36,7 +36,7 @@ import type { LegalSlots } from "../LegalSlots";
 export const COOKIES_METADATA: Metadata = {
   title: "Política de cookies",
   description:
-    "Política de cookies de actiondev.es. Usamos Google Tag Manager para analítica y medición de campañas (Google Analytics, Google Ads, Meta Pixel), solo tras tu consentimiento. Titular: Alcasi Systems, S.L. (CIF B72910664).",
+    "Cookies de actiondev.es: analítica y medición de campañas (Google Analytics, Google Ads y Meta Pixel, vía Google Tag Manager), solo si las aceptas.",
   alternates: { canonical: "/legal/cookies" },
   openGraph: {
     type: "website",

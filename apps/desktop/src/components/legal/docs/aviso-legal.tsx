@@ -25,7 +25,7 @@ import type { LegalSlots } from "../LegalSlots";
 export const AVISO_LEGAL_METADATA: Metadata = {
   title: "Aviso legal",
   description:
-    "Aviso legal de actiondev.es. Action Development es una marca comercial de Alcasi Systems, S.L. (CIF B72910664), inscrita en el Registro Mercantil de Pontevedra.",
+    "Aviso legal de actiondev.es: Action Development es una marca de Alcasi Systems, S.L. (CIF B72910664), inscrita en el Registro Mercantil de Pontevedra.",
   alternates: { canonical: "/legal/aviso-legal" },
   openGraph: {
     type: "website",

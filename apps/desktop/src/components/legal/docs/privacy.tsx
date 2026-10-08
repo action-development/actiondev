@@ -36,7 +36,7 @@ import type { LegalSlots } from "../LegalSlots";
 export const PRIVACY_METADATA: Metadata = {
   title: "Política de privacidad",
   description:
-    "Política de privacidad de actiondev.es. Responsable: Alcasi Systems, S.L. (CIF B72910664), titular de la marca Action Development. Tratamiento de datos conforme al RGPD.",
+    "Privacidad en actiondev.es: Alcasi Systems, S.L. (CIF B72910664), titular de la marca Action Development, trata tus datos conforme al RGPD.",
   alternates: { canonical: "/legal/privacy" },
   openGraph: {
     type: "website",
