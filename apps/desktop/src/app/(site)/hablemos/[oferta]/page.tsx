@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PLACEHOLDER_IMAGE, projects } from "@actiondev/shared";
+import { PLACEHOLDER_IMAGE } from "@actiondev/shared";
 import { adsLandings, getAdsLanding, type AdsLanding } from "@/data/ads-landings";
-import { testimonials } from "@/data/testimonials";
 import { FormJumpLink, LEAD_FORM_ID } from "@/components/leads/FormJump";
 import { LeadForm } from "@/components/leads/LeadForm";
-import { BUSINESS, OG_IMAGE, absoluteUrl } from "@/lib/seo";
+import { adsLandingMetadata, resolveAdsLandingContent, resolveHeroReview, reviewSummary } from "@/lib/ads-landing";
+import { BUSINESS } from "@/lib/seo";
 
 /**
  * Landings de campaña (`/hablemos/app`, `/hablemos/software`): destino de
@@ -32,51 +32,8 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { oferta } = await params;
   const landing = getAdsLanding(oferta);
-  if (!landing) return {};
-  const path = `/hablemos/${landing.slug}`;
-
-  return {
-    title: landing.title,
-    description: landing.metaDescription,
-    alternates: { canonical: path },
-    robots: { index: false, follow: true },
-    openGraph: {
-      type: "website",
-      locale: "es_ES",
-      url: absoluteUrl(path),
-      siteName: "Action",
-      title: `${landing.title} — Action`,
-      description: landing.metaDescription,
-      images: [
-        {
-          url: `${OG_IMAGE.url}?title=${encodeURIComponent(landing.h1)}`,
-          width: OG_IMAGE.width,
-          height: OG_IMAGE.height,
-        },
-      ],
-    },
-  };
-}
-
-/** «5,0» y nº de reseñas, calculados igual que en las landings SEO. */
-function reviewSummary() {
-  const rating = (testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length)
-    .toFixed(1)
-    .replace(".", ",");
-  return { rating, count: testimonials.length };
-}
-
-/**
- * Reseña del hero: la de `landing.heroReview.id`, sin reescribir. El recorte
- * (`excerpt`) solo se usa si es un fragmento literal de la reseña; si no, entera.
- */
-function resolveHeroReview(landing: AdsLanding) {
-  const t = testimonials.find((x) => x.id === landing.heroReview.id);
-  if (!t) return null;
-  const full = t.quoteEs ?? t.quote;
-  const { excerpt } = landing.heroReview;
-  const literal = excerpt && full.includes(excerpt.replace(/^…|…$/g, "").trim());
-  return { name: t.name, text: literal ? excerpt : full };
+  // Metadatos compartidos con la versión móvil (`lib/ads-landing.ts`).
+  return landing ? adsLandingMetadata(landing) : {};
 }
 
 function Bullets({ landing }: { landing: AdsLanding }) {
@@ -97,19 +54,8 @@ export default async function AdsLandingPage({ params }: PageProps) {
   const landing = getAdsLanding(oferta);
   if (!landing) notFound();
 
-  // Casos y reseñas se resuelven contra sus fuentes: un slug o id que ya no
-  // exista se cae en silencio en vez de pintar una tarjeta rota.
-  const cases = landing.cases.flatMap((c) => {
-    const project = projects.find((p) => p.slug === c.slug);
-    return project ? [{ ...c, project }] : [];
-  });
-  // La reseña del hero no se repite en la sección de reseñas.
-  const quotes = landing.testimonials
-    .filter((id) => id !== landing.heroReview.id)
-    .flatMap((id) => {
-      const t = testimonials.find((x) => x.id === id);
-      return t ? [t] : [];
-    });
+  // Casos y reseñas resueltos contra sus fuentes (`lib/ads-landing.ts`, compartido con móvil).
+  const { cases, quotes } = resolveAdsLandingContent(landing);
   const heroReview = resolveHeroReview(landing);
   const { rating, count } = reviewSummary();
 

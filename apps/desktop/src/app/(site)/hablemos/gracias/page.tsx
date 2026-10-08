@@ -1,36 +1,23 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { LEAD_NEEDS, PLACEHOLDER_IMAGE, projects, type LeadNeed } from "@actiondev/shared";
+import { PLACEHOLDER_IMAGE } from "@actiondev/shared";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { WhatsappIcon } from "@/components/icons/channel-icons";
 import { BUSINESS } from "@/lib/seo";
-import { NEED_PHRASE, whatsappHref } from "@/lib/leads/whatsapp";
+import { whatsappHref } from "@/lib/leads/whatsapp";
+import { THANKS_METADATA, thanksCases, thanksNeed, thanksWhatsappText } from "@/lib/leads/thanks";
 
 /**
  * Confirmación de un lead (`/hablemos/gracias?tipo=app`). Server component,
  * `noindex`. NO mide nada al cargar: la conversión (`generate_lead`) se envía
  * desde el formulario, con el lead ya guardado — medirla aquí contaría cada
  * recarga o enlace compartido como un lead más.
+ *
+ * Metadatos, `?tipo=`, mensaje y casos: `lib/leads/thanks.ts` (compartido con móvil).
  */
 
-export const metadata: Metadata = {
-  title: "Proyecto recibido",
-  alternates: { canonical: "/hablemos/gracias" },
-  robots: { index: false, follow: true },
-};
-
-const CASES_BY_NEED: Record<LeadNeed, string[]> = {
-  app: ["autoescuela-gti", "true-trading-app"],
-  software: ["autoescuela-gti", "timetracker"],
-  integration: ["nautirent", "autoescuela-gti"],
-  web: ["musa", "nautirent"],
-  unsure: ["autoescuela-gti", "true-trading-app"],
-};
-
-function isLeadNeed(value: string | undefined): value is LeadNeed {
-  return !!value && (LEAD_NEEDS as readonly string[]).includes(value);
-}
+export const metadata: Metadata = THANKS_METADATA;
 
 export default async function GraciasPage({
   searchParams,
@@ -38,18 +25,11 @@ export default async function GraciasPage({
   searchParams: Promise<{ tipo?: string | string[] }>;
 }) {
   const { tipo } = await searchParams;
-  const raw = Array.isArray(tipo) ? tipo[0] : tipo;
   // El parámetro se valida contra la unión: cualquier otra cosa se ignora.
-  const need = isLeadNeed(raw) ? raw : undefined;
-  const phrase = need ? NEED_PHRASE[need] : null;
-
+  const need = thanksNeed(tipo);
   // Sin datos personales en la URL: solo el tipo de proyecto.
-  const message = `Hola, acabo de enviar mi proyecto${phrase ? ` de ${phrase}` : ""} desde la web`;
-
-  const cases = (CASES_BY_NEED[need ?? "unsure"] ?? []).flatMap((slug) => {
-    const project = projects.find((p) => p.slug === slug);
-    return project ? [project] : [];
-  });
+  const message = thanksWhatsappText(need);
+  const cases = thanksCases(need);
 
   return (
     <main id="main-content">

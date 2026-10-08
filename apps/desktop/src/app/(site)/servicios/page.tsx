@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { getLandingsByGroup, type Landing } from "@/data/landings";
+import { getLandingsByGroup } from "@/data/landings";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { HoloBar } from "@/components/layout/HoloBar";
-import { BUSINESS, OG_IMAGE, absoluteUrl } from "@/lib/seo";
+import { BUSINESS } from "@/lib/seo";
+import { SERVICIOS_GROUPS, SERVICIOS_JSON_LD, SERVICIOS_METADATA } from "@/lib/servicios-seo";
 import { LegalLinks } from "@/components/layout/LegalLinks";
 
 /**
@@ -13,61 +13,9 @@ import { LegalLinks } from "@/components/layout/LegalLinks";
  * (`Landing.group`); cada tarjeta usa `hubSummary`, NO la meta description.
  */
 
-const GROUPS: { id: Landing["group"]; title: string; text: string }[] = [
-  {
-    id: "servicio",
-    title: "Por servicio",
-    text: "Lo que hacemos, explicado con casos reales. Todas estas páginas parten de nuestra oficina de Vigo, que es donde más clientes tenemos.",
-  },
-  {
-    id: "zona",
-    title: "Por zona",
-    text: "Cómo trabajamos fuera de Vigo: la provincia de Pontevedra, Redondela y el resto de Galicia, con los clientes que tenemos en cada sitio.",
-  },
-];
-
-export const metadata: Metadata = {
-  title: "Servicios: Apps, Software a Medida y Webs",
-  description:
-    "Apps, software a medida, webs y tiendas online desde Vigo para empresas de Pontevedra, Redondela y toda Galicia. Casos reales enlazados en cada servicio.",
-  alternates: { canonical: "/servicios" },
-  openGraph: {
-    type: "website",
-    locale: "es_ES",
-    url: absoluteUrl("/servicios"),
-    siteName: "Action",
-    title: "Servicios: Apps, Software a Medida y Webs — Action",
-    description:
-      "Desarrollo de aplicaciones, software a medida, desarrollo y diseño web y tiendas online para empresas de Vigo, Pontevedra y Galicia.",
-    images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
-  },
-};
-
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "CollectionPage",
-      "@id": absoluteUrl("/servicios"),
-      url: absoluteUrl("/servicios"),
-      name: "Servicios de Action — Desarrollo de aplicaciones y diseño web",
-      inLanguage: "es",
-      isPartOf: { "@id": absoluteUrl("#website") },
-    },
-    {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Inicio", item: absoluteUrl("/") },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: "Servicios",
-          item: absoluteUrl("/servicios"),
-        },
-      ],
-    },
-  ],
-};
+export const metadata = SERVICIOS_METADATA;
+const jsonLd = SERVICIOS_JSON_LD;
+const GROUPS = SERVICIOS_GROUPS;
 
 export default function ServiciosPage() {
   return (

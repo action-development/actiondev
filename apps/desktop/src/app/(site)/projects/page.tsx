@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { StructuredData } from "@/components/seo/StructuredData";
-import { BRAND, OG_IMAGE, absoluteUrl } from "@/lib/seo";
+import { PROJECTS_METADATA } from "@/lib/projects-metadata";
 import { ArcadePage } from "./ArcadePage";
 
 /**
@@ -9,22 +9,7 @@ import { ArcadePage } from "./ArcadePage";
  * a /contact. Server component: metadata + JSON-LD. Todo lo interactivo vive
  * en ArcadePage.tsx (client).
  */
-export const metadata: Metadata = {
-  // Sin la marca: el `template` del layout raíz ya añade " — Action".
-  title: "Proyectos de desarrollo web y apps en Vigo",
-  description:
-    "Apps, webs a medida y tiendas online hechas en Vigo para negocios de Vigo, Redondela, O Porriño y toda Galicia. Casos reales, uno por máquina recreativa.",
-  alternates: { canonical: "/projects" },
-  openGraph: {
-    type: "website",
-    locale: "es_ES",
-    url: absoluteUrl("/projects"),
-    siteName: BRAND.name,
-    title: "Proyectos de desarrollo web y apps en Vigo — Action",
-    description: "Una máquina recreativa por cada proyecto de Action. Elige una y juega.",
-    images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
-  },
-};
+export const metadata: Metadata = PROJECTS_METADATA;
 
 export default function ProjectsPage() {
   return (
