@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
-import { PLACEHOLDER_IMAGE, hasCaseStudy, projects, type Project } from "@actiondev/shared";
+import {
+  ORGANIZATION_ID,
+  PLACEHOLDER_IMAGE,
+  WEBSITE_ID,
+  hasCaseStudy,
+  projects,
+  type Project,
+} from "@actiondev/shared";
 import { projectCategoryLabel, relatedService } from "@/lib/project-case";
-import { OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
+import { SITE_URL, absoluteUrl, metaDescription, ogImage } from "@/lib/seo";
 
 /**
  * SEO de la ficha de proyecto (`/projects/[slug]`): una sola fuente para la
@@ -25,10 +32,10 @@ export function projectSeoTitle(project: Project): string {
 }
 
 export function projectMetadata(project: Project): Metadata {
-  const description = project.descriptionEs ?? project.description;
-  const ogUrl = `${OG_IMAGE.url}?title=${encodeURIComponent(project.title)}`;
-
+  // ≤155 caracteres: algunas descripciones de `projects.ts` pasan de 200.
+  const description = metaDescription(project.descriptionEs ?? project.description);
   const title = projectSeoTitle(project);
+  const image = ogImage(`${title} — Action`, project.title);
 
   return {
     title,
@@ -44,38 +51,47 @@ export function projectMetadata(project: Project): Metadata {
       siteName: "Action",
       title: `${title} — Action`,
       description,
-      images: [{ url: ogUrl, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+      images: [image],
     },
     twitter: {
       card: "summary_large_image",
       title: `${title} — Action`,
       description,
-      images: [ogUrl],
+      images: [image],
     },
   };
 }
 
+/**
+ * `CreativeWork` (el trabajo) + `BreadcrumbList`. El servicio de `about` es el
+ * MISMO nodo que emite su landing (`/<landing>#service`), así Google ve un
+ * grafo: proyecto → servicio → organización, en vez de un `Service` suelto
+ * por ficha.
+ */
 export function buildProjectJsonLd(project: Project) {
   const service = relatedService(project);
+  const url = absoluteUrl(`/projects/${project.slug}`);
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "CreativeWork",
-        "@id": absoluteUrl(`/projects/${project.slug}`),
-        url: absoluteUrl(`/projects/${project.slug}`),
+        "@id": `${url}#project`,
+        url,
+        mainEntityOfPage: url,
         name: project.title,
         description: project.descriptionEs ?? project.description,
         dateCreated: String(project.year),
         inLanguage: "es",
-        creator: { "@id": absoluteUrl("#organization") },
-        isPartOf: { "@id": absoluteUrl("#website") },
+        creator: { "@id": ORGANIZATION_ID },
+        isPartOf: { "@id": WEBSITE_ID },
         genre: projectCategoryLabel(project),
         about: {
           "@type": "Service",
+          "@id": absoluteUrl(`${service.href}#service`),
           name: service.label,
           url: absoluteUrl(service.href),
-          provider: { "@id": absoluteUrl("#organization") },
+          provider: { "@id": ORGANIZATION_ID },
         },
         ...(project.image !== PLACEHOLDER_IMAGE && { image: absoluteUrl(project.image) }),
         ...(project.location && {
@@ -94,13 +110,8 @@ export function buildProjectJsonLd(project: Project) {
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL },
-          { "@type": "ListItem", position: 2, name: "Trabajo", item: absoluteUrl("/projects") },
-          {
-            "@type": "ListItem",
-            position: 3,
-            name: project.title,
-            item: absoluteUrl(`/projects/${project.slug}`),
-          },
+          { "@type": "ListItem", position: 2, name: "Proyectos", item: absoluteUrl("/projects") },
+          { "@type": "ListItem", position: 3, name: project.title, item: url },
         ],
       },
     ],

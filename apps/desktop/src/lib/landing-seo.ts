@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { ORGANIZATION_ID, projects, type Project } from "@actiondev/shared";
+import { ORGANIZATION_ID, WEBSITE_ID, projects, type Project } from "@actiondev/shared";
 import type { Landing, LandingCase } from "@/data/landings";
 import { testimonials, type Testimonial } from "@/data/testimonials";
-import { OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
+import { SITE_URL, absoluteUrl, ogImage } from "@/lib/seo";
 
 /**
  * Landings SEO (`/[landing]`): metadatos, JSON-LD y contenido resuelto. Fuente
@@ -15,7 +15,7 @@ import { OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 export const LANDING_FORM_ID = "proyecto";
 
 export function landingMetadata(landing: Landing): Metadata {
-  const ogUrl = `${OG_IMAGE.url}?title=${encodeURIComponent(landing.h1)}`;
+  const image = ogImage(landing.title, landing.h1);
 
   return {
     // `absolute`: landing.title ya es un título SEO autoconclusivo ("X | Y"),
@@ -31,13 +31,13 @@ export function landingMetadata(landing: Landing): Metadata {
       siteName: "Action",
       title: landing.title,
       description: landing.metaDescription,
-      images: [{ url: ogUrl, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+      images: [image],
     },
     twitter: {
       card: "summary_large_image",
       title: landing.title,
       description: landing.metaDescription,
-      images: [ogUrl],
+      images: [image],
     },
   };
 }
@@ -54,8 +54,9 @@ export function buildLandingJsonLd(landing: Landing) {
         name: landing.title,
         description: landing.metaDescription,
         inLanguage: "es",
-        isPartOf: { "@id": absoluteUrl("#website") },
+        isPartOf: { "@id": WEBSITE_ID },
         about: { "@id": `${url}#service` },
+        breadcrumb: { "@id": `${url}#breadcrumb` },
       },
       {
         "@type": "Service",
@@ -73,6 +74,7 @@ export function buildLandingJsonLd(landing: Landing) {
       },
       {
         "@type": "FAQPage",
+        "@id": `${url}#faq`,
         mainEntity: landing.faqs.map((faq) => ({
           "@type": "Question",
           name: faq.q,
@@ -81,6 +83,7 @@ export function buildLandingJsonLd(landing: Landing) {
       },
       {
         "@type": "BreadcrumbList",
+        "@id": `${url}#breadcrumb`,
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL },
           {

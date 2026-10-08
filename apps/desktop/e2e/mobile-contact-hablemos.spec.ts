@@ -505,10 +505,16 @@ test.describe("Móvil v2 · /contact", () => {
     );
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://actiondev.es/contact");
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /index, follow/);
+    // Entidad (layout raíz) + `ContactPage` y migas de la página (`CONTACT_JSON_LD`).
     const types = await page
       .locator('script[type="application/ld+json"]')
-      .evaluateAll((nodes) => nodes.map((n) => JSON.parse(n.textContent ?? "{}")["@type"]));
-    expect(types).toEqual([["Organization", "ProfessionalService"], "WebSite"]);
+      .evaluateAll((nodes) =>
+        nodes.flatMap((n) => {
+          const ld = JSON.parse(n.textContent ?? "{}");
+          return ld["@graph"] ? ld["@graph"].map((g: { "@type": unknown }) => g["@type"]) : [ld["@type"]];
+        }),
+      );
+    expect(types).toEqual([["Organization", "ProfessionalService"], "WebSite", "ContactPage", "BreadcrumbList"]);
 
     await expect(page.locator("h1")).toHaveText("Escríbenos directamente");
     await expect(page.locator("main")).toContainText("¿Prefieres que te contactemos?");

@@ -198,7 +198,10 @@ export function organizationSchema(description?: string) {
       { "@type": "City", name: "A Coruña" },
       { "@type": "City", name: "Santiago de Compostela" },
       { "@type": "AdministrativeArea", name: "Galicia" },
-      { "@type": "Country", name: "ES" },
+      // `name` es el nombre del país, no su código ISO (que ya va en
+      // `addressCountry`): con "ES" el nodo decía que se sirve a un sitio
+      // llamado «ES».
+      { "@type": "Country", name: "España" },
     ],
     hasOfferCatalog: {
       "@type": "OfferCatalog",
@@ -217,5 +220,28 @@ export function organizationSchema(description?: string) {
       })),
     },
     sameAs: [BUSINESS.mapsUrl, BUSINESS.social.instagram, BUSINESS.social.linkedin],
+  };
+}
+
+/** `@id` del sitio. Las páginas lo citan en `isPartOf`. */
+export const WEBSITE_ID = `${BUSINESS.domain}/#website`;
+
+/**
+ * JSON-LD `WebSite`, el mismo en desktop y mobile. `name` es lo que Google
+ * prefiere como nombre del sitio en los resultados: «Action Development», el
+ * nombre de la ficha de Google y de la `Organization`, con «Action» de alias.
+ * Con «Action» a secas competía con la cadena de tiendas Action (auditoría
+ * SEO, §5.2).
+ */
+export function websiteSchema(description?: string) {
+  return {
+    "@type": "WebSite",
+    "@id": WEBSITE_ID,
+    url: BUSINESS.domain,
+    name: BUSINESS.alternateName,
+    alternateName: BUSINESS.name,
+    ...(description && { description }),
+    inLanguage: "es",
+    publisher: { "@id": ORGANIZATION_ID },
   };
 }

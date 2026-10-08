@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { BRAND, OG_IMAGE, absoluteUrl } from "@/lib/seo";
+import { ORGANIZATION_ID, WEBSITE_ID } from "@actiondev/shared";
+import { BRAND, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 
 /**
  * Metadatos de /resenas SOLO para la web móvil. COPIA literal del `metadata`
@@ -25,4 +26,37 @@ export const RESENAS_METADATA: Metadata = {
     description: "Lo que opinan nuestros clientes de Action, en una plaza 3D interactiva.",
     images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
   },
+};
+
+const RESENAS_URL = absoluteUrl("/resenas");
+
+/**
+ * JSON-LD de la PÁGINA (`WebPage` + `BreadcrumbList`), compartido por los dos
+ * árboles. Sigue sin `Review` ni `aggregateRating`: la página habla de la
+ * organización (`about`), no marca las reseñas. Escritorio lo emite desde
+ * `app/(site)/resenas/layout.tsx` para no tocar su `page.tsx`.
+ */
+export const RESENAS_JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": RESENAS_URL,
+      url: RESENAS_URL,
+      name: "Reseñas de clientes en Vigo",
+      description: RESENAS_METADATA.description,
+      inLanguage: "es",
+      isPartOf: { "@id": WEBSITE_ID },
+      about: { "@id": ORGANIZATION_ID },
+      breadcrumb: { "@id": `${RESENAS_URL}#breadcrumb` },
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": `${RESENAS_URL}#breadcrumb`,
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL },
+        { "@type": "ListItem", position: 2, name: "Reseñas", item: RESENAS_URL },
+      ],
+    },
+  ],
 };

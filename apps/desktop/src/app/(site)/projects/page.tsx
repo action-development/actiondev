@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { StructuredData } from "@/components/seo/StructuredData";
-import { PROJECTS_METADATA } from "@/lib/projects-metadata";
+import { PROJECTS_METADATA, buildProjectsJsonLd } from "@/lib/projects-metadata";
 import { ArcadePage } from "./ArcadePage";
 
 /**
@@ -14,7 +13,10 @@ export const metadata: Metadata = PROJECTS_METADATA;
 export default function ProjectsPage() {
   return (
     <>
-      <StructuredData kind="projects" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildProjectsJsonLd()) }}
+      />
       <ArcadePage />
     </>
   );

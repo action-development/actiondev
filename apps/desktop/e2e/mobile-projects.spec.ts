@@ -36,8 +36,13 @@ test.describe("Móvil v2 · proyectos", () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", d.canonical!);
     const types = await page
       .locator('script[type="application/ld+json"]')
-      .evaluateAll((n) => n.map((s) => JSON.parse(s.textContent ?? "{}")["@type"]));
-    expect(types).toContain("ItemList");
+      .evaluateAll((n) =>
+        n.flatMap((s) => {
+          const ld = JSON.parse(s.textContent ?? "{}");
+          return ld["@graph"] ? ld["@graph"].map((g: { "@type": unknown }) => g["@type"]) : [ld["@type"]];
+        }),
+      );
+    expect(types).toEqual(expect.arrayContaining(["CollectionPage", "ItemList", "BreadcrumbList"]));
   });
 
   test("el filtro por tipo oculta y muestra proyectos", async ({ page }) => {

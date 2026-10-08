@@ -5,11 +5,12 @@ import { RatingBand } from "@/components/m/Rating";
 import { ReviewItem } from "@/components/m/ReviewItem";
 import { StickyCta } from "@/components/m/StickyCta";
 import { testimonials } from "@/data/testimonials";
-import { RESENAS_METADATA } from "@/lib/resenas-seo";
+import { RESENAS_JSON_LD, RESENAS_METADATA } from "@/lib/resenas-seo";
 
 /**
  * /resenas — las reseñas de Google en lista (móvil v2). Sin plaza 3D. Mismo
- * title, description y canonical que el escritorio (`lib/resenas-seo.ts`).
+ * title, description, canonical y JSON-LD de página (`WebPage` +
+ * `BreadcrumbList`) que el escritorio (`lib/resenas-seo.ts`).
  * SIN JSON-LD de reseñas (ni `aggregateRating` ni `Review`): prohibido por
  * CLAUDE.md. Las 22 citas, en español, visibles.
  */
@@ -20,6 +21,7 @@ const CTA_ID = "resenas-cta";
 export default function MobileResenasPage() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(RESENAS_JSON_LD) }} />
       <MobileHeader />
       <main id="main-content">
         <section aria-labelledby="m-resenas-title">

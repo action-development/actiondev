@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import type { Landing } from "@/data/landings";
-import { OG_IMAGE, absoluteUrl } from "@/lib/seo";
+import { ORGANIZATION_ID, WEBSITE_ID } from "@actiondev/shared";
+import { landings, type Landing } from "@/data/landings";
+import { SITE_URL, absoluteUrl, ogImage } from "@/lib/seo";
 
 /**
  * Hub /servicios: grupos, metadatos y JSON-LD. Fuente ÚNICA compartida por la
@@ -34,31 +35,54 @@ export const SERVICIOS_METADATA: Metadata = {
     title: "Servicios: Apps, Software a Medida y Webs — Action",
     description:
       "Desarrollo de aplicaciones, software a medida, desarrollo y diseño web y tiendas online para empresas de Vigo, Pontevedra y Galicia.",
-    images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+    images: [ogImage("Servicios: Apps, Software a Medida y Webs — Action")],
   },
 };
 
+const SERVICIOS_URL = absoluteUrl("/servicios");
+
+/**
+ * `CollectionPage` cuyo `mainEntity` es la lista de servicios: cada elemento
+ * es el MISMO nodo `Service` que emite su landing (`/<landing>#service`), en
+ * el orden de la página (por servicio, luego por zona).
+ */
 export const SERVICIOS_JSON_LD = {
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "CollectionPage",
-      "@id": absoluteUrl("/servicios"),
-      url: absoluteUrl("/servicios"),
+      "@id": SERVICIOS_URL,
+      url: SERVICIOS_URL,
       name: "Servicios de Action — Desarrollo de aplicaciones y diseño web",
       inLanguage: "es",
-      isPartOf: { "@id": absoluteUrl("#website") },
+      isPartOf: { "@id": WEBSITE_ID },
+      about: { "@id": ORGANIZATION_ID },
+      breadcrumb: { "@id": `${SERVICIOS_URL}#breadcrumb` },
+      mainEntity: { "@id": `${SERVICIOS_URL}#services` },
+    },
+    {
+      "@type": "ItemList",
+      "@id": `${SERVICIOS_URL}#services`,
+      numberOfItems: landings.length,
+      itemListElement: SERVICIOS_GROUPS.flatMap((group) => landings.filter((l) => l.group === group.id)).map(
+        (landing, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "Service",
+            "@id": absoluteUrl(`/${landing.slug}#service`),
+            name: landing.serviceName,
+            url: absoluteUrl(`/${landing.slug}`),
+          },
+        }),
+      ),
     },
     {
       "@type": "BreadcrumbList",
+      "@id": `${SERVICIOS_URL}#breadcrumb`,
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Inicio", item: absoluteUrl("/") },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: "Servicios",
-          item: absoluteUrl("/servicios"),
-        },
+        { "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL },
+        { "@type": "ListItem", position: 2, name: "Servicios", item: SERVICIOS_URL },
       ],
     },
   ],

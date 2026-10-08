@@ -1,4 +1,4 @@
-import { BUSINESS, ORGANIZATION_ID, organizationSchema } from "@actiondev/shared";
+import { organizationSchema, websiteSchema } from "@actiondev/shared";
 
 /**
  * JSON-LD para la zona mobile. Con mobile-first indexing, esta versión es la
@@ -15,14 +15,7 @@ const schema = {
     // Mismo nodo que desktop (Organization + ProfessionalService), generado
     // desde @actiondev/shared para que las dos zonas no se desincronicen.
     organizationSchema(),
-    {
-      "@type": "WebSite",
-      "@id": `${BUSINESS.domain}/#website`,
-      url: BUSINESS.domain,
-      name: BUSINESS.name,
-      inLanguage: "es",
-      publisher: { "@id": ORGANIZATION_ID },
-    },
+    websiteSchema(),
   ],
 };
 

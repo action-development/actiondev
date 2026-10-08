@@ -6,7 +6,7 @@ import { MobileLeadForm } from "@/components/m/leads/MobileLeadForm";
 import { MobileFooter } from "@/components/m/MobileFooter";
 import { MobileHeader } from "@/components/m/MobileHeader";
 import { StickyCta } from "@/components/m/StickyCta";
-import { CONTACT_METADATA } from "@/lib/contact-metadata";
+import { CONTACT_JSON_LD, CONTACT_METADATA } from "@/lib/contact-metadata";
 import { es } from "@/lib/i18n/es";
 
 /**
@@ -16,7 +16,8 @@ import { es } from "@/lib/i18n/es";
  *
  * SEO (mobile-first): mismo title, description, canonical y Open Graph que
  * escritorio (`lib/contact-metadata.ts`), el mismo JSON-LD (Organization +
- * WebSite, del layout raíz) y los mismos textos y enlaces indexables que el
+ * WebSite del layout raíz y `ContactPage` + `BreadcrumbList` de
+ * `CONTACT_JSON_LD`) y los mismos textos y enlaces indexables que el
  * HUD de la calle, ahora VISIBLES: H1 «Escríbenos directamente», «Sin
  * compromiso», WhatsApp, email, «¿Prefieres que te contactemos?», «Pregunta a
  * la IA sobre nosotros» y los enlaces a `/projects`, `/resenas` y `/blog`.
@@ -37,6 +38,7 @@ export default function MobileContactPage() {
   const t = es.contact;
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(CONTACT_JSON_LD) }} />
       <MobileHeader ctaHref={`#${FORM_ID}`} />
       <main id="main-content">
         <section id={HERO_ID} aria-labelledby="m-contact-h1">
