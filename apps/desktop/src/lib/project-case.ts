@@ -79,7 +79,18 @@ const SERVICE_BY_CATEGORY: Record<string, RelatedService> = {
   "E-commerce": { href: "/tienda-online-vigo", label: "Tiendas online en Vigo" },
 };
 
-/** Landing de servicio más pertinente para el proyecto, por su categoría. */
+/**
+ * Landings que un proyecto puede pedir por `relatedLanding` cuando su
+ * categoría apunta a otra. Mapa corto a propósito: este módulo lo importa la
+ * recreativa (cliente) y `data/landings.ts` no debe entrar en ese bundle.
+ */
+const SERVICE_BY_LANDING: Record<string, RelatedService> = {
+  "software-a-medida-vigo": { href: "/software-a-medida-vigo", label: "Software a medida en Vigo" },
+  "desarrollo-web-redondela": { href: "/desarrollo-web-redondela", label: "Páginas web para negocios de Redondela" },
+};
+
+/** Landing de servicio más pertinente para el proyecto: la suya propia o la de su categoría. */
 export function relatedService(project: Project): RelatedService {
-  return SERVICE_BY_CATEGORY[project.category] ?? SERVICE_BY_CATEGORY.Website;
+  const own = project.relatedLanding ? SERVICE_BY_LANDING[project.relatedLanding] : undefined;
+  return own ?? SERVICE_BY_CATEGORY[project.category] ?? SERVICE_BY_CATEGORY.Website;
 }

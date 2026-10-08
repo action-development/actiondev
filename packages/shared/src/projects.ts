@@ -58,6 +58,12 @@ export interface Project {
   resultFigureEs?: string;
   /** Lo que mide `resultFigureEs`, en minúscula y con punto final. */
   resultFigureLabelEs?: string;
+  /**
+   * Slug de la landing SEO de su servicio cuando la que toca por `category`
+   * no es la buena (un ERP es software a medida aunque sea «Web Application»).
+   * La usa `relatedService()` de `apps/desktop/src/lib/project-case.ts`.
+   */
+  relatedLanding?: string;
 }
 
 export const PLACEHOLDER_IMAGE = "/projects/placeholder.webp";
@@ -89,6 +95,7 @@ export const projects: Project[] = [
     year: 2024,
     technologies: ["TBD"],
     color: "#0a0a0a",
+    relatedLanding: "software-a-medida-vigo",
     brief: [
       "An ERP for office staff to manage enrollments and administration",
       "Instructors log practice sessions and exam results straight into the system",
@@ -147,9 +154,9 @@ export const projects: Project[] = [
     location: "O Porriño",
     title: "PBB",
     description:
-      "Full digital presence for a local business: website, booking system, and local SEO strategy driving consistent organic traffic.",
+      "Website for PBB, the youth basketball club in O Porriño: online sign-up and payment of dues and registration fee, with accounts for families and players.",
     descriptionEs:
-      "Presencia digital completa para negocio local: web, sistema de reservas y estrategia SEO local que genera tráfico orgánico constante.",
+      "Web del club PBB de O Porriño: inscripción y pago de cuota y matrícula online, con cuentas para familias y deportistas. Adiós al papeleo en ventanilla.",
     category: "Web Application",
     categoryEs: "Aplicación Web",
     niche: "Sports Club",
@@ -339,6 +346,7 @@ export const projects: Project[] = [
     year: 2024,
     technologies: ["TBD"],
     color: "#0a0a0a",
+    relatedLanding: "desarrollo-web-redondela",
     brief: [
       "Sell tickets online for every event at the venue",
       "A profile system with a history of purchased tickets",
@@ -360,9 +368,9 @@ export const projects: Project[] = [
     location: "Vigo",
     title: "Musa | Night Club",
     description:
-      "Sensory restaurant website with integrated booking, interactive menu, and local SEO. Online reservations up 40%.",
+      "Website for Musa, a nightclub in Vigo: tickets sold on its own site, with no third-party ticketing platform, and a customer profile. Online reservations up 40%.",
     descriptionEs:
-      "Web sensorial para restaurante con reservas integradas, menú interactivo y SEO local. Reservas online +40%.",
+      "Web para Musa, discoteca de Vigo: venta de entradas en su propia web, sin ticketera externa, con perfil de cliente. Reservas online: +40 %.",
     category: "Web Application",
     categoryEs: "Aplicación Web",
     niche: "Hospitality & Nightlife",
@@ -472,6 +480,7 @@ export const projects: Project[] = [
     year: 2023,
     technologies: ["React", "Node.js", "Mobile App"],
     color: "#0a0a0a",
+    relatedLanding: "software-a-medida-vigo",
     brief: [
       "Fully digitize employee clock-in and time tracking",
       "A management dashboard with real-time data for the company",
@@ -495,8 +504,9 @@ export const projects: Project[] = [
       "Booking platform with interactive calendar, payment gateway, and real-time tour management.",
     descriptionEs:
       "Plataforma de reservas con calendario interactivo, pasarela de pago y gestión de tours en tiempo real.",
-    category: "Landing Page",
-    categoryEs: "Landing Page",
+    // Reservas, Stripe, Supabase y panel propio: una aplicación web, no una landing.
+    category: "Web Application",
+    categoryEs: "Aplicación Web",
     niche: "Tourism",
     nicheEs: "Turismo",
     image: "/projects/fang-tours.webp",
@@ -591,9 +601,9 @@ export const projects: Project[] = [
     location: "Redondela",
     title: "Samoa Café",
     description:
-      "Full brand identity from scratch: naming, logo, menu design, website with reservations, and social launch strategy.",
+      "Samoa Café, in Redondela: a brand identity built from scratch (naming, logo and menu) and a website with an editable menu that switches between day and night.",
     descriptionEs:
-      "Identidad de marca completa desde cero: naming, logo, diseño de carta, web con reservas y estrategia de lanzamiento en redes.",
+      "Samoa Café, en Redondela: identidad de marca desde cero (naming, logo y carta) y una web con carta editable que cambia sola entre día y noche.",
     category: "Web Application",
     categoryEs: "Aplicación Web",
     niche: "Hospitality",
@@ -607,6 +617,7 @@ export const projects: Project[] = [
     technologies: ["Next.js", "Tailwind", "Figma"],
     featured: true,
     color: "#1a1a2e",
+    relatedLanding: "desarrollo-web-redondela",
     brief: [
       "A full brand identity built from scratch: naming, logo and menu design",
       "A menu the restaurant can update themselves, straight from the website",
@@ -657,9 +668,9 @@ export const projects: Project[] = [
     slug: "fase",
     title: "Fase Service Partner",
     description:
-      "Corporate website for Fase Service Partner built for clients worldwide, with clear content for each service line and a solid, professional image.",
+      "Multilingual corporate website for FASE, naval and industrial electrical installations from Vigo and Marín, with clear content for each service line.",
     descriptionEs:
-      "Web corporativa para Fase Service Partner pensada para clientes de todo el mundo: contenidos claros por línea de servicio y una imagen sólida.",
+      "Web corporativa multilingüe para FASE, instalaciones eléctricas navales e industriales en Vigo y Marín, con contenidos claros por línea de servicio.",
     category: "Website",
     categoryEs: "Web",
     niche: "Corporate",
@@ -996,8 +1007,8 @@ export const projects: Project[] = [
     title: "San José",
     description: "Simple mobile app for a real estate agency to showcase its property listings.",
     descriptionEs: "App móvil sencilla para una inmobiliaria que muestra su catálogo de propiedades.",
-    category: "Landing Page",
-    categoryEs: "Landing Page",
+    category: "Mobile App",
+    categoryEs: "Aplicación Móvil",
     niche: "Real Estate",
     nicheEs: "Inmobiliaria",
     image: PLACEHOLDER_IMAGE,
@@ -1023,6 +1034,8 @@ export const projects: Project[] = [
   {
     id: "cerveceria-equs",
     slug: "cerveceria-equs",
+    // Su web: «Cervecería Equs | Hamburguesas, Tapas y Deportes en Noia, Galicia».
+    location: "Noia",
     title: "Cervecería Equs",
     description:
       "Landing page for a craft brewery: the character of its beer, clear location and contact details, and a home of its own beyond social media.",
