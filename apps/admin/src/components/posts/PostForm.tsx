@@ -38,11 +38,14 @@ export function PostForm({ post }: { post?: BlogPost }) {
     setValues((v) => ({ ...v, [key]: value }));
   }
 
+  // El H1 sigue al título mientras sean iguales (posts creados aquí). Si el
+  // post trae un H1 propio (redactado para SEO, distinto del <title>), se
+  // respeta: antes cada guardado lo pisaba con el título.
   function handleTitleChange(title: string) {
     setValues((v) => ({
       ...v,
       title,
-      h1: title,
+      h1: !v.h1 || v.h1 === v.title ? title : v.h1,
       slug: slugTouched ? v.slug : slugify(title),
     }));
   }
@@ -51,7 +54,7 @@ export function PostForm({ post }: { post?: BlogPost }) {
     return {
       ...values,
       status,
-      h1: values.title,
+      h1: values.h1?.trim() || values.title,
       metaDescription: values.metaDescription.trim() || values.excerpt,
       readingTime: estimateReadingTime(values.content),
     };
