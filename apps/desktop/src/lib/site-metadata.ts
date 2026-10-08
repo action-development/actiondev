@@ -92,4 +92,10 @@ export const ROOT_METADATA: Metadata = {
     address: false,
     telephone: false,
   },
+  // Verificación del dominio en el portfolio de Meta "Action Development"
+  // (Business Manager → Seguridad de la marca → Dominios). No quitar: Meta la
+  // revisa de vez en cuando y sin ella el dominio pierde la verificación.
+  verification: {
+    other: { "facebook-domain-verification": "e71wok1pdzangvflowbby1m7b98t1m" },
+  },
 };
