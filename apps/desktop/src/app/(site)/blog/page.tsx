@@ -71,7 +71,7 @@ export default async function BlogPage() {
                 ¿Hablamos de tu proyecto?
               </h2>
               <p className={board.cardText}>
-                Respuesta en menos de 24 horas, presupuesto cerrado y trato directo
+                Respuesta en 24 horas laborables, presupuesto cerrado y trato directo
                 con el equipo que desarrolla.
               </p>
               <p className={board.cardLinks}>

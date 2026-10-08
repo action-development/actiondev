@@ -44,7 +44,7 @@ export const en: Translations = {
     callbackPlaceholder: "Your phone number",
     callbackNotesPlaceholder: "Call or text? Any time that works best? Tell us anything else (optional)",
     callbackCta: "Send",
-    callbackSuccess: "Thank you! We'll be in touch within 24h.",
+    callbackSuccess: "Thank you! We'll be in touch within 24 business hours.",
     callbackError: "It couldn't be sent. Try again or message us on WhatsApp.",
     street: {
       address: "Rúa Colón, 20 · Vigo",
@@ -152,7 +152,7 @@ export const en: Translations = {
   contactPopup: {
     eyebrow: "Shortcut · skip the game",
     title: "What do you want to build?",
-    lead: "Pick one and message us. We reply within 24 h, no strings attached.",
+    lead: "Pick one and message us. We reply within 24 business hours, no strings attached.",
     servicesLegend: "What you need",
     services: {
       apps: {
@@ -170,7 +170,7 @@ export const en: Translations = {
     },
     whatsappCta: "Message us on WhatsApp",
     emailPrefix: "or by email:",
-    reassurance: "Reply within 24 h · Team in Vigo · No forms",
+    reassurance: "Reply within 24 business hours · Team in Vigo · No forms",
     askAI: "Still unsure? Ask an AI",
     close: "Close",
   },

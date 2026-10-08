@@ -261,7 +261,7 @@ export default async function BlogPostPage({ params }: PostPageProps) {
                 Cuéntanos tu proyecto
               </h2>
               <p className="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
-                Escríbenos y recibe una propuesta detallada en 24 horas. Sin
+                Escríbenos y te respondemos en 24 horas laborables. Sin
                 compromiso y sin letra pequeña.
               </p>
               <p className="mt-8 text-lg">

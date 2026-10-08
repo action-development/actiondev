@@ -111,7 +111,7 @@ export default function ServiciosPage() {
         >
           <h2 className="display-m text-foreground">¿Hablamos de tu proyecto?</h2>
           <p className="lede mx-auto mt-4">
-            Respuesta en menos de 24 horas, presupuesto cerrado y trato directo
+            Respuesta en 24 horas laborables, presupuesto cerrado y trato directo
             con el equipo que desarrolla.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">

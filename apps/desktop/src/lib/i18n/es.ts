@@ -45,7 +45,7 @@ export const es: Translations = {
     callbackNotesPlaceholder:
       "¿Llamada o mensaje? ¿Algún horario mejor para llamarte? Cuéntanos lo que quieras (opcional)",
     callbackCta: "Enviar",
-    callbackSuccess: "¡Gracias! Te contactaremos en menos de 24h.",
+    callbackSuccess: "¡Gracias! Te contactamos en 24 horas laborables.",
     callbackError: "No se ha podido enviar. Inténtalo de nuevo o escríbenos por WhatsApp.",
     street: {
       address: "Rúa Colón, 20 · Vigo",
@@ -157,7 +157,7 @@ export const es: Translations = {
   contactPopup: {
     eyebrow: "Atajo · sin jugar",
     title: "¿Qué quieres construir?",
-    lead: "Elige una opción y escríbenos. Te respondemos en menos de 24 h, sin compromiso.",
+    lead: "Elige una opción y escríbenos. Te respondemos en 24 horas laborables, sin compromiso.",
     servicesLegend: "Qué necesitas",
     services: {
       apps: {
@@ -175,7 +175,7 @@ export const es: Translations = {
     },
     whatsappCta: "Escribir por WhatsApp",
     emailPrefix: "o por email:",
-    reassurance: "Respuesta en < 24 h · Equipo en Vigo · Sin formularios",
+    reassurance: "Respuesta en 24 h laborables · Equipo en Vigo · Sin formularios",
     askAI: "¿Aún con dudas? Pregunta a la IA",
     close: "Cerrar",
   },

@@ -224,7 +224,7 @@ export const landings: Landing[] = [
     ],
     cta: {
       title: "¿Tienes una app en la cabeza?",
-      text: "Cuéntanos qué problema quieres resolver y para quién. Te respondemos en 24 horas con los siguientes pasos y, si hace falta, quedamos en Rúa Colón.",
+      text: "Cuéntanos qué problema quieres resolver y para quién. Te respondemos en 24 horas laborables con los siguientes pasos y, si hace falta, quedamos en Rúa Colón.",
     },
     leadNeed: "app",
     leadNeeds: LEAD_NEEDS_CAMPAIGN,
@@ -963,7 +963,7 @@ export const landings: Landing[] = [
     ],
     cta: {
       title: "¿Tu negocio de la provincia necesita una app?",
-      text: "Cuéntanos dónde estás y qué quieres resolver. Te respondemos en 24 horas y, si hace falta, nos vemos en persona.",
+      text: "Cuéntanos dónde estás y qué quieres resolver. Te respondemos en 24 horas laborables y, si hace falta, nos vemos en persona.",
     },
     leadNeed: "app",
     leadNeeds: LEAD_NEEDS_CAMPAIGN,
@@ -1545,7 +1545,7 @@ export const landings: Landing[] = [
     ],
     cta: {
       title: "¿Buscas agencia web en Galicia?",
-      text: "Escríbenos desde donde estés. Te respondemos en 24 horas con una propuesta de siguiente paso.",
+      text: "Escríbenos desde donde estés. Te respondemos en 24 horas laborables con una propuesta de siguiente paso.",
     },
     leadNeed: "web",
     leadNeeds: LEAD_NEEDS_WEB,

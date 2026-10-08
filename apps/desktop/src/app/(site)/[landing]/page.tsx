@@ -134,7 +134,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
                 </span>{" "}
                 · {testimonials.length} reseñas en Google
               </li>
-              <li>Respuesta en 24 horas</li>
+              <li>Respuesta en 24 horas laborables</li>
               <li>Equipo senior · Sin subcontratas</li>
             </ul>
           </div>

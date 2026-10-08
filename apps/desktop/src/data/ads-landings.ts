@@ -64,10 +64,10 @@ export const adsLandings: AdsLanding[] = [
     slug: "app",
     title: "Desarrollo de apps para empresas",
     metaDescription:
-      "Desarrollo de apps para empresas: iOS y Android con panel de gestión y backend, publicadas en App Store y Google Play. Propuesta cerrada. Rúa Colón, Vigo.",
+      "Desarrollo de apps para empresas: iOS y Android con panel de gestión y servidor, publicadas en App Store y Google Play. Propuesta cerrada. Rúa Colón, Vigo.",
     h1: "Desarrollo de apps para empresas, de la idea a App Store y Google Play",
     subtitle:
-      "Diseñamos y programamos tu app para iOS y Android, con su panel de gestión y su backend. Desde Rúa Colón, 20 (Vigo), con propuesta cerrada y el alcance por escrito.",
+      "Diseñamos y programamos tu app para iOS y Android, con su panel de gestión y su servidor. Desde Rúa Colón, 20 (Vigo), con propuesta cerrada y el alcance por escrito.",
     defaultNeed: "app",
     bullets: [
       "Un solo equipo de principio a fin: quien te atiende en la primera reunión es quien conoce el código después.",
@@ -109,11 +109,11 @@ export const adsLandings: AdsLanding[] = [
     faqs: [
       {
         q: "¿Cuánto cuesta una app?",
-        a: "Depende de las pantallas y tipos de usuario, del backend, de las integraciones y de si funciona sin conexión. Tras la reunión de definición te enviamos una propuesta cerrada.",
+        a: "Depende de las pantallas y tipos de usuario, de si se conecta con programas que ya usas y de si funciona sin conexión. Tras la reunión de definición te enviamos una propuesta cerrada.",
       },
       {
         q: "¿iOS, Android o las dos?",
-        a: "Las dos con una sola base de código (React Native). Nativo solo si el hardware lo exige.",
+        a: "Las dos, con una sola app para iPhone y Android: para la mayoría de apps de negocio es la opción que mejor equilibra coste, plazo y experiencia. Solo hacemos una versión aparte para cada sistema si la app necesita algo muy concreto del teléfono.",
       },
       {
         q: "¿Os encargáis de publicarla?",
@@ -125,12 +125,12 @@ export const adsLandings: AdsLanding[] = [
       },
       {
         q: "¿Podemos vernos en persona?",
-        a: "Sí, en Rúa Colón, 20, para el arranque, el prototipo y la entrega.",
+        a: "Sí. La oficina está en Rúa Colón, 20 (Vigo): con empresas de Vigo y su área, el arranque, el prototipo y la entrega los hacemos en persona. Con el resto de Galicia y España trabajamos en remoto con el mismo método.",
       },
     ],
     cta: {
       title: "¿Tienes una app en la cabeza?",
-      text: "Cuéntanos qué problema quieres resolver y para quién. Te respondemos en 24 horas con los siguientes pasos. La primera reunión es gratis y sin compromiso.",
+      text: "Cuéntanos qué problema quieres resolver y para quién. Te respondemos en 24 horas laborables con los siguientes pasos. La primera reunión es gratis y sin compromiso.",
     },
   },
   {
@@ -166,7 +166,7 @@ export const adsLandings: AdsLanding[] = [
         note: "Licencia enviada automáticamente tras el pago.",
       },
     ],
-    testimonials: ["julio-walker", "samuel-flores"],
+    testimonials: ["julio-walker", "pablo-r", "samuel-flores"],
     heroReview: { id: "julio-walker", excerpt: "Tienen solución para literalmente todo…" },
     whatsappText: "Hola, vengo de vuestra web y quiero hablar de un software de gestión a medida",
     steps: [
@@ -207,6 +207,10 @@ export const adsLandings: AdsLanding[] = [
       {
         q: "¿Quién lo mantiene?",
         a: "Nosotros, si quieres. El mantenimiento va en la propuesta para que no sea una sorpresa.",
+      },
+      {
+        q: "¿Trabajáis solo en Vigo?",
+        a: "No, pero es donde más trabajamos. En Vigo y su área nos vemos en persona sin complicaciones; con el resto de Galicia y España trabajamos en remoto con el mismo método.",
       },
     ],
     cta: {
