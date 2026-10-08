@@ -132,7 +132,7 @@ test.describe("Móvil v2 · home · contenido", () => {
     await withConsent(page);
     await page.goto("/");
     await expect(page.getByTestId("m-home-review")).toHaveCount(3);
-    await expect(page.getByTestId("m-home-reviews")).toContainText("22 reseñas en Google");
+    await expect(page.getByTestId("m-home-reviews")).toContainText("23 reseñas en Google");
     await expect(page.getByTestId("m-home-reviews").getByTestId("m-google-profile")).toHaveAttribute("href", /maps\.google\.com\/\?cid=/);
     await expect(page.getByTestId("m-home-reviews-all")).toHaveAttribute("href", "/resenas");
   });

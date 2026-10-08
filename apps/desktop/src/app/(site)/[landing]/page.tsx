@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLanding, landings } from "@/data/landings";
-import { testimonials } from "@/data/testimonials";
+import { GOOGLE_REVIEW_COUNT, testimonials } from "@/data/testimonials";
 import { getPosts } from "@/lib/blog";
 import { landingGuides } from "@/lib/blog-seo";
 import { LANDING_FORM_ID, buildLandingJsonLd, landingMetadata, resolveLandingContent } from "@/lib/landing-seo";
@@ -140,7 +140,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
                     .toFixed(1)
                     .replace(".", ",")}
                 </span>{" "}
-                · {testimonials.length} reseñas en Google
+                · {GOOGLE_REVIEW_COUNT} reseñas en Google
               </li>
               <li>Respuesta en 24 horas laborables</li>
               <li>Equipo senior · Sin subcontratas</li>

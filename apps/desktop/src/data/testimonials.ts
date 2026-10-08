@@ -20,6 +20,15 @@ export interface Testimonial {
   gender?: "male" | "female";
 }
 
+/**
+ * Nº de reseñas de la ficha de Google «Action Development» (5,0 con 23,
+ * consultada sin sesión en Google Maps el 2026-10-09). Es la cifra que se
+ * enseña. `testimonials` lleva solo las 22 que tienen texto: la de Kev
+ * Iglesias es de estrellas, sin texto que citar. Actualizar a mano cuando
+ * entre una reseña nueva (y añadirla abajo si trae texto).
+ */
+export const GOOGLE_REVIEW_COUNT = 23;
+
 export const testimonials: Testimonial[] = [
   {
     id: "almudena-muhle",

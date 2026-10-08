@@ -143,7 +143,7 @@ test.describe("Móvil v2 · /resenas contenido", () => {
 			await expect(item.getByRole("img", { name: "5 de 5 estrellas" })).toBeVisible();
 		}
 		await expect(page.getByTestId("m-rating-band")).toContainText("5,0");
-		await expect(page.getByTestId("m-rating-band")).toContainText("22 reseñas en Google");
+		await expect(page.getByTestId("m-rating-band")).toContainText("23 reseñas en Google");
 	});
 
 	test("enlaces a Google correctos y enlaces a proyecto solo si el dato lo indica", async ({ page }) => {

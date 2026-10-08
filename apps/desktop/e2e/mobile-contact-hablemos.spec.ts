@@ -149,7 +149,7 @@ test.describe("Móvil v2 · /hablemos/[oferta]", () => {
 
       // Contenido de `ads-landings.ts`: reseña del hero, casos en pestaña nueva, pasos y FAQ.
       await expect(page.getByTestId("m-ads-hero-review")).toBeVisible();
-      await expect(page.getByTestId("m-ads-rating")).toContainText("5,0 en Google · 22 reseñas");
+      await expect(page.getByTestId("m-ads-rating")).toContainText("5,0 en Google · 23 reseñas");
       await expect(page.getByTestId("m-ads-offer")).toHaveText(OFFER_LINE);
       const cases = page.locator('[data-testid^="m-ads-case-"]');
       expect(await cases.count()).toBeGreaterThan(0);

@@ -8,19 +8,19 @@ import { UnderlineLink } from "./UnderlineLink";
  * Valoración de Google en la web móvil v2 (DESIGN.md §7, `.stars`, `.rating`
  * y celda «Reseñas» del hero). Una sola pieza para la home, `/resenas` y las
  * landings de campaña. Las cifras salen de `testimonials.ts` por el mismo
- * cálculo que escritorio (`reviewSummary()` de `lib/ads-landing.ts`): nunca
- * se escriben a mano.
+ * cálculo que escritorio (`reviewSummary()` de `lib/ads-landing.ts`): la media,
+ * de las reseñas; el número, de `GOOGLE_REVIEW_COUNT` (el de la ficha).
  */
 
 const summary = reviewSummary();
 
 /** «5,0»: media con coma decimal. */
 export const REVIEW_AVERAGE = summary.rating;
-/** Nº de reseñas (22). */
+/** Nº de reseñas de la ficha de Google (23). */
 export const REVIEW_COUNT = summary.count;
 /** ¿Todas de 5 estrellas? Solo entonces se dice. */
 export const ALL_FIVE_STARS = testimonials.every((t) => t.rating === 5);
-/** «5,0 en Google · 22 reseñas»: la línea de prueba del hero (home y campaña). */
+/** «5,0 en Google · 23 reseñas»: la línea de prueba del hero (home y campaña). */
 export const RATING_SUMMARY = `${REVIEW_AVERAGE} en Google · ${REVIEW_COUNT} reseñas`;
 
 /**
@@ -53,7 +53,7 @@ export function Stars({
 
 /**
  * Banda de valoración (`.rating`, el elemento firma): tinta, «5,0» a 132 px,
- * estrellas, «22 reseñas en Google», «Todas de 5 estrellas» y «Leerlas en
+ * estrellas, «23 reseñas en Google», «Todas de 5 estrellas» y «Leerlas en
  * Google» a la ficha real (`mapsUrl`). `titleId` convierte el rótulo en el
  * `<h2>` de la sección (home); `reviewLink` añade «Deja tu reseña»
  * (`reviewUrl`, en `/resenas`).

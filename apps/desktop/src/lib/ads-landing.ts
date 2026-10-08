@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { projects, type Project } from "@actiondev/shared";
 import type { AdsCase, AdsLanding } from "@/data/ads-landings";
-import { testimonials, type Testimonial } from "@/data/testimonials";
+import { GOOGLE_REVIEW_COUNT, testimonials, type Testimonial } from "@/data/testimonials";
 import { OG_IMAGE, absoluteUrl } from "@/lib/seo";
 
 /**
@@ -38,12 +38,16 @@ export function adsLandingMetadata(landing: AdsLanding): Metadata {
   };
 }
 
-/** «5,0» y nº de reseñas, calculados igual que en las landings SEO. */
+/**
+ * «5,0» (media de las reseñas con texto) y nº de reseñas de la ficha de Google
+ * (`GOOGLE_REVIEW_COUNT`: incluye las que solo tienen estrellas). Una sola
+ * fuente para landings SEO, campaña y web móvil.
+ */
 export function reviewSummary() {
   const rating = (testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length)
     .toFixed(1)
     .replace(".", ",");
-  return { rating, count: testimonials.length };
+  return { rating, count: GOOGLE_REVIEW_COUNT };
 }
 
 /**
