@@ -19,11 +19,13 @@ import {
  * EE. UU.: de ahí la transferencia internacional del apartado 5), con su
  * atribución publicitaria (UTM, gclid, fbclid). Aviso interno por SMTP de
  * one.com y, si hay variables de entorno, Telegram. Copia en el CRM interno
- * (ActionERP, Supabase UE) vía `LEAD_ERP_URL`. Hay analítica y medición
+ * (ActionERP, Supabase UE) vía `LEAD_ERP_URL`. Los formularios instantáneos de
+ * los anuncios de Meta (Lead Ads) entran en ese MISMO pipeline leídos por la
+ * Graph API (`app/api/meta/leads`, sin intermediarios): apartado 2.2. Hay analítica y medición
  * de campañas (Google Tag Manager → GA4, Google Ads, Meta Pixel, solo tras
  * consentimiento — ver `/legal/cookies`) pero no base de datos propia de
  * analítica. Mantener este documento alineado con `packages/shared/src/leads.ts`,
- * `app/api/lead`, `components/contact/*` y `components/analytics/GoogleTagManager.tsx`
+ * `app/api/lead`, `app/api/meta/leads`, `components/contact/*` y `components/analytics/GoogleTagManager.tsx`
  * si eso cambia.
  */
 
@@ -157,10 +159,41 @@ export default function PrivacyPage() {
         <p>
           Los demás canales de la web (WhatsApp y correo electrónico) no pasan
           por ningún formulario: abren tu aplicación de mensajería o de correo,
-          y eres tú quien envía el mensaje (ver el apartado 2.3).
+          y eres tú quien envía el mensaje (ver el apartado 2.4).
         </p>
 
-        <h3>2.2. Atribución publicitaria</h3>
+        <h3>2.2. Formularios de anuncios de Meta (Facebook e Instagram)</h3>
+        <p>
+          Algunos de nuestros anuncios en Facebook e Instagram llevan un
+          formulario que se rellena sin salir de la aplicación. Si nos dejas
+          tus datos en uno de ellos, <strong>Meta Platforms Ireland Ltd.</strong>{" "}
+          los recoge por cuenta nuestra y nos los entrega mediante su interfaz
+          de programación (API) directamente a nuestros sistemas, sin
+          intermediarios. El formulario recoge tu <strong>nombre</strong>, tu{" "}
+          <strong>correo electrónico</strong>, tu <strong>teléfono</strong> y
+          el <strong>nombre de tu empresa</strong> (Meta puede rellenarlos con
+          los datos de tu perfil; puedes cambiarlos antes de enviar), y tus
+          respuestas sobre el <strong>tipo de necesidad</strong>, la{" "}
+          <strong>etapa</strong> del proyecto, un{" "}
+          <strong>presupuesto orientativo</strong> y, en una frase, qué
+          quieres resolver. Con la solicitud nos llegan también la fecha de
+          envío y el anuncio y la campaña desde los que la enviaste (como la
+          atribución del apartado 2.3); ningún otro dato de tu perfil.
+        </p>
+        <p>
+          A partir de ahí, la solicitud recibe{" "}
+          <strong>el mismo tratamiento que las de la web</strong> (apartado
+          2.1): se guarda en nuestra base de datos con la versión de esta
+          política vigente, nos llega el mismo aviso interno y se copia en
+          nuestro CRM, con la misma finalidad, base legal y plazos de
+          conservación (apartados 3 y 4). Una copia queda además en el centro
+          de clientes potenciales de Meta, al que solo accede nuestro equipo.
+          No enviamos a Meta ningún dato de vuelta sobre tu solicitud. Lo que
+          Meta haga con tu actividad en sus plataformas se rige por su propia
+          política de privacidad.
+        </p>
+
+        <h3>2.3. Atribución publicitaria</h3>
         <p>
           Si llegas a una página de la web desde un anuncio (por ejemplo, de
           Google Ads o de Meta), la dirección web puede incluir parámetros de
@@ -194,21 +227,21 @@ export default function PrivacyPage() {
           Ver la <Link href="/legal/cookies">política de cookies</Link>.
         </p>
 
-        <h3>2.3. Comunicaciones directas</h3>
+        <h3>2.4. Comunicaciones directas</h3>
         <p>
           Si nos escribes por correo electrónico, WhatsApp, teléfono o redes
           sociales, tratamos los datos que tú nos facilites en esa comunicación
           (identificativos, de contacto y los relativos al proyecto).
         </p>
 
-        <h3>2.4. Datos de clientes</h3>
+        <h3>2.5. Datos de clientes</h3>
         <p>
           En la prestación del servicio tratamos datos identificativos,
           fiscales, de contacto y de facturación de clientes y de sus personas
           de contacto.
         </p>
 
-        <h3>2.5. Datos técnicos de navegación, analítica y medición de campañas</h3>
+        <h3>2.6. Datos técnicos de navegación, analítica y medición de campañas</h3>
         <p>
           El proveedor de alojamiento registra datos técnicos de acceso
           (dirección IP, agente de usuario, fecha y hora) en sus logs de
@@ -235,8 +268,8 @@ export default function PrivacyPage() {
               Atender tu consulta, devolverte la llamada que nos pidas,
               valorar tu proyecto (formulario de proyecto de{" "}
               <code>/hablemos/*</code>, de las páginas de servicio y de{" "}
-              <code>/contact</code> en la versión para móvil) y elaborar una
-              propuesta
+              <code>/contact</code> en la versión para móvil, y formularios de
+              anuncios de Meta) y elaborar una propuesta
             </strong>{" "}
             — base
             legal: aplicación de medidas precontractuales a petición del
@@ -297,7 +330,11 @@ export default function PrivacyPage() {
         <h2>4. Plazos de conservación</h2>
         <ul>
           <li>
-            <strong>Solicitudes del formulario y del «llámame tú»</strong> (datos
+            <strong>
+              Solicitudes del formulario, del «llámame tú» y de los
+              formularios de anuncios de Meta
+            </strong>{" "}
+            (datos
             de contacto, datos del proyecto y atribución publicitaria):
             mientras dure la relación precontractual y, si no llega a
             contratarse, un máximo de 12 meses desde el último contacto; pasado
@@ -339,19 +376,19 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Google Cloud (Google Firebase / Cloud Firestore)</strong> —
-            encargado del tratamiento que almacena las solicitudes del
-            apartado 2.1 (con su atribución publicitaria), en servidores de{" "}
+            encargado del tratamiento que almacena las solicitudes de los
+            apartados 2.1 y 2.2 (con su atribución publicitaria), en servidores de{" "}
             <strong>Estados Unidos</strong>.
           </li>
           <li>
             <strong>Vercel Inc.</strong> — alojamiento web y ejecución del
-            servicio que recibe las solicitudes del formulario; encargado del
-            tratamiento. Puede tratar datos en Estados Unidos.
+            servicio que recibe las solicitudes del formulario y las de los
+            formularios de anuncios de Meta; encargado del tratamiento. Puede tratar datos en Estados Unidos.
           </li>
           <li>
             <strong>Supabase Inc.</strong> — base de datos de nuestro sistema
             interno de gestión comercial (CRM), al que se copian las solicitudes
-            del apartado 2.1 para su seguimiento; encargado del tratamiento, con
+            de los apartados 2.1 y 2.2 para su seguimiento; encargado del tratamiento, con
             servidores en la Unión Europea (París). La aplicación se ejecuta en
             Vercel.
           </li>
@@ -388,16 +425,21 @@ export default function PrivacyPage() {
             <Link href="/legal/cookies">política de cookies</Link>.
           </li>
           <li>
-            <strong>Meta Platforms Ireland Ltd.</strong> (Meta Pixel) — solo si
-            aceptas el banner de cookies. Recibe datos de navegación y el
-            hecho de que se ha enviado una solicitud, para medir campañas; puede
-            transferir datos a EE. UU. conforme a sus condiciones y a las
-            cláusulas contractuales tipo.
+            <strong>Meta Platforms Ireland Ltd.</strong> — con dos papeles
+            distintos. <strong>Meta Pixel</strong>: solo si aceptas el banner
+            de cookies; recibe datos de navegación y el hecho de que se ha
+            enviado una solicitud en la web, para medir campañas.{" "}
+            <strong>Formularios de anuncios</strong> (apartado 2.2): gestiona
+            el formulario y recoge los datos por cuenta nuestra, como
+            encargado del tratamiento, y nos los entrega por su API. Puede
+            transferir datos a EE. UU. conforme a sus condiciones, al Marco de
+            Privacidad de Datos UE-EE. UU. y a las cláusulas contractuales
+            tipo.
           </li>
         </ul>
         <p>
           <strong>Transferencias internacionales:</strong> las solicitudes
-          del apartado 2.1 se almacenan en Estados Unidos (ubicación{" "}
+          de los apartados 2.1 y 2.2 se almacenan en Estados Unidos (ubicación{" "}
           <code>nam5</code>), en la infraestructura de Google Firebase. La transferencia se ampara en la decisión
           de adecuación del Marco de Privacidad de Datos UE-EE. UU. (Comisión
           Europea, 10 de julio de 2023), al que está adherida Google LLC, y en
@@ -419,7 +461,7 @@ export default function PrivacyPage() {
           , así como retirar el consentimiento prestado en cualquier momento.
           Tienes derecho a <strong>oponerte</strong> en particular al
           tratamiento basado en nuestro interés legítimo, como la atribución
-          publicitaria del apartado 2.2: basta con que nos lo indiques y
+          publicitaria del apartado 2.3: basta con que nos lo indiques y
           dejaremos de usar tus identificadores de clic para medir y comunicar
           conversiones, salvo que acreditemos motivos legítimos imperiosos.
         </p>
