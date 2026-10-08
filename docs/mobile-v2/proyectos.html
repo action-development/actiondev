@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="es">
+<head>
+<title>Proyectos · Action Development</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EDEAE3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800;900&amp;family=Saira+Semi+Condensed:wght@400;500;600;700&amp;display=swap">
+<style>
+/* Action Development — móvil v2. Ficha técnica suiza: papel, tinta, un lima.
+   Retícula 390: medianil 16 · celdas a sangre separadas por filetes · ritmo de 4 px. */
+:root {
+  --ink: #121212;
+  --paper: #EDEAE3;
+  --grey: #D9D5CC;
+  --lime: #C8FF00;
+  --muted: #4A4741;
+  --muted-dark: #B9B5AC;
+  --line-dark: #5A5750;
+  --display: "Saira Condensed", "Arial Narrow", sans-serif;
+  --body: "Saira Semi Condensed", "Arial Narrow", sans-serif;
+  --g: 16px;
+  --bar: 64px;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--paper); -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 17px/1.45 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+.has-bar .ftr { padding-bottom: calc(var(--bar) + env(safe-area-inset-bottom, 0px)); }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+h1, h2, h3, h4, p, ul, ol, figure, blockquote, dl, dd, fieldset { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+fieldset { border: 0; min-width: 0; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.on-ink :focus-visible, .on-ink:focus-visible { outline-color: var(--lime); }
+::selection { background: var(--lime); color: var(--ink); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ic { display: block; flex: 0 0 auto; width: 24px; height: 24px; fill: currentColor; }
+
+/* ── Tipografía ─────────────────────────────────────────────── */
+.d { font-family: var(--display); font-weight: 900; text-transform: uppercase; letter-spacing: -0.01em; text-wrap: balance; }
+.t-hero { font-size: 66px; line-height: 0.84; letter-spacing: -0.02em; }
+.t-h1 { font-size: 56px; line-height: 0.86; letter-spacing: -0.02em; }
+.t-h2 { font-size: 46px; line-height: 0.88; }
+.t-h3 { font-size: 32px; line-height: 0.92; }
+.t-h4 { font-size: 24px; line-height: 0.95; }
+.t-val { font-family: var(--display); font-weight: 800; font-size: 21px; line-height: 1.1; text-transform: uppercase; }
+.label { font-family: var(--display); font-weight: 600; font-size: 12px; line-height: 1.2; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.on-ink .label, .label.on-ink { color: var(--muted-dark); }
+.lead { font-size: 19px; line-height: 1.4; font-weight: 500; max-width: 34ch; }
+.small { font-size: 14px; line-height: 1.4; }
+.muted { color: var(--muted); }
+
+/* ── Superficies ────────────────────────────────────────────── */
+.bg-ink { background: var(--ink); color: var(--paper); }
+.bg-lime { background: var(--lime); color: var(--ink); }
+.bg-grey { background: var(--grey); color: var(--ink); }
+.bg-paper { background: var(--paper); color: var(--ink); }
+.rule-b { border-bottom: 1px solid var(--ink); }
+.rule-b2 { border-bottom: 2px solid var(--ink); }
+.pad { padding-inline: var(--g); }
+
+/* ── Formas de servicio (decorativas) ───────────────────────── */
+.shape { display: block; flex: 0 0 auto; background: currentColor; }
+.shape.circle { width: 44px; height: 44px; border-radius: 50%; }
+.shape.square { width: 40px; height: 40px; }
+.shape.plus { width: 44px; height: 44px; clip-path: polygon(35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 35%, 35% 35%); }
+.shape.half { width: 24px; height: 48px; border-radius: 24px 0 0 24px; }
+.shape.sm.circle { width: 12px; height: 12px; }
+.shape.sm.square { width: 11px; height: 11px; }
+.shape.sm.plus { width: 12px; height: 12px; }
+.shape.sm.half { width: 6px; height: 12px; border-radius: 6px 0 0 6px; }
+
+/* ── Botones ────────────────────────────────────────────────── */
+.btn {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 56px; padding: 0 var(--g);
+  font-family: var(--display); font-weight: 800; font-size: 19px; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1;
+  user-select: none;
+}
+.btn .ic { width: 26px; height: 26px; }
+.btn-ink { background: var(--ink); color: var(--paper); }
+.btn-ink:hover { background: var(--lime); color: var(--ink); }
+.btn-lime { background: var(--lime); color: var(--ink); }
+.btn-lime:hover { background: var(--ink); color: var(--lime); }
+.btn-line { box-shadow: none; border: 2px solid var(--ink); background: transparent; color: var(--ink); }
+.btn-line:hover { background: var(--ink); color: var(--paper); }
+.btn:active { transform: translateY(1px); }
+.btn-ink:active, .btn-line:active { background: var(--lime); color: var(--ink); }
+.btn-lime:active { background: var(--ink); color: var(--lime); }
+.link-u {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 0 3px; border-bottom: 3px solid currentColor;
+  font-family: var(--display); font-weight: 800; font-size: 17px; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1;
+}
+.link-u .ic { width: 18px; height: 18px; }
+.link-u:active { background: var(--lime); color: var(--ink); }
+
+/* ── Cabecera ───────────────────────────────────────────────── */
+.hdr { display: flex; align-items: stretch; min-height: 60px; border-bottom: 2px solid var(--ink); background: var(--paper); }
+.hdr-logo { display: flex; align-items: center; padding: 0 var(--g); margin-right: auto; }
+.hdr-logo img { height: 34px; width: auto; }
+.hdr-wa { display: flex; align-items: center; justify-content: center; width: 60px; border-left: 1px solid var(--ink); }
+.hdr-wa .ic { width: 28px; height: 28px; }
+.hdr-wa:hover, .hdr-wa:active { background: var(--ink); color: var(--paper); }
+.hdr-menu { display: flex; align-items: center; gap: 8px; padding: 0 18px; background: var(--ink); color: var(--paper); font-family: var(--display); font-weight: 800; font-size: 16px; letter-spacing: 0.1em; text-transform: uppercase; }
+.hdr-menu .ic { width: 22px; height: 22px; }
+.hdr-menu:hover, .hdr-menu:active { background: var(--lime); color: var(--ink); }
+
+/* ── Menú a pantalla completa (se abre con #menu) ───────────── */
+.menu { position: fixed; inset: 0; z-index: 80; display: none; flex-direction: column; overflow-y: auto; background: var(--ink); color: var(--paper); }
+.menu:target { display: flex; }
+.menu-top { display: flex; align-items: stretch; min-height: 60px; border-bottom: 2px solid var(--line-dark); }
+.menu-top .hdr-logo img { height: 34px; }
+.menu-close { display: flex; align-items: center; gap: 8px; padding: 0 18px; border-left: 1px solid var(--line-dark); font-family: var(--display); font-weight: 800; font-size: 16px; letter-spacing: 0.1em; text-transform: uppercase; }
+.menu-close .ic { width: 22px; height: 22px; }
+.menu-close:hover, .menu-close:active { background: var(--paper); color: var(--ink); }
+.menu-nav a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px var(--g) 10px; border-bottom: 1px solid var(--line-dark); font-family: var(--display); font-weight: 900; font-size: 54px; line-height: 0.9; text-transform: uppercase; letter-spacing: -0.01em; }
+.menu-nav a .ic { width: 34px; height: 34px; color: var(--muted-dark); }
+.menu-nav a[aria-current="page"] { color: var(--lime); }
+.menu-nav a:hover, .menu-nav a:active { background: var(--paper); color: var(--ink); }
+.menu-cta { display: grid; grid-template-columns: 1fr 72px; gap: 1px; background: var(--line-dark); border-bottom: 1px solid var(--line-dark); }
+.menu-cta .btn { min-height: 76px; font-size: 26px; font-weight: 900; }
+.menu-cta .wa { display: flex; align-items: center; justify-content: center; background: var(--ink); color: var(--paper); }
+.menu-cta .wa .ic { width: 32px; height: 32px; }
+.menu-meta { display: grid; gap: 14px; padding: 20px var(--g) 28px; }
+.menu-meta .row { display: flex; gap: 12px; align-items: flex-start; }
+.menu-meta .ic { width: 22px; height: 22px; color: var(--muted-dark); }
+
+/* ── Celdas etiqueta/valor ──────────────────────────────────── */
+.cells { display: flex; flex-wrap: wrap; gap: 1px; background: var(--ink); border-bottom: 2px solid var(--ink); }
+.cell { flex: 1 1 160px; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; padding: 14px var(--g) 16px; background: var(--paper); }
+.cell.full { flex-basis: 100%; }
+.cell.bg-ink { background: var(--ink); }
+.cell.bg-grey { background: var(--grey); }
+.cell.bg-lime { background: var(--lime); }
+.stars { display: flex; gap: 2px; }
+.stars .ic { width: 18px; height: 18px; }
+
+/* ── Cabecera de sección ────────────────────────────────────── */
+.sec-h { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 16px; padding: 48px var(--g) 16px; border-bottom: 2px solid var(--ink); }
+.sec-h p { flex-basis: 100%; }
+
+/* ── Chips de servicio ──────────────────────────────────────── */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 9px 4px; border: 1px solid var(--ink); font-family: var(--display); font-weight: 800; font-size: 13px; letter-spacing: 0.07em; text-transform: uppercase; line-height: 1; white-space: nowrap; }
+.chip.app { background: var(--lime); }
+.chip.erp { background: var(--ink); color: var(--paper); }
+.chip.int { background: var(--grey); }
+.chip.web { background: var(--paper); }
+
+/* ── Tarjeta de caso ────────────────────────────────────────── */
+.case { display: block; border-bottom: 2px solid var(--ink); background: var(--paper); }
+.case-fig { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-bottom: 1px solid var(--ink); background: var(--grey); }
+.case-fig.tall { aspect-ratio: 4 / 5; }
+.case-fig.shot { aspect-ratio: 16 / 10; }
+.case-fig img { width: 100%; height: 100%; object-fit: cover; }
+.case-head { display: flex; align-items: stretch; border-bottom: 1px solid var(--ink); }
+.case-head .t { flex: 1; min-width: 0; display: grid; gap: 8px; padding: 16px var(--g) 14px; }
+.case-head .go { display: flex; align-items: center; justify-content: center; width: 64px; border-left: 1px solid var(--ink); }
+.case-head .go .ic { width: 30px; height: 30px; }
+.case:hover .case-head .go, .case:active .case-head .go { background: var(--lime); }
+.case-body { padding: 14px var(--g) 18px; font-size: 16.5px; line-height: 1.45; }
+.case-result { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 14px; padding: 16px var(--g) 18px; background: var(--ink); color: var(--paper); border-top: 1px solid var(--ink); }
+.case-result .num { grid-row: span 2; font-family: var(--display); font-weight: 900; font-size: 76px; line-height: 0.8; letter-spacing: -0.03em; color: var(--lime); }
+.case-result p { font-size: 16px; line-height: 1.35; }
+
+/* Tira horizontal de más trabajos */
+.strip { display: grid; grid-auto-flow: column; grid-auto-columns: 232px; gap: 1px; overflow-x: auto; background: var(--ink); border-bottom: 2px solid var(--ink); scroll-snap-type: x mandatory; scrollbar-width: none; }
+.strip::-webkit-scrollbar { display: none; }
+.strip a { display: flex; flex-direction: column; background: var(--paper); scroll-snap-align: start; }
+.strip .fig { aspect-ratio: 1 / 1; overflow: hidden; border-bottom: 1px solid var(--ink); }
+.strip .fig img { width: 100%; height: 100%; object-fit: cover; }
+.strip .cap { display: grid; gap: 4px; padding: 12px 14px 14px; }
+
+/* ── Reseñas ────────────────────────────────────────────────── */
+.rating { display: grid; grid-template-columns: auto 1fr; align-items: end; gap: 0 16px; padding: 28px var(--g) 24px; background: var(--ink); color: var(--paper); border-bottom: 2px solid var(--ink); }
+.rating .big { font-family: var(--display); font-weight: 900; font-size: 132px; line-height: 0.76; letter-spacing: -0.03em; }
+.rating .side { display: grid; gap: 10px; padding-bottom: 4px; }
+.rating .stars .ic { width: 22px; height: 22px; }
+.rating .foot { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-dark); }
+.review { display: grid; gap: 14px; padding: 24px var(--g) 22px; border-bottom: 1px solid var(--ink); }
+.review blockquote { font-size: 20px; line-height: 1.38; font-weight: 500; max-width: 34ch; }
+.review .who { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+
+/* ── Servicios ──────────────────────────────────────────────── */
+.svc { display: grid; gap: 1px; background: var(--ink); border-bottom: 2px solid var(--ink); }
+.svc a { display: grid; grid-template-columns: 76px 1fr 52px; align-items: stretch; min-height: 132px; }
+.svc .mark { display: flex; align-items: flex-start; justify-content: center; padding-top: 20px; border-right: 1px solid currentColor; }
+.svc .txt { display: grid; align-content: start; gap: 8px; padding: 18px 14px 18px 16px; min-width: 0; }
+.svc .txt p { font-size: 16px; line-height: 1.4; }
+.svc .arr { display: flex; align-items: flex-end; justify-content: center; padding-bottom: 18px; }
+.svc .arr .ic { width: 28px; height: 28px; }
+.svc a.bg-ink .mark { border-color: var(--line-dark); }
+.svc a:hover, .svc a:active { background: var(--ink); color: var(--paper); }
+.svc a.bg-ink:hover, .svc a.bg-ink:active { background: var(--lime); color: var(--ink); }
+
+/* ── Pasos del proceso ──────────────────────────────────────── */
+.steps { border-bottom: 2px solid var(--ink); }
+.step { display: grid; grid-template-columns: 72px 1fr; border-bottom: 1px solid var(--ink); }
+.step:last-child { border-bottom: 0; }
+.step .n { display: flex; justify-content: center; padding-top: 18px; border-right: 1px solid var(--ink); font-family: var(--display); font-weight: 900; font-size: 40px; line-height: 0.9; }
+.step .c { display: grid; gap: 6px; padding: 18px var(--g) 20px; }
+.step .c p { font-size: 16px; line-height: 1.42; }
+.step.hi .n { background: var(--lime); }
+
+/* ── FAQ ────────────────────────────────────────────────────── */
+.faq { border-bottom: 2px solid var(--ink); }
+.faq details { border-bottom: 1px solid var(--ink); }
+.faq details:last-child { border-bottom: 0; }
+.faq summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 14px 0 14px var(--g); list-style: none; cursor: pointer; font-family: var(--display); font-weight: 800; font-size: 21px; line-height: 1.05; text-transform: uppercase; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary .tg { flex: 0 0 56px; display: flex; align-items: center; justify-content: center; align-self: stretch; width: 56px; margin-block: -14px; border-left: 1px solid var(--ink); }
+.faq summary .tg .ic { width: 28px; height: 28px; }
+.faq summary .tg .rm { display: none; }
+.faq details[open] summary { background: var(--ink); color: var(--paper); }
+.faq details[open] summary .tg { border-color: var(--line-dark); }
+.faq details[open] summary .ad { display: none; }
+.faq details[open] summary .rm { display: block; }
+.faq summary:active { background: var(--lime); color: var(--ink); }
+.faq .a { padding: 16px var(--g) 22px; font-size: 17px; max-width: 40ch; }
+
+/* ── CTA final ──────────────────────────────────────────────── */
+.cta-final { display: grid; gap: 18px; padding: 40px var(--g) 28px; background: var(--lime); border-bottom: 2px solid var(--ink); }
+.cta-final .acts { display: grid; gap: 10px; margin-top: 6px; }
+
+/* ── Barra fija inferior ────────────────────────────────────── */
+.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: grid; grid-template-columns: 1fr var(--bar); border-top: 2px solid var(--ink); background: var(--ink); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.bar .btn { min-height: var(--bar); font-size: 22px; font-weight: 900; letter-spacing: 0.03em; }
+.bar .wa { display: flex; align-items: center; justify-content: center; background: var(--ink); color: var(--paper); border-left: 2px solid var(--ink); }
+.bar .wa .ic { width: 30px; height: 30px; }
+.bar .wa:hover, .bar .wa:active { background: var(--paper); color: var(--ink); }
+
+/* ── Pie ────────────────────────────────────────────────────── */
+.ftr { background: var(--ink); color: var(--paper); }
+.ftr-logo { padding: 32px var(--g) 28px; border-bottom: 1px solid var(--line-dark); }
+.ftr-logo img { width: 100%; height: auto; }
+.ftr-cells { display: flex; flex-wrap: wrap; gap: 1px; background: var(--line-dark); border-bottom: 1px solid var(--line-dark); }
+.ftr-cells .cell { background: var(--ink); color: var(--paper); }
+.ftr-cells .cell .label { color: var(--muted-dark); }
+.ftr-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line-dark); border-bottom: 1px solid var(--line-dark); }
+.ftr-nav a { display: flex; align-items: center; min-height: 56px; padding: 0 var(--g); background: var(--ink); font-family: var(--display); font-weight: 800; font-size: 20px; text-transform: uppercase; }
+.ftr-nav a:hover, .ftr-nav a:active { background: var(--paper); color: var(--ink); }
+.ftr-legal { display: grid; gap: 10px; padding: 20px var(--g) 28px; font-size: 14px; line-height: 1.45; color: var(--muted-dark); }
+.ftr-legal nav { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; }
+.ftr-legal nav a:hover { color: var(--paper); text-decoration: underline; }
+
+/* ── Formulario por pasos ───────────────────────────────────── */
+.lf { background: var(--paper); }
+.lf-head { display: flex; align-items: stretch; border-bottom: 1px solid var(--ink); }
+.lf-head .prog { flex: 1; display: grid; gap: 8px; padding: 14px var(--g) 12px; }
+.lf-head .bars { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.lf-head .bars span { height: 8px; border: 2px solid var(--ink); }
+.lf-head .bars span.on { background: var(--ink); }
+.lf-head .back { display: flex; align-items: center; gap: 6px; padding: 0 16px; border-left: 1px solid var(--ink); font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; }
+.lf-head .back .ic { width: 20px; height: 20px; }
+.lf-head .back:hover, .lf-head .back:active { background: var(--ink); color: var(--paper); }
+.lf-q { padding: 18px var(--g) 12px; }
+.lf-q legend { padding: 0; }
+.tiles { display: grid; gap: 1px; background: var(--ink); border-block: 1px solid var(--ink); }
+.tiles.c2 { grid-template-columns: 1fr 1fr; }
+.tiles.c3 { grid-template-columns: 1fr 1fr 1fr; }
+.tile { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; min-height: 108px; padding: 14px 14px 14px var(--g); background: var(--paper); cursor: pointer; }
+.tile input { position: absolute; opacity: 0; pointer-events: none; }
+.tile .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.tile .top .ic { width: 30px; height: 30px; }
+.tile .box { position: relative; flex: 0 0 auto; width: 26px; height: 26px; border: 3px solid currentColor; }
+.tile .box .ic { position: absolute; inset: -1px; width: 22px; height: 22px; display: none; }
+.tile .nm { font-family: var(--display); font-weight: 800; font-size: 19px; line-height: 1.02; text-transform: uppercase; }
+.tile.row { flex-direction: row; align-items: center; justify-content: flex-start; gap: 14px; min-height: 64px; padding: 12px var(--g); }
+.tile.row .nm { font-family: var(--body); font-weight: 600; font-size: 17px; line-height: 1.25; text-transform: none; }
+.tile.mini { min-height: 76px; justify-content: center; align-items: center; gap: 8px; padding: 12px 8px; text-align: center; }
+.tile.mini .nm { font-size: 17px; }
+.tile.span2 { grid-column: span 2; }
+.tile.short { min-height: 72px; justify-content: center; }
+.tile.short .top { align-items: center; }
+.tile:hover { background: var(--grey); }
+.tile:has(input:checked) { background: var(--ink); color: var(--paper); }
+.tile:has(input:checked) .box { background: var(--lime); border-color: var(--lime); color: var(--ink); }
+.tile:has(input:checked) .box .ic { display: block; }
+.tile:has(input:focus-visible) { outline: 3px solid var(--ink); outline-offset: -6px; z-index: 1; }
+.tile:has(input:checked:focus-visible) { outline-color: var(--lime); }
+.field { display: grid; gap: 6px; padding: 0 var(--g); }
+.field label, .field .lab { font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; }
+.field label .opt { font-family: var(--body); font-weight: 500; font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.field input, .field textarea {
+  width: 100%; height: 56px; padding: 0 14px; border: 2px solid var(--ink); border-radius: 0; background: var(--paper);
+  font-family: var(--display); font-weight: 800; font-size: 22px; color: var(--ink); text-transform: none;
+}
+.field textarea { height: 104px; padding: 12px 14px; resize: none; font-family: var(--body); font-weight: 500; font-size: 17px; line-height: 1.4; }
+.field input::placeholder, .field textarea::placeholder { color: #5A5750; opacity: 1; font-weight: 600; }
+.field input:focus, .field textarea:focus { outline: 3px solid var(--ink); outline-offset: 2px; }
+.field .hint { font-size: 14px; color: var(--muted); }
+.field .err { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--ink); color: var(--paper); font-size: 15px; line-height: 1.3; }
+.field .err b { display: grid; place-items: center; flex: 0 0 22px; height: 22px; background: var(--lime); color: var(--ink); font-family: var(--display); font-weight: 900; }
+.field input[aria-invalid="true"] { border-width: 3px; }
+.lf-foot { display: grid; gap: 12px; padding: 20px var(--g) 24px; }
+.lf-foot .note { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.lf-foot .note .ic { width: 20px; height: 20px; }
+.gdpr { font-size: 13px; line-height: 1.5; color: var(--muted); }
+.gdpr b { color: var(--ink); font-weight: 600; }
+.gdpr a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Separador de pantallas dentro de una maqueta */
+.screen-cut { display: flex; align-items: center; gap: 10px; padding: 14px var(--g); background: var(--grey); border-block: 2px solid var(--ink); }
+.screen-cut .ic { width: 22px; height: 22px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+.bar[hidden] { display: none; }
+
+/* ── Formulario: piezas extra ───────────────────────────────── */
+.lf fieldset { display: block; }
+.lf legend { display: block; width: 100%; padding: 18px var(--g) 12px; }
+.lf .q { padding: 18px var(--g) 12px; }
+.fields { display: grid; gap: 18px; padding: 4px 0 22px; }
+.glyph { font-family: var(--display); font-weight: 900; font-size: 34px; line-height: 0.8; }
+.tile.money .nm { text-transform: none; font-size: 22px; letter-spacing: 0; }
+.compact .tile:not(.row) { flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; min-height: 76px; padding: 12px 40px 12px 14px; }
+.compact .tile:not(.row) .top { display: contents; }
+.compact .tile:not(.row) .top > .ic, .compact .tile:not(.row) .glyph { width: 26px; height: 26px; font-size: 28px; text-align: center; }
+.compact .tile:not(.row) .box { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-width: 3px; }
+.compact .tile:not(.row) .box .ic { width: 18px; height: 18px; inset: -1px; }
+.compact .tile:not(.row) .nm { font-size: 17px; }
+.compact .lf-head .prog { padding-block: 10px 9px; }
+.compact .tile.row { min-height: 54px; padding-block: 8px; }
+.compact legend { padding: 12px var(--g) 9px; }
+
+/* ── Proyectos ──────────────────────────────────────────────── */
+.filters { display: flex; gap: 6px; padding: 14px var(--g); overflow-x: auto; border-bottom: 2px solid var(--ink); scrollbar-width: none; }
+.filters::-webkit-scrollbar { display: none; }
+.filters button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 2px solid var(--ink); font-family: var(--display); font-weight: 800; font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.filters button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.filters button:active { background: var(--lime); color: var(--ink); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--ink); border-bottom: 2px solid var(--ink); }
+.grid2 a { display: flex; flex-direction: column; background: var(--paper); }
+.grid2 .fig { aspect-ratio: 16 / 10; overflow: hidden; border-bottom: 1px solid var(--ink); }
+.grid2 .fig img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.grid2 .cap { display: grid; gap: 3px; padding: 10px 12px 14px; }
+.grid2 .t-val { font-size: 18px; }
+.case-kind { padding: 10px var(--g); border-bottom: 1px solid var(--ink); font-size: 15px; color: var(--muted); }
+.checks { display: grid; border-top: 1px solid var(--ink); }
+.checks li { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; padding: 14px var(--g); border-bottom: 1px solid var(--ink); font-size: 17px; line-height: 1.4; }
+.checks .ic { width: 26px; height: 26px; margin-top: -1px; }
+.prose { display: grid; gap: 10px; padding: 24px var(--g) 22px; }
+.prose p { font-size: 18px; line-height: 1.45; max-width: 36ch; }
+.next { display: grid; grid-template-columns: 1fr 64px; border-bottom: 2px solid var(--ink); }
+.next .t { display: grid; gap: 6px; padding: 18px var(--g); }
+.next .go { display: flex; align-items: center; justify-content: center; border-left: 1px solid var(--ink); background: var(--ink); color: var(--paper); }
+.next .go .ic { width: 30px; height: 30px; }
+.crumb { display: flex; align-items: stretch; border-bottom: 1px solid var(--ink); }
+.crumb a { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 var(--g); border-right: 1px solid var(--ink); font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; }
+.crumb a .ic { width: 20px; height: 20px; }
+.crumb a:active { background: var(--ink); color: var(--paper); }
+.crumb span { display: flex; align-items: center; padding: 0 var(--g); }
+[data-svc][hidden] { display: none; }
+.case .cell { justify-content: flex-start; }
+</style>
+
+<style>
+  .ptitle { display: grid; gap: 14px; padding: 26px var(--g) 22px; border-bottom: 2px solid var(--ink); }
+  .gen { display: flex; flex-direction: column; justify-content: space-between; aspect-ratio: 16 / 10; padding: 12px; border-bottom: 1px solid var(--ink); }
+  .gen .shape { width: 26px; height: 26px; }
+  .gen .shape.plus { width: 28px; height: 28px; }
+  .gen .w { font-family: var(--display); font-weight: 900; font-size: 30px; line-height: 0.85; text-transform: uppercase; letter-spacing: -0.01em; }
+  .fhead { display: grid; gap: 12px; padding: 22px var(--g) 20px; border-bottom: 1px solid var(--ink); }
+  .fig-cap { padding: 10px var(--g) 12px; font-size: 14px; color: var(--muted); border-bottom: 2px solid var(--ink); }
+  .fcta { display: grid; gap: 14px; padding: 32px var(--g) 24px; background: var(--lime); border-bottom: 2px solid var(--ink); }
+  .h-sub { padding: 28px var(--g) 12px; }
+</style>
+</head>
+<body class="has-bar">
+<header class="hdr">
+  <a class="hdr-logo" href="home.html" aria-label="Action Development, inicio"><img src="assets/logo-tinta.png" alt="Action Development" width="113" height="34"></a>
+  <a class="hdr-wa" href="https://wa.me/34614027410" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M108 -492A384 384 0 1 1 876 -492A384 384 0 1 1 108 -492ZM192 -492A300 300 0 1 0 792 -492A300 300 0 1 0 192 -492ZM398.8 -144.3L80 -80L144.3 -398.8ZM640.3-299.3Q586.3-299.3 525.3-328.8T411.3-411.3Q357.8-463.8 328.5-523.5T299.3-639.8V-684.8H435.3L460.8-572.8 391.8-509.8Q403.8-491.3 416.5-475.3T443.3-444.8Q459.3-428.8 476.3-415.5T511.8-392.3L579.3-460.8 684.8-436.3V-299.3H640.3Z"/></svg></a>
+  <a class="hdr-menu" href="#menu" aria-haspopup="dialog" aria-controls="menu">Menú<svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M95-203v-95h771v95H95Zm0-230v-94h771v94H95Zm0-229v-95h771v95H95Z"/></svg></a>
+</header>
+<div class="menu on-ink" id="menu" role="dialog" aria-modal="true" aria-label="Menú">
+  <div class="menu-top">
+    <a class="hdr-logo" href="home.html" aria-label="Action Development, inicio"><img src="assets/logo-papel.png" alt="Action Development" width="113" height="34"></a>
+    <a class="menu-close" href="#cerrar">Cerrar<svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m249-183-66-66 231-231-231-231 66-66 231 231 231-231 66 66-231 231 231 231-66 66-231-231-231 231Z"/></svg></a>
+  </div>
+  <nav class="menu-nav" aria-label="Menú principal">
+    <a href="home.html" >Inicio<svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></a>
+    <a href="proyectos.html" aria-current="page">Proyectos<svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></a>
+    <a href="home.html#servicios">Servicios<svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></a>
+    <a href="home.html#proceso">Cómo trabajamos<svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></a>
+    <a href="home.html#resenas">Reseñas<svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></a>
+  </nav>
+  <div class="menu-cta">
+    <a class="btn btn-lime" href="formulario.html">Contar mi proyecto<svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></a>
+    <a class="wa" href="https://wa.me/34614027410" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M108 -492A384 384 0 1 1 876 -492A384 384 0 1 1 108 -492ZM192 -492A300 300 0 1 0 792 -492A300 300 0 1 0 192 -492ZM398.8 -144.3L80 -80L144.3 -398.8ZM640.3-299.3Q586.3-299.3 525.3-328.8T411.3-411.3Q357.8-463.8 328.5-523.5T299.3-639.8V-684.8H435.3L460.8-572.8 391.8-509.8Q403.8-491.3 416.5-475.3T443.3-444.8Q459.3-428.8 476.3-415.5T511.8-392.3L579.3-460.8 684.8-436.3V-299.3H640.3Z"/></svg></a>
+  </div>
+  <div class="menu-meta">
+    <p class="row"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M535.5-505.09q22.5-22.09 22.5-55t-22.59-55.41q-22.59-22.5-55.5-22.5T425-615.41q-22 22.59-22 55.5T425.09-505q22.09 22 55 22t55.41-22.09ZM480-55Q307-199 221-318.5T135-555q0-160 104.5-255.5T480-906q136 0 241 95.5T826-555q0 117-86.5 236.5T480-55Z"/></svg><span>Rúa Colón, 20. 36201 Vigo (Pontevedra)</span></p>
+    <p class="row"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M777-95q-108 0-230-59T319-319Q212-424 153.5-543.51 95-663.02 95-776v-90h272l51 224-138 126q24.16 37.15 49.58 69.07Q355-415 383.03-385.97 415-354 449-327.5t71 46.5l135-137 211 48.58V-95h-89ZM234-600l80-75-22-96H191q-2 33 8.5 74.5T234-600Zm372 367q34 16 77.5 27.5T771-191v-102.82L683-313l-77 80ZM234-600Zm372 367Z"/></svg><span>+34 614 02 74 10</span></p>
+    <p class="row"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M55-135v-691h851v691H55Zm425-295L149-653v424h662v-424L480-430Zm0-83 327-218H154l326 218ZM149-653v-78 502-424Z"/></svg><span>hi@actiondev.es</span></p>
+    <p class="label">La primera reunión es gratis y sin compromiso</p>
+  </div>
+</div>
+
+
+<main>
+  <section class="ptitle" id="top" aria-labelledby="h1">
+    <h1 id="h1" class="d t-hero">Proyectos</h1>
+    <p class="lead">Apps, programas y webs que ya están funcionando. Cada uno con su antes y su después.</p>
+  </section>
+
+  <div class="filters" role="group" aria-label="Filtrar por tipo de trabajo">
+    <button type="button" data-f="all" aria-pressed="true">Todos</button>
+    <button type="button" data-f="app" aria-pressed="false"><span class="shape sm circle" aria-hidden="true"></span>Apps</button>
+    <button type="button" data-f="erp" aria-pressed="false"><span class="shape sm square" aria-hidden="true"></span>Programas de gestión</button>
+    <button type="button" data-f="int" aria-pressed="false"><span class="shape sm plus" aria-hidden="true"></span>Conectar programas</button>
+    <button type="button" data-f="web" aria-pressed="false"><span class="shape sm half" aria-hidden="true"></span>Webs y tiendas</button>
+  </div>
+
+  <div id="lista">
+    <a class="case" data-svc="app" href="#ficha">
+      <figure class="case-fig"><img src="assets/casos/trading-app.webp" alt="Trading App en un iPhone: gráfico de velas del oro en tiempo real"></figure>
+      <div class="case-head"><div class="t"><h2 class="d t-h3">Trading App</h2><div class="chips"><span class="chip app"><span class="shape sm circle" aria-hidden="true"></span>App</span><span class="label" style="align-self:center">Señales de mercado</span></div></div><span class="go" aria-hidden="true"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></span></div>
+      <div class="cells" style="border-bottom:0"><div class="cell"><span class="label">Antes</span><span>Las señales se perdían entre los mensajes de un grupo.</span></div><div class="cell"><span class="label">Ahora</span><span>App propia con velas en tiempo real, histórico y formación dentro.</span></div></div>
+    </a>
+    <a class="case" data-svc="app erp" href="#ficha">
+      <figure class="case-fig"><img src="assets/casos/autoescuela.webp" alt="La app de Autoescuela GTI en un iPhone: próxima clase, pagos pendientes y progreso del alumno"></figure>
+      <div class="case-head"><div class="t"><h2 class="d t-h3">Autoescuela GTI</h2><div class="chips"><span class="chip app"><span class="shape sm circle" aria-hidden="true"></span>App</span><span class="chip erp"><span class="shape sm square" aria-hidden="true"></span>Programa de gestión</span></div></div><span class="go" aria-hidden="true"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></span></div>
+      <div class="cells" style="border-bottom:0"><div class="cell"><span class="label">Antes</span><span>Los alumnos llamaban a secretaría para preguntar lo mismo.</span></div><div class="cell"><span class="label">Ahora</span><span>Una app con clases, pagos y exámenes, y un ERP para la oficina.</span></div></div>
+    </a>
+    <a class="case" data-svc="web" href="#ficha">
+      <figure class="case-fig"><img src="assets/casos/fase.webp" alt="Web de Fasepower en un monitor: «We are Fasepower» sobre la cubierta de un barco"></figure>
+      <div class="case-head"><div class="t"><h2 class="d t-h3">Fasepower</h2><div class="chips"><span class="chip web"><span class="shape sm half" aria-hidden="true"></span>Web</span><span class="label" style="align-self:center">Industria naval</span></div></div><span class="go" aria-hidden="true"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></span></div>
+      <div class="cells" style="border-bottom:0"><div class="cell"><span class="label">Antes</span><span>Competía por contratos internacionales con una web de 2012.</span></div><div class="cell"><span class="label">Ahora</span><span>Web bilingüe con una ficha técnica por servicio.</span></div></div>
+    </a>
+    <a class="case" data-svc="web" href="#ficha">
+      <figure class="case-fig"><img src="assets/casos/la-fabrica.webp" alt="Web de La Fábrica en un portátil: agenda de conciertos en rojo sobre negro"></figure>
+      <div class="case-head"><div class="t"><h2 class="d t-h3">La Fábrica</h2><div class="chips"><span class="chip web"><span class="shape sm half" aria-hidden="true"></span>Web</span><span class="label" style="align-self:center">Sala de conciertos, Redondela</span></div></div><span class="go" aria-hidden="true"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></span></div>
+      <div class="cells" style="border-bottom:0"><div class="cell"><span class="label">Antes</span><span>La agenda vivía en carteles de redes que caducaban en un día.</span></div><div class="cell"><span class="label">Ahora</span><span>Agenda por fechas, cuenta atrás y venta de entradas en su web.</span></div></div>
+    </a>
+    <a class="case" data-svc="web" href="#ficha">
+      <figure class="case-fig"><img src="assets/casos/cliche.webp" alt="Tienda online de Cliché en un portátil: chicas con la colección en la calle"></figure>
+      <div class="case-head"><div class="t"><h2 class="d t-h3">Cliché</h2><div class="chips"><span class="chip web"><span class="shape sm half" aria-hidden="true"></span>Tienda online</span><span class="label" style="align-self:center">Moda</span></div></div><span class="go" aria-hidden="true"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></span></div>
+      <div class="cells" style="border-bottom:0"><div class="cell"><span class="label">Antes</span><span>Vendía por mensaje directo.</span></div><div class="cell"><span class="label">Ahora</span><span>Tienda con catálogo por colecciones y pago propio.</span></div></div>
+    </a>
+    <a class="case" data-svc="web" href="#ficha">
+      <figure class="case-fig"><img src="assets/casos/biyoga.webp" alt="Web de Biyoga en un portátil: «Habita la práctica. Vuelve a tu ritmo»"></figure>
+      <div class="case-head"><div class="t"><h2 class="d t-h3">Biyoga</h2><div class="chips"><span class="chip web"><span class="shape sm half" aria-hidden="true"></span>Web</span><span class="label" style="align-self:center">Estudio de yoga</span></div></div><span class="go" aria-hidden="true"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></span></div>
+      <div class="cells" style="border-bottom:0"><div class="cell"><span class="label">Antes</span><span>Reservas por WhatsApp y horarios en un PDF.</span></div><div class="cell"><span class="label">Ahora</span><span>Web con reserva de clases y artículos propios.</span></div></div>
+    </a>
+    <a class="case" data-svc="web" href="#ficha">
+      <figure class="case-fig tall"><img src="assets/casos/patricia-avendano.webp" alt="Web de Patricia Avendaño en un portátil sobre un sofá de cuero: vestidos de novia y de fiesta"></figure>
+      <div class="case-head"><div class="t"><h2 class="d t-h3">Patricia Avendaño</h2><div class="chips"><span class="chip web"><span class="shape sm half" aria-hidden="true"></span>Web</span><span class="label" style="align-self:center">Moda nupcial y de fiesta</span></div></div><span class="go" aria-hidden="true"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></span></div>
+      <div class="cells" style="border-bottom:0"><div class="cell"><span class="label">Antes</span><span>Dos clientas muy distintas entraban por la misma puerta.</span></div><div class="cell"><span class="label">Ahora</span><span>Novia y fiesta en dos recorridos, en español e inglés.</span></div></div>
+    </a>
+    <a class="case" data-svc="app" href="#ficha">
+      <figure class="case-fig tall"><img src="assets/casos/true-trading.webp" alt="App de TrueTrading en un iPhone sobre un bloque de hormigón: pantalla de carga"></figure>
+      <div class="case-head"><div class="t"><h2 class="d t-h3">TrueTrading</h2><div class="chips"><span class="chip app"><span class="shape sm circle" aria-hidden="true"></span>App</span><span class="label" style="align-self:center">Señales de mercado</span></div></div><span class="go" aria-hidden="true"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></span></div>
+      <div class="cells" style="border-bottom:0"><div class="cell"><span class="label">Antes</span><span>El trabajo estaba repartido entre Telegram y otras herramientas.</span></div><div class="cell"><span class="label">Ahora</span><span>Una sola app con chats, grupos y perfiles, en tiempo real.</span></div></div>
+    </a>
+
+    <div class="sec-h" data-svc="app erp int web"><h2 class="d t-h2">Más proyectos</h2></div>
+    <div class="grid2">
+      <a data-svc="web" href="#ficha"><span class="fig"><img src="assets/capturas/musa.webp" alt="Web de Musa"></span><span class="cap"><span class="t-val">Musa</span><span class="small muted">Ocio nocturno, Vigo</span></span></a>
+      <a data-svc="web" href="#ficha"><span class="fig"><img src="assets/capturas/pbb-porrino.webp" alt="Web del PBB O Porriño"></span><span class="cap"><span class="t-val">PBB O Porriño</span><span class="small muted">Club de baloncesto</span></span></a>
+      <a data-svc="int web" href="#ficha"><span class="gen bg-grey"><span class="shape plus" aria-hidden="true"></span><span class="w">Flota en tiempo real</span></span><span class="cap"><span class="t-val">Nautirent</span><span class="small muted">Web conectada a su software de flota</span></span></a>
+      <a data-svc="erp" href="#ficha"><span class="gen bg-ink"><span class="shape square" aria-hidden="true"></span><span class="w">Fichaje sin papel</span></span><span class="cap"><span class="t-val">Timetracker</span><span class="small muted">Control horario, pyme industrial</span></span></a>
+      <a data-svc="web" href="#ficha"><span class="fig"><img src="assets/capturas/koopey.webp" alt="Tienda online de Koopey"></span><span class="cap"><span class="t-val">Koopey</span><span class="small muted">Tienda de moda</span></span></a>
+      <a data-svc="web" href="#ficha"><span class="fig"><img src="assets/capturas/samoa.webp" alt="Web de Samoa Café"></span><span class="cap"><span class="t-val">Samoa Café</span><span class="small muted">Hostelería, Redondela</span></span></a>
+      <a data-svc="web" href="#ficha"><span class="fig"><img src="assets/capturas/almudena-muhle.webp" alt="Web de Almudena Muhle"></span><span class="cap"><span class="t-val">Almudena Muhle</span><span class="small muted">Interiorismo</span></span></a>
+      <a data-svc="web" href="#ficha"><span class="fig"><img src="assets/capturas/parisdenoia.webp" alt="Web de la orquesta París de Noia"></span><span class="cap"><span class="t-val">París de Noia</span><span class="small muted">Orquesta, Noia</span></span></a>
+      <a data-svc="int web" href="#ficha"><span class="fig"><img src="assets/capturas/licentia.webp" alt="Web de Licentia"></span><span class="cap"><span class="t-val">Licentia</span><span class="small muted">Licencias con entrega automática</span></span></a>
+      <a data-svc="web" href="#ficha"><span class="fig"><img src="assets/capturas/canelita.webp" alt="Tienda online de Canelita"></span><span class="cap"><span class="t-val">Canelita</span><span class="small muted">Comercio, Redondela</span></span></a>
+    </div>
+  </div>
+
+  <div class="screen-cut"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M433-826v511L201-547l-66 67 345 345 346-345-67-67-232 232v-511h-94Z"/></svg><span class="label" style="color:var(--ink)">Al tocar un proyecto se abre su ficha</span></div>
+
+  <article id="ficha" aria-labelledby="h-ficha">
+    <nav class="crumb" aria-label="Migas"><a href="#top"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m315-433 232 232-67 66-345-345 345-346 67 67-232 232h511v94H315Z"/></svg>Proyectos</a><span class="label">Caso</span></nav>
+    <header class="fhead">
+      <h2 id="h-ficha" class="d t-h1">Autoescuela GTI</h2>
+      <div class="chips"><span class="chip app"><span class="shape sm circle" aria-hidden="true"></span>App</span><span class="chip erp"><span class="shape sm square" aria-hidden="true"></span>Programa de gestión</span></div>
+    </header>
+    <figure class="case-fig tall" style="aspect-ratio:1/1"><img src="assets/casos/autoescuela.webp" alt="La app de Autoescuela GTI en un iPhone: próxima clase, pagos pendientes y progreso del alumno"></figure>
+    <div class="cells">
+      <div class="cell"><span class="label">Sector</span><span class="t-val">Autoescuela</span></div>
+      <div class="cell"><span class="label">Para quién</span><span class="t-val">Alumnos, profesores y secretaría</span></div>
+      <div class="cell"><span class="label">Qué hicimos</span><span class="t-val">App iOS y Android + ERP</span></div>
+      <div class="cell"><span class="label">Hecho con</span><span class="t-val">React Native y Supabase</span></div>
+    </div>
+    <section class="prose" aria-labelledby="h-prob">
+      <h3 id="h-prob" class="d t-h3">El problema</h3>
+      <p>Cada alumno llamaba para preguntar lo mismo: cuándo es mi clase, qué debo, cuándo me examino.</p>
+    </section>
+    <section aria-labelledby="h-hicimos">
+      <h3 id="h-hicimos" class="d t-h3 h-sub">Lo que hicimos</h3>
+      <ul class="checks">
+        <li><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M378-222 130-470l68-68 180 180 383-383 68 68-451 451Z"/></svg><span>Un ERP para que las secretarias gestionen matrículas y administración.</span></li>
+        <li><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M378-222 130-470l68-68 180 180 383-383 68 68-451 451Z"/></svg><span>Los profesores registran prácticas y resultados de examen desde el propio sistema.</span></li>
+        <li><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M378-222 130-470l68-68 180 180 383-383 68 68-451 451Z"/></svg><span>Una app donde los alumnos ven su próxima clase, pagos, tasas y progreso de teórica y prácticas.</span></li>
+        <li><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M378-222 130-470l68-68 180 180 383-383 68 68-451 451Z"/></svg><span>Gestión completa de la flota de coches de prácticas.</span></li>
+      </ul>
+    </section>
+    <div class="case-result on-ink" style="border-bottom:2px solid var(--ink)">
+      <span class="num">×10</span>
+      <span class="label">Resultado</span>
+      <p>trámites que alumnos y profesores resuelven sin pasar por secretaría. El teléfono de la oficina dejó de sonar.</p>
+    </div>
+    <figure>
+      <div class="case-fig shot"><img src="assets/capturas/autoescuelagti.webp" alt="Pantalla de acceso al panel de gestión de la autoescuela"></div>
+      <figcaption class="fig-cap">El ERP de secretaría: acceso al panel de gestión.</figcaption>
+    </figure>
+    <section class="fcta" aria-labelledby="h-fcta">
+      <h3 id="h-fcta" class="d t-h2">¿Tu negocio tiene un problema parecido?</h3>
+      <p class="lead">Cuéntanoslo. La primera reunión es gratis y sin compromiso.</p>
+      <a class="btn btn-ink on-ink" href="formulario.html">Contar mi proyecto<svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></a>
+    </section>
+    <a class="next" href="#lista"><span class="t"><span class="label">Siguiente proyecto</span><span class="d t-h3">Trading App</span></span><span class="go on-ink"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M645-433H135v-94h510L413-759l67-67 346 346-346 345-67-66 232-232Z"/></svg></span></a>
+  </article>
+</main>
+<footer class="ftr on-ink">
+  <div class="ftr-logo"><img src="assets/logo-papel.png" alt="Action Development" width="358" height="108"></div>
+  <div class="ftr-cells">
+    <div class="cell full"><span class="label">Oficina</span><span class="t-val">Rúa Colón, 20. 36201 Vigo</span></div>
+    <div class="cell"><span class="label">Teléfono y WhatsApp</span><span class="t-val">+34 614 02 74 10</span></div>
+    <div class="cell"><span class="label">Email</span><span class="t-val" style="text-transform:none">hi@actiondev.es</span></div>
+  </div>
+  <nav class="ftr-nav" aria-label="Pie de página">
+    <a href="proyectos.html">Proyectos</a>
+    <a href="home.html#servicios">Servicios</a>
+    <a href="https://maps.google.com/?cid=18162141466997281764" target="_blank" rel="noopener">Google</a>
+    <a href="formulario.html">Contacto</a>
+  </nav>
+  <div class="ftr-legal">
+    <p>Action Development es el nombre comercial de Alcasi Systems, S.L., CIF B72910664, inscrita en el Registro Mercantil de Pontevedra.</p>
+    <nav aria-label="Legal"><a href="#">Aviso legal</a><a href="#">Privacidad</a><a href="#">Cookies</a></nav>
+  </div>
+</footer>
+
+<nav class="bar" aria-label="Contacto rápido">
+  <a class="btn btn-lime" href="formulario.html">Contar mi proyecto<svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="m250-221-67-67 395-395H224v-94h515v514h-95v-353L250-221Z"/></svg></a>
+  <a class="wa on-ink" href="https://wa.me/34614027410" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"><svg class="ic" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M108 -492A384 384 0 1 1 876 -492A384 384 0 1 1 108 -492ZM192 -492A300 300 0 1 0 792 -492A300 300 0 1 0 192 -492ZM398.8 -144.3L80 -80L144.3 -398.8ZM640.3-299.3Q586.3-299.3 525.3-328.8T411.3-411.3Q357.8-463.8 328.5-523.5T299.3-639.8V-684.8H435.3L460.8-572.8 391.8-509.8Q403.8-491.3 416.5-475.3T443.3-444.8Q459.3-428.8 476.3-415.5T511.8-392.3L579.3-460.8 684.8-436.3V-299.3H640.3Z"/></svg></a>
+</nav>
+
+<script>
+  // Barra fija: aparece cuando el CTA del hero sale de pantalla y se oculta con el formulario a la vista.
+  (function () {
+    var bar = document.querySelector('.bar');
+    var hero = document.getElementById('top');
+    var form = document.getElementById('proyecto');
+    if (!bar || !hero || !('IntersectionObserver' in window)) return;
+    var heroIn = true, formIn = false;
+    var sync = function () { bar.hidden = heroIn || formIn; };
+    new IntersectionObserver(function (e) { heroIn = e[0].isIntersecting; sync(); }).observe(hero);
+    if (form) new IntersectionObserver(function (e) { formIn = e[0].isIntersecting; sync(); }).observe(form);
+    sync();
+  })();
+</script>
+
+<script>
+  (function () {
+    var btns = document.querySelectorAll('.filters button');
+    var items = document.querySelectorAll('#lista [data-svc]');
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        var f = b.getAttribute('data-f');
+        btns.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+        items.forEach(function (el) { el.hidden = f !== 'all' && el.getAttribute('data-svc').split(' ').indexOf(f) < 0; });
+      });
+    });
+  })();
+</script>
+</body>
+</html>

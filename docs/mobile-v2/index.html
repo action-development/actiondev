@@ -1,0 +1,83 @@
+<title>Action Development móvil</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@700;800;900&amp;family=Saira+Semi+Condensed:wght@400;500;600&amp;display=swap">
+<style>
+  /* Sala de revisión: los marcos de 390×844 en fila, cada uno con su scroll; la página no compite con las maquetas. */
+  :root {
+    --bg: #EDEAE3;
+    --fg: #121212;
+    --muted: #4A4741;
+    --frame: #121212;
+    --accent: #C8FF00;
+    --on-accent: #121212;
+    --display: "Saira Condensed", "Arial Narrow", sans-serif;
+    --body: "Saira Semi Condensed", "Arial Narrow", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #121212; --fg: #EDEAE3; --muted: #B9B5AC; --frame: #5A5750; color-scheme: dark; }
+  }
+  :root[data-theme="dark"] { --bg: #121212; --fg: #EDEAE3; --muted: #B9B5AC; --frame: #5A5750; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.45 var(--body); }
+  .wrap { padding-inline: 16px; padding-block: 28px 48px; max-width: 2200px; margin: 0 auto; }
+  header { display: grid; gap: 10px; padding-bottom: 22px; border-bottom: 2px solid var(--fg); }
+  h1 { margin: 0; font: 900 clamp(44px, 7vw, 88px)/0.86 var(--display); text-transform: uppercase; letter-spacing: -0.02em; text-wrap: balance; }
+  header p { margin: 0; max-width: 62ch; font-size: 17px; color: var(--muted); }
+  .frames { display: flex; flex-wrap: wrap; gap: 28px; padding-top: 28px; }
+  figure { margin: 0; display: grid; gap: 10px; width: min(410px, 100%); }
+  figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  figcaption b { font: 800 20px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+  figcaption a { font: 700 13px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg); text-underline-offset: 3px; }
+  figcaption a:focus-visible, figcaption a:hover { background: var(--accent); color: var(--on-accent); outline: none; }
+  .phone { border: 10px solid var(--frame); background: var(--frame); max-width: 100%; }
+  .phone iframe { display: block; width: 390px; max-width: 100%; height: 844px; border: 0; background: #EDEAE3; }
+  .note { margin: 0; font-size: 14px; color: var(--muted); max-width: 42ch; }
+  .facts { display: flex; flex-wrap: wrap; gap: 1px; margin-top: 40px; background: var(--fg); border: 1px solid var(--fg); }
+  .facts > div { flex: 1 1 260px; min-width: 0; display: grid; align-content: start; gap: 10px; padding: 16px; background: var(--bg); }
+  .facts > div > span { font: 700 12px/1.2 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .facts p { margin: 0; font-size: 16px; }
+  .sw { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sw i { display: inline-block; width: 28px; height: 28px; border: 1px solid var(--fg); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Nueva web móvil de Action Development</h1>
+    <p>Cuatro maquetas a tamaño real de móvil (390 × 844). Cada marco tiene su propio scroll: se pueden recorrer, pulsar las opciones del formulario y abrir las preguntas.</p>
+  </header>
+
+  <div class="frames">
+    <figure>
+      <figcaption><b>Inicio</b><a href="home.html" target="_blank" rel="noopener">Abrir sola</a></figcaption>
+      <div class="phone"><iframe src="home.html" title="Maqueta: inicio" loading="eager"></iframe></div>
+      <p class="note">Qué hacemos, prueba con casos y reseñas, servicios, proceso y contacto.</p>
+    </figure>
+    <figure>
+      <figcaption><b>Landing de apps</b><a href="landing-app.html" target="_blank" rel="noopener">Abrir sola</a></figcaption>
+      <div class="phone"><iframe src="landing-app.html" title="Maqueta: landing de apps" loading="eager"></iframe></div>
+      <p class="note">Para anuncios (/hablemos/app): el primer paso del formulario cabe en la primera pantalla.</p>
+    </figure>
+    <figure>
+      <figcaption><b>Formulario</b><a href="formulario.html" target="_blank" rel="noopener">Abrir sola</a></figcaption>
+      <div class="phone"><iframe src="formulario.html" title="Maqueta: formulario en dos pasos" loading="eager"></iframe></div>
+      <p class="note">Los dos pasos, uno debajo del otro. Opciones grandes en vez de desplegables.</p>
+    </figure>
+    <figure>
+      <figcaption><b>Proyectos y ficha</b><a href="proyectos.html" target="_blank" rel="noopener">Abrir sola</a></figcaption>
+      <div class="phone"><iframe src="proyectos.html" title="Maqueta: proyectos y ficha de caso" loading="eager"></iframe></div>
+      <p class="note">Lista con filtro por tipo de trabajo y, debajo, la ficha de Autoescuela GTI.</p>
+    </figure>
+    <figure>
+      <figcaption><b>Menú abierto</b><a href="home.html#menu" target="_blank" rel="noopener">Abrir sola</a></figcaption>
+      <div class="phone"><iframe src="home.html#menu" title="Maqueta: menú a pantalla completa" loading="eager"></iframe></div>
+      <p class="note">El botón Menú abre la navegación a pantalla completa, con el contacto siempre a mano.</p>
+    </figure>
+  </div>
+
+  <section class="facts" aria-label="Decisiones de diseño">
+    <div><span>Color</span><div class="sw" aria-hidden="true"><i style="background:#EDEAE3"></i><i style="background:#121212"></i><i style="background:#C8FF00"></i><i style="background:#D9D5CC"></i></div><p>Papel, tinta y el lima de la marca para lo que se pulsa. Nada más.</p></div>
+    <div><span>Letra</span><p>Saira Condensed muy gruesa para titulares y Saira Semi Condensed para leer.</p></div>
+    <div><span>Prueba</span><p>Capturas reales de proyectos, reseñas con nombre y 5,0 en Google · 22 reseñas.</p></div>
+    <div><span>Contacto</span><p>Un botón principal, Contar mi proyecto, y WhatsApp siempre visible.</p></div>
+  </section>
+</div>
