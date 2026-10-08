@@ -63,6 +63,18 @@ export function offlineCutoff({ now, desde }: OfflineOptions): number {
 }
 
 /**
+ * Consentimiento del lead para las columnas `Ad User Data` / `Ad Personalization`.
+ * `consent` es la decisión del banner al enviar (un único interruptor: el
+ * Consent Mode lo aplica igual a ad_user_data y ad_personalization). Sin dato
+ * (leads antiguos) o `unknown` (no decidió): vacío, nunca se inventa `Granted`.
+ */
+export function googleConsent(consent: Lead["consent"]): "Granted" | "Denied" | "" {
+  if (consent === "granted") return "Granted";
+  if (consent === "denied") return "Denied";
+  return "";
+}
+
+/**
  * CSV de la plantilla «Importar conversiones por clic» de Google Ads.
  * Solo leads con `gclid`: la subida por archivo no tiene columnas GBRAID/WBRAID.
  * Sin BOM: la primera celda debe ser literalmente `Parameters:TimeZone=…`.
@@ -77,17 +89,20 @@ export function buildOfflineConversionsCsv(leads: Lead[], options: OfflineOption
       "Conversion Time",
       "Conversion Value",
       "Conversion Currency",
+      "Ad User Data",
+      "Ad Personalization",
     ]),
   ];
 
   for (const lead of leads) {
     const gclid = lead.attribution?.gclid?.trim();
     if (!gclid) continue;
+    const consent = googleConsent(lead.consent);
     const created = Date.parse(lead.createdAt);
     if (Number.isNaN(created) || created < cutoff) continue;
 
     if (lead.qualifiedAt && !Number.isNaN(Date.parse(lead.qualifiedAt))) {
-      lines.push(csvRow([gclid, CONVERSION_QUALIFIED, formatMadridTime(lead.qualifiedAt), "", ""]));
+      lines.push(csvRow([gclid, CONVERSION_QUALIFIED, formatMadridTime(lead.qualifiedAt), "", "", consent, consent]));
     }
     if (
       lead.status === "won" &&
@@ -96,7 +111,7 @@ export function buildOfflineConversionsCsv(leads: Lead[], options: OfflineOption
       typeof lead.value === "number" &&
       lead.value > 0
     ) {
-      lines.push(csvRow([gclid, CONVERSION_WON, formatMadridTime(lead.wonAt), lead.value, "EUR"]));
+      lines.push(csvRow([gclid, CONVERSION_WON, formatMadridTime(lead.wonAt), lead.value, "EUR", consent, consent]));
     }
   }
 

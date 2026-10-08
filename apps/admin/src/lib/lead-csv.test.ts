@@ -5,6 +5,7 @@ import {
   buildOfflineConversionsCsv,
   csvCell,
   formatMadridTime,
+  googleConsent,
 } from "./lead-csv";
 
 const NOW = new Date("2026-10-08T10:00:00Z");
@@ -30,8 +31,31 @@ describe("formatMadridTime", () => {
   });
 });
 
+describe("googleConsent", () => {
+  it("mapea granted/denied y deja vacío lo desconocido", () => {
+    expect(googleConsent("granted")).toBe("Granted");
+    expect(googleConsent("denied")).toBe("Denied");
+    expect(googleConsent("unknown")).toBe("");
+    expect(googleConsent(undefined)).toBe("");
+  });
+});
+
 describe("buildOfflineConversionsCsv", () => {
-  const header = "Parameters:TimeZone=Europe/Madrid\r\nGoogle Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency\r\n";
+  it("rellena Ad User Data y Ad Personalization con el consentimiento guardado", () => {
+    const csv = buildOfflineConversionsCsv(
+      [
+        lead({ attribution: { gclid: "G1" }, consent: "granted", qualifiedAt: "2026-10-02T09:00:00Z" }),
+        lead({ attribution: { gclid: "G2" }, consent: "denied", qualifiedAt: "2026-10-02T09:00:00Z" }),
+        lead({ attribution: { gclid: "G3" }, qualifiedAt: "2026-10-02T09:00:00Z" }),
+      ],
+      { now: NOW },
+    );
+    expect(csv).toContain("G1,Lead cualificado,2026-10-02 11:00:00,,,Granted,Granted\r\n");
+    expect(csv).toContain("G2,Lead cualificado,2026-10-02 11:00:00,,,Denied,Denied\r\n");
+    expect(csv).toContain("G3,Lead cualificado,2026-10-02 11:00:00,,,,\r\n");
+  });
+
+  const header = "Parameters:TimeZone=Europe/Madrid\r\nGoogle Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency,Ad User Data,Ad Personalization\r\n";
 
   it("solo cabecera si no hay gclid", () => {
     expect(buildOfflineConversionsCsv([lead({ qualifiedAt: "2026-10-02T09:00:00Z" })], { now: NOW })).toBe(header);
@@ -52,8 +76,8 @@ describe("buildOfflineConversionsCsv", () => {
     );
     expect(csv).toBe(
       header +
-        "G1,Lead cualificado,2026-10-02 11:00:00,,\r\n" +
-        "G1,Cliente ganado,2026-10-05 16:30:00,12000,EUR\r\n",
+        "G1,Lead cualificado,2026-10-02 11:00:00,,,,\r\n" +
+        "G1,Cliente ganado,2026-10-05 16:30:00,12000,EUR,,\r\n",
     );
   });
 
