@@ -32,7 +32,7 @@ export const PROJECT_CTA_HREF = "/contact";
 /** Rótulo único de la acción principal en todo el recorrido (DESIGN.md §11). */
 export const PROJECT_CTA_LABEL = "Contar mi proyecto";
 
-/** Documentos legales: rutas del árbol de escritorio (`/legal/*` no cambia en fase 1). */
+/** Documentos legales (`/legal/*`, con árbol móvil desde la fase 2): pie y navegación entre documentos. */
 export const LEGAL_LINKS = [
   { href: "/legal/aviso-legal", label: "Aviso legal" },
   { href: "/legal/privacy", label: "Privacidad" },

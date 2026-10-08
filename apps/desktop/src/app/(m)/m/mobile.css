@@ -135,8 +135,9 @@
 }
 
 /* Texto largo con marcado propio (cuerpo de los artículos del blog y
-   documentos legales): el contenido llega como HTML semántico (`h2`, `p`,
-   `ul`, `blockquote`…) sin clases, y aquí se le da la lectura del sistema.
+   documentos legales): el contenido llega como HTML semántico (`h2`, `h3`,
+   `p`, `ul`, `blockquote`, `code`…) sin clases, y aquí se le da la lectura
+   del sistema.
    Semi Condensed de 18 px con 1,6 de interlineado: a 358 px de columna salen
    ~50 caracteres por línea (la medida cómoda es 45-75), y la columna nunca
    crece más allá de 40em aunque el móvil sea ancho. Subtítulos en Condensed
@@ -153,6 +154,10 @@
 
   .m-prose > * + * {
     margin-top: 1em;
+  }
+
+  .m-prose > :first-child {
+    margin-top: 0;
   }
 
   .m-prose h2 {
@@ -182,6 +187,16 @@
 
   .m-prose strong {
     font-weight: 700;
+  }
+
+  /* Identificadores (cookies, claves de almacenamiento, contenedor de GTM)
+     en los documentos legales: bloque gris pegado al texto, con corte en
+     cualquier punto para que un nombre largo nunca desborde a 320 px. */
+  .m-prose code {
+    background: var(--color-grey);
+    padding: 0 0.3em;
+    font-size: 0.92em;
+    overflow-wrap: anywhere;
   }
 
   .m-prose a {

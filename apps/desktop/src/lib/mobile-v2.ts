@@ -7,8 +7,7 @@
  * Dos conceptos distintos (`[DEPLOY]` de CLAUDE.md):
  * - RUTAS CON ÁRBOL MÓVIL (`MOBILE_TREE_ROUTES`): las que tienen página en
  *   `app/(m)/m`. Fase 1 (`/`, `/servicios`, `/projects`, `/resenas`,
- *   `/contact`, `/hablemos`) y fase 2 (las landings SEO y `/blog`; `/legal/*`
- *   se añade cuando exista).
+ *   `/contact`, `/hablemos`) y fase 2 (las landings SEO, `/blog` y `/legal/*`).
  * - RUTAS PÚBLICAS (`MOBILE_V2_ROUTES`): las que ve cualquier visitante móvil.
  *
  * Flag `MOBILE_V2` = `off` (por defecto) | `qa` | `on`:
@@ -56,6 +55,7 @@ export const MOBILE_TREE_ROUTES = [
   // Fase 2
   ...LANDING_ROUTES,
   "/blog",
+  "/legal",
 ] as const;
 
 export type MobileV2Mode = "off" | "qa" | "on";

@@ -90,9 +90,9 @@ export function MobileFooter({
           <ul className="flex flex-wrap gap-x-[18px] gap-y-2">
             {LEGAL_LINKS.map((item) => (
               <li key={item.href}>
-                <a href={item.href} className={legalLinkClass}>
+                <MLink href={item.href} className={legalLinkClass}>
                   {item.label}
-                </a>
+                </MLink>
               </li>
             ))}
             <li>
