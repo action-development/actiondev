@@ -6,13 +6,14 @@ import { MobileHeader } from "@/components/m/MobileHeader";
 import { CASE_CTA_ID, ProjectCaseView } from "@/components/m/projects/ProjectCaseView";
 import { projectNeighbors } from "@/components/m/projects/kinds";
 import { StickyCta } from "@/components/m/StickyCta";
-import { buildProjectJsonLd, findProject, projectMetadata } from "@/lib/project-seo";
+import { buildProjectJsonLd, findProject, projectMetadata, relatedProjects } from "@/lib/project-seo";
 
 /**
  * Ficha de proyecto en la web móvil v2 (maqueta `proyectos.html#ficha`).
  * `generateStaticParams`, `generateMetadata` (title = `proyecto — tipo [en
  * localidad]`, canonical, `noindex, follow` sin caso) y JSON-LD `CreativeWork`
- * vienen de `lib/project-seo.ts`, la MISMA fuente que la ficha de escritorio.
+ * vienen de `lib/project-seo.ts`, la MISMA fuente que la ficha de escritorio;
+ * «Más proyectos» (`relatedProjects`), también.
  */
 interface ProjectPageProps {
   params: Promise<{ slug: string }>;
@@ -44,7 +45,7 @@ export default async function MobileProjectPage({ params }: ProjectPageProps) {
       />
       <MobileHeader whatsappText={whatsappText} />
       <main id="main-content">
-        <ProjectCaseView project={project} prev={prev} next={next} />
+        <ProjectCaseView project={project} prev={prev} next={next} more={relatedProjects(project)} />
       </main>
       <MobileFooter whatsappText={whatsappText} />
       <StickyCta formId={CASE_CTA_ID} whatsappText={whatsappText} />

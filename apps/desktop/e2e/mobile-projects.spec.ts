@@ -1,6 +1,6 @@
 import { devices } from "@playwright/test";
 import { test, expect } from "./fixtures";
-import { projects } from "../../../packages/shared/src/projects";
+import { hasCaseStudy, projects } from "../../../packages/shared/src/projects";
 
 /**
  * Web móvil v2 · /projects y /projects/[slug]. Proyecto con iPhone 390×844,
@@ -123,6 +123,21 @@ test.describe("Móvil v2 · proyectos", () => {
         .locator('script[type="application/ld+json"]')
         .evaluateAll((n) => n.map((s) => s.textContent ?? "").join("\n"));
       expect(ld).toContain('"CreativeWork"');
+    }
+  });
+
+  test("ficha: «Más proyectos» enlaza las mismas fichas indexables que escritorio", async ({ page, request }) => {
+    const indexable = new Set(projects.filter(hasCaseStudy).map((p) => `/projects/${p.slug}`));
+    for (const slug of ["autoescuela-gti", "musa", "ratsquad"]) {
+      await page.goto(`/projects/${slug}`);
+      const mobile = await page.getByTestId("m-case-more-link").evaluateAll((a) => a.map((n) => n.getAttribute("href")));
+      const html = await (await request.get(`/projects/${slug}`, { headers: { "user-agent": DESKTOP_UA } })).text();
+      const block = html.match(/data-testid="project-more"[\s\S]*?<\/nav>/)?.[0] ?? "";
+      const desktop = [...block.matchAll(/href="(\/projects\/[^"]+)"/g)].map((m) => m[1]);
+      expect(mobile.length, slug).toBeGreaterThanOrEqual(3);
+      expect(mobile, slug).toEqual(desktop);
+      for (const href of mobile) expect(indexable.has(href!), `${slug} → ${href}`).toBe(true);
+      expect(mobile, slug).not.toContain(`/projects/${slug}`);
     }
   });
 

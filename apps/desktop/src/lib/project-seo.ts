@@ -21,6 +21,28 @@ export function findProject(slug: string): Project | undefined {
   return projects.find((p) => p.slug === slug);
 }
 
+/** Cuántos proyectos enlaza «Más proyectos» al final de una ficha. */
+export const RELATED_PROJECTS_MAX = 3;
+
+/**
+ * «Más proyectos» de una ficha (escritorio y web móvil v2): solo fichas
+ * INDEXABLES (`hasCaseStudy`), primero las de la misma categoría, luego las
+ * que comparten landing de servicio (`relatedService`) y, para completar, las
+ * destacadas; dentro de cada grupo, el orden de `projects.ts`. Determinista:
+ * los dos árboles enlazan exactamente las mismas.
+ */
+export function relatedProjects(project: Project, max = RELATED_PROJECTS_MAX): Project[] {
+  const service = relatedService(project).href;
+  const rank = (p: Project) =>
+    p.category === project.category ? 0 : relatedService(p).href === service ? 1 : p.featured ? 2 : 3;
+  return projects
+    .filter((p) => p.slug !== project.slug && hasCaseStudy(p))
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => rank(a.p) - rank(b.p) || a.i - b.i)
+    .slice(0, max)
+    .map(({ p }) => p);
+}
+
 /**
  * Título SEO: proyecto + tipo en español + localidad si es verificable
  * ("Musa | Night Club — Aplicación web en Vigo"). El `template` del layout

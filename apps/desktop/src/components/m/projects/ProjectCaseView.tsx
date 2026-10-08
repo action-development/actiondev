@@ -1,6 +1,6 @@
 import type { Project } from "@actiondev/shared";
 import { projectCase, relatedService } from "@/lib/project-case";
-import { Cell, Cells } from "../Cell";
+import { Cell, Cells, Label } from "../Cell";
 import { Button } from "../Button";
 import { Icon } from "../Icon";
 import { MLink } from "../MLink";
@@ -56,14 +56,52 @@ function Neighbour({ project, dir }: { project: Project; dir: "prev" | "next" })
   );
 }
 
+/** Fila de «Más proyectos»: tipo y localidad, nombre (`<h3>`) y descripción; un enlace con filete. */
+function ProjectRow({ project }: { project: Project }) {
+  const kinds = projectKinds(project).map((k) => KIND_INFO[k].label).join(" + ");
+  return (
+    <li className="border-b border-ink last:border-b-2">
+      <MLink
+        href={`/projects/${project.slug}`}
+        data-testid="m-case-more-link"
+        className="group grid grid-cols-[1fr_52px] bg-paper text-ink hover:bg-ink hover:text-paper active:bg-ink active:text-paper"
+      >
+        <span className="grid min-w-0 content-start gap-2 px-4 pt-[18px] pb-5">
+          <Label className="group-hover:text-muted-dark group-active:text-muted-dark">
+            {kinds}
+            {project.location ? ` · ${project.location}` : ""}
+          </Label>
+          <h3 className="font-display text-h4 break-words uppercase">{project.title}</h3>
+          <span className="text-base leading-[1.42]">{project.descriptionEs ?? project.description}</span>
+        </span>
+        <span className="flex items-start justify-center pt-[18px]">
+          <Icon name="arrow_outward" size={26} />
+        </span>
+      </MLink>
+    </li>
+  );
+}
+
 /**
  * Ficha de un proyecto (DESIGN.md §7, «Tarjeta de caso» ampliada; maqueta
  * `proyectos.html#ficha`). Server component. El contenido sale de `Project` y
  * de `projectCase` (el mismo que la ficha de escritorio): «Qué nos pidieron»
  * y «Qué conseguimos» como `<h2>`, Antes/Ahora solo si hay texto verificado,
  * «Ver web» solo con URL real y el vídeo bajo demanda (`preload="none"`).
+ * Enlazado interno IGUAL que escritorio: «Servicio relacionado» y «Más
+ * proyectos» (`more`, `relatedProjects`); además, anterior y siguiente.
  */
-export function ProjectCaseView({ project, prev, next }: { project: Project; prev: Project; next: Project }) {
+export function ProjectCaseView({
+  project,
+  prev,
+  next,
+  more,
+}: {
+  project: Project;
+  prev: Project;
+  next: Project;
+  more: Project[];
+}) {
   const { brief, result } = projectCase(project);
   const service = relatedService(project);
   const niche = project.nicheEs ?? project.niche;
@@ -185,6 +223,19 @@ export function ProjectCaseView({ project, prev, next }: { project: Project; pre
           </span>
         </MLink>
       </section>
+
+      {more.length > 0 && (
+        <nav aria-labelledby="ficha-mas" data-testid="m-case-more" className="mt-10">
+          <h2 id="ficha-mas" className="border-b-2 border-ink px-4 pt-7 pb-3 font-display text-h3 uppercase">
+            Más proyectos
+          </h2>
+          <ul>
+            {more.map((item) => (
+              <ProjectRow key={item.slug} project={item} />
+            ))}
+          </ul>
+        </nav>
+      )}
 
       <section
         id={CASE_CTA_ID}

@@ -4,9 +4,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { projects } from "@actiondev/shared";
 import { BUSINESS } from "@/lib/seo";
-import { buildProjectJsonLd, findProject, projectMetadata } from "@/lib/project-seo";
+import { buildProjectJsonLd, findProject, projectMetadata, relatedProjects } from "@/lib/project-seo";
 import { Header } from "@/components/layout/Header";
-import { projectCase, relatedService } from "@/lib/project-case";
+import { projectCase, projectCategoryLabel, relatedService } from "@/lib/project-case";
 import { LegalLinks } from "@/components/layout/LegalLinks";
 
 /**
@@ -15,6 +15,9 @@ import { LegalLinks } from "@/components/layout/LegalLinks";
  * una página para leer un caso, no el juego de la home. `brief`/`result`
  * (ES) son opcionales en `Project`: mientras no haya contenido real por
  * proyecto, caen en el placeholder genérico de `lib/project-case.ts`.
+ *
+ * Enlazado interno (lo mismo en la ficha móvil, `ProjectCaseView`):
+ * «Servicio relacionado» y «Más proyectos» (`relatedProjects`).
  */
 
 interface ProjectPageProps {
@@ -43,6 +46,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const niche = project.nicheEs ?? project.niche;
   const { brief, result } = projectCase(project);
   const service = relatedService(project);
+  const more = relatedProjects(project);
 
   return (
     <>
@@ -179,6 +183,37 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 </span>
               </Link>
             </section>
+
+            {/* Más proyectos — fichas indexables, misma categoría primero */}
+            {more.length > 0 && (
+              <nav
+                aria-labelledby="more-projects-title"
+                className="mt-20 border-t border-border pt-16"
+                data-testid="project-more"
+              >
+                <h2 id="more-projects-title" className="micro-label micro-label-loud">
+                  Más proyectos
+                </h2>
+                <ul className="mt-6 divide-y divide-border border-y border-border">
+                  {more.map((item) => (
+                    <li key={item.slug}>
+                      <Link href={`/projects/${item.slug}`} className="group block py-6">
+                        <p className="text-sm text-muted">
+                          {projectCategoryLabel(item)}
+                          {item.location ? ` · ${item.location}` : ""}
+                        </p>
+                        <h3 className="mt-2 text-lg font-medium text-foreground underline decoration-transparent decoration-2 underline-offset-4 transition-colors duration-[var(--duration)] ease-[var(--ease)] group-hover:decoration-foreground">
+                          {item.title}
+                        </h3>
+                        <p className="mt-2 max-w-[62ch] text-[1.05rem] leading-relaxed text-muted">
+                          {item.descriptionEs ?? item.description}
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
 
             {/* CTA */}
             <section className="mt-20 border-t border-border pt-16">
