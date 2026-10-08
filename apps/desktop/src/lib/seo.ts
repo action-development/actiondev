@@ -97,3 +97,36 @@ export const OG_IMAGE = {
 export function absoluteUrl(path = "/"): string {
   return new URL(path, SITE_URL).toString();
 }
+
+/**
+ * Imagen Open Graph de una página, CON `alt` (sin él, `og:image:alt` faltaba
+ * en todas las páginas menos la home). `title` = el texto que pinta la imagen
+ * dinámica de `/api/og?title=`; sin él, la genérica de la marca.
+ */
+export function ogImage(alt: string, title?: string) {
+  return {
+    url: title ? `${OG_IMAGE.url}?title=${encodeURIComponent(title)}` : OG_IMAGE.url,
+    width: OG_IMAGE.width,
+    height: OG_IMAGE.height,
+    alt,
+  };
+}
+
+/** Largo máximo de una meta description (CLAUDE.md `[SEO]`). */
+export const META_DESCRIPTION_MAX = 155;
+
+/**
+ * Meta description dentro de los 155 caracteres: si el texto de origen (la
+ * descripción de un proyecto, la de un post del panel) se pasa, se corta en
+ * la última palabra entera y se cierra con «…», en vez de dejar que Google la
+ * corte a media palabra. El texto visible de la página no cambia: esto es solo
+ * para `<meta name="description">` y Open Graph.
+ */
+export function metaDescription(text: string, max = META_DESCRIPTION_MAX): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  const head = (lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.·—–-]+$/, "");
+  return `${head}…`;
+}

@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   BUSINESS,
   LEGAL_ENTITY,
-  OG_IMAGE,
+  ogImage,
   REGISTERED_ADDRESS_LINE,
   absoluteUrl,
 } from "@/lib/seo";
@@ -34,7 +34,7 @@ export const TERMS_METADATA: Metadata = {
     title: "Términos y condiciones — Action",
     description:
       "Condiciones de contratación de servicios de desarrollo con Alcasi Systems, S.L., titular de la marca Action Development.",
-    images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+    images: [ogImage("Términos y condiciones — Action")],
   },
 };
 

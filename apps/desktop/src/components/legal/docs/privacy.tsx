@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   BUSINESS,
   LEGAL_ENTITY,
-  OG_IMAGE,
+  ogImage,
   REGISTERED_ADDRESS_LINE,
   absoluteUrl,
 } from "@/lib/seo";
@@ -46,7 +46,7 @@ export const PRIVACY_METADATA: Metadata = {
     title: "Política de privacidad — Action",
     description:
       "Qué datos personales trata Alcasi Systems, S.L. a través de actiondev.es, con qué base legal y cómo ejercer tus derechos.",
-    images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+    images: [ogImage("Política de privacidad — Action")],
   },
 };
 

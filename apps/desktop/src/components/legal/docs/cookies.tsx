@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BUSINESS, LEGAL_ENTITY, OG_IMAGE, absoluteUrl } from "@/lib/seo";
+import { BUSINESS, LEGAL_ENTITY, absoluteUrl, ogImage } from "@/lib/seo";
 import type { LegalSlots } from "../LegalSlots";
 
 /**
@@ -46,7 +46,7 @@ export const COOKIES_METADATA: Metadata = {
     title: "Política de cookies — Action",
     description:
       "actiondev.es solo instala cookies de analítica y de medición de campañas si las aceptas en el banner. Qué cookies usa y cómo cambiar tu decisión.",
-    images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+    images: [ogImage("Política de cookies — Action")],
   },
 };
 

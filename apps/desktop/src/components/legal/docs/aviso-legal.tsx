@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   BUSINESS,
   LEGAL_ENTITY,
-  OG_IMAGE,
+  ogImage,
   REGISTERED_ADDRESS_LINE,
   SITE_URL,
   absoluteUrl,
@@ -35,7 +35,7 @@ export const AVISO_LEGAL_METADATA: Metadata = {
     title: "Aviso legal — Action",
     description:
       "Datos identificativos del titular de actiondev.es: Alcasi Systems, S.L., CIF B72910664.",
-    images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+    images: [ogImage("Aviso legal — Action")],
   },
 };
 
