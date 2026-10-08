@@ -6,6 +6,7 @@ import { WhatsappIcon } from "@/components/icons/channel-icons";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { BUSINESS } from "@/lib/seo";
 import { LEAD_FORM_ID, scrollToLeadForm } from "./FormJump";
+import { useCampaignWhatsappHref } from "./useCampaignWhatsapp";
 
 /**
  * Barra fija de móvil de `/hablemos/*` y de las landings SEO (`heroId="hero"`, `formId="proyecto"`): «Contar mi proyecto» + WhatsApp.
@@ -21,12 +22,16 @@ import { LEAD_FORM_ID, scrollToLeadForm } from "./FormJump";
 export function StickyCta({
   heroId = "hero",
   formId = LEAD_FORM_ID,
+  whatsappTexts,
 }: {
   /** Id del hero: la barra aparece cuando sale de pantalla. */
   heroId?: string;
   /** Id del bloque del formulario: la barra se oculta mientras está a la vista, y es el destino del botón. */
   formId?: string;
+  /** `slug de oferta → mensaje` (`/hablemos/*`): WhatsApp se abre con el mensaje escrito. Sin él, el enlace va pelado. */
+  whatsappTexts?: Record<string, string>;
 } = {}) {
+  const campaignHref = useCampaignWhatsappHref(whatsappTexts ?? {});
   const [present, setPresent] = useState(false);
   const [heroIn, setHeroIn] = useState(true);
   const [formIn, setFormIn] = useState(false);
@@ -81,7 +86,7 @@ export function StickyCta({
           <span className="inline-flex items-center gap-2">Contar mi proyecto</span>
         </button>
         <HoloButton
-          href={BUSINESS.whatsappUrl}
+          href={whatsappTexts ? campaignHref : BUSINESS.whatsappUrl}
           variant="quiet"
           aria-label="Escribir por WhatsApp"
           data-testid="sticky-cta-whatsapp"

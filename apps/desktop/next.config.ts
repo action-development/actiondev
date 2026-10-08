@@ -36,6 +36,8 @@ const nextConfig: NextConfig = {
       },
       // Antes era un `redirect()` en app/reviews (307, temporal).
       { source: "/reviews", destination: "/resenas", permanent: true },
+      // `/legal` no tiene página propia (daba 404): el índice de los documentos es el aviso legal.
+      { source: "/legal", destination: "/legal/aviso-legal", permanent: true },
     ];
   },
   // /admin es la app `@actiondev/admin` (basePath "/admin"), proxeada para

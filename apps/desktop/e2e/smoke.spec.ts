@@ -589,6 +589,57 @@ test.describe("Landings de campaña", () => {
     expect(decodeURIComponent(href ?? "")).toContain("proyecto de página web desde la web");
   });
 
+  test("/hablemos/gracias: sin tel:, WhatsApp precargado y casos en pestaña nueva", async ({ page }) => {
+    await page.goto("/hablemos/gracias?tipo=app");
+    await expect(page.getByTestId("gracias-call")).toHaveCount(0);
+    await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
+    await expect(page.getByTestId("gracias-whatsapp")).toHaveAttribute("href", /\?text=/);
+    const cases = page.locator('[data-testid^="gracias-case-"]');
+    expect(await cases.count()).toBeGreaterThan(0);
+    for (const c of await cases.all()) await expect(c).toHaveAttribute("target", "_blank");
+  });
+
+  for (const [offer, phrase] of [
+    ["app", "una app a medida"],
+    ["software", "un software de gestión a medida"],
+  ] as const) {
+    test(`/hablemos/${offer}: WhatsApp precargado, sin tel:, reseña, pie y promesas`, async ({ page }) => {
+      await page.goto(`/hablemos/${offer}`);
+      for (const id of ["campaign-whatsapp", "footer-whatsapp"]) {
+        const href = decodeURIComponent((await page.getByTestId(id).getAttribute("href")) ?? "");
+        expect(href).toContain("?text=Hola, vengo de vuestra web");
+        if (id === "campaign-whatsapp") expect(href).toContain(phrase);
+      }
+      await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
+      await expect(page.getByTestId("sticky-cta-whatsapp")).toHaveAttribute("href", /\?text=/);
+      await expect(page.getByTestId("ads-hero-review")).toBeVisible();
+      const footer = page.locator("footer");
+      await expect(footer).toContainText("Alcasi Systems, S.L.");
+      await expect(footer).toContainText("B72910664");
+      await expect(footer.getByTestId("footer-email")).toHaveAttribute("href", "mailto:hi@actiondev.es");
+      for (const link of await page.locator('[data-testid^="ads-case-"]').all()) {
+        await expect(link).toHaveAttribute("target", "_blank");
+      }
+      await page.getByTestId("lead-field-stage-idea").check();
+      await page.getByTestId("lead-next").click();
+      await expect(page.getByTestId("lead-privacy").locator('a[href="/legal/privacy"]')).toHaveAttribute("target", "_blank");
+      await expect(page.getByTestId("lead-privacy")).toContainText("one.com");
+      await expect(page.getByTestId("lead-form")).toContainText("Solo para orientar la propuesta; no te compromete a nada.");
+      await expect(page.getByTestId("lead-form")).toContainText("Primera reunión gratis y sin compromiso. Te respondemos en 24 horas laborables.");
+      // Empresa y detalles van plegados; el canal preferido, visible y con valor por defecto.
+      await expect(page.getByTestId("lead-field-company")).toBeHidden();
+      await expect(page.getByTestId("lead-field-contact-whatsapp")).toBeChecked();
+      await page.getByTestId("lead-extras").locator("summary").click();
+      await expect(page.getByTestId("lead-field-company")).toBeVisible();
+    });
+  }
+
+  test("/legal redirige a /legal/aviso-legal", async ({ request }) => {
+    const res = await request.get("/legal", { maxRedirects: 0 });
+    expect(res.status()).toBe(308);
+    expect(res.headers()["location"]).toContain("/legal/aviso-legal");
+  });
+
   test("oferta desconocida devuelve 404", async ({ page }) => {
     const response = await page.goto("/hablemos/xxx");
     expect(response?.status()).toBe(404);
@@ -674,6 +725,20 @@ test.describe("Conversión: landings SEO, banner de cookies y Header móvil", ()
     const reject = (await page.getByTestId("cookie-consent-reject").boundingBox())!;
     expect(Math.abs(accept.y - reject.y)).toBeLessThan(2);
     expect(Math.abs(accept.height - reject.height)).toBeLessThan(2);
+    // Guía AEPD: misma prominencia — exactamente la misma clase.
+    const cls = async (id: string) => page.getByTestId(id).getAttribute("class");
+    expect(await cls("cookie-consent-reject")).toBe(await cls("cookie-consent-accept"));
+  });
+
+  test("banner compacto en /hablemos/app (390x844): ≤ 76 px y no tapa «Siguiente»", async ({ page }) => {
+    await page.setViewportSize(MOBILE);
+    await page.goto("/hablemos/app");
+    const banner = (await page.getByTestId("cookie-consent").boundingBox())!;
+    const next = (await page.getByTestId("lead-next").boundingBox())!;
+    expect(banner.height).toBeLessThanOrEqual(76);
+    expect(next.y + next.height).toBeLessThanOrEqual(banner.y);
+    const cls = async (id: string) => page.getByTestId(id).getAttribute("class");
+    expect(await cls("cookie-consent-reject")).toBe(await cls("cookie-consent-accept"));
   });
 
   for (const path of ["/contact", "/projects?quieto", "/resenas"]) {

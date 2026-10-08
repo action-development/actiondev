@@ -179,6 +179,9 @@ export interface Translations {
   /** Banner de consentimiento (`ui/CookieConsent.tsx`), condición para cargar GTM. */
   cookieConsent: {
     message: string;
+    /** Versión de una línea para el banner compacto de `/hablemos/*` en móvil. */
+    compactMessage: string;
+    compactLinkLabel: string;
     linkLabel: string;
     accept: string;
     reject: string;

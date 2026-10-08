@@ -147,6 +147,8 @@ export const es: Translations = {
   cookieConsent: {
     message:
       "Usamos cookies de analítica y de medición de campañas publicitarias (Google y Meta). Solo se activan si las aceptas.",
+    compactMessage: "Cookies de analítica y publicidad solo si aceptas.",
+    compactLinkLabel: "Política",
     linkLabel: "Política de cookies",
     accept: "Aceptar",
     reject: "Rechazar",

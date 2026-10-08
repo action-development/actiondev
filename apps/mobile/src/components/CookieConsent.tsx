@@ -15,6 +15,9 @@ import { useI18n } from "@/lib/i18n/context";
  * mismo criterio que el gemelo de desktop, para no robar clicks a otro
  * elemento interactivo de la home ni colisionar con selectores de dialog.
  */
+/** UNA sola clase para los dos botones (guía de cookies de la AEPD: rechazar tan visible como aceptar). */
+const BUTTON_CLASS = "border border-black bg-black px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-white";
+
 export function CookieConsent() {
   const { t } = useI18n();
   const [visible, setVisible] = useState(false);
@@ -47,7 +50,7 @@ export function CookieConsent() {
           type="button"
           onClick={() => storeConsent("denied")}
           data-testid="cookie-consent-reject"
-          className="border border-black px-4 py-2 text-[11px] font-semibold uppercase tracking-wide"
+          className={BUTTON_CLASS}
         >
           {t.cookieConsent.reject}
         </button>
@@ -55,7 +58,7 @@ export function CookieConsent() {
           type="button"
           onClick={() => storeConsent("granted")}
           data-testid="cookie-consent-accept"
-          className="border border-black bg-black px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-white"
+          className={BUTTON_CLASS}
         >
           {t.cookieConsent.accept}
         </button>

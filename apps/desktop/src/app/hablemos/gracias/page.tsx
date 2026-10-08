@@ -5,6 +5,7 @@ import { LEAD_NEEDS, PLACEHOLDER_IMAGE, projects, type LeadNeed } from "@actiond
 import { HoloButton } from "@/components/ui/HoloButton";
 import { WhatsappIcon } from "@/components/icons/channel-icons";
 import { BUSINESS } from "@/lib/seo";
+import { NEED_PHRASE, whatsappHref } from "@/lib/leads/whatsapp";
 
 /**
  * Confirmación de un lead (`/hablemos/gracias?tipo=app`). Server component,
@@ -17,15 +18,6 @@ export const metadata: Metadata = {
   title: "Proyecto recibido",
   alternates: { canonical: "/hablemos/gracias" },
   robots: { index: false, follow: true },
-};
-
-/** Cómo se nombra cada necesidad dentro de la frase del WhatsApp. */
-const NEED_PHRASE: Record<LeadNeed, string | null> = {
-  app: "app móvil",
-  web: "página web",
-  software: "software de gestión",
-  integration: "integración entre programas",
-  unsure: null,
 };
 
 const CASES_BY_NEED: Record<LeadNeed, string[]> = {
@@ -53,7 +45,6 @@ export default async function GraciasPage({
 
   // Sin datos personales en la URL: solo el tipo de proyecto.
   const message = `Hola, acabo de enviar mi proyecto${phrase ? ` de ${phrase}` : ""} desde la web`;
-  const whatsappHref = `${BUSINESS.whatsappUrl}?text=${encodeURIComponent(message)}`;
 
   const cases = (CASES_BY_NEED[need ?? "unsure"] ?? []).flatMap((slug) => {
     const project = projects.find((p) => p.slug === slug);
@@ -77,12 +68,9 @@ export default async function GraciasPage({
           </p>
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-            <HoloButton href={whatsappHref} variant="solid" className="min-h-[52px] px-8" data-testid="gracias-whatsapp">
+            <HoloButton href={whatsappHref(message)} variant="solid" className="min-h-[52px] px-8" data-testid="gracias-whatsapp">
               <WhatsappIcon className="h-4 w-4 shrink-0" />
               Escribir ya por WhatsApp
-            </HoloButton>
-            <HoloButton href={`tel:${BUSINESS.phoneE164}`} className="min-h-[52px] px-8" data-testid="gracias-call">
-              Llamar ahora
             </HoloButton>
           </div>
         </div>
@@ -96,6 +84,8 @@ export default async function GraciasPage({
               <li key={project.slug}>
                 <Link
                   href={`/projects/${project.slug}`}
+                  target="_blank"
+                  rel="noopener"
                   data-testid={`gracias-case-${project.slug}`}
                   className="holo-surface holo-corners holo-link group flex h-full flex-col"
                 >

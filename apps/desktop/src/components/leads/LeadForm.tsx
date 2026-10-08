@@ -4,7 +4,6 @@ import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } fr
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  BUSINESS,
   LEAD_BUDGETS,
   LEAD_BUDGET_LABELS,
   LEAD_CONTACT_PREFERENCES,
@@ -23,6 +22,7 @@ import {
   type LeadStage,
 } from "@actiondev/shared";
 import { HoloButton } from "@/components/ui/HoloButton";
+import { whatsappHref, whatsappTextForNeed } from "@/lib/leads/whatsapp";
 import { LEAD_LIMITS, isValidEmail, isValidPhone, phoneDigits, PHONE_MIN_DIGITS } from "@/lib/leads/validation";
 
 /**
@@ -281,7 +281,7 @@ export function LeadForm({
         <div key="step-1" data-testid={tid("step-1")} className="lead-step">
           <StepBars step={1} />
 
-          <fieldset className="mt-3.5">
+          <fieldset className="mt-3">
             <legend className="mb-2 text-[15px] font-semibold text-foreground">¿Qué necesitas?</legend>
             <div className="grid grid-cols-2 gap-2">
               {needs.map((value) => (
@@ -302,7 +302,7 @@ export function LeadForm({
             </div>
           </fieldset>
 
-          <fieldset className="mt-3.5" aria-describedby={errors.stage ? fid("err-stage") : undefined}>
+          <fieldset className="mt-3" aria-describedby={errors.stage ? fid("err-stage") : undefined}>
             <legend className="mb-2 text-[15px] font-semibold text-foreground">¿En qué punto estás?</legend>
             <div className="grid gap-2">
               {LEAD_STAGES.map((value) => (
@@ -331,7 +331,7 @@ export function LeadForm({
             type="button"
             onClick={goNext}
             data-testid={tid("next")}
-            className="holo-btn holo-btn-solid mt-5 min-h-[52px] w-full text-[13px]"
+            className="holo-btn holo-btn-solid mt-3 min-h-[52px] w-full text-[13px]"
           >
             <span className="inline-flex items-center gap-2">Siguiente</span>
           </button>
@@ -379,25 +379,6 @@ export function LeadForm({
             </div>
 
             <div>
-              <label htmlFor={fid("company")} className={labelClass}>
-                Empresa <span className="font-normal text-muted">(opcional)</span>
-              </label>
-              <input
-                id={fid("company")}
-                name="company"
-                type="text"
-                autoComplete="organization"
-                maxLength={LEAD_LIMITS.company}
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                aria-describedby={fid("hint-company")}
-                data-testid={tid("field-company")}
-                className={inputClass}
-              />
-              <Hint id={fid("hint-company")}>Si aún no tienes empresa, déjalo en blanco</Hint>
-            </div>
-
-            <div>
               <label htmlFor={fid("phone")} className={labelClass}>
                 Teléfono
               </label>
@@ -427,7 +408,7 @@ export function LeadForm({
               )}
             </div>
 
-            <div>
+            <div className="sm:col-span-2">
               <label htmlFor={fid("email")} className={labelClass}>
                 Email
               </label>
@@ -470,7 +451,7 @@ export function LeadForm({
                   clearError("budget");
                 }}
                 aria-invalid={!!errors.budget}
-                aria-describedby={errors.budget ? fid("err-budget") : undefined}
+                aria-describedby={errors.budget ? fid("err-budget") : fid("hint-budget")}
                 data-testid={tid("field-budget")}
                 className={`${inputClass} appearance-none pr-10`}
               >
@@ -487,29 +468,11 @@ export function LeadForm({
                 ▾
               </span>
             </div>
-            <FieldError id={fid("err-budget")} testId={tid("error-budget")} message={errors.budget} />
-          </div>
-
-          <div className="mt-4">
-            <div className="mb-1.5 flex items-baseline justify-between gap-3">
-              <label htmlFor={fid("notes")} className="text-sm font-semibold text-foreground">
-                Cuéntanoslo en dos líneas <span className="font-normal text-muted">(opcional)</span>
-              </label>
-              <span className="text-xs text-muted" aria-hidden>
-                {notes.length}/{LEAD_LIMITS.notes}
-              </span>
-            </div>
-            <textarea
-              id={fid("notes")}
-              name="notes"
-              rows={2}
-              maxLength={LEAD_LIMITS.notes}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ej.: que los técnicos rellenen los partes en la nave y lleguen al instante a la oficina"
-              data-testid={tid("field-notes")}
-              className="block min-h-[92px] w-full lg:min-h-[64px] resize-none border-2 border-border bg-background px-3.5 py-3 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none"
-            />
+            {errors.budget ? (
+              <FieldError id={fid("err-budget")} testId={tid("error-budget")} message={errors.budget} />
+            ) : (
+              <Hint id={fid("hint-budget")}>Solo para orientar la propuesta; no te compromete a nada.</Hint>
+            )}
           </div>
 
           <fieldset className="mt-4">
@@ -530,6 +493,55 @@ export function LeadForm({
               ))}
             </div>
           </fieldset>
+
+          {/* Empresa y detalles: opcionales, plegados para acortar el paso en móvil. El canal preferido va FUERA: la API lo exige y su valor por defecto tiene que verse. */}
+          <details data-testid={tid("extras")} className="disclosure group mt-4 border-t-2 border-border pt-3">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-foreground transition-colors hover:text-accent [&::-webkit-details-marker]:hidden">
+              Añadir empresa y detalles (opcional)
+              <span aria-hidden className="shrink-0 text-accent transition-transform group-open:rotate-45">
+                +
+              </span>
+            </summary>
+            <div className="grid gap-3.5 pt-2">
+              <div>
+                <label htmlFor={fid("company")} className={labelClass}>
+                  Empresa
+                </label>
+                <input
+                  id={fid("company")}
+                  name="company"
+                  type="text"
+                  autoComplete="organization"
+                  maxLength={LEAD_LIMITS.company}
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  data-testid={tid("field-company")}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                  <label htmlFor={fid("notes")} className="text-sm font-semibold text-foreground">
+                    Cuéntanoslo en dos líneas
+                  </label>
+                  <span className="text-xs text-muted" aria-hidden>
+                    {notes.length}/{LEAD_LIMITS.notes}
+                  </span>
+                </div>
+                <textarea
+                  id={fid("notes")}
+                  name="notes"
+                  rows={2}
+                  maxLength={LEAD_LIMITS.notes}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Ej.: que los técnicos rellenen los partes en la nave y lleguen al instante a la oficina"
+                  data-testid={tid("field-notes")}
+                  className="block min-h-[92px] w-full lg:min-h-[64px] resize-none border-2 border-border bg-background px-3.5 py-3 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none"
+                />
+              </div>
+            </div>
+          </details>
 
           {/* Honeypot: fuera de pantalla, fuera del árbol accesible y fuera del tabulador. */}
           <div aria-hidden="true" className="absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden">
@@ -552,11 +564,18 @@ export function LeadForm({
             <strong className="font-semibold text-foreground">Responsable:</strong> Alcasi Systems, S.L.{" "}
             <strong className="font-semibold text-foreground">Finalidad:</strong> responder a tu solicitud y preparar un
             presupuesto. <strong className="font-semibold text-foreground">Legitimación:</strong> medidas precontractuales
-            a petición tuya. <strong className="font-semibold text-foreground">Destinatarios:</strong> nadie, salvo
-            obligación legal; los datos se alojan en Google Firebase (EE. UU.) con garantías adecuadas.{" "}
+            a petición tuya. <strong className="font-semibold text-foreground">Destinatarios:</strong> proveedores de
+            alojamiento, correo y CRM (Google Firebase, Vercel, Supabase, one.com y, si está activado, Telegram) como encargados del
+            tratamiento y, solo si aceptas las cookies, Google y Meta para medir campañas; no se ceden a terceros salvo
+            obligación legal. Los datos se alojan en Google Firebase (EE. UU.) con garantías adecuadas.{" "}
             <strong className="font-semibold text-foreground">Derechos:</strong> acceso, rectificación, supresión y otros en
             hi@actiondev.es. Más información en la{" "}
-            <Link href="/legal/privacy" className="link-sweep text-accent hover:text-foreground">
+            <Link
+              href="/legal/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link-sweep text-accent hover:text-foreground"
+            >
               Política de privacidad
             </Link>
             .
@@ -568,7 +587,7 @@ export function LeadForm({
                 No se ha podido enviar. Escríbenos por WhatsApp y te atendemos igual
               </p>
               <div className="mt-3">
-                <HoloButton href={BUSINESS.whatsappUrl} size="sm" data-testid={tid("whatsapp")}>
+                <HoloButton href={whatsappHref(whatsappTextForNeed(need))} size="sm" data-testid={tid("whatsapp")}>
                   Escribir por WhatsApp
                 </HoloButton>
               </div>
@@ -584,7 +603,7 @@ export function LeadForm({
           >
             <span className="inline-flex items-center gap-2">{sending ? "Enviando…" : "Enviar mi proyecto"}</span>
           </button>
-          <p className="mt-2.5 text-center text-[13px] text-muted">Te respondemos en 24 horas laborables</p>
+          <p className="mt-2.5 text-center text-[13px] text-muted">Primera reunión gratis y sin compromiso. Te respondemos en 24 horas laborables.</p>
         </div>
       )}
     </form>

@@ -45,6 +45,15 @@ export interface AdsLanding {
   cases: AdsCase[];
   /** Ids de `testimonials.ts`. Cada reseña se cita en UNA sola landing. */
   testimonials: string[];
+  /**
+   * Reseña del hero, junto al formulario: `id` de `testimonials.ts` y, si hace
+   * falta una sola línea en móvil, un recorte LITERAL de su texto con «…» en
+   * el extremo cortado. Si el recorte no está en la reseña, se pinta entera.
+   * No se repite en la sección de reseñas de la página.
+   */
+  heroReview: { id: string; excerpt?: string };
+  /** Mensaje precargado de los enlaces de WhatsApp de la landing (barra, barra fija). */
+  whatsappText: string;
   steps: AdsStep[];
   faqs: AdsFaq[];
   cta: { title: string; text: string };
@@ -77,10 +86,12 @@ export const adsLandings: AdsLanding[] = [
       },
     ],
     testimonials: ["rapeal-john", "dominik-saworski"],
+    heroReview: { id: "rapeal-john", excerpt: "…el resultado ha sido espectacular" },
+    whatsappText: "Hola, vengo de vuestra web y quiero hablar de una app a medida",
     steps: [
       {
         title: "Reunión de definición",
-        text: "En Rúa Colón o por videollamada. Salimos con los usuarios, las pantallas clave y el alcance de la primera versión.",
+        text: "La primera reunión es gratis y sin compromiso. En Rúa Colón o por videollamada. Salimos con los usuarios, las pantallas clave y el alcance de la primera versión.",
       },
       {
         title: "Propuesta cerrada",
@@ -119,7 +130,7 @@ export const adsLandings: AdsLanding[] = [
     ],
     cta: {
       title: "¿Tienes una app en la cabeza?",
-      text: "Cuéntanos qué problema quieres resolver y para quién. Te respondemos en 24 horas con los siguientes pasos.",
+      text: "Cuéntanos qué problema quieres resolver y para quién. Te respondemos en 24 horas con los siguientes pasos. La primera reunión es gratis y sin compromiso.",
     },
   },
   {
@@ -156,10 +167,12 @@ export const adsLandings: AdsLanding[] = [
       },
     ],
     testimonials: ["julio-walker", "samuel-flores"],
+    heroReview: { id: "julio-walker", excerpt: "Tienen solución para literalmente todo…" },
+    whatsappText: "Hola, vengo de vuestra web y quiero hablar de un software de gestión a medida",
     steps: [
       {
         title: "Reunión de definición",
-        text: "Hablamos con quienes hacen el trabajo y dibujamos el proceso actual, con sus atajos y sus Excel.",
+        text: "La primera reunión es gratis y sin compromiso. Hablamos con quienes hacen el trabajo y dibujamos el proceso actual, con sus atajos y sus Excel.",
       },
       {
         title: "Propuesta cerrada",
@@ -198,7 +211,7 @@ export const adsLandings: AdsLanding[] = [
     ],
     cta: {
       title: "¿Qué proceso de tu empresa sigue en Excel?",
-      text: "Cuéntanoslo. Te diremos si tiene sentido un software a medida, una integración o un programa estándar bien configurado.",
+      text: "Cuéntanoslo. Te diremos si tiene sentido un software a medida, una integración o un programa estándar bien configurado. La primera reunión es gratis y sin compromiso.",
     },
   },
 ];

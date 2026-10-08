@@ -66,6 +66,19 @@ function reviewSummary() {
   return { rating, count: testimonials.length };
 }
 
+/**
+ * Reseña del hero: la de `landing.heroReview.id`, sin reescribir. El recorte
+ * (`excerpt`) solo se usa si es un fragmento literal de la reseña; si no, entera.
+ */
+function resolveHeroReview(landing: AdsLanding) {
+  const t = testimonials.find((x) => x.id === landing.heroReview.id);
+  if (!t) return null;
+  const full = t.quoteEs ?? t.quote;
+  const { excerpt } = landing.heroReview;
+  const literal = excerpt && full.includes(excerpt.replace(/^…|…$/g, "").trim());
+  return { name: t.name, text: literal ? excerpt : full };
+}
+
 function Bullets({ landing }: { landing: AdsLanding }) {
   return (
     <ul data-testid="ads-bullets" className="divide-y divide-border border-y border-border">
@@ -90,15 +103,19 @@ export default async function AdsLandingPage({ params }: PageProps) {
     const project = projects.find((p) => p.slug === c.slug);
     return project ? [{ ...c, project }] : [];
   });
-  const quotes = landing.testimonials.flatMap((id) => {
-    const t = testimonials.find((x) => x.id === id);
-    return t ? [t] : [];
-  });
+  // La reseña del hero no se repite en la sección de reseñas.
+  const quotes = landing.testimonials
+    .filter((id) => id !== landing.heroReview.id)
+    .flatMap((id) => {
+      const t = testimonials.find((x) => x.id === id);
+      return t ? [t] : [];
+    });
+  const heroReview = resolveHeroReview(landing);
   const { rating, count } = reviewSummary();
 
   return (
     <main id="main-content">
-      <div className="container-editorial grid gap-x-14 gap-y-6 pt-5 pb-16 sm:gap-y-10 sm:pt-8 lg:grid-cols-12 lg:pt-14 lg:pb-24">
+      <div className="container-editorial grid gap-x-14 gap-y-6 pt-3 pb-16 sm:gap-y-10 sm:pt-8 lg:grid-cols-12 lg:pt-14 lg:pb-24">
         {/* Hero: texto. En móvil el formulario sigue justo debajo. */}
         <div id="hero" className="lg:col-span-7">
           <h1
@@ -124,12 +141,23 @@ export default async function AdsLandingPage({ params }: PageProps) {
               {BUSINESS.address.street} · {BUSINESS.address.locality}
             </span>
           </p>
+          {heroReview && (
+            <figure
+              data-testid="ads-hero-review"
+              className="mt-2 text-[12px] leading-snug text-foreground/85 sm:mt-4 sm:border-l-2 sm:border-accent sm:pl-3 sm:text-sm"
+            >
+              <blockquote className="inline">
+                <p className="inline">«{heroReview.text}»</p>
+              </blockquote>{" "}
+              <figcaption className="inline text-muted">— {heroReview.name}</figcaption>
+            </figure>
+          )}
         </div>
 
         {/* Formulario: a la derecha y fijo en escritorio. */}
         <div
           id={LEAD_FORM_ID}
-          className="scroll-mt-4 lg:sticky lg:top-6 lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto"
+          className="scroll-mt-4 max-sm:-mt-3 lg:sticky lg:top-6 lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto"
         >
           <LeadForm defaultNeed={landing.defaultNeed} source="ads_landing" offer={landing.slug} />
         </div>
@@ -137,7 +165,7 @@ export default async function AdsLandingPage({ params }: PageProps) {
         <div className="space-y-16 lg:col-span-7 lg:space-y-20">
           <Bullets landing={landing} />
 
-          {/* Casos reales → ficha /projects/{slug}, en la misma pestaña */}
+          {/* Casos reales → ficha /projects/{slug}, en pestaña nueva para no perder la landing */}
           {cases.length > 0 && (
             <section aria-labelledby="casos">
               <h2 id="casos" className="text-2xl font-bold tracking-tight text-foreground">
@@ -148,6 +176,8 @@ export default async function AdsLandingPage({ params }: PageProps) {
                   <li key={slug}>
                     <Link
                       href={`/projects/${slug}`}
+                      target="_blank"
+                      rel="noopener"
                       data-testid={`ads-case-${slug}`}
                       className="holo-surface holo-corners holo-link group flex h-full flex-col"
                     >

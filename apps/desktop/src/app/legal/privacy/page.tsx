@@ -18,7 +18,8 @@ import {
  * "llámame tú" de `/contact`) en Firestore `leads` (base de datos en `nam5` =
  * EE. UU.: de ahí la transferencia internacional del apartado 5), con su
  * atribución publicitaria (UTM, gclid, fbclid). Aviso interno por SMTP de
- * one.com y, si hay variables de entorno, Telegram. Hay analítica y medición
+ * one.com y, si hay variables de entorno, Telegram. Copia en el CRM interno
+ * (ActionERP, Supabase UE) vía `LEAD_ERP_URL`. Hay analítica y medición
  * de campañas (Google Tag Manager → GA4, Google Ads, Meta Pixel, solo tras
  * consentimiento — ver `/legal/cookies`) pero no base de datos propia de
  * analítica. Mantener este documento alineado con `packages/shared/src/leads.ts`,
@@ -144,8 +145,10 @@ export default function PrivacyPage() {
           ), solo accesible para el equipo de Action. Al recibirla, el sistema
           nos envía un aviso interno con los datos de la solicitud por correo
           electrónico (servidor de correo de one.com) y, si está activado, por
-          un mensaje interno de Telegram. No usamos estos datos para enviarte
-          publicidad ni boletines.
+          un mensaje interno de Telegram, y copia la solicitud en nuestro
+          sistema interno de gestión comercial (CRM propio, alojado en la Unión
+          Europea), donde el equipo hace el seguimiento. No usamos estos datos
+          para enviarte publicidad ni boletines.
         </p>
         <p>
           Los demás canales de la web (WhatsApp y correo electrónico) no pasan
@@ -338,6 +341,13 @@ export default function PrivacyPage() {
             <strong>Vercel Inc.</strong> — alojamiento web y ejecución del
             servicio que recibe las solicitudes del formulario; encargado del
             tratamiento. Puede tratar datos en Estados Unidos.
+          </li>
+          <li>
+            <strong>Supabase Inc.</strong> — base de datos de nuestro sistema
+            interno de gestión comercial (CRM), al que se copian las solicitudes
+            del apartado 2.1 para su seguimiento; encargado del tratamiento, con
+            servidores en la Unión Europea (París). La aplicación se ejecuta en
+            Vercel.
           </li>
           <li>
             <strong>one.com</strong> — proveedor de correo electrónico, con el
