@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { projects } from "@actiondev/shared";
 import { BUSINESS } from "@/lib/seo";
 import { buildProjectJsonLd, findProject, projectMetadata, relatedProjects } from "@/lib/project-seo";
+import { projectBlogPost } from "@/lib/project-blog";
 import { Header } from "@/components/layout/Header";
 import { projectCase, projectCategoryLabel, relatedService } from "@/lib/project-case";
 import { LegalLinks } from "@/components/layout/LegalLinks";
@@ -16,9 +17,13 @@ import { LegalLinks } from "@/components/layout/LegalLinks";
  * (ES) son opcionales en `Project`: mientras no haya contenido real por
  * proyecto, caen en el placeholder genérico de `lib/project-case.ts`.
  *
- * Enlazado interno (lo mismo en la ficha móvil, `ProjectCaseView`):
+ * Enlazado interno (lo mismo en la ficha móvil, `ProjectCaseView`): «Caso
+ * contado en el blog» si su artículo (`lib/project-blog.ts`) está publicado,
  * «Servicio relacionado» y «Más proyectos» (`relatedProjects`).
  */
+
+/** El artículo del caso sale de Firestore: aparece al publicarse (webhook o esta red de seguridad). */
+export const revalidate = 3600;
 
 interface ProjectPageProps {
   params: Promise<{ slug: string }>;
@@ -46,13 +51,14 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const niche = project.nicheEs ?? project.niche;
   const { brief, result } = projectCase(project);
   const service = relatedService(project);
+  const post = await projectBlogPost(project.slug);
   const more = relatedProjects(project);
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildProjectJsonLd(project)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildProjectJsonLd(project, post)) }}
       />
 
       <Header />
@@ -166,6 +172,26 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
         <article className="container-editorial">
           <div className="mx-auto max-w-3xl">
+            {/* El caso contado en el blog — solo con el artículo publicado. */}
+            {post && (
+              <section className="mt-20 border-t border-border pt-16" data-testid="project-blog-case">
+                <h2 className="micro-label micro-label-loud">Caso contado en el blog</h2>
+                <Link
+                  href={`/blog/${post.slug}`}
+                  className="link-sweep group mt-6 inline-flex items-baseline gap-3 text-2xl font-semibold text-foreground hover:text-accent"
+                >
+                  {post.h1}
+                  <span
+                    aria-hidden
+                    className="transition-transform duration-[var(--duration)] ease-[var(--ease)] group-hover:translate-x-1"
+                  >
+                    →
+                  </span>
+                </Link>
+                <p className="mt-4 max-w-[58ch] text-[1.05rem] leading-relaxed text-muted">{post.excerpt}</p>
+              </section>
+            )}
+
             {/* Servicio relacionado — enlazado interno hacia la landing del
                 tipo de proyecto (ver `relatedService`), con ancla descriptiva. */}
             <section className="mt-20 border-t border-border pt-16">

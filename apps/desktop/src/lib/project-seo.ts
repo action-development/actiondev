@@ -5,6 +5,7 @@ import {
   WEBSITE_ID,
   hasCaseStudy,
   projects,
+  type BlogPost,
   type Project,
 } from "@actiondev/shared";
 import { projectCategoryLabel, relatedService } from "@/lib/project-case";
@@ -90,7 +91,7 @@ export function projectMetadata(project: Project): Metadata {
  * grafo: proyecto → servicio → organización, en vez de un `Service` suelto
  * por ficha.
  */
-export function buildProjectJsonLd(project: Project) {
+export function buildProjectJsonLd(project: Project, post?: BlogPost) {
   const service = relatedService(project);
   const url = absoluteUrl(`/projects/${project.slug}`);
   return {
@@ -116,6 +117,8 @@ export function buildProjectJsonLd(project: Project) {
           provider: { "@id": ORGANIZATION_ID },
         },
         ...(project.image !== PLACEHOLDER_IMAGE && { image: absoluteUrl(project.image) }),
+        // El artículo que cuenta el caso (solo si está publicado; mismo @id que su BlogPosting).
+        ...(post && { subjectOf: { "@id": `${absoluteUrl(`/blog/${post.slug}`)}#article` } }),
         ...(project.location && {
           locationCreated: {
             "@type": "Place",

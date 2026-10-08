@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { landings } from "@/data/landings";
+import { projectsForPost } from "@/lib/project-blog";
 
 /**
  * Webhook llamado por `apps/admin` justo después de escribir un post en
@@ -30,6 +31,14 @@ export async function POST(request: Request) {
   for (const landing of landings) {
     revalidatePath(`/${landing.slug}`);
     revalidatePath(`/m/${landing.slug}`);
+  }
+  // Fichas cuyo caso cuenta este artículo («Caso contado en el blog»): el
+  // enlace aparece (o desaparece) en cuanto el post cambia de estado.
+  if (typeof slug === "string" && slug) {
+    for (const project of projectsForPost(slug)) {
+      revalidatePath(`/projects/${project}`);
+      revalidatePath(`/m/projects/${project}`);
+    }
   }
   // El post nuevo tiene que aparecer también en el sitemap (y en IndexNow).
   revalidatePath("/sitemap.xml");

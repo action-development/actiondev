@@ -1,4 +1,4 @@
-import type { Project } from "@actiondev/shared";
+import type { BlogPost, Project } from "@actiondev/shared";
 import { projectCase, relatedService } from "@/lib/project-case";
 import { Cell, Cells, Label } from "../Cell";
 import { Button } from "../Button";
@@ -88,18 +88,21 @@ function ProjectRow({ project }: { project: Project }) {
  * de `projectCase` (el mismo que la ficha de escritorio): «Qué nos pidieron»
  * y «Qué conseguimos» como `<h2>`, Antes/Ahora solo si hay texto verificado,
  * «Ver web» solo con URL real y el vídeo bajo demanda (`preload="none"`).
- * Enlazado interno IGUAL que escritorio: «Servicio relacionado» y «Más
- * proyectos» (`more`, `relatedProjects`); además, anterior y siguiente.
+ * Enlazado interno IGUAL que escritorio: «Caso contado en el blog» (`post`, solo
+ * si está publicado), «Servicio relacionado» y «Más proyectos» (`more`,
+ * `relatedProjects`); además, anterior y siguiente.
  */
 export function ProjectCaseView({
   project,
   prev,
   next,
+  post,
   more,
 }: {
   project: Project;
   prev: Project;
   next: Project;
+  post?: BlogPost;
   more: Project[];
 }) {
   const { brief, result } = projectCase(project);
@@ -203,6 +206,30 @@ export function ProjectCaseView({
             {project.title} en movimiento.
           </figcaption>
         </figure>
+      )}
+
+      {post && (
+        <section aria-labelledby="ficha-blog" className="border-t-2 border-ink">
+          <h2 id="ficha-blog" className="font-display text-h3 uppercase px-4 pt-7 pb-3">
+            Caso contado en el blog
+          </h2>
+          <MLink
+            href={`/blog/${post.slug}`}
+            data-testid="m-case-blog"
+            className="group grid grid-cols-[1fr_64px] border-y border-ink bg-paper"
+          >
+            <span className="grid min-w-0 gap-2 px-4 py-[18px]">
+              <span className="font-display text-h4 break-words uppercase">{post.h1}</span>
+              <span className="text-base leading-[1.42]">{post.excerpt}</span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="flex items-center justify-center border-l border-ink group-hover:bg-lime group-active:bg-lime"
+            >
+              <Icon name="arrow_outward" size={30} />
+            </span>
+          </MLink>
+        </section>
       )}
 
       <section aria-labelledby="ficha-servicio" className="border-t-2 border-ink">
