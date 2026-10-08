@@ -8,6 +8,12 @@ import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { HoloBar } from "@/components/layout/HoloBar";
 import { LegalLinks } from "@/components/layout/LegalLinks";
+import { FormJumpButton } from "@/components/leads/FormJump";
+import { LeadForm } from "@/components/leads/LeadForm";
+import { StickyCta } from "@/components/leads/StickyCta";
+
+/** Id del bloque del formulario: ancla de los CTA y de la barra fija de móvil. */
+const PROJECT_FORM_ID = "proyecto";
 
 /**
  * Landing pages SEO locales (/desarrollo-de-aplicaciones-vigo, …).
@@ -177,7 +183,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
           </nav>
 
           {/* Hero */}
-          <div className="pt-12 md:pt-16">
+          <div id="hero" className="pt-12 md:pt-16">
             <p className="micro-label">
               {BUSINESS.address.street} · {BUSINESS.address.locality}
             </p>
@@ -188,6 +194,27 @@ export default async function LandingPage({ params }: LandingPageProps) {
                   {paragraph}
                 </p>
               ))}
+            </div>
+
+            {/* CTA tras la intro: la landing llega desde Google y el formulario
+                está al final; este es el primer sitio donde ya se puede actuar. */}
+            <div className="mt-10 flex flex-wrap items-center gap-4">
+              <FormJumpButton
+                targetId={PROJECT_FORM_ID}
+                variant="solid"
+                className="min-h-[52px] px-8"
+                data-testid="landing-cta-project"
+              >
+                Cuéntanos tu proyecto
+              </FormJumpButton>
+              <HoloButton
+                href={BUSINESS.whatsappUrl}
+                variant="quiet"
+                className="min-h-[52px] px-8"
+                data-testid="landing-cta-whatsapp"
+              >
+                WhatsApp
+              </HoloButton>
             </div>
 
             {/* Franja de confianza */}
@@ -379,25 +406,43 @@ export default async function LandingPage({ params }: LandingPageProps) {
             </div>
           </section>
 
-          {/* CTA */}
+          {/* Formulario de leads (ancla #proyecto) + canales directos */}
           <section
-            aria-label="Contacto"
-            className="holo-surface holo-corners mt-20 p-8 text-center md:p-14"
+            id={PROJECT_FORM_ID}
+            aria-labelledby="proyecto-titulo"
+            data-testid="landing-project"
+            className="mt-20 scroll-mt-6"
           >
-            <h2 className="display-m text-foreground">{landing.cta.title}</h2>
-            <p className="lede mx-auto mt-4">{landing.cta.text}</p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <HoloButton href={BUSINESS.whatsappUrl} variant="solid">
-                Hablar por WhatsApp
-              </HoloButton>
-              <HoloButton href={`mailto:${BUSINESS.email}`} data>
-                {BUSINESS.email}
-              </HoloButton>
+            <div className="mx-auto max-w-2xl">
+              <h2 id="proyecto-titulo" className="display-m text-foreground">
+                {landing.cta.title}
+              </h2>
+              <p className="lede mt-4">{landing.cta.text}</p>
+              <div className="mt-8">
+                <LeadForm
+                  defaultNeed={landing.leadNeed}
+                  needs={landing.leadNeeds}
+                  source="seo_landing"
+                  offer={landing.slug}
+                />
+              </div>
+
+              <div className="mt-10 border-t border-border pt-8">
+                <p className="micro-label">¿Prefieres escribirnos directamente?</p>
+                <div className="mt-5 flex flex-wrap items-center gap-4">
+                  <HoloButton href={BUSINESS.whatsappUrl} variant="quiet">
+                    Hablar por WhatsApp
+                  </HoloButton>
+                  <HoloButton href={`mailto:${BUSINESS.email}`} data>
+                    {BUSINESS.email}
+                  </HoloButton>
+                </div>
+                <p className="mt-6 font-mono text-xs uppercase tracking-widest text-muted">
+                  {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
+                  {BUSINESS.address.locality} · {BUSINESS.phoneDisplay}
+                </p>
+              </div>
             </div>
-            <p className="mt-6 font-mono text-xs uppercase tracking-widest text-muted">
-              {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
-              {BUSINESS.address.locality} · {BUSINESS.phoneDisplay}
-            </p>
           </section>
 
           {/* Enlazado interno */}
@@ -421,7 +466,9 @@ export default async function LandingPage({ params }: LandingPageProps) {
         </article>
       </main>
 
-      <footer className="border-t border-border">
+      <StickyCta heroId="hero" formId={PROJECT_FORM_ID} />
+
+      <footer className="border-t border-border pb-24 lg:pb-0">
         <div className="container-editorial flex flex-col gap-3 pt-10 pb-5 font-mono text-xs uppercase tracking-widest text-muted md:flex-row md:items-center md:justify-between">
           <p>
             Action — {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}

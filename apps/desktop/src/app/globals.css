@@ -591,6 +591,68 @@ body {
     50%      { opacity: 0.3; }
   }
 
+  /* ── Formulario de leads (`components/leads/LeadForm.tsx`) ────────── */
+  /* Losa de elección (radio): caja de esquina viva. Al elegirla "se ilumina en
+     lima" con una capa (`::before`) cuya OPACIDAD es lo único que se anima: ni
+     color ni borde en transición, que repintarían. El input real queda
+     invisible encima (sigue siendo un radio nativo: teclado, lector, foco). */
+  .lead-choice {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 2px solid var(--border);
+    border-radius: 0;
+    background: var(--card);
+    cursor: pointer;
+    transition: transform var(--duration-fast) var(--ease-snap);
+  }
+  .lead-choice::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border: 2px solid var(--accent);
+    background: var(--holo-dim);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-fast) var(--ease-snap);
+  }
+  .lead-choice:hover::before { opacity: 0.35; }
+  .lead-choice:has(input:checked)::before { opacity: 1; }
+  .lead-choice:has(input:focus-visible) { outline: 2px solid var(--foreground); outline-offset: 3px; }
+  .lead-choice:active { transform: translateY(1px); }
+  .lead-choice > input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .lead-choice > span { position: relative; pointer-events: none; }
+
+  /* Entrada del paso: la ÚNICA animación del formulario. */
+  .lead-step { animation: lead-step-in var(--duration) var(--ease) both; }
+  @keyframes lead-step-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Barra fija de móvil de `/hablemos/*`. */
+  .lead-sticky {
+    transform: translateY(100%);
+    opacity: 0;
+    transition:
+      transform var(--duration) var(--ease),
+      opacity var(--duration) var(--ease);
+  }
+  .lead-sticky[data-show="true"] { transform: none; opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lead-choice, .lead-choice::before, .lead-sticky { transition: none; }
+    .lead-step { animation: none; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .holo-live, .holo-led { animation: none; }
     .holo-btn, .holo-btn::after, .holo-link { transition: none; }

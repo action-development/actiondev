@@ -49,7 +49,9 @@ type ServiceId = "apps" | "webapp" | "web";
 const SERVICE_IDS: readonly ServiceId[] = ["apps", "webapp", "web"];
 
 function isExcluded(pathname: string) {
-  return pathname === "/contact" || pathname.startsWith("/legal");
+  // `/hablemos/*`: landings de campaña, con su propio formulario — el atajo
+  // sería una segunda llamada a la acción compitiendo con la única que cuenta.
+  return pathname === "/contact" || pathname.startsWith("/legal") || pathname.startsWith("/hablemos");
 }
 
 function isSuppressed(): boolean {

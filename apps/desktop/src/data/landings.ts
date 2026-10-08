@@ -22,6 +22,8 @@
  * - Cada testimonio se cita en UNA sola landing.
  */
 
+import { LEAD_NEEDS_CAMPAIGN, LEAD_NEEDS_WEB, type LeadNeed } from "@actiondev/shared";
+
 export interface LandingFaq {
   q: string;
   a: string;
@@ -78,6 +80,10 @@ export interface Landing {
   proof: { text: string; testimonials: string[] };
   faqs: LandingFaq[];
   cta: { title: string; text: string };
+  /** Necesidad preseleccionada en el formulario del final (`#proyecto`). */
+  leadNeed: LeadNeed;
+  /** Las 4 opciones del paso 1: `LEAD_NEEDS_WEB` en las de web, `LEAD_NEEDS_CAMPAIGN` en las de app y software. */
+  leadNeeds: readonly LeadNeed[];
   /** 2-4 landings relacionadas, con anclas descriptivas y distintas. */
   related: { slug: string; label: string }[];
   /** Descripción propia para la tarjeta de /servicios. */
@@ -220,6 +226,8 @@ export const landings: Landing[] = [
       title: "¿Tienes una app en la cabeza?",
       text: "Cuéntanos qué problema quieres resolver y para quién. Te respondemos en 24 horas con los siguientes pasos y, si hace falta, quedamos en Rúa Colón.",
     },
+    leadNeed: "app",
+    leadNeeds: LEAD_NEEDS_CAMPAIGN,
     related: [
       { slug: "software-a-medida-vigo", label: "Software a medida y ERP para empresas de Vigo" },
       { slug: "desarrollo-web-vigo", label: "Webs y aplicaciones web a medida en Vigo" },
@@ -371,6 +379,8 @@ export const landings: Landing[] = [
       title: "¿Qué debería hacer tu web por ti?",
       text: "Explícanos qué tarea te gustaría quitarte de encima — llamadas, papeleo, taquilla — y te proponemos cómo resolverla con una web a medida.",
     },
+    leadNeed: "web",
+    leadNeeds: LEAD_NEEDS_WEB,
     related: [
       { slug: "diseno-web-vigo", label: "Diseño web con identidad propia en Vigo" },
       { slug: "tienda-online-vigo", label: "Tiendas online y ecommerce en Vigo" },
@@ -515,6 +525,8 @@ export const landings: Landing[] = [
       title: "¿Quieres una web que se reconozca a primera vista?",
       text: "Enséñanos tu marca — o cuéntanos la que quieres construir — y te proponemos una dirección de arte.",
     },
+    leadNeed: "web",
+    leadNeeds: LEAD_NEEDS_WEB,
     related: [
       { slug: "desarrollo-web-vigo", label: "Desarrollo web con Next.js en Vigo" },
       { slug: "tienda-online-vigo", label: "Diseño de tiendas online en Vigo" },
@@ -659,6 +671,8 @@ export const landings: Landing[] = [
       title: "¿Qué quieres vender online?",
       text: "Cuéntanos tu catálogo y cómo vendes hoy, y te diremos si te conviene Shopify o una tienda a medida, con los costes de cada opción por escrito.",
     },
+    leadNeed: "web",
+    leadNeeds: LEAD_NEEDS_WEB,
     related: [
       { slug: "desarrollo-web-redondela", label: "Webs y tiendas para el comercio de Redondela" },
       { slug: "diseno-web-vigo", label: "Diseño de marca y web en Vigo" },
@@ -807,6 +821,8 @@ export const landings: Landing[] = [
       title: "¿Qué proceso de tu empresa sigue en Excel?",
       text: "Cuéntanoslo. Te diremos si tiene sentido un software a medida, una integración o simplemente un programa estándar bien configurado.",
     },
+    leadNeed: "software",
+    leadNeeds: LEAD_NEEDS_CAMPAIGN,
     related: [
       { slug: "desarrollo-de-aplicaciones-vigo", label: "Apps móviles para empresas de Vigo" },
       { slug: "tienda-online-vigo", label: "Tiendas online conectadas a tu gestión" },
@@ -949,6 +965,8 @@ export const landings: Landing[] = [
       title: "¿Tu negocio de la provincia necesita una app?",
       text: "Cuéntanos dónde estás y qué quieres resolver. Te respondemos en 24 horas y, si hace falta, nos vemos en persona.",
     },
+    leadNeed: "app",
+    leadNeeds: LEAD_NEEDS_CAMPAIGN,
     related: [
       { slug: "desarrollo-web-pontevedra", label: "Páginas web a medida en Pontevedra" },
       { slug: "desarrollo-de-aplicaciones-vigo", label: "Desarrollo de apps desde nuestra oficina de Vigo" },
@@ -1089,6 +1107,8 @@ export const landings: Landing[] = [
       title: "¿Renovamos la web de tu negocio?",
       text: "Cuéntanos qué haces y dónde estás. Te proponemos una dirección visual y un plan para que la web trabaje para ti.",
     },
+    leadNeed: "web",
+    leadNeeds: LEAD_NEEDS_WEB,
     related: [
       { slug: "desarrollo-web-redondela", label: "Diseño web para negocios de Redondela" },
       {
@@ -1228,6 +1248,8 @@ export const landings: Landing[] = [
       title: "¿Tienes un negocio en Redondela?",
       text: "Escríbenos y quedamos en tu local. Te contamos qué haríamos con tu web y cuánto costaría, sin compromiso.",
     },
+    leadNeed: "web",
+    leadNeeds: LEAD_NEEDS_WEB,
     related: [
       {
         slug: "desarrollo-web-pontevedra",
@@ -1377,6 +1399,8 @@ export const landings: Landing[] = [
       title: "¿Tienes un producto digital en mente?",
       text: "Cuéntanos la idea en dos líneas. Te respondemos con las preguntas que hay que hacerse antes de gastar un euro y con los siguientes pasos.",
     },
+    leadNeed: "app",
+    leadNeeds: LEAD_NEEDS_CAMPAIGN,
     related: [
       { slug: "desarrollo-de-aplicaciones-vigo", label: "Estudio de desarrollo de apps en Vigo" },
       { slug: "agencia-desarrollo-web-galicia", label: "Agencia web para empresas gallegas" },
@@ -1523,6 +1547,8 @@ export const landings: Landing[] = [
       title: "¿Buscas agencia web en Galicia?",
       text: "Escríbenos desde donde estés. Te respondemos en 24 horas con una propuesta de siguiente paso.",
     },
+    leadNeed: "web",
+    leadNeeds: LEAD_NEEDS_WEB,
     related: [
       { slug: "desarrollo-web-vigo", label: "Desarrollo web a medida en Vigo" },
       { slug: "tienda-online-vigo", label: "Crear una tienda online con Shopify o a medida" },

@@ -35,7 +35,8 @@ import { preloadScene } from "@/lib/scene-preload";
  * ~5 s frente a los ~1,9 s de cualquier otra ruta. La escena 3D arranca detrás
  * de esta persiana mientras se recoge, y acaba de entrar con su propio fundido.
  *
- * Se deja pasar sin animar: modificadores (cmd/ctrl/shift/alt → pestaña
+ * Se deja pasar sin animar: toda página `/hablemos/*` (landings de campaña),
+ * modificadores (cmd/ctrl/shift/alt → pestaña
  * nueva), botón no principal, `target="_blank"`, `download`, orígenes externos,
  * `data-no-transition`, un `#ancla` de la misma página y el click a la ruta en
  * la que ya estamos. Si el padre ya hizo `preventDefault` (logo del Header en
@@ -160,6 +161,9 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (e.defaultPrevented || e.button !== 0) return;
+      // Landings de campaña (`/hablemos/*`): llegan de un anuncio y no es la
+      // web de autor — navegación inmediata, sin persiana.
+      if (window.location.pathname.startsWith("/hablemos")) return;
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
       const anchor = (e.target as Element | null)?.closest?.("a[href]");

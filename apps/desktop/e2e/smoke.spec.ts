@@ -454,3 +454,254 @@ test.describe("Legal links", () => {
     await expect(footer.getByTestId("cookie-preferences-link")).toBeVisible();
   });
 });
+
+test.describe("Landings de campaña", () => {
+  // Consentimiento decidido: sin él el banner tapa la parte baja del móvil.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem("action-cookie-consent", "denied");
+    });
+  });
+
+  for (const offer of ["app", "software"]) {
+    test(`/hablemos/${offer}: h1, noindex y sin popup de contacto`, async ({ page }) => {
+      await page.goto(`/hablemos/${offer}`);
+      await page.waitForLoadState("domcontentloaded");
+
+      await expect(page.getByTestId("ads-h1")).toBeVisible();
+      await expect(page.locator("h1")).toHaveCount(1);
+      await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", new RegExp(`/hablemos/${offer}$`));
+      // Barra propia: el logo no es un enlace al juego.
+      await expect(page.locator('header a[href="/"]')).toHaveCount(0);
+      await expect(page.getByTestId("lead-form")).toBeVisible();
+      await expect(page.getByTestId("lead-step-1")).toBeVisible();
+      await expect(page.getByTestId(`lead-field-need-${offer}`)).toBeChecked();
+      await expect(page.getByTestId("contact-popup")).toHaveCount(0);
+    });
+  }
+
+  test("paso 1 → paso 2 → envío mockeado → /hablemos/gracias", async ({ page }) => {
+    let body: Record<string, unknown> | null = null;
+    await page.route("**/api/lead", async (route) => {
+      body = route.request().postDataJSON();
+      await route.fulfill({ json: { ok: true, id: "test-id" } });
+    });
+
+    await page.goto("/hablemos/app?utm_source=google&gclid=abc123");
+    await page.waitForLoadState("domcontentloaded");
+
+    // Sin elegir el punto en que está, no avanza.
+    await page.getByTestId("lead-next").click();
+    await expect(page.getByTestId("lead-error-stage")).toBeVisible();
+    await page.getByTestId("lead-field-stage-idea").check();
+    await page.getByTestId("lead-next").click();
+
+    await expect(page.getByTestId("lead-step-2")).toBeVisible();
+    await expect(page.getByTestId("lead-field-name")).toBeFocused();
+
+    // Validación humana
+    await page.getByTestId("lead-field-name").fill("Ana");
+    await page.getByTestId("lead-submit").click();
+    await expect(page.getByTestId("lead-error-phone")).toHaveText(/Falta tu teléfono para poder llamarte/);
+    await expect(page.getByTestId("lead-error-email")).toBeVisible();
+    await expect(page.getByTestId("lead-error-budget")).toBeVisible();
+
+    await page.getByTestId("lead-field-phone").fill("600 123 456");
+    await page.getByTestId("lead-field-email").fill("ana@empresa.es");
+    await page.getByTestId("lead-field-budget").selectOption("unknown");
+    await page.getByTestId("lead-submit").click();
+
+    await expect(page).toHaveURL(/\/hablemos\/gracias\?tipo=app$/);
+    await expect(page.getByTestId("gracias-h1")).toContainText("Recibido");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+
+    expect(body).toMatchObject({
+      source: "ads_landing",
+      need: "app",
+      stage: "idea",
+      budget: "unknown",
+      contactPreference: "whatsapp",
+      attribution: { utmSource: "google", gclid: "abc123", landingPath: "/hablemos/app" },
+    });
+  });
+
+  test("«Atrás» vuelve al paso 1 conservando la elección", async ({ page }) => {
+    await page.goto("/hablemos/software");
+    await page.getByTestId("lead-field-stage-defined").check();
+    await page.getByTestId("lead-next").click();
+    await page.getByTestId("lead-back").click();
+    await expect(page.getByTestId("lead-step-1")).toBeVisible();
+    await expect(page.getByTestId("lead-field-stage-defined")).toBeChecked();
+  });
+
+  test("un fallo de envío muestra el error con salida por WhatsApp", async ({ page }) => {
+    await page.route("**/api/lead", (route) => route.fulfill({ status: 502, json: { ok: false } }));
+    await page.goto("/hablemos/app");
+    await page.getByTestId("lead-field-stage-idea").check();
+    await page.getByTestId("lead-next").click();
+    await page.getByTestId("lead-field-name").fill("Ana");
+    await page.getByTestId("lead-field-phone").fill("600123456");
+    await page.getByTestId("lead-field-email").fill("ana@empresa.es");
+    await page.getByTestId("lead-field-budget").selectOption("lt5k");
+    await page.getByTestId("lead-submit").click();
+
+    await expect(page.getByTestId("lead-error")).toContainText("No se ha podido enviar");
+    await expect(page.getByTestId("lead-whatsapp")).toHaveAttribute("href", /^https:\/\/wa\.me\//);
+    await expect(page.getByTestId("lead-submit")).toBeEnabled();
+  });
+
+  test("la barra fija de móvil aparece al salir el hero y se oculta con el formulario", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/hablemos/app");
+    const bar = page.getByTestId("sticky-cta");
+    await expect(bar).toHaveAttribute("data-show", "false");
+
+    await page.getByTestId("ads-closing-cta").scrollIntoViewIfNeeded();
+    await expect(bar).toHaveAttribute("data-show", "true");
+
+    await page.getByTestId("sticky-cta-form").click();
+    await expect(page.getByTestId("lead-form")).toBeInViewport();
+    await expect(page.getByTestId("lead-field-need-app")).toBeFocused();
+    await expect(bar).toHaveAttribute("data-show", "false");
+  });
+
+  test("/hablemos/gracias valida ?tipo= y no mete datos en el WhatsApp", async ({ page }) => {
+    await page.goto("/hablemos/gracias?tipo=software");
+    const href = await page.getByTestId("gracias-whatsapp").getAttribute("href");
+    expect(decodeURIComponent(href ?? "")).toContain("proyecto de software de gestión desde la web");
+
+    await page.goto("/hablemos/gracias?tipo=<script>");
+    const generic = await page.getByTestId("gracias-whatsapp").getAttribute("href");
+    expect(decodeURIComponent(generic ?? "")).toContain("proyecto desde la web");
+    expect(generic).not.toContain("script");
+  });
+
+  test("/hablemos/*: el paso 1 pinta 4 opciones (sin «web») y /gracias?tipo=web suena natural", async ({ page }) => {
+    await page.goto("/hablemos/app");
+    await expect(page.getByTestId("lead-form")).toBeVisible();
+    await expect(page.locator('[data-testid^="lead-field-need-"]')).toHaveCount(4);
+    await expect(page.getByTestId("lead-field-need-web")).toHaveCount(0);
+    await expect(page.getByTestId("lead-field-need-integration")).toHaveCount(1);
+
+    await page.goto("/hablemos/gracias?tipo=web");
+    const href = await page.getByTestId("gracias-whatsapp").getAttribute("href");
+    expect(decodeURIComponent(href ?? "")).toContain("proyecto de página web desde la web");
+  });
+
+  test("oferta desconocida devuelve 404", async ({ page }) => {
+    const response = await page.goto("/hablemos/xxx");
+    expect(response?.status()).toBe(404);
+  });
+});
+
+test.describe("Conversión: landings SEO, banner de cookies y Header móvil", () => {
+  const MOBILE = { width: 390, height: 844 };
+
+  test("landing SEO de apps: CTA tras la intro, #proyecto con formulario y H1 intacto", async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem("action-cookie-consent", "denied"));
+    await page.setViewportSize(MOBILE);
+    await page.goto("/desarrollo-de-aplicaciones-vigo");
+    await page.waitForLoadState("domcontentloaded");
+
+    await expect(page.locator("h1")).toHaveText("Desarrollo de aplicaciones en Vigo");
+
+    const cta = page.getByTestId("landing-cta-project");
+    await expect(cta).toBeVisible();
+    await expect(cta).toHaveText(/Cuéntanos tu proyecto/i);
+    await expect(page.getByTestId("landing-cta-whatsapp")).toBeVisible();
+    // Va DESPUÉS de la intro (el H1 la precede) y mucho antes del final de la página.
+    const ctaY = (await cta.boundingBox())!.y;
+    const h1Y = (await page.locator("h1").boundingBox())!.y;
+    const pageH = await page.evaluate(() => document.documentElement.scrollHeight);
+    expect(ctaY).toBeGreaterThan(h1Y);
+    expect(ctaY).toBeLessThan(pageH / 3);
+
+    // El formulario vive en #proyecto, con las 4 opciones de campaña y «app» marcada.
+    const section = page.locator("#proyecto");
+    await expect(section.getByTestId("lead-form")).toHaveCount(1);
+    await expect(section.locator('[data-testid^="lead-field-need-"]')).toHaveCount(4);
+    await expect(page.getByTestId("lead-field-need-app")).toBeChecked();
+
+    // El CTA lleva al formulario y enfoca su primer campo.
+    await cta.click();
+    await expect(page).toHaveURL(/#proyecto$/);
+    await expect(page.getByTestId("lead-form")).toBeInViewport();
+    await expect(page.getByTestId("lead-field-need-app")).toBeFocused();
+  });
+
+  test("landing SEO de web: opciones LEAD_NEEDS_WEB con «web» preseleccionada", async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem("action-cookie-consent", "denied"));
+    await page.goto("/desarrollo-web-vigo");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.locator("h1")).toHaveCount(1);
+    await expect(page.locator('#proyecto [data-testid^="lead-field-need-"]')).toHaveCount(4);
+    await expect(page.getByTestId("lead-field-need-web")).toBeChecked();
+    await expect(page.getByTestId("lead-field-need-integration")).toHaveCount(0);
+  });
+
+  test("landing SEO en móvil: la barra fija aparece al bajar y se oculta con el formulario", async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem("action-cookie-consent", "denied"));
+    await page.setViewportSize(MOBILE);
+    await page.goto("/desarrollo-web-vigo");
+    const bar = page.getByTestId("sticky-cta");
+    await expect(bar).toHaveAttribute("data-show", "false");
+
+    await page.locator("#resenas").scrollIntoViewIfNeeded();
+    await expect(bar).toHaveAttribute("data-show", "true");
+
+    await page.getByTestId("sticky-cta-form").click();
+    await expect(page.getByTestId("lead-form")).toBeInViewport();
+    await expect(bar).toHaveAttribute("data-show", "false");
+  });
+
+  test("banner de cookies: fondo opaco y compacto en móvil, con ambos botones", async ({ page }) => {
+    await page.setViewportSize(MOBILE);
+    await page.goto("/desarrollo-de-aplicaciones-vigo");
+    const banner = page.getByTestId("cookie-consent");
+    await expect(banner).toBeVisible();
+
+    const bg = await banner.evaluate((el) => getComputedStyle(el).backgroundColor);
+    const alpha = bg.startsWith("rgba") ? Number(bg.replace(/[^\d.,]/g, "").split(",")[3]) : 1;
+    expect(alpha).toBeGreaterThanOrEqual(0.94);
+
+    const box = (await banner.boundingBox())!;
+    expect(box.height).toBeLessThanOrEqual(140);
+    expect(box.x + box.width).toBeLessThanOrEqual(MOBILE.width);
+
+    // Botones en línea y con la misma altura (misma prominencia de tamaño).
+    const accept = (await page.getByTestId("cookie-consent-accept").boundingBox())!;
+    const reject = (await page.getByTestId("cookie-consent-reject").boundingBox())!;
+    expect(Math.abs(accept.y - reject.y)).toBeLessThan(2);
+    expect(Math.abs(accept.height - reject.height)).toBeLessThan(2);
+  });
+
+  for (const path of ["/contact", "/projects?quieto", "/resenas"]) {
+    test(`Header a 390 px en ${path}: logo visible y nada fuera del viewport`, async ({ page }) => {
+      await page.addInitScript(() => window.localStorage.setItem("action-cookie-consent", "denied"));
+      await page.setViewportSize(MOBILE);
+      await page.goto(path);
+      await page.waitForLoadState("domcontentloaded");
+
+      const nav = page.getByTestId("main-nav");
+      await expect(nav).toBeVisible();
+      await expect(nav.locator("img").first()).toBeVisible();
+      // Por debajo de `md`: solo logo + CTA.
+      await expect(nav.locator("ul")).toBeHidden();
+      await expect(nav.locator('a[href="/contact"]:not(ul a)')).toBeVisible();
+      await expect(nav.locator("button")).toBeHidden();
+
+      const boxes = await nav.locator("*").evaluateAll((els) =>
+        els
+          .map((el) => ({ el, r: el.getBoundingClientRect(), shown: getComputedStyle(el).display !== "none" }))
+          .filter(({ r, shown }) => shown && r.width > 0 && r.height > 0)
+          .map(({ r }) => ({ x: r.x, right: r.x + r.width })),
+      );
+      expect(boxes.length).toBeGreaterThan(0);
+      for (const b of boxes) {
+        expect(b.x).toBeGreaterThanOrEqual(0);
+        expect(b.right).toBeLessThanOrEqual(MOBILE.width);
+      }
+    });
+  }
+});
