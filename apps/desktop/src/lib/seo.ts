@@ -29,7 +29,7 @@ export {
  * Fecha de última revisión de los documentos legales (ISO).
  * Actualizar SIEMPRE que se toque el contenido de /legal/*.
  */
-export const LEGAL_UPDATED = "2026-10-02";
+export const LEGAL_UPDATED = "2026-10-08";
 
 export const SITE_URL = BUSINESS.domain;
 

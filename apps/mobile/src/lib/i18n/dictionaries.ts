@@ -54,7 +54,7 @@ export const dictionaries = {
     },
     cookieConsent: {
       message:
-        "We use analytics cookies to understand how the site is used. They only run if you accept them.",
+        "We use analytics cookies and cookies to measure advertising campaigns (Google and Meta). They only run if you accept them.",
       linkLabel: "Cookie policy",
       accept: "Accept",
       reject: "Reject",
@@ -217,7 +217,7 @@ export const dictionaries = {
     },
     cookieConsent: {
       message:
-        "Usamos cookies de analítica para entender cómo se usa el sitio. Solo se activan si las aceptas.",
+        "Usamos cookies de analítica y de medición de campañas publicitarias (Google y Meta). Solo se activan si las aceptas.",
       linkLabel: "Política de cookies",
       accept: "Aceptar",
       reject: "Rechazar",

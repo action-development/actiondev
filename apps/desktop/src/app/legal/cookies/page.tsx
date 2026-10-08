@@ -7,10 +7,13 @@ import { BUSINESS, LEGAL_ENTITY, OG_IMAGE, absoluteUrl } from "@/lib/seo";
  * Política de cookies.
  *
  * Este sitio usa Google Tag Manager (`components/analytics/GoogleTagManager.tsx`,
- * ambas apps) para cargar herramientas de analítica — SOLO tras consentimiento
- * explícito vía el banner (`ui/CookieConsent.tsx` en desktop,
- * `components/CookieConsent.tsx` en mobile). Sin aceptar, GTM no se carga y no
- * se instala ninguna cookie de analítica. La decisión se guarda en
+ * ambas apps) para cargar analítica (GA4) y medición de campañas (Google Ads,
+ * Meta Pixel) — SOLO tras consentimiento explícito vía el banner
+ * (`ui/CookieConsent.tsx` en desktop, `components/CookieConsent.tsx` en
+ * mobile). Sin aceptar, GTM no se carga y no se instala ninguna cookie
+ * (Consent Mode v2 en modo básico). Duraciones: tabla de cookies de Google
+ * (business.safety.google/adscookies) y documentación de Meta (fbp/fbc,
+ * 90 días). Si cambia el contenedor GTM (tags), actualizar el apartado 3. La decisión se guarda en
  * `localStorage["action-cookie-consent"]` (`@actiondev/shared` → `analytics.ts`),
  * compartida entre desktop y mobile.
  *
@@ -25,7 +28,7 @@ import { BUSINESS, LEGAL_ENTITY, OG_IMAGE, absoluteUrl } from "@/lib/seo";
 export const metadata: Metadata = {
   title: "Política de cookies",
   description:
-    "Política de cookies de actiondev.es. Usamos Google Tag Manager para analítica, solo tras tu consentimiento. Titular: Alcasi Systems, S.L. (CIF B72910664).",
+    "Política de cookies de actiondev.es. Usamos Google Tag Manager para analítica y medición de campañas (Google Analytics, Google Ads, Meta Pixel), solo tras tu consentimiento. Titular: Alcasi Systems, S.L. (CIF B72910664).",
   alternates: { canonical: "/legal/cookies" },
   openGraph: {
     type: "website",
@@ -34,7 +37,7 @@ export const metadata: Metadata = {
     siteName: BUSINESS.name,
     title: "Política de cookies — Action",
     description:
-      "actiondev.es solo instala cookies de analítica si las aceptas en el banner. Qué cookies usa y cómo cambiar tu decisión.",
+      "actiondev.es solo instala cookies de analítica y de medición de campañas si las aceptas en el banner. Qué cookies usa y cómo cambiar tu decisión.",
     images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
   },
 };
@@ -76,7 +79,7 @@ export default function CookiesPage() {
       <LegalDocHeader
         eyebrow="Legal · LSSI art. 22.2"
         title="Política de cookies"
-        lede="Este sitio no instala ninguna cookie de analítica hasta que la aceptas en el banner. Puedes cambiar tu decisión en cualquier momento desde «Preferencias de cookies», en el pie de página, o desde «Cookies», abajo a la izquierda en las pantallas 3D."
+        lede="Este sitio no instala ninguna cookie de analítica ni de medición de campañas hasta que las aceptas en el banner. Puedes cambiar tu decisión en cualquier momento desde «Preferencias de cookies», en el pie de página, o desde «Cookies», abajo a la izquierda en las pantallas 3D."
       />
 
       <div className="legal-prose">
@@ -99,33 +102,100 @@ export default function CookiesPage() {
         <h2>3. Cookies que usa este sitio</h2>
         <p>
           actiondev.es usa <strong>Google Tag Manager</strong> (contenedor{" "}
-          <code>GTM-PF295VK8</code>) para cargar herramientas de analítica —{" "}
+          <code>GTM-T9766P5S</code>) para cargar herramientas de analítica y de
+          medición de campañas publicitarias —{" "}
           <strong>solo si aceptas el banner de cookies</strong>. Mientras no
           aceptas, el script de Google Tag Manager no se carga y no se instala
-          ninguna cookie de analítica.
+          ninguna de las cookies de esta sección.
         </p>
-        <p>Si aceptas, pueden instalarse cookies como:</p>
+        <p>
+          Si aceptas, Google Tag Manager puede cargar las tres herramientas
+          siguientes. Las duraciones son aproximadas y las fija el proveedor.
+        </p>
+
+        <h3>3.1. Google Analytics 4 (analítica)</h3>
         <ul>
           <li>
             <strong>
               <code>_ga</code>, <code>_ga_*</code>
             </strong>{" "}
-            (Google Analytics) — distinguen visitantes únicos y sesiones.
-            Persisten hasta 2 años.
+            — distinguen visitantes únicos y sesiones para estadísticas de uso
+            del sitio (páginas vistas, procedencia, dispositivo).
           </li>
           <li>
-            <strong>
-              <code>_gid</code>
-            </strong>{" "}
-            (Google Analytics) — distingue visitantes. Persiste 24 horas.
+            <strong>Titular:</strong> Google Ireland Limited (cookies de
+            terceros gestionadas desde nuestro dominio).{" "}
+            <strong>Duración:</strong> hasta 2 años.{" "}
+            <strong>Transferencias:</strong> puede enviar datos a Google LLC en
+            EE. UU., amparado en el Marco de Privacidad de Datos UE-EE. UU. y
+            en las cláusulas contractuales tipo.
           </li>
         </ul>
+
+        <h3>3.2. Google Ads (medición de conversiones)</h3>
+        <ul>
+          <li>
+            <strong>
+              <code>_gcl_au</code>, <code>_gcl_aw</code>, <code>_gcl_gb</code>
+            </strong>{" "}
+            — guardan que llegaste desde un anuncio de Google (identificador
+            de clic) para poder medir si después nos contactas, y qué campaña
+            lo originó. No muestran publicidad personalizada por sí mismas: no
+            hacemos remarketing.
+          </li>
+          <li>
+            <strong>Titular:</strong> Google Ireland Limited.{" "}
+            <strong>Duración:</strong> hasta 90 días.{" "}
+            <strong>Transferencias:</strong> como en Google Analytics (EE. UU.,
+            Marco de Privacidad de Datos y cláusulas contractuales tipo).
+          </li>
+          <li>
+            Cuando envías el formulario de proyecto, con tu consentimiento,
+            Google Ads recibe además tu correo y tu teléfono{" "}
+            <strong>cifrados con un resumen criptográfico (hash)</strong> para
+            asociar la solicitud al anuncio (conversiones mejoradas). Detalle
+            en la <Link href="/legal/privacy">política de privacidad</Link>.
+          </li>
+        </ul>
+
+        <h3>3.3. Meta Pixel (medición de campañas)</h3>
+        <ul>
+          <li>
+            <strong>
+              <code>_fbp</code>, <code>_fbc</code>
+            </strong>{" "}
+            — <code>_fbp</code> identifica el navegador y <code>_fbc</code>{" "}
+            guarda el identificador de clic de un anuncio de Facebook o
+            Instagram (<code>fbclid</code>), para medir qué anuncios llevan a
+            una visita o a una solicitud.
+          </li>
+          <li>
+            <strong>Titular:</strong> Meta Platforms Ireland Ltd.{" "}
+            <strong>Duración:</strong> hasta 90 días.{" "}
+            <strong>Transferencias:</strong> puede enviar datos a Meta
+            Platforms, Inc. en EE. UU., conforme a sus condiciones y a las
+            cláusulas contractuales tipo.
+          </li>
+        </ul>
+
         <p>
-          Estas cookies son de <strong>terceros</strong> (Google Ireland
-          Limited) y su finalidad es exclusivamente <strong>estadística</strong>
-          : entender qué páginas se visitan y cómo. No usamos píxeles de
-          publicidad (Meta, LinkedIn, Google Ads), cookies de perfilado ni
-          mapas de calor o grabación de sesiones.
+          Estas cookies son de <strong>terceros</strong> (aunque algunas se
+          guarden en nuestro dominio) y su finalidad es la{" "}
+          <strong>estadística y la medición de campañas</strong>. No usamos
+          cookies de perfilado propias, remarketing, mapas de calor ni
+          grabación de sesiones, ni píxeles de otras redes (como LinkedIn).
+        </p>
+        <h3>3.4. Consent Mode v2 (cómo respeta tu decisión)</h3>
+        <p>
+          El sitio aplica el <strong>Modo de consentimiento v2</strong> de
+          Google en su modalidad <strong>básica</strong>: hasta que aceptas, los
+          cuatro permisos (<code>ad_storage</code>,{" "}
+          <code>ad_user_data</code>, <code>ad_personalization</code> y{" "}
+          <code>analytics_storage</code>) están denegados y{" "}
+          <strong>no se carga ninguna etiqueta ni se envía ninguna señal</strong>
+          , ni siquiera «anónima» o sin cookies. Al aceptar, se conceden y se
+          cargan las etiquetas; si después revocas tu decisión, se vuelven a
+          denegar.
         </p>
         {/* Texto SIN la palabra "privacidad": el enlace "Privacidad" del pie
             (Footer.tsx) se busca por nombre accesible en e2e con
@@ -140,6 +210,14 @@ export default function CookiesPage() {
             rel="noopener noreferrer"
           >
             policies.google.com/privacy
+          </a>{" "}
+          y Meta en{" "}
+          <a
+            href="https://www.facebook.com/privacy/policy"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            facebook.com/privacy/policy
           </a>
           .
         </p>
@@ -159,7 +237,7 @@ export default function CookiesPage() {
           que la borres o la cambies.
         </p>
         <p>
-          Para cambiar tu decisión en cualquier momento, usa el enlace{" "}
+          Si rechazas, no se carga nada de la sección 3. Para cambiar tu decisión en cualquier momento, usa el enlace{" "}
           <strong>«Preferencias de cookies»</strong> del pie de página o, en
           las pantallas 3D (inicio, proyectos, reseñas y contacto),{" "}
           <strong>«Cookies»</strong> abajo a la izquierda: vuelve a mostrar el

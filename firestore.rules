@@ -16,8 +16,56 @@ service cloud.firestore {
       allow get, list: if resource.data.status == 'published';
       allow read, write: if isAdmin();
     }
+    // Campo opcional de texto: ausente, o string con tope de longitud.
+    function optStr(m, k, max) {
+      return !(k in m) || (m[k] is string && m[k].size() <= max);
+    }
+    // Campo opcional de unión cerrada: ausente, o uno de los valores.
+    function optIn(m, k, allowed) {
+      return !(k in m) || (m[k] is string && m[k] in allowed);
+    }
+
+    // Atribución publicitaria (LeadAttribution en packages/shared/src/leads.ts):
+    // solo esas claves, todas string <= 300.
+    function validAttribution(a) {
+      return a is map &&
+        a.keys().hasOnly(['utmSource', 'utmMedium', 'utmCampaign', 'utmTerm',
+          'utmContent', 'gclid', 'gbraid', 'wbraid', 'fbclid', 'landingPath']) &&
+        optStr(a, 'utmSource', 300) && optStr(a, 'utmMedium', 300) &&
+        optStr(a, 'utmCampaign', 300) && optStr(a, 'utmTerm', 300) &&
+        optStr(a, 'utmContent', 300) && optStr(a, 'gclid', 300) &&
+        optStr(a, 'gbraid', 300) && optStr(a, 'wbraid', 300) &&
+        optStr(a, 'fbclid', 300) && optStr(a, 'landingPath', 300);
+    }
+
+    // Lead enviado por un visitante anónimo (Lead en packages/shared/src/leads.ts).
+    // Si se añade un campo allí, añadirlo aquí. Los campos del panel
+    // (statusUpdatedAt, qualifiedAt, wonAt, value, lostReason) NO se admiten al
+    // crear: solo los escribe un admin con update.
+    function validLead(d) {
+      return d.keys().hasOnly(['phone', 'notes', 'status', 'createdAt', 'source',
+          'name', 'email', 'company', 'need', 'stage', 'budget',
+          'contactPreference', 'attribution', 'consent', 'privacyVersion']) &&
+        d.keys().hasAll(['phone', 'notes', 'status', 'createdAt']) &&
+        d.phone is string && d.phone.size() >= 6 && d.phone.size() <= 30 &&
+        d.notes is string && d.notes.size() <= 500 &&
+        d.status == 'new' &&
+        d.createdAt is string && d.createdAt.size() <= 40 &&
+        optIn(d, 'source', ['callback_form', 'ads_landing', 'seo_landing']) &&
+        optStr(d, 'name', 120) &&
+        optStr(d, 'email', 160) &&
+        optStr(d, 'company', 160) &&
+        optIn(d, 'need', ['app', 'software', 'integration', 'web', 'unsure']) &&
+        optIn(d, 'stage', ['idea', 'defined', 'existing']) &&
+        optIn(d, 'budget', ['lt5k', '5k-15k', '15k-40k', 'gt40k', 'unknown']) &&
+        optIn(d, 'contactPreference', ['call', 'whatsapp', 'email']) &&
+        optIn(d, 'consent', ['granted', 'denied', 'unknown']) &&
+        optStr(d, 'privacyVersion', 20) &&
+        (!('attribution' in d) || validAttribution(d.attribution));
+    }
+
     match /leads/{leadId} {
-      allow create: if true;
+      allow create: if validLead(request.resource.data);
       allow read, update, delete: if isAdmin();
     }
 

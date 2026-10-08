@@ -141,7 +141,7 @@ export const en: Translations = {
   },
   cookieConsent: {
     message:
-      "We use analytics cookies to understand how the site is used. They only run if you accept them.",
+      "We use analytics cookies and cookies to measure advertising campaigns (Google and Meta). They only run if you accept them.",
     linkLabel: "Cookie policy",
     accept: "Accept",
     reject: "Reject",
