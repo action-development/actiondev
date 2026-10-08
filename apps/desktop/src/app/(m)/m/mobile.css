@@ -42,6 +42,13 @@
   --text-h1--line-height: 0.86;
   --text-h1--letter-spacing: -0.02em;
   --text-h1--font-weight: 900;
+  /* H1 largo (landings SEO y artículos del blog, DESIGN.md §5: «En landing,
+     H1 a 42»): titulares de 4-8 palabras que a 56 px ocupaban media pantalla
+     y empujaban el CTA fuera de la primera. */
+  --text-h1-long: clamp(36px, 10.77vw, 42px);
+  --text-h1-long--line-height: 0.9;
+  --text-h1-long--letter-spacing: -0.01em;
+  --text-h1-long--font-weight: 900;
   --text-h2: 46px;
   --text-h2--line-height: 0.88;
   --text-h2--letter-spacing: -0.01em;
@@ -124,6 +131,133 @@
   /* El menú es un `<dialog>` a pantalla completa: sin el velo gris por defecto. */
   dialog::backdrop {
     background: var(--color-ink);
+  }
+}
+
+/* Texto largo con marcado propio (cuerpo de los artículos del blog y
+   documentos legales): el contenido llega como HTML semántico (`h2`, `p`,
+   `ul`, `blockquote`…) sin clases, y aquí se le da la lectura del sistema.
+   Semi Condensed de 18 px con 1,6 de interlineado: a 358 px de columna salen
+   ~50 caracteres por línea (la medida cómoda es 45-75), y la columna nunca
+   crece más allá de 40em aunque el móvil sea ancho. Subtítulos en Condensed
+   900 caja alta, viñetas cuadradas de tinta (el lima no es texto sobre
+   papel), citas con filete grueso. En `@layer components`: una utilidad de
+   Tailwind en el JSX sigue mandando. */
+@layer components {
+  .m-prose {
+    max-width: 40em;
+    font-size: 18px;
+    line-height: 1.6;
+    overflow-wrap: break-word;
+  }
+
+  .m-prose > * + * {
+    margin-top: 1em;
+  }
+
+  .m-prose h2 {
+    margin-top: 1.6em;
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    scroll-margin-top: 16px;
+  }
+
+  .m-prose h3 {
+    margin-top: 1.4em;
+    font-family: var(--font-display);
+    font-size: 21px;
+    font-weight: 800;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+
+  .m-prose h2 + *,
+  .m-prose h3 + * {
+    margin-top: 0.75em;
+  }
+
+  .m-prose strong {
+    font-weight: 700;
+  }
+
+  .m-prose a {
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+
+  .m-prose a:active {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+
+  .m-prose ul,
+  .m-prose ol {
+    list-style: none;
+    padding: 0;
+  }
+
+  .m-prose li {
+    position: relative;
+    padding-left: 26px;
+  }
+
+  .m-prose li + li {
+    margin-top: 0.55em;
+  }
+
+  .m-prose ul > li::before {
+    content: "";
+    position: absolute;
+    top: 0.62em;
+    left: 2px;
+    width: 9px;
+    height: 9px;
+    background: var(--color-ink);
+  }
+
+  .m-prose ol {
+    counter-reset: m-prose-item;
+  }
+
+  .m-prose ol > li {
+    counter-increment: m-prose-item;
+    padding-left: 34px;
+  }
+
+  .m-prose ol > li::before {
+    content: counter(m-prose-item, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+  }
+
+  .m-prose blockquote {
+    border-left: 6px solid var(--color-ink);
+    padding: 2px 0 2px 16px;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .m-prose dl {
+    display: grid;
+    gap: 0.25em 0;
+  }
+
+  .m-prose dt {
+    margin-top: 0.75em;
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-muted);
   }
 }
 

@@ -1,38 +1,22 @@
 import { landings } from "@/data/landings";
-import { whatsappHref } from "@/lib/leads/whatsapp";
-import { Button } from "../Button";
+import { FinalCta } from "../FinalCta";
 import { Icon } from "../Icon";
 import { MLink } from "../MLink";
 import { HOME_FINAL_CTA_ID, HOME_WHATSAPP_TEXT } from "./home-data";
 
 /**
- * CTA final (DESIGN.md §7, `.cta-final`): bloque lima con la pregunta,
- * entradilla, «Contar mi proyecto» en tinta y WhatsApp de contorno. Con
- * él a la vista, la barra fija se esconde (`HOME_FINAL_CTA_ID`).
+ * CTA final de la home (`FinalCta`): la pregunta, la entradilla y los dos
+ * botones. Con él a la vista, la barra fija se esconde (`HOME_FINAL_CTA_ID`).
  */
 export function HomeFinalCta() {
   return (
-    <section
+    <FinalCta
       id={HOME_FINAL_CTA_ID}
-      aria-labelledby="cta-final-title"
+      title="¿Tienes un proyecto en la cabeza?"
+      text="Cuéntanos qué problema quieres resolver y para quién. Te respondemos en 24 horas laborables."
+      whatsappText={HOME_WHATSAPP_TEXT}
       data-testid="m-home-final-cta"
-      className="grid gap-[18px] border-b-2 border-ink bg-lime px-4 pt-10 pb-7 text-ink"
-    >
-      <h2 id="cta-final-title" className="font-display text-h1 uppercase">
-        ¿Tienes un proyecto en la cabeza?
-      </h2>
-      <p className="max-w-[34ch] text-lead">
-        Cuéntanos qué problema quieres resolver y para quién. Te respondemos en 24 horas laborables.
-      </p>
-      <div className="mt-1.5 grid gap-2.5">
-        <Button href="/contact" variant="ink" data-testid="m-final-cta-form">
-          Contar mi proyecto
-        </Button>
-        <Button href={whatsappHref(HOME_WHATSAPP_TEXT)} variant="line" icon="whatsapp" data-testid="m-final-cta-whatsapp">
-          Escribir por WhatsApp
-        </Button>
-      </div>
-    </section>
+    />
   );
 }
 
@@ -40,8 +24,8 @@ export function HomeFinalCta() {
  * «Servicios por zona»: las 10 landings SEO de `landings.ts`, VISIBLES y con
  * su `serviceName` como ancla (el mismo texto con el que las enlazaba el nav
  * `sr-only` de la home anterior). Discreto, justo antes del pie: celdas a
- * sangre separadas por filetes, dos por fila. `MLink` → `<a>`: las landings
- * son del árbol de escritorio.
+ * sangre separadas por filetes, dos por fila. `MLink` elige: `<Link>` si la
+ * landing tiene árbol móvil publicado, `<a>` si aún la sirve el escritorio.
  */
 export function HomeZones() {
   return (
