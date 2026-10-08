@@ -18,6 +18,10 @@ import "./projects.css";
  * (2) no hay estado que hidratar ni bundle que pagar, y (3) los radios dan
  * teclado (flechas) y lector de pantalla gratis. `:has()` va en iOS 15.4+.
  *
+ * El filtro es UNA fila con scroll horizontal (con los rótulos en plural ocupaba
+ * 3 filas a 390 px); `min-w-0` en el `fieldset` es obligatorio (su `min-width`
+ * por defecto es `min-content` y desbordaría la página).
+ *
  * Tres niveles: tarjetas grandes (mockup o destacado con captura), cuadrícula
  * de capturas y, al final, «Más proyectos» en texto para los que solo tienen
  * `placeholder.webp` (sin caja gris vacía).
@@ -122,7 +126,7 @@ export function ProjectsBrowser() {
   const { big, tiles, text } = projectTiers();
   return (
     <div className="pf" data-testid="m-projects">
-      <fieldset className="flex flex-wrap gap-1.5 border-b-2 border-ink px-4 py-3.5" data-testid="m-projects-filter">
+      <fieldset className="flex min-w-0 snap-x scroll-px-4 gap-1.5 overflow-x-auto overscroll-x-contain border-b-2 border-ink px-4 py-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-testid="m-projects-filter">
         <legend className="sr-only">Filtrar por tipo de trabajo</legend>
         {FILTERS.map((filter) => {
           const shape = filter.id === "all" ? null : KIND_INFO[filter.id].shape;
@@ -138,7 +142,7 @@ export function ProjectsBrowser() {
               <label
                 htmlFor={`pf-${filter.id}`}
                 data-testid={`m-filter-${filter.id}`}
-                className="inline-flex min-h-11 cursor-pointer items-center gap-2 border-2 border-ink px-3.5 font-display text-[16px] font-extrabold tracking-[0.06em] whitespace-nowrap uppercase peer-checked:bg-ink peer-checked:text-paper peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink active:bg-lime active:text-ink"
+                className="inline-flex min-h-11 shrink-0 cursor-pointer snap-start items-center gap-2 border-2 border-ink px-3.5 font-display text-[16px] font-extrabold tracking-[0.06em] whitespace-nowrap uppercase peer-checked:bg-ink peer-checked:text-paper peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink active:bg-lime active:text-ink"
               >
                 {shape && <Shape kind={shape} size="sm" />}
                 {filter.label}
