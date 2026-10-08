@@ -5,7 +5,8 @@ import { CorkBoard } from "@/components/blog/CorkBoard";
 import { PinBoard } from "@/components/blog/PinBoard";
 import { Pinned } from "@/components/blog/Pinned";
 import board from "@/components/blog/CorkBoard.module.css";
-import { BUSINESS, OG_IMAGE, absoluteUrl } from "@/lib/seo";
+import { BLOG_JSON_LD, BLOG_METADATA, sortPostsByDate } from "@/lib/blog-seo";
+import { BUSINESS } from "@/lib/seo";
 import { LegalLinks } from "@/components/layout/LegalLinks";
 
 /**
@@ -17,56 +18,21 @@ import { LegalLinks } from "@/components/layout/LegalLinks";
  *
  * `revalidate` es la red de seguridad: la publicación real la dispara el
  * webhook `/api/revalidate` que llama `apps/admin` al guardar un post.
+ * Metadatos y JSON-LD: `lib/blog-seo.ts`, compartidos con la web móvil v2.
  */
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: "Blog",
-  description:
-    "Guías y artículos de Action sobre desarrollo de aplicaciones, desarrollo web y diseño digital para empresas de Vigo, Pontevedra y Galicia.",
-  alternates: { canonical: "/blog" },
-  openGraph: {
-    type: "website",
-    locale: "es_ES",
-    url: absoluteUrl("/blog"),
-    siteName: "Action",
-    title: "Blog — Action",
-    description:
-      "Guías y artículos sobre desarrollo de aplicaciones, desarrollo web y diseño digital.",
-    images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height }],
-  },
-};
-
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "CollectionPage",
-      "@id": absoluteUrl("/blog"),
-      url: absoluteUrl("/blog"),
-      name: "Blog de Action",
-      inLanguage: "es",
-      isPartOf: { "@id": absoluteUrl("#website") },
-    },
-    {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Inicio", item: absoluteUrl("/") },
-        { "@type": "ListItem", position: 2, name: "Blog", item: absoluteUrl("/blog") },
-      ],
-    },
-  ],
-};
+export const metadata: Metadata = BLOG_METADATA;
 
 export default async function BlogPage() {
   const posts = await getPosts();
-  const sorted = [...posts].sort((a, b) => b.date.localeCompare(a.date));
+  const sorted = sortPostsByDate(posts);
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(BLOG_JSON_LD) }}
       />
 
       <Header />

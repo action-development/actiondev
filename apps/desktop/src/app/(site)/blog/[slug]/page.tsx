@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  ORGANIZATION_ID,
-  getAuthor,
-  type Author,
-  type BlogContentBlock,
-  type BlogPost,
-} from "@actiondev/shared";
+import { getAuthor, type BlogContentBlock } from "@actiondev/shared";
 import { getPost, getPosts } from "@/lib/blog";
-import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
+import { buildPostJsonLd, headingIds, humanizeSlug, parseInline, postMetadata, postToc } from "@/lib/blog-seo";
+import { BUSINESS } from "@/lib/seo";
 import { getLanding } from "@/data/landings";
 import { Header } from "@/components/layout/Header";
 import { LegalLinks } from "@/components/layout/LegalLinks";
@@ -33,7 +28,8 @@ import { LegalLinks } from "@/components/layout/LegalLinks";
  * subtítulos. Todo lo que va al JSON-LD está también pintado en el HTML, salvo
  * las fechas: no se muestran (decisión del cliente), pero `date`/`updatedAt`
  * siguen en `datePublished`/`dateModified` y en el `article:*_time` de Open
- * Graph, que es donde Google y las redes las leen.
+ * Graph, que es donde Google y las redes las leen. Metadatos, JSON-LD, anclas
+ * y enlaces en línea: `lib/blog-seo.ts`, compartidos con la web móvil v2.
  */
 export const revalidate = 3600;
 
@@ -52,179 +48,28 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = await getPost(slug);
   if (!post) return {};
-
-  const ogUrl = postImage(post);
-  const author = getAuthor(post.author);
-
-  return {
-    title: post.title,
-    description: post.metaDescription,
-    alternates: { canonical: `/blog/${post.slug}` },
-    openGraph: {
-      type: "article",
-      locale: "es_ES",
-      url: absoluteUrl(`/blog/${post.slug}`),
-      siteName: "Action",
-      title: post.title,
-      description: post.metaDescription,
-      publishedTime: post.date,
-      modifiedTime: post.updatedAt ?? post.date,
-      authors: author ? [author.url] : undefined,
-      section: post.category,
-      images: [
-        post.image
-          ? { url: ogUrl }
-          : { url: ogUrl, width: OG_IMAGE.width, height: OG_IMAGE.height },
-      ],
-    },
-    authors: author ? [{ name: author.name, url: author.url }] : undefined,
-    twitter: {
-      card: "summary_large_image",
-      title: post.title,
-      description: post.metaDescription,
-      images: [ogUrl],
-    },
-  };
-}
-
-/** Imagen del post: la suya si la tiene (absolutizada), si no la OG dinámica. */
-function postImage(post: BlogPost): string {
-  if (post.image) return absoluteUrl(post.image);
-  return `${OG_IMAGE.url}?title=${encodeURIComponent(post.h1)}`;
-}
-
-/** Texto plano para el JSON-LD: quita `**` y deja solo el texto de los enlaces. */
-function stripInline(text: string): string {
-  return text.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
-}
-
-function personSchema(author: Author) {
-  return {
-    "@type": "Person",
-    "@id": author.schemaId,
-    name: author.name,
-    url: author.url,
-    jobTitle: author.role,
-    sameAs: author.sameAs,
-    worksFor: { "@id": author.worksFor },
-  };
-}
-
-function buildJsonLd(
-  post: BlogPost,
-  author: Author | undefined,
-  landing: ReturnType<typeof getLanding>,
-) {
-  const url = absoluteUrl(`/blog/${post.slug}`);
-  const service = landing
-    ? {
-        "@type": "Service",
-        "@id": absoluteUrl(`/${landing.slug}#service`),
-        name: landing.serviceName,
-        url: absoluteUrl(`/${landing.slug}`),
-      }
-    : undefined;
-
-  return {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "BlogPosting",
-        "@id": `${url}#article`,
-        url,
-        mainEntityOfPage: { "@type": "WebPage", "@id": url },
-        headline: post.h1,
-        description: post.metaDescription,
-        image: postImage(post),
-        datePublished: post.date,
-        dateModified: post.updatedAt ?? post.date,
-        inLanguage: "es",
-        articleSection: post.category,
-        author: author ? personSchema(author) : { "@id": ORGANIZATION_ID },
-        publisher: { "@id": ORGANIZATION_ID },
-        isPartOf: { "@id": absoluteUrl("#website") },
-        ...(service ? { about: service, mentions: service } : {}),
-      },
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL },
-          { "@type": "ListItem", position: 2, name: "Blog", item: absoluteUrl("/blog") },
-          { "@type": "ListItem", position: 3, name: post.h1, item: url },
-        ],
-      },
-      ...(post.faqs?.length
-        ? [
-            {
-              "@type": "FAQPage",
-              "@id": `${url}#faq`,
-              mainEntity: post.faqs.map((faq) => ({
-                "@type": "Question",
-                name: faq.question,
-                acceptedAnswer: { "@type": "Answer", text: stripInline(faq.answer) },
-              })),
-            },
-          ]
-        : []),
-    ],
-  };
-}
-
-/** Ancla estable de un subtítulo (sin tildes, en minúsculas, con guiones). */
-function headingId(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-/** Ids de los H2 por índice de bloque, sin colisiones (sufijo -2, -3…). */
-function headingIds(content: BlogContentBlock[]): Map<number, string> {
-  const ids = new Map<number, string>();
-  const used = new Set<string>();
-  content.forEach((block, index) => {
-    if (block.type !== "heading") return;
-    const base = headingId(block.text) || `seccion-${index}`;
-    let id = base;
-    for (let n = 2; used.has(id); n++) id = `${base}-${n}`;
-    used.add(id);
-    ids.set(index, id);
-  });
-  return ids;
-}
-
-/** Slug de landing → texto legible, por si el slug ya no existe en `landings.ts`. */
-function humanizeSlug(slug: string): string {
-  const text = slug.replace(/-/g, " ");
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  return postMetadata(post);
 }
 
 /**
- * Inline del cuerpo: `**negrita**` y `[texto](/ruta)`. Los enlaces internos
- * (`/…`) van por `next/link` y llevan el subrayado del sistema (`link-sweep`);
- * cualquier otro destino se pinta como texto, no como enlace: el contenido lo
- * escribe el panel y no debe poder sacar al lector del sitio sin más.
+ * Inline del cuerpo (`parseInline` de `lib/blog-seo.ts`): `**negrita**` y
+ * `[texto](/ruta)`. Los enlaces internos (`/…`) van por `next/link` y llevan
+ * el subrayado del sistema (`link-sweep`); cualquier otro destino se pinta
+ * como texto, no como enlace: el contenido lo escribe el panel y no debe poder
+ * sacar al lector del sitio sin más.
  */
 function renderInline(text: string) {
-  return text
-    .split(/(\*\*[^*]+\*\*|\[[^\]]+\]\(\/(?!\/)[^)\s]*\))/g)
-    .filter(Boolean)
-    .map((part, i) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={i}>{part.slice(2, -2)}</strong>;
-      }
-      const link = /^\[([^\]]+)\]\((\/(?!\/)[^)\s]*)\)$/.exec(part);
-      if (link) {
-        return (
-          <Link key={i} href={link[2]} className="link-sweep hover:text-accent">
-            {link[1]}
-          </Link>
-        );
-      }
-      return <span key={i}>{part}</span>;
-    });
+  return parseInline(text).map((part, i) => {
+    if (part.kind === "strong") return <strong key={i}>{part.text}</strong>;
+    if (part.kind === "link") {
+      return (
+        <Link key={i} href={part.href} className="link-sweep hover:text-accent">
+          {part.text}
+        </Link>
+      );
+    }
+    return <span key={i}>{part.text}</span>;
+  });
 }
 
 function renderBlock(block: BlogContentBlock, index: number, ids: Map<number, string>) {
@@ -258,15 +103,13 @@ export default async function BlogPostPage({ params }: PostPageProps) {
   const author = getAuthor(post.author);
   const landing = post.targetLanding ? getLanding(post.targetLanding) : undefined;
   const ids = headingIds(post.content);
-  const toc = post.content.flatMap((block, index) =>
-    block.type === "heading" ? [{ id: ids.get(index)!, text: block.text }] : [],
-  );
+  const toc = postToc(post.content, ids);
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd(post, author, landing)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildPostJsonLd(post, author, landing)) }}
       />
 
       <Header />

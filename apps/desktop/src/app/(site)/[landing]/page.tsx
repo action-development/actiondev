@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ORGANIZATION_ID, projects } from "@actiondev/shared";
-import { getLanding, landings, type Landing } from "@/data/landings";
+import { getLanding, landings } from "@/data/landings";
 import { testimonials } from "@/data/testimonials";
-import { BUSINESS, OG_IMAGE, SITE_URL, absoluteUrl } from "@/lib/seo";
+import { LANDING_FORM_ID, buildLandingJsonLd, landingMetadata, resolveLandingContent } from "@/lib/landing-seo";
+import { BUSINESS } from "@/lib/seo";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { HoloBar } from "@/components/layout/HoloBar";
 import { LegalLinks } from "@/components/layout/LegalLinks";
@@ -13,7 +13,7 @@ import { LeadForm } from "@/components/leads/LeadForm";
 import { StickyCta } from "@/components/leads/StickyCta";
 
 /** Id del bloque del formulario: ancla de los CTA y de la barra fija de móvil. */
-const PROJECT_FORM_ID = "proyecto";
+const PROJECT_FORM_ID = LANDING_FORM_ID;
 
 /**
  * Landing pages SEO locales (/desarrollo-de-aplicaciones-vigo, …).
@@ -24,8 +24,10 @@ const PROJECT_FORM_ID = "proyecto";
  * home y el enlazado entre landings. El contenido vive en `data/landings.ts`:
  * contexto local, casos reales (enlazados a `/projects/{slug}`), secciones
  * propias, proceso, reseñas citadas por id, FAQ y relacionadas.
- * Responsive: los móviles reciben esta misma página (el middleware solo
- * reescribe "/" hacia la zona mobile).
+ * Metadatos, JSON-LD y contenido resuelto salen de `lib/landing-seo.ts`, la
+ * misma fuente que la versión de la web móvil v2 (`app/(m)/m/[landing]`), que
+ * el middleware sirve en móvil cuando la ruta está publicada (o con la cookie
+ * de vista previa). Si no, los móviles reciben esta misma página, responsive.
  */
 
 interface LandingPageProps {
@@ -43,92 +45,7 @@ export async function generateMetadata({
 }: LandingPageProps): Promise<Metadata> {
   const { landing: slug } = await params;
   const landing = getLanding(slug);
-  if (!landing) return {};
-
-  const ogUrl = `${OG_IMAGE.url}?title=${encodeURIComponent(landing.h1)}`;
-
-  return {
-    // `absolute`: landing.title ya es un título SEO autoconclusivo ("X | Y"),
-    // sin el `title.template` del layout raíz — con él se sumaban dos
-    // separadores distintos ("X | Y — Action").
-    title: { absolute: landing.title },
-    description: landing.metaDescription,
-    alternates: { canonical: `/${landing.slug}` },
-    openGraph: {
-      type: "website",
-      locale: "es_ES",
-      url: absoluteUrl(`/${landing.slug}`),
-      siteName: "Action",
-      title: landing.title,
-      description: landing.metaDescription,
-      images: [{ url: ogUrl, width: OG_IMAGE.width, height: OG_IMAGE.height }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: landing.title,
-      description: landing.metaDescription,
-      images: [ogUrl],
-    },
-  };
-}
-
-function buildJsonLd(landing: Landing) {
-  const url = absoluteUrl(`/${landing.slug}`);
-  return {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebPage",
-        "@id": url,
-        url,
-        name: landing.title,
-        description: landing.metaDescription,
-        inLanguage: "es",
-        isPartOf: { "@id": absoluteUrl("#website") },
-        about: { "@id": `${url}#service` },
-      },
-      {
-        "@type": "Service",
-        "@id": `${url}#service`,
-        name: landing.serviceName,
-        description: landing.metaDescription,
-        url,
-        serviceType: landing.serviceType,
-        // Misma entidad que emiten desktop y mobile (`organizationSchema`).
-        provider: { "@id": ORGANIZATION_ID },
-        areaServed: landing.areaServed.map(({ name, type }) => ({
-          "@type": type,
-          name,
-        })),
-      },
-      {
-        "@type": "FAQPage",
-        mainEntity: landing.faqs.map((faq) => ({
-          "@type": "Question",
-          name: faq.q,
-          acceptedAnswer: { "@type": "Answer", text: faq.a },
-        })),
-      },
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Inicio", item: SITE_URL },
-          {
-            "@type": "ListItem",
-            position: 2,
-            name: "Servicios",
-            item: absoluteUrl("/servicios"),
-          },
-          {
-            "@type": "ListItem",
-            position: 3,
-            name: landing.serviceName,
-            item: url,
-          },
-        ],
-      },
-    ],
-  };
+  return landing ? landingMetadata(landing) : {};
 }
 
 export default async function LandingPage({ params }: LandingPageProps) {
@@ -136,23 +53,13 @@ export default async function LandingPage({ params }: LandingPageProps) {
   const landing = getLanding(slug);
   if (!landing) notFound();
 
-  // Casos y reseñas se resuelven contra sus fuentes (projects.ts,
-  // testimonials.ts): un slug o id que ya no exista se cae en silencio en vez
-  // de pintar una tarjeta rota.
-  const cases = landing.cases.flatMap((c) => {
-    const project = projects.find((p) => p.slug === c.slug);
-    return project ? [{ ...c, project }] : [];
-  });
-  const quotes = landing.proof.testimonials.flatMap((id) => {
-    const t = testimonials.find((x) => x.id === id);
-    return t ? [t] : [];
-  });
+  const { cases, quotes } = resolveLandingContent(landing);
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd(landing)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildLandingJsonLd(landing)) }}
       />
 
       {/* Misma proyección que el Header de la home, pero estática: esta página
