@@ -18,6 +18,22 @@ async function setup(page: Page) {
   await page.route(/googletagmanager\.com|wa\.me/, (route) => route.abort());
 }
 
+/** Elementos con texto ocultos a la vista (hidden, sr-only, display:none) dentro de `<main>`: no debe haber ninguno. */
+async function hiddenIndexable(page: Page) {
+  return page.evaluate(() => {
+    const out: string[] = [];
+    for (const el of document.querySelectorAll("main *")) {
+      const cls = el.getAttribute("class") ?? "";
+      const cs = getComputedStyle(el);
+      const own = Array.from(el.childNodes).some((n) => n.nodeType === 3 && (n.textContent ?? "").trim());
+      const hidden =
+        el.hasAttribute("hidden") || /\bsr-only\b/.test(cls) || cs.display === "none" || cs.visibility === "hidden";
+      if (hidden && (own || el.querySelector("a[href]"))) out.push(`${el.tagName}.${cls}`);
+    }
+    return out;
+  });
+}
+
 type View = {
   title: string;
   description: string;
@@ -142,6 +158,7 @@ test.describe("Móvil v2 · blog", () => {
       await expect(page.getByTestId("m-post-crumbs").locator('a[href="/blog"]')).toBeVisible();
       await expect(page.getByTestId("m-post-back")).toHaveAttribute("href", "/blog");
       await expect(page.getByTestId("m-post-cta-form")).toHaveAttribute("href", "/contact");
+      expect(await hiddenIndexable(page)).toEqual([]);
       await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
     }
   });
@@ -186,12 +203,16 @@ test.describe("Móvil v2 · blog", () => {
     await page.goto("/blog");
     const bar = page.getByTestId("m-sticky-cta");
     await expect(bar).toBeHidden();
-    // Justo por debajo del título: el hero ya no se ve y el CTA final todavía no.
-    await page.evaluate(() => {
-      const hero = document.getElementById("blog-hero")!.getBoundingClientRect();
-      window.scrollTo(0, window.scrollY + hero.bottom + 8);
-    });
-    await expect(bar).toBeVisible();
+    // Posiciones en el documento: fin del título y principio del CTA final.
+    const { heroEnd, ctaTop } = await page.evaluate(() => ({
+      heroEnd: document.getElementById("blog-hero")!.getBoundingClientRect().bottom + window.scrollY,
+      ctaTop: document.getElementById("blog-cta")!.getBoundingClientRect().top + window.scrollY,
+    }));
+    // Con pocos artículos (los de ejemplo) no hay tramo sin título ni CTA a la vista.
+    if (ctaTop - heroEnd > 844 + 16) {
+      await page.evaluate((y) => window.scrollTo(0, y), heroEnd + 8);
+      await expect(bar).toBeVisible();
+    }
     await page.getByTestId("m-blog-cta").scrollIntoViewIfNeeded();
     await expect(bar).toBeHidden();
   });

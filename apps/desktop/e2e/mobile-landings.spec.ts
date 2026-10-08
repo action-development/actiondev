@@ -20,6 +20,22 @@ async function setup(page: Page) {
   await page.route(/googletagmanager\.com|wa\.me|maps\.google|g\.page/, (route) => route.abort());
 }
 
+/** Elementos con texto ocultos a la vista (hidden, sr-only, display:none) dentro de `<main>`: no debe haber ninguno. */
+async function hiddenIndexable(page: Page) {
+  return page.evaluate(() => {
+    const out: string[] = [];
+    for (const el of document.querySelectorAll("main *")) {
+      const cls = el.getAttribute("class") ?? "";
+      const cs = getComputedStyle(el);
+      const own = Array.from(el.childNodes).some((n) => n.nodeType === 3 && (n.textContent ?? "").trim());
+      const hidden =
+        el.hasAttribute("hidden") || /\bsr-only\b/.test(cls) || cs.display === "none" || cs.visibility === "hidden";
+      if (hidden && (own || el.querySelector("a[href]"))) out.push(`${el.tagName}.${cls}`);
+    }
+    return out;
+  });
+}
+
 type Head = { title: string; description: string; canonical: string; ld: string[]; links: string[]; h1: string[] };
 
 /** Lo que sirve el escritorio para `path`: cabeza, JSON-LD de la página, h1 y enlaces internos del `<main>`. */
@@ -111,6 +127,7 @@ test.describe("Móvil v2 · landings SEO", () => {
       // Las respuestas de la FAQ están en el HTML (dentro de `<details>`; la primera, abierta).
       for (const faq of landing.faqs) await expect(main.getByText(faq.a, { exact: true })).toHaveCount(1);
       await expect(main.getByText(landing.faqs[0].a, { exact: true })).toBeVisible();
+      expect(await hiddenIndexable(page)).toEqual([]);
       // Enlaces: casos a su ficha, relacionadas con su ancla, «Todos los servicios», migas.
       for (const c of landing.cases) await expect(main.locator(`a[href="/projects/${c.slug}"]`).first()).toBeVisible();
       for (const r of landing.related) {
