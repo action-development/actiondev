@@ -113,17 +113,19 @@ export function sortPostsByDate(posts: BlogPost[]): BlogPost[] {
 
 /* ── Enlazado interno ───────────────────────────────────────────────────── */
 
-/** Cuántas guías se enlazan desde una landing o desde el final de un artículo. */
+/** Cuántos artículos enlaza «Sigue leyendo» al final de un artículo. */
 export const RELATED_POSTS_MAX = 3;
 
 /**
- * Guías de una landing: los posts que empujan a ella (`targetLanding`), del
- * más reciente al más antiguo. Es la vía para que las landings enlacen al
- * blog (auditoría SEO M4): sin ella, la mayoría de los artículos solo
- * recibían un enlace, el del índice.
+ * Guías de una landing: TODOS los posts publicados que empujan a ella
+ * (`targetLanding`), del más reciente al más antiguo. Sin tope: es el enlace
+ * hub → spoke del plan de contenidos (cada guía nueva aparece sola en su
+ * landing al revalidar). Es la vía para que las landings enlacen al blog
+ * (auditoría SEO M4): sin ella, la mayoría de los artículos solo recibían un
+ * enlace, el del índice. `getPosts` ya trae solo `status == "published"`.
  */
-export function landingGuides(posts: BlogPost[], landingSlug: string, max = RELATED_POSTS_MAX): BlogPost[] {
-  return sortPostsByDate(posts.filter((p) => p.targetLanding === landingSlug)).slice(0, max);
+export function landingGuides(posts: BlogPost[], landingSlug: string): BlogPost[] {
+  return sortPostsByDate(posts.filter((p) => p.targetLanding === landingSlug));
 }
 
 /**
