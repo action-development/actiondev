@@ -15,12 +15,14 @@ export function HomeHero() {
   return (
     <section aria-labelledby="m-home-title" data-testid="m-home-hero">
       <div className="grid gap-[18px] px-4 py-[26px]">
+        {/* H1 con la keyword y la ciudad, como el title y el H1 de escritorio
+            («Desarrollo de Aplicaciones y Webs en Vigo»): es el que indexa Google. */}
         <h1 id="m-home-title" className="font-display text-hero uppercase">
-          Apps, programas y webs para tu negocio
+          Desarrollo de apps y webs en Vigo
         </h1>
         <p className="max-w-[34ch] text-lead">
-          Las diseñamos y programamos en nuestra oficina de Vigo. Antes de empezar, te damos un presupuesto cerrado y
-          por escrito.
+          Apps, programas de gestión y webs a medida, diseñados y programados en nuestra oficina. Antes de empezar, te
+          damos un presupuesto cerrado y por escrito.
         </p>
       </div>
 

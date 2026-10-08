@@ -66,7 +66,7 @@ test.describe("Móvil v2 · home · SEO", () => {
     const h1 = page.locator("h1");
     await expect(h1).toHaveCount(1);
     await expect(h1).toBeVisible();
-    await expect(h1).toHaveText("Apps, programas y webs para tu negocio");
+    await expect(h1).toHaveText("Desarrollo de apps y webs en Vigo");
   });
 
   test("Googlebot Smartphone recibe los metadatos en el <head> y todos los enlaces en el HTML", async ({ request }) => {
