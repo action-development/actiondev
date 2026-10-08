@@ -35,7 +35,7 @@ export function HoloBar({ phone, phoneHref }: HoloBarProps) {
         <a
           href={phoneHref}
           className="holo-btn holo-btn-sm holo-btn-data"
-          aria-label={`Llamar o escribir a ${phone}`}
+          aria-label={`Abrir WhatsApp: ${phone}`}
         >
           <span>{phone}</span>
         </a>

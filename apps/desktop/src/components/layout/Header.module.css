@@ -113,6 +113,13 @@
   background: linear-gradient(to bottom, transparent, rgba(234, 255, 176, 0.35), transparent);
 }
 
+/* `display` NO se declara en `.telemetry`, `.nav`, `.switch` ni `.cta`: lo
+   ponen las utilidades de Header.tsx (`hidden lg:inline-flex`, `hidden
+   md:inline-flex`, `md:inline-grid`, `inline-flex`). Un `display` en este
+   módulo va SIN capa y le gana a TODA utilidad de Tailwind (que vive en
+   `@layer utilities`): el `hidden` perdía y por debajo de `md` se pintaban la
+   telemetría, los enlaces y el selector de idioma, desbordando la cápsula. */
+
 /* ── Marca + telemetría ───────────────────────────────────────── */
 /* Contenedor, NO enlace: la telemetría va aquí al lado del logo pero fuera
    del `<a>` (ver el comentario en Header.tsx — WCAG 2.5.3). Misma geometría
@@ -144,7 +151,6 @@
    alto, y dos filas de mono obligaban a 64px. Las coordenadas solo aparecen
    cuando sobra ancho (2xl). */
 .telemetry {
-  display: inline-flex;
   align-items: center;
   gap: 7px;
   font-family: var(--font-mono), monospace;
@@ -189,7 +195,6 @@
 
 /* ── Navegación: etiqueta con retícula proyectada ─────────────── */
 .nav {
-  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 2px;
@@ -249,7 +254,6 @@
    exactamente un segmento sin tener que medir el texto. */
 .switch {
   position: relative;
-  display: inline-grid;
   grid-template-columns: 1fr 1fr;
   align-items: center;
   padding: 1px;
@@ -290,7 +294,6 @@
 /* ── CTA: prompt proyectado, se solidifica al apuntar ─────────── */
 .cta {
   position: relative;
-  display: inline-flex;
   align-items: center;
   gap: 7px;
   height: 28px;

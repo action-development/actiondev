@@ -8,8 +8,10 @@ import { useT } from "@/lib/i18n";
 /**
  * Banner de consentimiento (LSSI art. 22.2 / RGPD) — condición para que
  * `analytics/GoogleTagManager.tsx` cargue algo. Mismo lenguaje que
- * `layout/HoloBar.tsx`: cápsula lima translúcida con corchetes en las
- * esquinas.
+ * `layout/HoloBar.tsx` (franjas, fresnel, corchetes) pero `holo-solid`: lleva
+ * texto largo sobre contenido de página y el cristal al 30 % lo dejaba
+ * ilegible. En móvil, compacto (≤ ~140 px a 390 de ancho): menos padding,
+ * 14 px y los dos botones en una fila de igual ancho.
  *
  * Abajo a la IZQUIERDA y del tamaño de su contenido (no un `inset-x-0`
  * centrado): el mando de la grúa (`overlays/RemoteControl.tsx`) vive abajo
@@ -45,18 +47,18 @@ export function CookieConsent() {
       role="region"
       aria-label={t.cookieConsent.ariaLabel}
       data-testid="cookie-consent"
-      className="holo-surface holo-corners holo-glass fixed bottom-4 left-4 z-[70] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-4 p-5"
+      className="holo-surface holo-solid holo-corners bg-background fixed bottom-2 left-2 z-[70] flex w-[calc(100%-1rem)] max-w-sm flex-col gap-2.5 p-3 sm:bottom-4 sm:left-4 sm:w-[calc(100%-2rem)] sm:gap-4 sm:p-5"
     >
-      <p className="text-[13px] leading-relaxed text-foreground/85">
+      <p className="text-sm leading-snug text-foreground/85 sm:text-[13px] sm:leading-relaxed">
         {t.cookieConsent.message}{" "}
         <Link href="/legal/cookies" className="link-sweep holo-tint">
           {t.cookieConsent.linkLabel}
         </Link>
       </p>
-      <div className="flex shrink-0 gap-3">
+      <div className="flex shrink-0 gap-2 sm:gap-3">
         <button
           type="button"
-          className="holo-btn holo-btn-quiet holo-btn-sm"
+          className="holo-btn holo-btn-quiet holo-btn-sm flex-1 sm:flex-none"
           onClick={() => storeConsent("denied")}
           data-testid="cookie-consent-reject"
         >
@@ -64,7 +66,7 @@ export function CookieConsent() {
         </button>
         <button
           type="button"
-          className="holo-btn holo-btn-solid holo-btn-sm"
+          className="holo-btn holo-btn-solid holo-btn-sm flex-1 sm:flex-none"
           onClick={() => storeConsent("granted")}
           data-testid="cookie-consent-accept"
         >

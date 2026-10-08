@@ -197,7 +197,7 @@ export function Header() {
           </span>
         </div>
 
-        <span aria-hidden className={`${styles.divider} hidden md:block`} />
+        <span aria-hidden className={styles.divider} />
 
         {/* Enlaces: índice + etiqueta, retícula al apuntar */}
         <ul role="list" className={`${styles.nav} hidden md:inline-flex`}>
@@ -235,8 +235,10 @@ export function Header() {
           <span className={styles.seg} data-on={locale === "en"}>EN</span>
         </button>
 
-        {/* CTA: prompt proyectado que se solidifica */}
-        <Link href="/contact" className={`${styles.cta} hidden md:inline-flex`}>
+        {/* CTA: prompt proyectado que se solidifica. Visible también por debajo de
+            `md`: en móvil es la única salida a contacto (enlaces e idioma sí se
+            ocultan). */}
+        <Link href="/contact" className={`${styles.cta} inline-flex`}>
           <span aria-hidden className={styles.fill} />
           <span aria-hidden>&gt;</span>
           <span>{t.nav.cta}</span>
