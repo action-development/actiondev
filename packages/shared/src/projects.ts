@@ -33,6 +33,31 @@ export interface Project {
    * el `locationCreated` de su JSON-LD.
    */
   location?: string;
+  /**
+   * Mockup (dispositivo en contexto) para la web móvil. Aditivo: desktop lo
+   * ignora y sigue usando `image`. Ruta bajo `/projects/`, sufijo `-mockup`.
+   */
+  mockup?: string;
+  /** Orientación de `mockup`: `landscape` = 3:2, `portrait` = 4:5 en la web móvil. */
+  mockupOrientation?: "landscape" | "portrait";
+  /**
+   * Mockup vertical 4:5 (1440×1800) para donde la web móvil luce mejor en
+   * vertical: la tira de casos de la home y el hero de la ficha. Sufijo
+   * `-mockup-vertical`. Desktop lo ignora.
+   */
+  mockupVertical?: string;
+  /** «Antes» del caso en una frase, solo con lo respaldado por este fichero. */
+  beforeEs?: string;
+  /** «Ahora» del caso en una frase, solo con lo respaldado por este fichero. */
+  afterEs?: string;
+  /**
+   * Cifra de la banda «Resultado» de la web móvil («×10»), SOLO si sale de
+   * `resultEs`. Va siempre con `resultFigureLabelEs` (qué mide). Desktop la
+   * ignora. No repetirla en `afterEs`: las tarjetas pintan las dos cosas.
+   */
+  resultFigureEs?: string;
+  /** Lo que mide `resultFigureEs`, en minúscula y con punto final. */
+  resultFigureLabelEs?: string;
 }
 
 export const PLACEHOLDER_IMAGE = "/projects/placeholder.webp";
@@ -53,6 +78,13 @@ export const projects: Project[] = [
     niche: "Driving School",
     nicheEs: "Autoescuela",
     image: "/projects/autoescuelagti.webp",
+    mockup: "/projects/autoescuela-gti-mockup.webp",
+    mockupOrientation: "landscape",
+    beforeEs: "Alumnos y profesores resolvían sus trámites pasando por secretaría.",
+    afterEs: "Una app para el alumno y un ERP para la oficina.",
+    // De `resultEs`: «multiplicando por 10 los trámites que alumnos y profesores resuelven sin pasar por secretaría».
+    resultFigureEs: "×10",
+    resultFigureLabelEs: "trámites que alumnos y profesores resuelven sin pasar por secretaría.",
     url: "#",
     year: 2024,
     technologies: ["TBD"],
@@ -87,6 +119,9 @@ export const projects: Project[] = [
     niche: "Trading",
     nicheEs: "Trading",
     image: PLACEHOLDER_IMAGE,
+    mockup: "/projects/lift-mockup.webp",
+    mockupVertical: "/projects/lift-mockup-vertical.webp",
+    mockupOrientation: "landscape",
     url: "#",
     year: 2024,
     technologies: ["TBD"],
@@ -120,6 +155,8 @@ export const projects: Project[] = [
     niche: "Sports Club",
     nicheEs: "Club deportivo",
     image: "/projects/pbb-porrino.webp",
+    mockup: "/projects/pbb-porrino-mockup.webp",
+    mockupOrientation: "landscape",
     video: "/projects_video/pbb-porrino.webm",
     url: "https://www.porrinobaloncestobase.com/",
     year: 2025,
@@ -154,6 +191,11 @@ export const projects: Project[] = [
     niche: "Trading",
     nicheEs: "Trading",
     image: "/projects/truetrading.webp",
+    mockup: "/projects/true-trading-app-mockup.webp",
+    mockupVertical: "/projects/true-trading-app-mockup-vertical.webp",
+    mockupOrientation: "landscape",
+    beforeEs: "El trabajo estaba repartido entre Telegram y otras herramientas.",
+    afterEs: "Una sola app con chats, grupos y perfiles, conectada en tiempo real a plataformas de trading.",
     url: "#",
     year: 2024,
     technologies: ["TBD"],
@@ -172,6 +214,76 @@ export const projects: Project[] = [
       "Centralizing operations in one app removed the scatter across Telegram and other software: the team no longer has to leave the app to work, with all trading activity synced in real time.",
     resultEs:
       "Centralizar la operativa en una sola app eliminó la dispersión entre Telegram y otras herramientas: el equipo dejó de salir de la app para trabajar, con toda la actividad sincronizada en tiempo real.",
+  },
+  {
+    id: "oscar-soto",
+    slug: "oscar-soto",
+    title: "Óscar Soto",
+    description:
+      "Training app for Óscar Soto's clients: book classes, train and follow their progress with weekly load, weight and streaks.",
+    descriptionEs:
+      "App de entrenamiento para los clientes de Óscar Soto: reservar clases, entrenar y seguir su progreso con la carga semanal, el peso y la racha.",
+    category: "Mobile App",
+    categoryEs: "Aplicación Móvil",
+    niche: "Fitness",
+    nicheEs: "Entrenamiento",
+    image: PLACEHOLDER_IMAGE,
+    mockup: "/projects/oscar-soto-mockup.webp",
+    mockupVertical: "/projects/oscar-soto-mockup-vertical.webp",
+    mockupOrientation: "landscape",
+    url: "#",
+    year: 2026,
+    technologies: ["React Native", "Expo"],
+    color: "#c62828",
+    brief: [
+      "Let clients book their classes from their phone",
+      "Log workouts and see progress week by week",
+      "Keep the habit going with streaks and weekly class goals",
+    ],
+    briefEs: [
+      "Que los clientes reserven sus clases desde el móvil",
+      "Registrar los entrenamientos y ver el progreso semana a semana",
+      "Mantener el hábito con rachas y un objetivo de clases por semana",
+    ],
+    result:
+      "One app brings together class bookings, training and tracking: weekly load, classes completed in the week, weight and the active streak, all on the home screen.",
+    resultEs:
+      "Una sola app reúne la reserva de clases, el entrenamiento y el seguimiento: carga semanal, clases hechas en la semana, peso y racha activa, todo en la pantalla de inicio.",
+  },
+  {
+    id: "tratum",
+    slug: "tratum",
+    title: "Tratum",
+    description:
+      "Real estate platform only between private individuals: an iOS and Android app where buyers and tenants talk directly to the owner, with verified identities.",
+    descriptionEs:
+      "Plataforma inmobiliaria solo entre particulares: app para iOS y Android donde se habla directamente con la persona propietaria, con la identidad verificada.",
+    category: "Mobile App",
+    categoryEs: "Aplicación Móvil",
+    niche: "Real estate",
+    nicheEs: "Inmobiliaria",
+    image: PLACEHOLDER_IMAGE,
+    mockup: "/projects/tratum-mockup.webp",
+    mockupVertical: "/projects/tratum-mockup-vertical.webp",
+    mockupOrientation: "landscape",
+    url: "#",
+    year: 2026,
+    technologies: ["React Native", "Expo"],
+    color: "#1e1b4b",
+    brief: [
+      "Buy, sell and rent homes without intermediaries, only between private individuals",
+      "Verify the identity of every user",
+      "Native iOS and Android app with its own admin panel",
+    ],
+    briefEs: [
+      "Comprar, vender y alquilar vivienda sin intermediarios, solo entre particulares",
+      "Verificar la identidad de cada persona usuaria",
+      "App nativa para iOS y Android con su propio panel de administración",
+    ],
+    result:
+      "In development: a native iOS and Android app with direct chat with the owner from the first message and identity verification, plus its own admin panel.",
+    resultEs:
+      "En desarrollo: app nativa para iOS y Android con chat directo con la persona propietaria desde el primer mensaje y verificación de identidad, más su propio panel de administración.",
   },
   {
     id: "nautirent",
@@ -219,6 +331,10 @@ export const projects: Project[] = [
     niche: "Entertainment & Events",
     nicheEs: "Ocio y eventos",
     image: PLACEHOLDER_IMAGE,
+    mockup: "/projects/ticketera-la-fabrica-mockup.webp",
+    mockupOrientation: "landscape",
+    beforeEs: "Las entradas se vendían en la taquilla física.",
+    afterEs: "Venta de entradas online, con perfil de compras y aforo en tiempo real, sin colas.",
     url: "https://www.lafabricaredondela.es/",
     year: 2024,
     technologies: ["TBD"],
@@ -252,6 +368,8 @@ export const projects: Project[] = [
     niche: "Hospitality & Nightlife",
     nicheEs: "Hostelería y ocio nocturno",
     image: "/projects/musa.webp",
+    mockup: "/projects/musa-mockup.webp",
+    mockupOrientation: "landscape",
     video: "/projects_video/musa-pot.webm",
     url: "https://www.musavigo.es/",
     year: 2024,
@@ -481,6 +599,8 @@ export const projects: Project[] = [
     niche: "Hospitality",
     nicheEs: "Hostelería",
     image: "/projects/samoa.webp",
+    mockup: "/projects/samoa-mockup.webp",
+    mockupOrientation: "landscape",
     video: "/projects_video/samoa.webm",
     url: "https://www.samoaredondela.com/",
     year: 2024,
@@ -545,6 +665,9 @@ export const projects: Project[] = [
     niche: "Corporate",
     nicheEs: "Corporativo",
     image: "/projects/fase.webp",
+    mockup: "/projects/fase-mockup.webp",
+    mockupOrientation: "landscape",
+    afterEs: "Web corporativa con contenidos claros por línea de servicio, pensada para clientes de todo el mundo.",
     url: "https://www.fasepower.com/",
     year: 2024,
     technologies: ["TBD"],
@@ -577,6 +700,9 @@ export const projects: Project[] = [
     niche: "Fashion",
     nicheEs: "Moda",
     image: "/projects/patricia-avendano.webp",
+    mockup: "/projects/patricia-avendano-mockup.webp",
+    mockupOrientation: "landscape",
+    afterEs: "Web bilingüe con lookbook interactivo, vídeos de pasarela a pantalla completa y sección de prensa.",
     video: "/projects_video/patricia-avendano.webm",
     url: "https://www.patricia-avendano.com/",
     year: 2024,
@@ -611,6 +737,8 @@ export const projects: Project[] = [
     niche: "Fashion Retail",
     nicheEs: "Moda",
     image: "/projects/koopey.webp",
+    mockup: "/projects/koopey-mockup.webp",
+    mockupOrientation: "landscape",
     video: "/projects_video/koopey.webm",
     url: "https://koopeyclub.com/",
     year: 2024,
@@ -646,6 +774,9 @@ export const projects: Project[] = [
     niche: "Live Music Band",
     nicheEs: "Orquesta",
     image: "/projects/parisdenoia.webp",
+    mockup: "/projects/paris-de-noia-mockup.webp",
+    mockupVertical: "/projects/paris-de-noia-mockup-vertical.webp",
+    mockupOrientation: "landscape",
     url: "https://www.parisdenoia.es/",
     year: 2024,
     technologies: ["TBD"],
@@ -712,6 +843,9 @@ export const projects: Project[] = [
     niche: "Retail",
     nicheEs: "Tienda online",
     image: "/projects/cliche.webp",
+    mockup: "/projects/cliche-mockup.webp",
+    mockupOrientation: "landscape",
+    afterEs: "Tienda Shopify a medida con checkout rápido y un catálogo preparado para crecer.",
     url: "https://www.clichespain.com/",
     year: 2024,
     technologies: ["TBD"],
@@ -745,6 +879,8 @@ export const projects: Project[] = [
     niche: "Retail",
     nicheEs: "Tienda online",
     image: "/projects/canelita.webp",
+    mockup: "/projects/canelita-mockup.webp",
+    mockupOrientation: "landscape",
     url: "https://canelitaredondela.es/",
     year: 2024,
     technologies: ["TBD"],
