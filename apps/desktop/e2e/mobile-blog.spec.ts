@@ -44,6 +44,12 @@ test.describe("Móvil v2 · blog", () => {
     for (const path of posts) {
       const response = await page.goto(path);
       expect(response?.status(), path).toBe(200);
+      // Post fusionado con 301 (`redirects()` de next.config.ts) que sigue
+      // publicado hasta que se despublique: su destino ya se revisa en el bucle.
+      if (response?.request().redirectedFrom()) {
+        expect(new URL(page.url()).pathname, path).toMatch(/^\/blog\/[a-z0-9-]+$/);
+        continue;
+      }
       const desktop = await desktopView(browser, path);
       expectParity(await readView(page), desktop, path);
 

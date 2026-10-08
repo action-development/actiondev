@@ -88,7 +88,8 @@ test.describe("Móvil v2 · proyectos", () => {
     await expect(page.getByTestId("m-case-result")).toContainText("×10");
     await expect(page.getByRole("heading", { level: 2, name: "Qué nos pidieron" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 2, name: "Qué conseguimos" })).toBeVisible();
-    await expect(page.getByTestId("m-case-service")).toHaveAttribute("href", "/desarrollo-web-vigo");
+    // `relatedLanding`: un ERP es software a medida aunque su categoría sea «Web Application».
+    await expect(page.getByTestId("m-case-service")).toHaveAttribute("href", "/software-a-medida-vigo");
     await expect(page.getByTestId("m-case-cta")).toHaveAttribute("href", "/contact");
     await expect(page.getByTestId("m-case-next")).toBeAttached();
     await expect(page.getByTestId("m-case-prev")).toBeAttached();
