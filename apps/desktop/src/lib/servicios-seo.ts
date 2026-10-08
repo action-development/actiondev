@@ -9,16 +9,42 @@ import { SITE_URL, absoluteUrl, ogImage } from "@/lib/seo";
  * paridad SEO por construcción. Extraído sin cambios de la página de escritorio.
  */
 
-export const SERVICIOS_GROUPS: { id: Landing["group"]; title: string; text: string }[] = [
+/** H1 de /servicios (escritorio y móvil): plan de contenidos 2026-10-08, §5.2. */
+export const SERVICIOS_H1 = "Servicios de desarrollo de apps, software y webs en Vigo";
+
+/** Guía del blog enlazada bajo un grupo. SOLO posts publicados: un borrador daría 404. */
+export interface ServiciosGuide {
+  href: `/blog/${string}`;
+  label: string;
+}
+
+export const SERVICIOS_GROUPS: {
+  id: Landing["group"];
+  title: string;
+  text: string;
+  /** 1-2 guías del blog, las de más búsquedas del bloque (hub → spokes). */
+  guides: ServiciosGuide[];
+}[] = [
   {
     id: "servicio",
     title: "Por servicio",
     text: "Lo que hacemos, explicado con casos reales. Todas estas páginas parten de nuestra oficina de Vigo, que es donde más clientes tenemos.",
+    guides: [
+      { href: "/blog/cuanto-cuesta-desarrollar-una-app", label: "¿Cuánto cuesta crear una app?" },
+      { href: "/blog/app-para-empleados-partes-fichajes", label: "App para fichar y partes de trabajo" },
+    ],
   },
   {
     id: "zona",
     title: "Por zona",
     text: "Cómo trabajamos fuera de Vigo: la provincia de Pontevedra, Redondela y el resto de Galicia, con los clientes que tenemos en cada sitio.",
+    guides: [
+      {
+        href: "/blog/como-elegir-agencia-desarrollo-web-galicia",
+        label: "Cómo elegir agencia de desarrollo web en Galicia",
+      },
+      { href: "/blog/como-salir-en-google-maps-vigo", label: "Cómo salir en Google Maps con un negocio en Vigo" },
+    ],
   },
 ];
 

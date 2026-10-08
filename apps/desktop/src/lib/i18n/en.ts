@@ -187,7 +187,9 @@ export const en: Translations = {
     googleSource: "Google review",
   },
   arcade: {
-    title: "Our work",
+    title: "App, software and web projects built in Vigo",
+    intro:
+      "Apps, custom software and websites we have built from our office in Vigo for businesses in Vigo, Redondela, O Porriño, Noia and elsewhere in Galicia and Spain. Each case explains what the client asked for and what we achieved.",
     loading: "Powering up the machines…",
     hintWalk: "Walk down the aisle",
     hintPick: "Pick a machine",

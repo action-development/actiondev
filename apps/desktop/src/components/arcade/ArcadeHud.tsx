@@ -77,6 +77,7 @@ export function ArcadeHud({
       className={`pointer-events-none fixed inset-0 z-10 transition-opacity ${docked ? "invisible opacity-0" : "opacity-100"}`}
     >
       <h1 className="sr-only">{t.arcade.title}</h1>
+      <p className="sr-only">{t.arcade.intro}</p>
 
       {/* Tutorial: misma altura que en el hero y la plaza, bajo la cápsula del Header. */}
       <div

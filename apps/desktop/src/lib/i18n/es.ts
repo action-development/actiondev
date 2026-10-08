@@ -192,7 +192,9 @@ export const es: Translations = {
     googleSource: "Reseña de Google",
   },
   arcade: {
-    title: "Nuestros trabajos",
+    title: "Proyectos de apps, software y webs hechos en Vigo",
+    intro:
+      "Apps, software a medida y webs que hemos hecho desde nuestra oficina de Vigo para negocios de Vigo, Redondela, O Porriño, Noia y otros puntos de Galicia y de España. Cada ficha cuenta qué nos pidió el cliente y qué conseguimos.",
     loading: "Encendiendo las máquinas…",
     hintWalk: "Avanza por el pasillo",
     hintPick: "Elige una máquina",

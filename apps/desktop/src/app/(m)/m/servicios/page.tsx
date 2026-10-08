@@ -1,12 +1,14 @@
 import { getLandingsByGroup } from "@/data/landings";
 import { CtaBlock } from "@/components/m/CtaBlock";
+import { Icon } from "@/components/m/Icon";
+import { MLink } from "@/components/m/MLink";
 import { MobileFooter } from "@/components/m/MobileFooter";
 import { MobileHeader } from "@/components/m/MobileHeader";
 import { Section } from "@/components/m/Section";
 import { LandingLinks } from "@/components/m/services/LandingLinks";
 import { ServiceRows } from "@/components/m/services/ServiceRows";
 import { StickyCta } from "@/components/m/StickyCta";
-import { SERVICIOS_GROUPS, SERVICIOS_JSON_LD, SERVICIOS_METADATA } from "@/lib/servicios-seo";
+import { SERVICIOS_GROUPS, SERVICIOS_H1, SERVICIOS_JSON_LD, SERVICIOS_METADATA } from "@/lib/servicios-seo";
 
 /**
  * /servicios — hub de las 10 landings SEO (móvil v2). Title, description,
@@ -26,8 +28,8 @@ export default function MobileServiciosPage() {
       <main id="main-content">
         <section aria-labelledby="m-servicios-title">
           <div className="grid gap-[18px] border-b-2 border-ink px-4 pt-[26px] pb-7">
-            <h1 id="m-servicios-title" className="font-display text-h1 uppercase">
-              Servicios de desarrollo y diseño digital
+            <h1 id="m-servicios-title" className="font-display text-h1-long uppercase">
+              {SERVICIOS_H1}
             </h1>
             <p className="max-w-[34ch] text-lead">
               Somos Action, un estudio de desarrollo con oficina en la Rúa Colón, 20, en el centro de Vigo. Hacemos
@@ -44,6 +46,22 @@ export default function MobileServiciosPage() {
         {SERVICIOS_GROUPS.map((group) => (
           <Section key={group.id} id={`grupo-${group.id}`} title={group.title} lead={group.text}>
             <LandingLinks landings={getLandingsByGroup(group.id)} groupId={group.id} />
+            <ul className="grid gap-px border-b-2 border-ink bg-ink" data-testid={`m-servicios-guides-${group.id}`}>
+              {group.guides.map((guide) => (
+                <li key={guide.href} className="flex bg-grey">
+                  <MLink
+                    href={guide.href}
+                    className="flex min-h-16 w-full items-center justify-between gap-3 px-4 py-3.5 text-[17px] leading-[1.3] hover:bg-ink hover:text-paper active:bg-ink active:text-paper"
+                  >
+                    <span className="min-w-0">
+                      <span className="font-display font-extrabold uppercase tracking-[0.02em]">Guía del blog · </span>
+                      {guide.label}
+                    </span>
+                    <Icon name="arrow_outward" size={24} />
+                  </MLink>
+                </li>
+              ))}
+            </ul>
           </Section>
         ))}
 

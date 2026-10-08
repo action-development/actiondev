@@ -1,9 +1,15 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { getLandingsByGroup } from "@/data/landings";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { HoloBar } from "@/components/layout/HoloBar";
 import { BUSINESS } from "@/lib/seo";
-import { SERVICIOS_GROUPS, SERVICIOS_JSON_LD, SERVICIOS_METADATA } from "@/lib/servicios-seo";
+import {
+  SERVICIOS_GROUPS,
+  SERVICIOS_H1,
+  SERVICIOS_JSON_LD,
+  SERVICIOS_METADATA,
+} from "@/lib/servicios-seo";
 import { LegalLinks } from "@/components/layout/LegalLinks";
 
 /**
@@ -32,9 +38,7 @@ export default function ServiciosPage() {
           <p className="micro-label">
             Vigo · Pontevedra · Redondela · Galicia
           </p>
-          <h1 className="display-l mt-4 text-foreground">
-            Servicios de desarrollo y diseño digital
-          </h1>
+          <h1 className="display-l mt-4 text-foreground">{SERVICIOS_H1}</h1>
           <p className="lede mt-8">
             Somos Action, un estudio de desarrollo con oficina en la Rúa Colón,
             20, en el centro de Vigo. Hacemos aplicaciones móviles, software a
@@ -102,6 +106,17 @@ export default function ServiciosPage() {
                 </li>
               ))}
             </ul>
+            <p className="mt-8 text-[0.95rem] leading-relaxed text-muted">
+              Guías del blog:{" "}
+              {group.guides.map((guide, i) => (
+                <Fragment key={guide.href}>
+                  {i > 0 && " · "}
+                  <Link href={guide.href} className="link-sweep text-foreground hover:text-accent">
+                    {guide.label}
+                  </Link>
+                </Fragment>
+              ))}
+            </p>
           </nav>
         ))}
 

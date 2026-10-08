@@ -229,6 +229,8 @@ export interface Translations {
   arcade: {
     /** h1 de la página: solo para lectores de pantalla y buscadores. */
     title: string;
+    /** Párrafo de entrada (sr-only en el pasillo; visible en la lista móvil, que lo lee de `es`). */
+    intro: string;
     loading: string;
     /** Tutorial (`ControlSign`): paso 1, andar. Caja alta, una línea. */
     hintWalk: string;
