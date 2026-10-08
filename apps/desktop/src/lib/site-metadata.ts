@@ -86,6 +86,10 @@ export const ROOT_METADATA: Metadata = {
       { url: "/logos/action_globe-64.png", type: "image/png", sizes: "64x64" },
       { url: "/favicon.ico", sizes: "48x48" },
     ],
+    // iOS (pantalla de inicio) y los bots que lo piden en la raíz: daba 404.
+    // El mismo globo sobre blanco y sin transparencia (iOS pinta de negro el
+    // alfa, y el glifo es negro).
+    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
   },
   formatDetection: {
     email: false,

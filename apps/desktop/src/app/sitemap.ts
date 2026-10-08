@@ -9,8 +9,11 @@ const CORE_LANDING = "desarrollo-de-aplicaciones-vigo";
 // Fecha del último cambio de contenido real de cada ruta propia. A mano y
 // no `new Date()`: con la fecha de build, cada deploy le decía a Google
 // "todo cambió hoy" sin que el contenido se hubiera tocado. Bump manual al
-// editar contenido de esa ruta.
-const CONTENT_UPDATED = new Date("2026-10-02");
+// editar contenido de esa ruta. 2026-10-08: la web móvil v2 (lo que indexa
+// Googlebot Smartphone) se hizo pública en `/`, `/servicios`, `/projects` +
+// fichas, `/resenas` y `/contact`; las landings estrenaron formulario y
+// guías del blog, y `projects.ts` sumó proyectos y mockups.
+const CONTENT_UPDATED = new Date("2026-10-08");
 const LEGAL_LAST_MODIFIED = new Date(LEGAL_UPDATED);
 
 // Se genera en el build: sin esto, un post publicado desde el admin no
