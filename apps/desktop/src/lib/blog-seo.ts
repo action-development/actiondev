@@ -25,7 +25,8 @@ export const BLOG_DESCRIPTION =
   "Guías y artículos de Action sobre desarrollo de aplicaciones, desarrollo web y diseño digital para empresas de Vigo, Pontevedra y Galicia.";
 
 export const BLOG_METADATA: Metadata = {
-  title: "Blog",
+  // Plan de contenidos 2026-10-08, §5.2. El H1 visual («Nuestro Blog») es del cliente.
+  title: "Guías sobre apps, software y webs",
   description: BLOG_DESCRIPTION,
   alternates: { canonical: "/blog" },
   openGraph: {
@@ -33,7 +34,7 @@ export const BLOG_METADATA: Metadata = {
     locale: "es_ES",
     url: absoluteUrl("/blog"),
     siteName: "Action",
-    title: "Blog — Action",
+    title: "Guías sobre apps, software y webs — Action",
     description:
       "Guías y artículos sobre desarrollo de aplicaciones, desarrollo web y diseño digital.",
     images: [ogImage("Blog — Action")],
