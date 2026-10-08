@@ -1,8 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { parseLeadRequest } from "@/lib/leads/parse";
 import { isFirestoreConfigured, saveLead } from "@/lib/leads/firestore";
-import { notifyLead } from "@/lib/leads/notify";
-import { forwardLeadToErp } from "@/lib/leads/erp";
+import { dispatchLead } from "@/lib/leads/dispatch";
 import { allowRequest, clientIp } from "@/lib/leads/rate-limit";
 
 /**
@@ -88,6 +87,6 @@ export async function POST(request: Request) {
     return json({ ok: false, error: "storage_failed" }, 502);
   }
 
-  after(() => Promise.allSettled([notifyLead(lead, id), forwardLeadToErp(lead, id, createdAt)]));
+  after(() => dispatchLead(lead, id, createdAt));
   return json({ ok: true, id });
 }

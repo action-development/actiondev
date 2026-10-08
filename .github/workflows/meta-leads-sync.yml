@@ -1,0 +1,38 @@
+# Red de seguridad de los leads de los formularios instantáneos de Meta.
+# El webhook (/api/meta/leads) es la vía rápida; esto recoge cada 10 min lo que
+# se le haya escapado. Idempotente: un lead ya guardado no se vuelve a avisar.
+#
+# Repo PÚBLICO: el secreto va en Settings → Secrets → Actions
+# (META_LEADS_SYNC_SECRET, el mismo valor que en Vercel) y el log solo imprime
+# el código HTTP, nunca la respuesta. Sin el secreto, el job no hace nada.
+# GitHub puede retrasar los cron unos minutos en horas punta.
+name: Meta leads sync
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: meta-leads-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Sincronizar leads de Meta (últimas 48 h)
+        env:
+          SYNC_SECRET: ${{ secrets.META_LEADS_SYNC_SECRET }}
+        run: |
+          if [ -z "$SYNC_SECRET" ]; then
+            echo "META_LEADS_SYNC_SECRET no configurado: no se sincroniza."
+            exit 0
+          fi
+          curl -fsS --max-time 65 --retry 1 --retry-delay 20 --retry-all-errors \
+            -o /dev/null -w "HTTP %{http_code}\n" \
+            -X POST "https://actiondev.es/api/meta/leads/sync?hours=48" \
+            -H "x-sync-secret: ${SYNC_SECRET}"

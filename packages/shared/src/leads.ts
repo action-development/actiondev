@@ -5,6 +5,8 @@
  * - `ads_landing` / `seo_landing` / `contact_page`: el formulario cualificador
  *   de dos pasos (landings de campaña `/hablemos/*`, landings SEO y el
  *   `/contact` de la web móvil) — rellena el resto.
+ * - `meta_lead_form`: formulario instantáneo de Meta (Lead Ads), leído por la
+ *   Graph API con id determinista `meta_<leadgen_id>`.
  * Todo lo que no sea del «llámame tú» es opcional para que los documentos
  * antiguos sigan cumpliendo el tipo. `firestore.rules` valida las mismas
  * claves: si se añade un campo aquí, añadirlo también allí.
@@ -14,7 +16,15 @@
 export const LEAD_STATUSES = ["new", "contacted", "qualified", "meeting", "proposal", "won", "lost"] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 
-export const LEAD_SOURCES = ["callback_form", "ads_landing", "seo_landing", "contact_page"] as const;
+/** Formularios de la propia web: los ÚNICOS que acepta `POST /api/lead`. */
+export const LEAD_WEB_SOURCES = ["callback_form", "ads_landing", "seo_landing", "contact_page"] as const;
+
+/**
+ * Todos los orígenes (reglas, panel y ERP). `meta_lead_form` = formulario
+ * instantáneo de un anuncio de Meta: no pasa por `/api/lead`, lo recogen
+ * `/api/meta/leads` (webhook) y `/api/meta/leads/sync` (red de seguridad).
+ */
+export const LEAD_SOURCES = [...LEAD_WEB_SOURCES, "meta_lead_form"] as const;
 export type LeadSource = (typeof LEAD_SOURCES)[number];
 
 /**
@@ -54,6 +64,7 @@ export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
   ads_landing: "Landing de campaña",
   seo_landing: "Landing SEO",
   contact_page: "Formulario de contacto",
+  meta_lead_form: "Formulario de Meta",
 };
 
 export const LEAD_NEED_LABELS: Record<LeadNeed, string> = {

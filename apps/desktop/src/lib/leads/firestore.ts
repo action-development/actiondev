@@ -55,14 +55,16 @@ export function isFirestoreConfigured(): boolean {
   return !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID && !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 }
 
-/** Crea el lead y devuelve el ID del documento (último segmento de `name`). Lanza si Firestore falla. */
-export async function saveLead(lead: ParsedLead, createdAt?: string): Promise<string> {
+function leadsCollectionUrl(documentId?: string): string {
   const project = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const key = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   if (!project || !key) throw new Error("Firebase no configurado");
+  const id = documentId ? `documentId=${encodeURIComponent(documentId)}&` : "";
+  return `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(project)}/databases/(default)/documents/leads?${id}key=${encodeURIComponent(key)}`;
+}
 
-  const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(project)}/databases/(default)/documents/leads?key=${encodeURIComponent(key)}`;
-  const response = await fetch(url, {
+function createRequest(url: string, lead: ParsedLead, createdAt?: string): Promise<Response> {
+  return fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -74,15 +76,44 @@ export async function saveLead(lead: ParsedLead, createdAt?: string): Promise<st
     cache: "no-store",
     signal: AbortSignal.timeout(8000),
   });
+}
 
-  if (!response.ok) {
-    // Cuerpo recortado y sin datos del lead: solo el motivo de Google.
-    const detail = (await response.text().catch(() => "")).slice(0, 300);
-    throw new Error(`Firestore ${response.status}: ${detail}`);
-  }
+async function failure(response: Response): Promise<Error> {
+  // Cuerpo recortado y sin datos del lead: solo el motivo de Google.
+  const detail = (await response.text().catch(() => "")).slice(0, 300);
+  return new Error(`Firestore ${response.status}: ${detail}`);
+}
+
+/** Crea el lead y devuelve el ID del documento (último segmento de `name`). Lanza si Firestore falla. */
+export async function saveLead(lead: ParsedLead, createdAt?: string): Promise<string> {
+  const response = await createRequest(leadsCollectionUrl(), lead, createdAt);
+  if (!response.ok) throw await failure(response);
 
   const doc = (await response.json()) as { name?: string };
   const id = doc.name?.split("/").pop();
   if (!id) throw new Error("Firestore no devolvió el ID del documento");
   return id;
+}
+
+/** IDs deterministas: letras, dígitos, `_` y `-` (nada de `/`, que abriría otra ruta). */
+const DOC_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
+
+/**
+ * Crea el lead con un ID FIJO solo si no existe (idempotencia de los leads de
+ * Meta: `meta_<leadgen_id>`). `createDocument` con `documentId` lleva la
+ * precondición «no existe»: las reglas validan primero el documento y, si es
+ * válido y el ID ya está, Firestore responde 409 ALREADY_EXISTS (comprobado en
+ * el emulador). Sin sesión de admin no se puede leer `leads`: el 409 es la
+ * única forma de saber que ya estaba. Lanza ante cualquier otro error.
+ */
+export async function createLeadWithId(
+  lead: ParsedLead,
+  documentId: string,
+  createdAt: string,
+): Promise<"created" | "exists"> {
+  if (!DOC_ID_RE.test(documentId)) throw new Error("ID de documento no válido");
+  const response = await createRequest(leadsCollectionUrl(documentId), lead, createdAt);
+  if (response.ok) return "created";
+  if (response.status === 409) return "exists";
+  throw await failure(response);
 }

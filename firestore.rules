@@ -51,7 +51,7 @@ service cloud.firestore {
         d.notes is string && d.notes.size() <= 500 &&
         d.status == 'new' &&
         d.createdAt is string && d.createdAt.size() <= 40 &&
-        optIn(d, 'source', ['callback_form', 'ads_landing', 'seo_landing', 'contact_page']) &&
+        optIn(d, 'source', ['callback_form', 'ads_landing', 'seo_landing', 'contact_page', 'meta_lead_form']) &&
         optStr(d, 'name', 120) &&
         optStr(d, 'email', 160) &&
         optStr(d, 'company', 160) &&

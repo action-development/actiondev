@@ -11,7 +11,8 @@
         "REVALIDATE_SECRET",
         "DESKTOP_SITE_URL",
         "FIREBASE_*",
-        "LEAD_*"
+        "LEAD_*",
+        "META_*"
       ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },

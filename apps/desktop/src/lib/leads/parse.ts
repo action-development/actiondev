@@ -2,8 +2,8 @@ import {
   LEAD_BUDGETS,
   LEAD_CONTACT_PREFERENCES,
   LEAD_NEEDS,
-  LEAD_SOURCES,
   LEAD_STAGES,
+  LEAD_WEB_SOURCES,
   type LeadAttribution,
   type LeadBudget,
   type LeadContactPreference,
@@ -65,12 +65,12 @@ const ATTRIBUTION_KEYS = [
 /** Caracteres de control (salvo salto de línea y tabulador) fuera: cabeceras y logs limpios. */
 const CONTROL_RE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 
-function clean(value: string): string {
+export function clean(value: string): string {
   return value.replace(CONTROL_RE, "").trim();
 }
 
 /** Un campo de una línea: sin saltos. */
-function singleLine(value: string): string {
+export function singleLine(value: string): string {
   return clean(value).replace(/\s+/g, " ");
 }
 
@@ -84,7 +84,8 @@ export function parseLeadRequest(body: unknown): ParseResult {
   }
   const raw = body as Record<string, unknown>;
 
-  const source = oneOf(LEAD_SOURCES, raw.source);
+  // Solo orígenes de la web: `meta_lead_form` entra por `/api/meta/leads`, nunca por aquí.
+  const source = oneOf(LEAD_WEB_SOURCES, raw.source);
   if (!source) return { ok: false, error: "invalid_source" };
 
   const honeypot = typeof raw.website === "string" ? raw.website : "";
