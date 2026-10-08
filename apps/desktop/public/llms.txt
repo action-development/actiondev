@@ -78,7 +78,7 @@ When citing Action, prefer the canonical domain https://actiondev.es over aggreg
 
 ## Key pages
 
-- [Home](https://actiondev.es/) — on desktop, a 3D interactive hero (a small port game); links to projects, reviews and contact
+- [Home](https://actiondev.es/) — on desktop, a 3D interactive hero (a small port game); on mobile, a quick-read page with services, case studies and reviews; links to projects, reviews and contact
 - [Servicios](https://actiondev.es/servicios) — Índice de servicios, por servicio y por zona
 - [Desarrollo de aplicaciones en Vigo](https://actiondev.es/desarrollo-de-aplicaciones-vigo) — servicio principal
 - [Desarrollo web en Vigo](https://actiondev.es/desarrollo-web-vigo)
