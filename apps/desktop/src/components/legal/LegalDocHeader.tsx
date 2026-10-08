@@ -1,4 +1,5 @@
 import { LEGAL_UPDATED } from "@/lib/seo";
+import { formatLegalDate } from "./legal-entity";
 
 /**
  * Cabecera común de cada documento legal: eyebrow, H1, entradilla y fecha de
@@ -12,12 +13,6 @@ interface LegalDocHeaderProps {
   lede: string;
 }
 
-const UPDATED_FORMATTER = new Intl.DateTimeFormat("es-ES", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
-
 export function LegalDocHeader({ eyebrow, title, lede }: LegalDocHeaderProps) {
   return (
     <header>
@@ -27,7 +22,7 @@ export function LegalDocHeader({ eyebrow, title, lede }: LegalDocHeaderProps) {
       <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
         Última actualización:{" "}
         <time dateTime={LEGAL_UPDATED}>
-          {UPDATED_FORMATTER.format(new Date(`${LEGAL_UPDATED}T00:00:00Z`))}
+          {formatLegalDate(LEGAL_UPDATED)}
         </time>
       </p>
     </header>
