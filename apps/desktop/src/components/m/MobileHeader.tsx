@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { GENERIC_WHATSAPP_TEXT, whatsappHref } from "@/lib/leads/whatsapp";
+import { navigatesWithinMobileTree } from "@/lib/mobile-v2";
 import { Icon } from "./Icon";
 import { MobileMenu } from "./MobileMenu";
-import { PROJECT_CTA_HREF } from "./nav";
+import { MOBILE_NAV, PROJECT_CTA_HREF } from "./nav";
 
 /**
  * Cabecera de la web móvil v2 (DESIGN.md §7, `.hdr`): 60 px, filete de 2 px,
@@ -59,7 +60,14 @@ export function MobileHeader({
       >
         <Icon name="whatsapp" size={28} />
       </a>
-      {menu && <MobileMenu whatsappText={whatsappText} ctaHref={ctaHref} />}
+      {menu && (
+        <MobileMenu
+          whatsappText={whatsappText}
+          ctaHref={ctaHref}
+          // Se decide AQUÍ (servidor): `MOBILE_V2*` no existen en el navegador.
+          softHrefs={MOBILE_NAV.filter((item) => navigatesWithinMobileTree(item.href)).map((item) => item.href)}
+        />
+      )}
     </header>
   );
 }

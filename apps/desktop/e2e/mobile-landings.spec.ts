@@ -235,7 +235,7 @@ test.describe("Móvil v2 · landings SEO", () => {
     await page.goto("/diseno-web-vigo");
     await page.getByTestId("m-menu-open").click();
     await expect(page.getByTestId("m-menu")).toBeVisible();
-    await expect(page.getByTestId("m-menu-link")).toHaveCount(5);
+    await expect(page.getByTestId("m-menu-link")).toHaveCount(6);
     await expect(page.getByTestId("m-menu-cta")).toHaveAttribute("href", "#proyecto");
     await page.getByTestId("m-menu-cta").click();
     await expect(page.getByTestId("m-menu")).toBeHidden();

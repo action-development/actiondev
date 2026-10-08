@@ -67,7 +67,7 @@ test.describe("Móvil v2 · legales", () => {
     const legal = page.getByTestId("m-footer-legal");
     expect(await legal.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")))).toEqual([...DOCS]);
     await page.getByTestId("m-menu-open").click();
-    await expect(page.getByTestId("m-menu-link")).toHaveCount(5);
+    await expect(page.getByTestId("m-menu-link")).toHaveCount(6);
   });
 
   test("/legal y /reviews redirigen como en escritorio", async ({ request }) => {

@@ -14,12 +14,17 @@ export const OFFICE_SHORT = `${BUSINESS.address.street.replace(",", "")}, ${BUSI
 /** «614 02 74 10»: el número sin prefijo, para la fila de WhatsApp de los héroes. */
 export const PHONE_SHORT = BUSINESS.phoneDisplay.replace(/^\+34\s*/, "");
 
-/** Las cinco entradas del menú (DESIGN.md §7, «Menú a pantalla completa»). */
+/**
+ * Las seis entradas del menú (DESIGN.md §7, «Menú a pantalla completa»).
+ * «Blog» se añadió el 2026-10-09: el Header de escritorio lo enlaza en todas
+ * las páginas y la regla de oro de la v2 exige los mismos enlaces internos.
+ */
 export const MOBILE_NAV = [
   { href: "/", label: "Inicio" },
   { href: "/servicios", label: "Servicios" },
   { href: "/projects", label: "Proyectos" },
   { href: "/resenas", label: "Reseñas" },
+  { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Contacto" },
 ] as const;
 

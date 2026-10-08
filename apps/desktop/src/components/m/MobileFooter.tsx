@@ -6,9 +6,12 @@ import { CookiePreferencesButton } from "./CookiePreferencesButton";
 import { MLink } from "./MLink";
 import { LEGAL_LINKS, OFFICE_LINE } from "./nav";
 
+/** Rejilla 2 × 3 del pie: las secciones del sitio, la ficha de Google y contacto. */
 const FOOTER_NAV = [
   { href: "/projects", label: "Proyectos" },
   { href: "/servicios", label: "Servicios" },
+  { href: "/resenas", label: "Reseñas" },
+  { href: "/blog", label: "Blog" },
   { href: BUSINESS.mapsUrl, label: "Google" },
   { href: "/contact", label: "Contacto" },
 ] as const;
@@ -18,7 +21,8 @@ const legalLinkClass =
 
 /**
  * Pie de la web móvil v2 (DESIGN.md §7, `.ftr`), sobre tinta: logo en papel a
- * todo el ancho → oficina, WhatsApp y email → cuatro enlaces 2 × 2 →
+ * todo el ancho → oficina, WhatsApp y email → seis enlaces 2 × 3 (con Reseñas
+ * y Blog, que enlaza el Header de escritorio en todas las páginas) →
  * titularidad (LSSI art. 10: razón social, CIF, registro, oficina y domicilio
  * social) y enlaces legales con «Preferencias de cookies».
  *
@@ -67,7 +71,11 @@ export function MobileFooter({
       </Cells>
 
       {variant === "full" && (
-        <nav aria-label="Pie de página" className="grid grid-cols-2 gap-px border-b border-line-dark bg-line-dark">
+        <nav
+          aria-label="Pie de página"
+          data-testid="m-footer-nav"
+          className="grid grid-cols-2 gap-px border-b border-line-dark bg-line-dark"
+        >
           {FOOTER_NAV.map((item) => (
             <MLink
               key={item.href}

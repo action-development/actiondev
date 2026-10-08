@@ -27,10 +27,18 @@ const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1
 export function MobileMenu({
   whatsappText = GENERIC_WHATSAPP_TEXT,
   ctaHref = PROJECT_CTA_HREF,
+  softHrefs,
 }: {
   whatsappText?: string;
   /** Destino de «Contar mi proyecto». */
   ctaHref?: string;
+  /**
+   * Entradas que se quedan en el árbol móvil (`navigatesWithinMobileTree`,
+   * calculado en `MobileHeader`): esas van con `next/link`; el resto (p. ej.
+   * `/blog` mientras no sea pública en móvil) con `<a>`, como hace `MLink`,
+   * para no prefetchear el árbol de otro layout raíz.
+   */
+  softHrefs: readonly string[];
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
@@ -126,9 +134,10 @@ export function MobileMenu({
           <ul>
             {MOBILE_NAV.map((item) => {
               const current = isCurrent(item.href, pathname);
+              const ItemLink = softHrefs.includes(item.href) ? Link : "a";
               return (
                 <li key={item.href}>
-                  <Link
+                  <ItemLink
                     href={item.href}
                     onClick={close}
                     aria-current={current ? "page" : undefined}
@@ -139,7 +148,7 @@ export function MobileMenu({
                   >
                     {item.label}
                     <Icon name="arrow_outward" size={34} className="text-muted-dark" />
-                  </Link>
+                  </ItemLink>
                 </li>
               );
             })}

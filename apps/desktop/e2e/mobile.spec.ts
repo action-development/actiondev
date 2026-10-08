@@ -94,7 +94,7 @@ test.describe("Móvil v2 · base", () => {
     await expect(page.getByTestId("m-menu-open")).toHaveText(/men[uú]/i);
   });
 
-  test("menú: abre, enlaza las 5 rutas, atrapa el foco y cierra con Esc y con Cerrar", async ({ page }) => {
+  test("menú: abre, enlaza las 6 rutas, atrapa el foco y cierra con Esc y con Cerrar", async ({ page }) => {
     await withConsent(page, "denied");
     await page.goto("/");
     const opener = page.getByTestId("m-menu-open");
@@ -106,12 +106,13 @@ test.describe("Móvil v2 · base", () => {
     await expect(menu).toBeVisible();
     await expect(opener).toHaveAttribute("aria-expanded", "true");
     const links = page.getByTestId("m-menu-link");
-    await expect(links).toHaveCount(5);
+    await expect(links).toHaveCount(6);
     expect(await links.evaluateAll((as) => as.map((a) => a.getAttribute("href")))).toEqual([
       "/",
       "/servicios",
       "/projects",
       "/resenas",
+      "/blog",
       "/contact",
     ]);
     await expect(links.first()).toHaveAttribute("aria-current", "page");
@@ -176,6 +177,15 @@ test.describe("Móvil v2 · base", () => {
     await expect(footer).toContainText("Rúa Colón, 20");
     await expect(page.getByTestId("m-footer-whatsapp")).toHaveAttribute("href", WHATSAPP);
     await expect(page.getByTestId("m-footer-email")).toHaveAttribute("href", "mailto:hi@actiondev.es");
+    // Rejilla 2 × 3: las mismas secciones que enlaza el Header de escritorio, más Google y contacto.
+    expect(await page.getByTestId("m-footer-nav").locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")))).toEqual([
+      "/projects",
+      "/servicios",
+      "/resenas",
+      "/blog",
+      "https://maps.google.com/?cid=18162141466997281764",
+      "/contact",
+    ]);
     const legal = page.getByTestId("m-footer-legal");
     expect(await legal.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")))).toEqual([
       "/legal/aviso-legal",

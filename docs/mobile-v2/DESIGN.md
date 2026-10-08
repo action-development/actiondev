@@ -146,7 +146,7 @@ Cada uno está montado en las maquetas. El CSS de referencia está en el `<style
 
 **Cabecera** (`.hdr`). 60 px, filete inferior de 2 px. Logo de 34 px de alto | WhatsApp en una celda de 60 × 60 | botón **MENÚ** negro. No es fija: la barra inferior ya da acceso permanente. En landings de anuncios: logo y WhatsApp, sin menú.
 
-**Menú a pantalla completa** (`.menu`). Fondo tinta, logo en papel y **CERRAR**. Enlaces en Condensed 900 de 54 px con flecha, separados por filetes `line-dark`. La página activa va en lima. Debajo, el bloque lima «Contar mi proyecto» con WhatsApp al lado, y dirección, teléfono y email como texto seleccionable. En React: `<dialog>` modal, foco atrapado, Esc cierra y se bloquea el scroll (como `MobileMenu.tsx` de Curro).
+**Menú a pantalla completa** (`.menu`). Fondo tinta, logo en papel y **CERRAR**. Enlaces en Condensed 900 de 54 px con flecha, separados por filetes `line-dark`: Inicio, Servicios, Proyectos, Reseñas, Blog y Contacto (Blog desde el 2026-10-09). La página activa va en lima. Debajo, el bloque lima «Contar mi proyecto» con WhatsApp al lado, y dirección, teléfono y email como texto seleccionable. En React: `<dialog>` modal, foco atrapado, Esc cierra y se bloquea el scroll (como `MobileMenu.tsx` de Curro).
 
 **Hero de inicio.** H1 + entradilla → bloque lima a sangre con **CONTAR MI PROYECTO** a 40 px, flecha de 58 px y la frase «La primera reunión es gratis y sin compromiso. Te respondemos en 24 horas laborables.» → fila negra «Escribir por WhatsApp» con el número → celdas: reseñas, oficina y presupuesto. Todo cabe en los 844 px.
 
@@ -181,7 +181,7 @@ Cada uno está montado en las maquetas. El CSS de referencia está en el `<style
 - **Campos:** caja de 56 px con borde de 2 px en tinta y radio 0. Valor en Condensed 800 de 22 px y textarea en Semi Condensed de 17 px. La etiqueta va arriba, siempre visible; el placeholder nunca hace de etiqueta.
 - **Variante compacta** (landing): los tiles de necesidad pasan a horizontal (icono + nombre, casilla en la esquina, 76 px) para que el botón **Siguiente** quede dentro de la primera pantalla.
 
-**Pie** (`.ftr`). Fondo tinta. Logo en papel a todo el ancho → celdas con oficina, teléfono y email → cuatro enlaces en rejilla 2 × 2 → «Action Development es el nombre comercial de Alcasi Systems, S.L., CIF B72910664, inscrita en el Registro Mercantil de Pontevedra» y los enlaces legales. En landings de anuncios, versión mínima sin logo grande ni navegación.
+**Pie** (`.ftr`). Fondo tinta. Logo en papel a todo el ancho → celdas con oficina, teléfono y email → seis enlaces en rejilla 2 × 3 (Proyectos, Servicios, Reseñas, Blog, Google, Contacto; Reseñas y Blog desde el 2026-10-09, por paridad de enlaces con el Header de escritorio) → «Action Development es el nombre comercial de Alcasi Systems, S.L., CIF B72910664, inscrita en el Registro Mercantil de Pontevedra» y los enlaces legales. En landings de anuncios, versión mínima sin logo grande ni navegación.
 
 ## 8. Estados
 
