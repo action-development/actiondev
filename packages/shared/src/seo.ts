@@ -134,7 +134,7 @@ export const SERVICE_LANDINGS = [
   { slug: "tienda-online-vigo", label: "Tiendas online en Vigo" },
   { slug: "software-a-medida-vigo", label: "Software a medida en Vigo" },
   { slug: "desarrollo-de-aplicaciones-pontevedra", label: "Desarrollo de aplicaciones en Pontevedra" },
-  { slug: "desarrollo-web-pontevedra", label: "Desarrollo y diseño web en Pontevedra" },
+  { slug: "desarrollo-web-pontevedra", label: "Diseño y desarrollo web en Pontevedra" },
   { slug: "desarrollo-web-redondela", label: "Diseño y desarrollo web en Redondela" },
   { slug: "desarrollo-de-aplicaciones-galicia", label: "Desarrollo de aplicaciones en Galicia" },
   { slug: "agencia-desarrollo-web-galicia", label: "Agencia de desarrollo web en Galicia" },

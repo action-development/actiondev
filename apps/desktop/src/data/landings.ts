@@ -14,9 +14,10 @@
  *   `packages/shared/src/projects.ts` (se enlazan a `/projects/{slug}`);
  *   citas → `id` de `src/data/testimonials.ts`. Nada de cifras, plazos,
  *   precios, tecnologías o clientes que no estén ahí. Una ubicación de
- *   cliente solo se afirma si sale de su dominio/slug/descripción (Samoa,
- *   La Fábrica y Canelita → Redondela; PBB → O Porriño; Musa → Vigo;
- *   París de Noia y Fisionorte → Noia).
+ *   cliente solo se afirma si sale de su dominio/slug/descripción o de su
+ *   web publicada (Samoa, La Fábrica y Canelita → Redondela; PBB → O Porriño;
+ *   Musa y Patricia Avendaño → Vigo; FASE → Vigo y el puerto de Marín;
+ *   París de Noia, Fisionorte y Equs → Noia; Almudena Muhle → Mallorca).
  * - Sin precios publicados (pendiente de decisión del cliente): se explica
  *   de qué depende el presupuesto, cada landing con un enfoque distinto.
  * - Cada testimonio se cita en UNA sola landing.
@@ -162,6 +163,13 @@ export const landings: Landing[] = [
     ],
     sections: [
       {
+        title: "Una empresa de desarrollo de apps en Vigo",
+        paragraphs: [
+          "Si comparas empresas de desarrollo de apps en Vigo, pregunta primero quién va a programar la tuya. En Action, quien te escucha en la primera reunión es quien diseña y programa la app: sin comerciales de por medio ni subcontratas. Trabajamos en la oficina de la Rúa Colón, 20, y con los clientes de Vigo y su área nos vemos ahí en persona.",
+          "Y el equipo que la construye es el que la mantiene. Cuando Apple o Google cambian sus requisitos, cuando el uso destapa un fallo o cuando quieres añadir una función, hablas con alguien que conoce el código porque lo escribió, no con un servicio técnico que lo abre por primera vez.",
+        ],
+      },
+      {
         title: "¿App nativa, multiplataforma o web app?",
         paragraphs: [
           "Es la primera pregunta que nos hacen, y la respuesta depende de tres cosas: quién va a usar la app, desde qué dispositivo y qué tiene que hacer con el hardware del teléfono.",
@@ -204,6 +212,14 @@ export const landings: Landing[] = [
       {
         q: "¿Qué tipo de empresas de Vigo encargan una app?",
         a: "Sobre todo dos perfiles: pymes industriales y de servicios que quieren digitalizar un proceso interno (fichajes, partes de trabajo, pedidos, formación) y negocios de cara al público que necesitan reservas, cuotas, citas o un canal propio con sus clientes. Los dos tienen algo en común: la app sustituye algo que hoy se hace a mano.",
+      },
+      {
+        q: "¿Cuánto se cobra por el desarrollo de una app?",
+        a: "Depende del alcance: cuántas pantallas y tipos de usuario tiene, si necesita backend propio, con qué sistemas se conecta y si debe funcionar sin conexión. Por eso no damos una cifra sin conocer el proyecto: tras una reunión de definición te enviamos una propuesta cerrada con el alcance por escrito.",
+      },
+      {
+        q: "¿Qué empresas desarrollan aplicaciones en Vigo?",
+        a: "En Vigo hay agencias generalistas, estudios centrados en apps y empresas de fuera con páginas por ciudad. Para distinguirlas, pide apps publicadas que puedas descargar, pregunta quién va a programar la tuya y qué pasa con el mantenimiento. Nosotros somos un estudio con oficina en la Rúa Colón, 20, y en esta página tienes nuestros casos.",
       },
       {
         q: "¿Puedo tener una app y un panel web para mi equipo en el mismo proyecto?",
@@ -385,7 +401,7 @@ export const landings: Landing[] = [
       { slug: "diseno-web-vigo", label: "Diseño web con identidad propia en Vigo" },
       { slug: "tienda-online-vigo", label: "Tiendas online y ecommerce en Vigo" },
       { slug: "desarrollo-web-redondela", label: "Páginas web para negocios de Redondela" },
-      { slug: "desarrollo-web-pontevedra", label: "Desarrollo y diseño web en Pontevedra" },
+      { slug: "desarrollo-web-pontevedra", label: "Diseño web en Pontevedra" },
     ],
     hubSummary:
       "Webs corporativas y aplicaciones web con Next.js que venden, reservan o cobran. Casos: Musa (Vigo) y PBB (O Porriño).",
@@ -405,7 +421,7 @@ export const landings: Landing[] = [
     title: "Diseño de Páginas Web en Vigo | Webs con Identidad Propia",
     metaDescription:
       "Diseño de páginas web en Vigo con dirección de arte, motion y 3D: webs que no parecen plantillas. Casos: Samoa Café y Almudena Muhle. Estudio en Vigo.",
-    h1: "Diseño web en Vigo",
+    h1: "Diseño de páginas web en Vigo",
     intro: [
       "El diseño de una web decide en pocos segundos si alguien se queda o vuelve a Google. En Action diseñamos páginas web con identidad propia — tipografía, ritmo, movimiento y, cuando el proyecto lo pide, 3D — para marcas de Vigo que no quieren parecerse a la plantilla de su competencia.",
       "Somos un estudio de Vigo donde diseño y programación los hace el mismo equipo. Eso cambia el resultado más de lo que parece: lo que se aprueba en el prototipo es lo que se publica, y los detalles de animación no se pierden en el traspaso a un desarrollador que no estuvo en las reuniones.",
@@ -414,7 +430,7 @@ export const landings: Landing[] = [
       title: "Diseñar para marcas con carácter",
       paragraphs: [
         "Vigo es una ciudad de marcas con personalidad: hostelería que cambia de ambiente del día a la noche, moda, interiorismo, industria que exporta y comercio que se defiende de las grandes cadenas. Lo que tienen en común es que su producto se ve y se toca, y una web genérica lo aplana.",
-        "Nuestro trabajo consiste en trasladar ese carácter a la pantalla sin sacrificar lo práctico. Una carta que cambia sola entre la versión de día y la de noche, como la de Samoa Café. Un lookbook de pasarela a pantalla completa, como el de Patricia Avendaño. Proyectos de interiorismo contados como historias, como en la web de Almudena Muhle. El diseño tiene que servir al negocio, no al porfolio del estudio.",
+        "Nuestro trabajo consiste en trasladar ese carácter a la pantalla sin sacrificar lo práctico. Una carta que cambia sola entre la versión de día y la de noche, como la de Samoa Café, en Redondela. Un lookbook de pasarela a pantalla completa, como el de la diseñadora viguesa Patricia Avendaño. Proyectos de interiorismo contados como historias, como en la web del estudio mallorquín de Almudena Muhle. El diseño tiene que servir al negocio, no al porfolio del estudio.",
         "Y lo hacemos con los pies en el suelo: un diseño que tarda en cargar en el móvil de alguien que está en la calle buscando dónde cenar no es un buen diseño, por bonito que sea en una pantalla grande.",
       ],
     },
@@ -501,6 +517,10 @@ export const landings: Landing[] = [
     },
     faqs: [
       {
+        q: "¿Cómo elijo una empresa de diseño web en Vigo?",
+        a: "Mira webs suyas publicadas y ábrelas en tu móvil, pregunta quién diseña y quién programa, y pide un presupuesto cerrado que diga qué incluye. En Action diseño y programación los hace el mismo equipo, en Vigo.",
+      },
+      {
         q: "¿Hacéis también el logo y la identidad de marca?",
         a: "Sí, cuando hace falta. En Samoa Café partimos de cero: naming, logo, diseño de carta y web. Si ya tienes identidad, la respetamos y la adaptamos al medio digital.",
       },
@@ -549,7 +569,7 @@ export const landings: Landing[] = [
     ],
     title: "Diseño de Tiendas Online en Vigo | Shopify y Ecommerce",
     metaDescription:
-      "Creamos tiendas online en Vigo: Shopify o ecommerce a medida con React y Node.js, pagos y catálogo cuidado. Casos reales como Canelita, Cliché y Koopey.",
+      "Creamos tiendas online en Vigo: Shopify o ecommerce a medida, pagos y catálogo cuidado. Casos reales: Canelita, en Redondela, Cliché y Koopey.",
     h1: "Diseño de tiendas online en Vigo",
     intro: [
       "Una tienda online no es una web con un carrito: es un canal de venta que tiene que cargar rápido en el móvil, cobrar sin fricción y encajar con el resto de tu negocio — stock, pedidos, envíos. Diseñamos y desarrollamos tiendas online para marcas y comercios de Vigo y su área que quieren vender más allá de su escaparate.",
@@ -647,6 +667,10 @@ export const landings: Landing[] = [
     },
     faqs: [
       {
+        q: "¿Cuánto cuesta una tienda online?",
+        a: "Depende sobre todo del tamaño del catálogo, de si se conecta con tu programa de gestión, de los métodos de pago y de quién prepara fotos y fichas. Una tienda Shopify bien montada y un ecommerce a medida no se presupuestan igual: tras una primera conversación te enviamos una propuesta cerrada.",
+      },
+      {
         q: "¿Qué retrasa más la apertura de una tienda online?",
         a: "Casi nunca la parte técnica: el contenido. Fotos, descripciones, precios y variantes de cada producto. Planificamos la tienda por fases con fechas en la propuesta y trabajamos el catálogo en paralelo desde el primer día.",
       },
@@ -724,7 +748,7 @@ export const landings: Landing[] = [
         text: "Paneles de administración, cuadros de mando y portales para clientes o proveedores con acceso por usuario.",
       },
       {
-        title: "Integraciones y middleware",
+        title: "Integración con tu ERP y otros sistemas",
         text: "Conectamos tu web, tu tienda o tu app con el software que ya tienes para que los datos viajen solos. En Nautirent, la web lee la disponibilidad de la flota del programa interno.",
       },
       {
@@ -813,8 +837,12 @@ export const landings: Landing[] = [
         a: "Nosotros, si quieres. El software a medida necesita mantenimiento: actualizaciones de seguridad, cambios normativos y mejoras que salen del uso. Lo planteamos en la propuesta para que no sea una sorpresa.",
       },
       {
-        q: "¿Cómo se presupuesta un software a medida?",
-        a: "Por módulos. Tras entender el proceso, estimamos cada módulo por separado con lo que incluye y lo que no, para que decidas por dónde empezar y cuánto invertir en cada fase.",
+        q: "¿Cuánto cuesta un software a medida?",
+        a: "No damos una cifra cerrada sin conocer el proceso. Lo presupuestamos por módulos: tras entenderlo, estimamos cada módulo por separado con lo que incluye y lo que no, para que decidas por dónde empezar y cuánto invertir en cada fase.",
+      },
+      {
+        q: "¿Hay ayudas para digitalizar una pyme en Galicia?",
+        a: "Sí. La línea específica del IGAPE es la IG300C, de ayudas a la transformación digital de las pymes: su convocatoria de 2026 (DOG n.º 107, de 10 de junio de 2026) incluía, entre otros, proyectos de digitalización y automatización de procesos y sistemas de gestión integral. El plazo de solicitud de 2026 ya cerró; conviene tener el proyecto definido antes de que se publique la siguiente.",
       },
     ],
     cta: {
@@ -945,6 +973,10 @@ export const landings: Landing[] = [
         a: "Sí, para las reuniones que lo merecen: el arranque del proyecto, la validación del prototipo y la entrega. El resto avanza en remoto, con demos y versiones de prueba, para que no pagues desplazamientos innecesarios.",
       },
       {
+        q: "¿Hacéis apps para clubes deportivos y asociaciones?",
+        a: "Sí. Para PBB, el club de baloncesto base de O Porriño, la inscripción y el pago de la cuota y la matrícula se hacen desde la web, con cuentas separadas para familias y deportistas, y los padres gestionan las cuentas de sus hijos desde su propio perfil.",
+      },
+      {
         q: "Tengo un negocio de temporada. ¿Me compensa una app?",
         a: "Depende de cuánto trabajo te quite en temporada alta. Si hoy pierdes reservas por no contestar a tiempo o haces a mano lo que podría hacerse solo, suele compensar. Si tu cliente te encuentra una vez y no vuelve, quizá te baste una web con reservas; te lo diremos.",
       },
@@ -980,7 +1012,7 @@ export const landings: Landing[] = [
   {
     slug: "desarrollo-web-pontevedra",
     group: "zona",
-    serviceName: "Desarrollo y diseño web en Pontevedra",
+    serviceName: "Diseño y desarrollo web en Pontevedra",
     serviceType: "Diseño y desarrollo web",
     // Sin Redondela: tiene landing propia y la compartían en `areaServed`.
     areaServed: [
@@ -988,13 +1020,15 @@ export const landings: Landing[] = [
       { name: "O Porriño", type: "City" },
       { name: "Provincia de Pontevedra", type: "AdministrativeArea" },
     ],
-    title: "Desarrollo y Diseño Web en Pontevedra | Webs a Medida",
+    // «Diseño web pontevedra» (100–1.000 al mes) por delante de «desarrollo
+    // web pontevedra» (10–100): plan de contenidos de 2026-10-08, §5.1.
+    title: "Diseño Web en Pontevedra | Desarrollo de Webs a Medida",
     metaDescription:
-      "Diseño y desarrollo de páginas web a medida en Pontevedra y las Rías Baixas: hostelería, eventos, clubes y comercio. Casos en Redondela y O Porriño. ★ 5,0",
-    h1: "Desarrollo y diseño web en Pontevedra",
+      "Diseño y desarrollo de páginas web a medida en Pontevedra y las Rías Baixas: hostelería, eventos, clubes y comercio, con casos en la provincia. ★ 5,0",
+    h1: "Diseño y desarrollo web en Pontevedra",
     intro: [
       "Diseñamos y desarrollamos páginas web a medida para negocios de la provincia de Pontevedra. El mismo equipo hace las dos cosas, la dirección de arte y la programación, así que lo que apruebas en el diseño es exactamente lo que se publica.",
-      "Nuestra oficina está en Vigo, pero buena parte de los clientes con web publicada que puedes visitar están en la provincia: en Redondela, un café, una sala de eventos y un comercio; en O Porriño, un club deportivo. Conocemos el tipo de negocio que hay aquí porque trabajamos para él.",
+      "Nuestra oficina está en Vigo, y buena parte de los clientes con web publicada que puedes visitar están repartidos por la provincia: una sala de eventos en Redondela, un club de baloncesto en O Porriño y una empresa de instalaciones eléctricas navales que trabaja desde Vigo y el puerto de Marín. Conocemos el tipo de negocio que hay aquí porque trabajamos para él.",
     ],
     localContext: {
       title: "Webs para la economía de las Rías Baixas",
@@ -1028,18 +1062,20 @@ export const landings: Landing[] = [
       },
     ],
     casesTitle: "Clientes de la provincia",
+    // Samoa se queda en Redondela y en diseño: aquí, un caso de cada tipo de
+    // negocio y ningún otro de Redondela (canibalización con su landing).
     cases: [
-      {
-        slug: "samoa",
-        note: "Café de Redondela. Identidad de marca desde cero y web con carta editable que cambia sola entre versión de día y de noche.",
-      },
       {
         slug: "ticketera-la-fabrica",
         note: "Recinto de ocio y eventos de Redondela. Venta de entradas online con perfil de usuario e historial, y gestión del aforo en tiempo real.",
       },
       {
         slug: "pbb-porrino",
-        note: "Club de baloncesto de O Porriño. Web con inscripción y pago online, cuentas de familia y estrategia de SEO local.",
+        note: "Club de baloncesto base de O Porriño. Pasar la inscripción y el cobro de cuota y matrícula a la web acabó con el papeleo en ventanilla.",
+      },
+      {
+        slug: "fase",
+        note: "Instalaciones eléctricas navales e industriales, con equipo propio en Vigo y en el puerto de Marín. Web corporativa multilingüe, ordenada por línea de servicio.",
       },
     ],
     sections: [
@@ -1100,7 +1136,7 @@ export const landings: Landing[] = [
       },
       {
         q: "¿Os ocupáis del posicionamiento en Google?",
-        a: "Dejamos resuelto el SEO técnico — títulos, datos estructurados, sitemap, velocidad — y te orientamos en lo que depende de ti: reseñas, ficha de Google Business y contenido. En PBB, la estrategia de SEO local formó parte del proyecto.",
+        a: "Dejamos resuelto el SEO técnico — títulos, datos estructurados, sitemap, velocidad — y te orientamos en lo que depende de ti: reseñas, ficha de Google Business y contenido. Cuando el negocio vive de su zona, el SEO local entra en el propio encargo, como en la web de la discoteca Musa, en Vigo.",
       },
     ],
     cta: {
@@ -1118,7 +1154,7 @@ export const landings: Landing[] = [
       { slug: "diseno-web-vigo", label: "Estudio de diseño web en Vigo" },
     ],
     hubSummary:
-      "Diseño y desarrollo web para hostelería, eventos, clubes y comercio de la provincia. Casos en Redondela y O Porriño.",
+      "Diseño y desarrollo web para hostelería, eventos, clubes, comercio e industria de la provincia. Casos: La Fábrica, PBB y FASE.",
   },
 
   // ───────────────────────────────────────────────────────────────────
@@ -1424,9 +1460,11 @@ export const landings: Landing[] = [
       { name: "Lugo", type: "City" },
       { name: "Noia", type: "City" },
     ],
-    title: "Agencia de Desarrollo Web en Galicia | Webs a Medida",
+    // «Diseño web galicia» (100–1.000) sin perder «Desarrollo Web en Galicia» ni
+    // «Agencia», por lo que ya sale 1.ª en Bing: plan de contenidos, §5.1.
+    title: "Diseño y Desarrollo Web en Galicia | Agencia en Vigo",
     metaDescription:
-      "Agencia de desarrollo web con sede en Vigo: webs corporativas, tiendas y aplicaciones web para empresas de A Coruña, Santiago, Ourense, Lugo y Pontevedra.",
+      "Agencia de diseño y desarrollo web con sede en Vigo: webs corporativas, tiendas online y aplicaciones web para empresas gallegas, en persona o en remoto.",
     h1: "Agencia de desarrollo web en Galicia",
     intro: [
       "Action es una agencia de desarrollo web con sede en Vigo que trabaja con empresas de toda Galicia. Construimos webs corporativas, tiendas online y aplicaciones web a medida para negocios de A Coruña, Santiago, Ourense, Lugo y la provincia de Pontevedra.",
