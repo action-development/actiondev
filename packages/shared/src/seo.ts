@@ -64,10 +64,12 @@ export const BUSINESS = {
   languages: ["es", "en"],
   /**
    * Temas que domina la entidad (`knowsAbout`). SOLO lo que respaldan los
-   * proyectos y las landings: React Native y Expo (Óscar Soto, Tratum,
-   * XauLabs), Next.js y React (PBB, Musa, Samoa…), Supabase y Stripe (Fang
-   * Tours), Shopify (Canelita, Cliché), Three.js (Musa), Node.js (Koopey,
-   * Timetracker). Sin Flutter, Swift ni Kotlin: no hay un proyecto que los use.
+   * proyectos (`technologies` de `projects.ts`, comprobadas en vivo el
+   * 2026-10-09), las landings o esta misma web: React Native y Expo (Óscar
+   * Soto, Tratum, XauLabs), React con Next.js (PBB) o Vite (Musa, Samoa…),
+   * Node.js (Koopey, Timetracker), Shopify (Canelita, Cliché), Three.js y
+   * TypeScript (actiondev.es). Sin Flutter, Swift, Kotlin, Supabase ni Stripe:
+   * ningún proyecto publicado los usa.
    */
   knowsAbout: [
     "Desarrollo de aplicaciones móviles",
@@ -82,10 +84,9 @@ export const BUSINESS = {
     "Desarrollo web",
     "Next.js",
     "React",
+    "Vite",
     "TypeScript",
     "Node.js",
-    "Supabase",
-    "Stripe",
     "Comercio electrónico",
     "Shopify",
     "Three.js",

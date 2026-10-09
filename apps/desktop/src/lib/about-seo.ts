@@ -25,7 +25,8 @@ import {
  * pinta los mismos textos y los mismos enlaces con su propio sistema.
  *
  * Veracidad: solo datos del repo (`BUSINESS`, `LEGAL_ENTITY`, `projects.ts`,
- * `testimonials.ts`, `landings.ts`, `llms.txt`). Lo que el plan marca
+ * `testimonials.ts`, `landings.ts`, `llms.txt`; las tecnologías, solo las de
+ * `projects.ts` comprobadas en vivo y las de esta web). Lo que el plan marca
  * «CONFIRMAR» (año de la marca, tamaño del equipo, cargo, horario, gallego,
  * Flutter) NO sale. Cifras calculadas, nunca escritas a mano: la valoración
  * con `reviewSummary()`, los proyectos con `projects.length` y las
@@ -161,7 +162,7 @@ export const ABOUT_FACTS: readonly AboutFact[] = [
   {
     label: "Tecnología",
     value: [
-      "React Native y Expo en las apps; React y Next.js en la web; Node.js y Supabase en el backend; Stripe para los cobros, Shopify en las tiendas y Three.js en el 3D, con TypeScript. Cuando una app depende a fondo del hardware del teléfono, se valora el desarrollo nativo",
+      "React Native y Expo en las apps; React con Next.js o Vite en la web; Node.js en el backend; Shopify en las tiendas y Three.js en el 3D, como el puerto jugable de esta web. Cuando una app depende a fondo del hardware del teléfono, se valora el desarrollo nativo",
     ],
   },
   {
@@ -216,7 +217,7 @@ const CASES: readonly LandingCase[] = [
   },
   {
     slug: "ticketera-la-fabrica",
-    note: "Venta de entradas online para La Fábrica, recinto de eventos de Redondela, con el aforo gestionado en tiempo real.",
+    note: "Venta de entradas online para La Fábrica, discoteca de Redondela, con el aforo gestionado en tiempo real.",
   },
   {
     slug: "nautirent",
@@ -303,7 +304,7 @@ export const ABOUT_FAQS: readonly AboutFaq[] = [
   {
     q: "¿Con qué tecnologías trabaja?",
     a: [
-      "Las apps, con React Native y Expo, que publican en iOS y Android con una sola base de código; cuando una app depende a fondo del hardware del teléfono, se valora el desarrollo nativo. Las webs, con React y Next.js, y el backend, con Node.js y Supabase. Para cobrar usa Stripe; para las tiendas, Shopify o desarrollo propio, y para el 3D, Three.js.",
+      "Las apps, con React Native y Expo, que publican en iOS y Android con una sola base de código; cuando una app depende a fondo del hardware del teléfono, se valora el desarrollo nativo. Las webs, con React y Next.js o Vite, y el backend, con Node.js. Las tiendas, con Shopify o desarrollo propio, y el 3D, con Three.js, como el de esta misma web.",
     ],
   },
   {
