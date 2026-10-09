@@ -897,3 +897,38 @@ test.describe("Sobre nosotros (página de la entidad)", () => {
     expect(sitemap).toContain("<loc>https://actiondev.es/sobre-nosotros</loc>");
   });
 });
+
+test.describe("AEO: landings, valoración única y llms.txt", () => {
+  const RATING = "5,0 sobre 5 · 23 reseñas";
+
+  test("cada landing abre con «Action Development» y lleva los «Datos clave» con la valoración única", async ({ page }) => {
+    for (const slug of ["desarrollo-de-aplicaciones-vigo", "software-a-medida-vigo", "tienda-online-vigo"]) {
+      await page.goto(`/${slug}`);
+      const first = page.locator("#hero p.prose-body").first();
+      await expect(first, slug).toHaveText(/^Action Development /);
+      const facts = page.getByTestId("landing-key-facts");
+      await expect(facts.locator("dt"), slug).toHaveCount(7);
+      await expect(facts, slug).toContainText(RATING);
+      await expect(facts.locator('a[href="/projects"]'), slug).toContainText("publicados");
+      await expect(page.locator("main"), slug).not.toContainText("22 reseñas");
+    }
+  });
+
+  test("/llms.txt y /llms-full.txt se generan con los datos del sitio", async ({ request }) => {
+    const res = await request.get("/llms.txt");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toContain("text/plain");
+    const txt = await res.text();
+    expect(txt).toMatch(/^# Action Development — /);
+    expect(txt).toContain("5,0 de 5 con 23 reseñas (consultado el 9 de octubre de 2026)");
+    expect(txt).toContain("https://actiondev.es/sobre-nosotros");
+    expect(txt).toContain("https://actiondev.es/desarrollo-de-aplicaciones-vigo");
+    expect(txt).toContain("React Native with Expo");
+    expect(txt).not.toMatch(/Flutter|Supabase|activa desde 2020/);
+
+    const full = await (await request.get("/llms-full.txt")).text();
+    for (const h of ["## Sobre Action Development", "## Desarrollo de aplicaciones en Vigo", "### Autoescuela GTI"]) {
+      expect(full).toContain(h);
+    }
+  });
+});

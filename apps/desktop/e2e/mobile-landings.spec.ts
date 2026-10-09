@@ -169,6 +169,15 @@ test.describe("Móvil v2 · landings SEO", () => {
     }
   });
 
+  test("«Datos clave» en las celdas del hero, con la valoración única y los proyectos contados", async ({ page }) => {
+    await setup(page);
+    await page.goto("/desarrollo-de-aplicaciones-vigo");
+    const facts = page.getByTestId("m-landing-key-facts");
+    await expect(facts).toContainText("5,0 sobre 5 · 23 reseñas");
+    await expect(facts.locator('a[href="/projects"]')).toContainText("publicados");
+    await expect(facts).toContainText("React Native y Expo");
+  });
+
   test("primera pantalla: h1, CTA lima al formulario y WhatsApp con el mensaje de la landing", async ({ page }) => {
     await setup(page);
     await page.goto("/desarrollo-de-aplicaciones-vigo");
