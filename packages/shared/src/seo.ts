@@ -47,19 +47,10 @@ export const BUSINESS = {
   /** Enlace corto de GBP que abre directamente el formulario de reseña. */
   reviewUrl: "https://g.page/r/CeTTw-Rv4wz8EBM/review",
   foundingYear: 2020,
-  /**
-   * Fundador: el mismo `Person` que emite `pablo.actiondev.es` y que firma el
-   * blog (`AUTHORS` de `authors.ts`, con el mismo `@id`). Va aquí y no se
-   * importa de `authors.ts` porque ese módulo importa `ORGANIZATION_ID` de
-   * este: el ciclo dejaría uno de los dos sin inicializar. Sin `jobTitle` en
-   * el JSON-LD de la organización: el cargo está pendiente de confirmar
-   * (plan AEO, §4.2) y el nodo completo vive en su web.
-   */
-  founder: {
-    name: "Pablo Cabaleiro",
-    url: "https://pablo.actiondev.es",
-    schemaId: "https://pablo.actiondev.es/#person",
-  },
+  // Sin `founder`: el cargo de Pablo Cabaleiro («fundador / director técnico»)
+  // está pendiente de confirmar por el dueño (plan AEO, §4.2) y ni el repo ni
+  // pablo.actiondev.es (solo `worksFor`) lo respaldan. Su `Person` ya enlaza
+  // con la organización desde su web y desde la firma del blog.
   /** Idiomas de trabajo (BCP 47): español e inglés (`llms.txt`, «Bilingual operation»). */
   languages: ["es", "en"],
   /**
@@ -67,7 +58,7 @@ export const BUSINESS = {
    * proyectos (`technologies` de `projects.ts`, comprobadas en vivo el
    * 2026-10-09), las landings o esta misma web: React Native y Expo (Óscar
    * Soto, Tratum, XauLabs), React con Next.js (PBB) o Vite (Musa, Samoa…),
-   * Node.js (Koopey, Timetracker), Shopify (Canelita, Cliché), Three.js y
+   * Node.js (Timetracker; Koopey es Shopify), Shopify (Canelita, Cliché), Three.js y
    * TypeScript (actiondev.es). Sin Flutter, Swift, Kotlin, Supabase ni Stripe:
    * ningún proyecto publicado los usa.
    */
@@ -237,12 +228,6 @@ export function organizationSchema(description: string = ORGANIZATION_DESCRIPTIO
     description,
     disambiguatingDescription: ORGANIZATION_DISAMBIGUATION,
     foundingDate: String(BUSINESS.foundingYear),
-    founder: {
-      "@type": "Person",
-      "@id": BUSINESS.founder.schemaId,
-      name: BUSINESS.founder.name,
-      url: BUSINESS.founder.url,
-    },
     knowsAbout: [...BUSINESS.knowsAbout],
     knowsLanguage: [...BUSINESS.languages],
     email: BUSINESS.email,

@@ -24,7 +24,7 @@ test.describe("Móvil v2 · sobre nosotros", () => {
 
     await expect(page.getByTestId("m-about-h1")).toBeVisible();
     await expect(page.getByTestId("m-about-rating")).toHaveAttribute("href", "https://maps.google.com/?cid=18162141466997281764");
-    await expect(page.getByTestId("m-about-facts").locator("dt")).toHaveCount(12);
+    await expect(page.getByTestId("m-about-facts").locator("dt")).toHaveCount(11);
     await expect(page.getByTestId("m-landing-case")).toHaveCount(5);
     await expect(page.getByTestId("m-about-faq").locator("h3")).toHaveCount(9);
     // Barra fija desde el principio; se esconde con el CTA del final a la vista.

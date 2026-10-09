@@ -847,7 +847,7 @@ test.describe("Sobre nosotros (página de la entidad)", () => {
     const description = await page.locator('meta[name="description"]').getAttribute("content");
     expect(description?.length).toBeLessThanOrEqual(155);
 
-    // Ficha de la entidad: un <dl> con titular, oficina y fundador, todo visible.
+    // Ficha de la entidad: un <dl> con titular, oficina y equipo, todo visible.
     const facts = page.getByTestId("about-facts");
     await expect(facts).toBeVisible();
     for (const text of ["Alcasi Systems, S.L.", "B72910664", "Rúa Colón, 20", "Pablo Cabaleiro", "React Native"]) {
@@ -882,7 +882,9 @@ test.describe("Sobre nosotros (página de la entidad)", () => {
     const org = nodes.find((n) => n["@id"] === ORG);
     expect(org?.name).toBe("Action Development");
     expect(org?.description).toMatch(/^Action Development es /);
-    expect(org?.founder?.["@id"]).toBe("https://pablo.actiondev.es/#person");
+    // Sin `founder` hasta que el dueño confirme el cargo (plan AEO, §4.2).
+    expect(org?.founder).toBeUndefined();
+    await expect(facts).not.toContainText("Fundador");
     expect(org?.geo).toMatchObject({ latitude: 42.2372544, longitude: -8.7206586 });
     expect(blocks.join(" ")).not.toMatch(/aggregateRating|"Review"/);
     expect(errors).toHaveLength(0);

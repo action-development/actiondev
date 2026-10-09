@@ -84,7 +84,12 @@ export function isExternal(href: string): boolean {
 
 const { rating: RATING, count: REVIEW_COUNT } = reviewSummary();
 const PROJECT_COUNT = projects.length;
-const FOUNDER_ROLE = AUTHORS["pablo-cabaleiro"].role.toLowerCase();
+/**
+ * Pablo Cabaleiro con el cargo que ya publican su web y la firma del blog
+ * (`AUTHORS`). NO «fundador»: está pendiente de confirmar (plan AEO, §4.2).
+ */
+const TEAM_MEMBER = AUTHORS["pablo-cabaleiro"];
+const TEAM_MEMBER_ROLE = TEAM_MEMBER.role.toLowerCase();
 const WHATSAPP_HREF = whatsappHref(GENERIC_WHATSAPP_TEXT);
 
 const list = new Intl.ListFormat("es", { type: "conjunction" });
@@ -112,7 +117,8 @@ export const ABOUT_INTRO = [
 /** Tres cifras de la primera pantalla. El rótulo y el valor se pintan igual en los dos árboles. */
 export const ABOUT_STATS: readonly { value: string; label: string; href: string; cta: string }[] = [
   { value: RATING, label: `${REVIEW_COUNT} reseñas en Google`, href: BUSINESS.mapsUrl, cta: "Leerlas en Google" },
-  { value: String(PROJECT_COUNT), label: "proyectos publicados", href: "/projects", cta: "Ver los proyectos" },
+  // «En el portfolio» y no «publicados»: la lista incluye Tratum, aún en desarrollo.
+  { value: String(PROJECT_COUNT), label: "proyectos en el portfolio", href: "/projects", cta: "Ver los proyectos" },
   { value: BUSINESS.address.street, label: `Oficina en ${BUSINESS.address.locality}`, href: BUSINESS.mapsUrl, cta: "Cómo llegar" },
 ];
 
@@ -137,12 +143,12 @@ export const ABOUT_FACTS: readonly AboutFact[] = [
     ],
   },
   {
-    label: "Fundador",
-    value: [{ text: BUSINESS.founder.name, href: BUSINESS.founder.url }, `, ${FOUNDER_ROLE}`],
-  },
-  {
     label: "Equipo",
-    value: ["Diseño, desarrollo móvil y web, backend y mantenimiento con el mismo equipo interno, sin subcontratas"],
+    value: [
+      "Diseño, desarrollo móvil y web, backend y mantenimiento con el mismo equipo interno, sin subcontratas. En él está ",
+      { text: TEAM_MEMBER.name, href: TEAM_MEMBER.url },
+      `, ${TEAM_MEMBER_ROLE}`,
+    ],
   },
   {
     label: "Qué hace",
@@ -168,7 +174,7 @@ export const ABOUT_FACTS: readonly AboutFact[] = [
   {
     label: "Proyectos",
     value: [
-      { text: `${PROJECT_COUNT} proyectos publicados`, href: "/projects" },
+      { text: `${PROJECT_COUNT} proyectos en el portfolio`, href: "/projects" },
       `, con clientes en ${list.format(CLIENT_LOCALITIES)}, entre otros`,
     ],
   },
@@ -316,9 +322,9 @@ export const ABOUT_FAQS: readonly AboutFaq[] = [
   {
     q: "¿Quién está detrás de Action Development?",
     a: [
-      `${LEGAL_ENTITY.name} (CIF ${LEGAL_ENTITY.taxId}), sociedad inscrita en el ${LEGAL_ENTITY.registry.office}. Su fundador es `,
-      { text: BUSINESS.founder.name, href: BUSINESS.founder.url },
-      `, ${FOUNDER_ROLE}.`,
+      `${LEGAL_ENTITY.name} (CIF ${LEGAL_ENTITY.taxId}), sociedad inscrita en el ${LEGAL_ENTITY.registry.office}. En su equipo está `,
+      { text: TEAM_MEMBER.name, href: TEAM_MEMBER.url },
+      `, ${TEAM_MEMBER_ROLE}.`,
     ],
   },
   {
