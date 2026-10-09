@@ -32,8 +32,11 @@ export const BUSINESS = {
     postalCode: "36201",
     country: "ES",
   },
-  // Aproximadas a Rúa Colón 20 — verificar contra el pin exacto de la ficha GBP.
-  geo: { latitude: 42.2372, longitude: -8.7203 },
+  // Pin EXACTO de la ficha de Google Business Profile: coordenadas de la URL
+  // a la que redirige `mapsUrl` (`/maps/place/Action+Development/@42.2372544,
+  // -8.7206586`), comprobadas el 2026-10-09. Antes, 42.2372 / -8.7203
+  // (aproximadas, a ~30 m del pin).
+  geo: { latitude: 42.2372544, longitude: -8.7206586 },
   /**
    * Ficha REAL de Google Business Profile ("Action Development"), por CID.
    * Antes era una URL de búsqueda de Maps: podía enseñar a la competencia y
@@ -44,6 +47,50 @@ export const BUSINESS = {
   /** Enlace corto de GBP que abre directamente el formulario de reseña. */
   reviewUrl: "https://g.page/r/CeTTw-Rv4wz8EBM/review",
   foundingYear: 2020,
+  /**
+   * Fundador: el mismo `Person` que emite `pablo.actiondev.es` y que firma el
+   * blog (`AUTHORS` de `authors.ts`, con el mismo `@id`). Va aquí y no se
+   * importa de `authors.ts` porque ese módulo importa `ORGANIZATION_ID` de
+   * este: el ciclo dejaría uno de los dos sin inicializar. Sin `jobTitle` en
+   * el JSON-LD de la organización: el cargo está pendiente de confirmar
+   * (plan AEO, §4.2) y el nodo completo vive en su web.
+   */
+  founder: {
+    name: "Pablo Cabaleiro",
+    url: "https://pablo.actiondev.es",
+    schemaId: "https://pablo.actiondev.es/#person",
+  },
+  /** Idiomas de trabajo (BCP 47): español e inglés (`llms.txt`, «Bilingual operation»). */
+  languages: ["es", "en"],
+  /**
+   * Temas que domina la entidad (`knowsAbout`). SOLO lo que respaldan los
+   * proyectos y las landings: React Native y Expo (Óscar Soto, Tratum,
+   * XauLabs), Next.js y React (PBB, Musa, Samoa…), Supabase y Stripe (Fang
+   * Tours), Shopify (Canelita, Cliché), Three.js (Musa), Node.js (Koopey,
+   * Timetracker). Sin Flutter, Swift ni Kotlin: no hay un proyecto que los use.
+   */
+  knowsAbout: [
+    "Desarrollo de aplicaciones móviles",
+    "iOS",
+    "Android",
+    "React Native",
+    "Expo",
+    "Software a medida",
+    "ERP a medida",
+    "Control horario",
+    "Integraciones de software",
+    "Desarrollo web",
+    "Next.js",
+    "React",
+    "TypeScript",
+    "Node.js",
+    "Supabase",
+    "Stripe",
+    "Comercio electrónico",
+    "Shopify",
+    "Three.js",
+    "Diseño web",
+  ],
   social: {
     // `@action.dev` NO existe (el `sameAs` del JSON-LD apuntaba a un perfil
     // vacío): el perfil real es `@actiondev.es`.
@@ -144,6 +191,19 @@ export const SERVICE_LANDINGS = [
 export const ORGANIZATION_ID = `${BUSINESS.domain}/#organization`;
 
 /**
+ * Descripción de la entidad en el JSON-LD, la MISMA en escritorio, en la web
+ * móvil v2 y en la zona mobile antigua. Empieza por «Action Development es…»:
+ * con «Action es…» los motores de IA la mezclaban con la cadena de tiendas
+ * Action (plan AEO, §4.1 y §4.3).
+ */
+export const ORGANIZATION_DESCRIPTION =
+  "Action Development es un estudio de desarrollo de software con oficina en Vigo (Rúa Colón, 20) que diseña y programa apps para iOS y Android, software a medida y webs, con el mismo equipo interno de principio a fin.";
+
+/** Qué NO es la entidad (`disambiguatingDescription`): la cadena de tiendas Action y otras «Action Development». */
+export const ORGANIZATION_DISAMBIGUATION =
+  "Estudio de desarrollo de software de Vigo (España). No tiene relación con la cadena de tiendas de descuento Action ni con otras empresas llamadas Action Development fuera de España.";
+
+/**
  * JSON-LD de la entidad de negocio: UN solo nodo `Organization` +
  * `ProfessionalService`. Antes eran dos nodos con nombres distintos
  * ("Action" y "Action Digital Agency") y Google veía dos entidades en vez de
@@ -156,7 +216,7 @@ export const ORGANIZATION_ID = `${BUSINESS.domain}/#organization`;
  * HTML es "spammy structured markup". Las reseñas cuentan en la ficha de
  * Google Business Profile, no aquí.
  */
-export function organizationSchema(description?: string) {
+export function organizationSchema(description: string = ORGANIZATION_DESCRIPTION) {
   return {
     "@type": ["Organization", "ProfessionalService"],
     "@id": ORGANIZATION_ID,
@@ -173,8 +233,17 @@ export function organizationSchema(description?: string) {
     url: BUSINESS.domain,
     logo: `${BUSINESS.domain}/logos/logo.webp`,
     image: `${BUSINESS.domain}/logos/logo.webp`,
-    ...(description && { description }),
+    description,
+    disambiguatingDescription: ORGANIZATION_DISAMBIGUATION,
     foundingDate: String(BUSINESS.foundingYear),
+    founder: {
+      "@type": "Person",
+      "@id": BUSINESS.founder.schemaId,
+      name: BUSINESS.founder.name,
+      url: BUSINESS.founder.url,
+    },
+    knowsAbout: [...BUSINESS.knowsAbout],
+    knowsLanguage: [...BUSINESS.languages],
     email: BUSINESS.email,
     telephone: BUSINESS.phoneE164,
     priceRange: "€€",
@@ -192,11 +261,25 @@ export function organizationSchema(description?: string) {
       longitude: BUSINESS.geo.longitude,
     },
     hasMap: BUSINESS.mapsUrl,
+    // Contacto comercial: WhatsApp (el número solo atiende WhatsApp, pero el
+    // E.164 es el mismo) y email, en los dos idiomas de trabajo.
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        telephone: BUSINESS.phoneE164,
+        email: BUSINESS.email,
+        url: `${BUSINESS.domain}/contact`,
+        availableLanguage: [...BUSINESS.languages],
+        areaServed: { "@type": "Country", name: "España" },
+      },
+    ],
+    // De lo local a lo general: en persona en Vigo y la provincia, a
+    // distancia en Galicia y España. Las ciudades sueltas de antes (A Coruña,
+    // Santiago) caben en Galicia; cada landing declara la suya en su `Service`.
     areaServed: [
       { "@type": "City", name: "Vigo" },
-      { "@type": "City", name: "Pontevedra" },
-      { "@type": "City", name: "A Coruña" },
-      { "@type": "City", name: "Santiago de Compostela" },
+      { "@type": "AdministrativeArea", name: "Provincia de Pontevedra" },
       { "@type": "AdministrativeArea", name: "Galicia" },
       // `name` es el nombre del país, no su código ISO (que ya va en
       // `addressCountry`): con "ES" el nodo decía que se sirve a un sitio
@@ -219,6 +302,12 @@ export function organizationSchema(description?: string) {
         },
       })),
     },
+    // Solo perfiles PROPIOS que resuelven y son de la marca (comprobado el
+    // 2026-10-09: la ficha de Google redirige a «Action Development», el
+    // LinkedIn es «Action Development | LinkedIn» con actiondev.es y Vigo, y
+    // el Instagram es @actiondev.es). Ni el GitHub (es el repo del sitio, no
+    // un perfil de marca) ni directorios sin reclamar: cada perfil de
+    // directorio entra cuando esté reclamado y con datos correctos.
     sameAs: [BUSINESS.mapsUrl, BUSINESS.social.instagram, BUSINESS.social.linkedin],
   };
 }

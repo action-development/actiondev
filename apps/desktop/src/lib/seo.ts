@@ -33,14 +33,24 @@ export const LEGAL_UPDATED = "2026-10-08";
 
 export const SITE_URL = BUSINESS.domain;
 
+/**
+ * Nombre del sitio para lo que leen las máquinas: `og:site_name`,
+ * `application-name` y el `name` del manifest. «Action Development», el mismo
+ * que el `WebSite` y la `Organization` del JSON-LD y que la ficha de Google:
+ * «Action» a secas es también la cadena de tiendas (plan AEO, §4.1).
+ *
+ * La plantilla VISIBLE de los títulos sigue en « — Action» (`BRAND.name`):
+ * con « — Action Development» los títulos largos pasan de 60 caracteres y
+ * Google cortaría justo la marca.
+ */
+export const SITE_NAME = BUSINESS.alternateName;
+
 export const BRAND = {
   name: BUSINESS.name,
   legalName: BUSINESS.legalName,
   tagline: "Desarrollo de Aplicaciones y Webs en Vigo",
   shortDescription:
     "Agencia de desarrollo de aplicaciones y páginas web en Vigo. Apps iOS y Android, webs a medida y experiencias 3D para empresas de Pontevedra y toda Galicia. ★ 5,0 en Google.",
-  longDescription:
-    "Action es una agencia de desarrollo digital con sede en Vigo (Rúa Colón, 20) especializada en desarrollo de aplicaciones móviles iOS y Android, desarrollo web a medida, diseño web premium y experiencias 3D interactivas. Trabajamos con empresas de Vigo, Pontevedra y toda Galicia — del concepto a la publicación en App Store y Google Play, con el mismo equipo senior en todas las fases.",
   keywords: [
     "desarrollo de aplicaciones Vigo",
     "desarrollo de apps Vigo",

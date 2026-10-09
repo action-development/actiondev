@@ -32,11 +32,12 @@ export function StructuredData({ kind }: StructuredDataProps) {
 function buildSchema(kind: SchemaKind): object {
   switch (kind) {
     // Organization + ProfessionalService en un solo nodo, compartido con
-    // mobile (ver `organizationSchema` en @actiondev/shared).
+    // mobile (ver `organizationSchema` en @actiondev/shared), con la MISMA
+    // descripción en los tres sitios (`ORGANIZATION_DESCRIPTION`).
     case "organization":
       return {
         "@context": "https://schema.org",
-        ...organizationSchema(BRAND.longDescription),
+        ...organizationSchema(),
       };
 
     // Mismo generador que la zona mobile: `name` = «Action Development».
