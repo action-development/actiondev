@@ -573,7 +573,7 @@ export const landings: Landing[] = [
     h1: "Diseño de tiendas online en Vigo",
     intro: [
       "Action Development diseña y desarrolla tiendas online para marcas y comercios de Vigo y su área que quieren vender más allá de su escaparate. Una tienda online no es una web con un carrito: es un canal de venta que tiene que cargar rápido en el móvil, cobrar sin fricción y encajar con el resto de tu negocio — stock, pedidos, envíos.",
-      "Trabajamos con Shopify y con desarrollo propio, y te decimos cuál te conviene con tu catálogo delante. Hemos montado tiendas Shopify para Canelita, Cliché, Nabi Cosmética o Cachadas, y una tienda a medida con capa en tiempo real para Koopey.",
+      "Trabajamos con Shopify y con desarrollo propio, y te decimos cuál te conviene con tu catálogo delante. Hemos montado tiendas Shopify para Canelita, Cliché, Koopey, Nabi Cosmética o Cachadas.",
     ],
     localContext: {
       title: "Vender online desde Vigo",
