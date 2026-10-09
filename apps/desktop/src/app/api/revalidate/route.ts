@@ -40,8 +40,11 @@ export async function POST(request: Request) {
       revalidatePath(`/m/projects/${project}`);
     }
   }
-  // El post nuevo tiene que aparecer también en el sitemap (y en IndexNow).
+  // El post nuevo tiene que aparecer también en el sitemap (y en IndexNow) y
+  // en las guías de `/llms.txt` y `/llms-full.txt` (generados, `lib/llms.ts`).
   revalidatePath("/sitemap.xml");
+  revalidatePath("/llms.txt");
+  revalidatePath("/llms-full.txt");
 
   return NextResponse.json({ revalidated: true });
 }
