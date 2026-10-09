@@ -5,6 +5,7 @@ import {
   LEGAL_ENTITY,
   ogImage,
   REGISTERED_ADDRESS_LINE,
+  SITE_NAME,
   absoluteUrl,
 } from "@/lib/seo";
 import type { LegalSlots } from "../LegalSlots";
@@ -42,7 +43,7 @@ export const PRIVACY_METADATA: Metadata = {
     type: "website",
     locale: "es_ES",
     url: absoluteUrl("/legal/privacy"),
-    siteName: BUSINESS.name,
+    siteName: SITE_NAME,
     title: "Política de privacidad — Action",
     description:
       "Qué datos personales trata Alcasi Systems, S.L. a través de actiondev.es, con qué base legal y cómo ejercer tus derechos.",

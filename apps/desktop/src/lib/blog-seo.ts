@@ -8,7 +8,7 @@ import {
   type BlogPost,
 } from "@actiondev/shared";
 import type { Landing } from "@/data/landings";
-import { OG_IMAGE, SITE_URL, absoluteUrl, metaDescription, ogImage } from "@/lib/seo";
+import { OG_IMAGE, SITE_NAME, SITE_URL, absoluteUrl, metaDescription, ogImage } from "@/lib/seo";
 
 /**
  * Blog (`/blog` y `/blog/[slug]`): metadatos, JSON-LD y utilidades del cuerpo
@@ -33,7 +33,7 @@ export const BLOG_METADATA: Metadata = {
     type: "website",
     locale: "es_ES",
     url: absoluteUrl("/blog"),
-    siteName: "Action",
+    siteName: SITE_NAME,
     title: "Guías sobre apps, software y webs — Action",
     description:
       "Guías y artículos sobre desarrollo de aplicaciones, desarrollo web y diseño digital.",
@@ -182,7 +182,7 @@ export function postMetadata(post: BlogPost): Metadata {
       type: "article",
       locale: "es_ES",
       url: absoluteUrl(`/blog/${post.slug}`),
-      siteName: "Action",
+      siteName: SITE_NAME,
       title: post.title,
       description,
       publishedTime: post.date,

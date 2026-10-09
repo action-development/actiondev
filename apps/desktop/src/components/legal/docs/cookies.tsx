@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BUSINESS, LEGAL_ENTITY, absoluteUrl, ogImage } from "@/lib/seo";
+import { BUSINESS, LEGAL_ENTITY, SITE_NAME, absoluteUrl, ogImage } from "@/lib/seo";
 import type { LegalSlots } from "../LegalSlots";
 
 /**
@@ -42,7 +42,7 @@ export const COOKIES_METADATA: Metadata = {
     type: "website",
     locale: "es_ES",
     url: absoluteUrl("/legal/cookies"),
-    siteName: BUSINESS.name,
+    siteName: SITE_NAME,
     title: "Política de cookies — Action",
     description:
       "actiondev.es solo instala cookies de analítica y de medición de campañas si las aceptas en el banner. Qué cookies usa y cómo cambiar tu decisión.",

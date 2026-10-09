@@ -5,6 +5,7 @@ import {
   LEGAL_ENTITY,
   ogImage,
   REGISTERED_ADDRESS_LINE,
+  SITE_NAME,
   absoluteUrl,
 } from "@/lib/seo";
 import type { LegalSlots } from "../LegalSlots";
@@ -30,7 +31,7 @@ export const TERMS_METADATA: Metadata = {
     type: "website",
     locale: "es_ES",
     url: absoluteUrl("/legal/terms"),
-    siteName: BUSINESS.name,
+    siteName: SITE_NAME,
     title: "Términos y condiciones — Action",
     description:
       "Condiciones de contratación de servicios de desarrollo con Alcasi Systems, S.L., titular de la marca Action Development.",

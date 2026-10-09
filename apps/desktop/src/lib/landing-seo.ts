@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ORGANIZATION_ID, WEBSITE_ID, projects, type Project } from "@actiondev/shared";
 import type { Landing, LandingCase } from "@/data/landings";
 import { testimonials, type Testimonial } from "@/data/testimonials";
-import { SITE_URL, absoluteUrl, ogImage } from "@/lib/seo";
+import { SITE_NAME, SITE_URL, absoluteUrl, ogImage } from "@/lib/seo";
 
 /**
  * Landings SEO (`/[landing]`): metadatos, JSON-LD y contenido resuelto. Fuente
@@ -28,7 +28,7 @@ export function landingMetadata(landing: Landing): Metadata {
       type: "website",
       locale: "es_ES",
       url: absoluteUrl(`/${landing.slug}`),
-      siteName: "Action",
+      siteName: SITE_NAME,
       title: landing.title,
       description: landing.metaDescription,
       images: [image],

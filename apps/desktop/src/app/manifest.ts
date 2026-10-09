@@ -1,9 +1,11 @@
 import type { MetadataRoute } from "next";
-import { BRAND } from "@/lib/seo";
+import { BRAND, SITE_NAME } from "@/lib/seo";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${BRAND.name} — ${BRAND.tagline}`,
+    // Nombre largo de la entidad (`SITE_NAME`); el corto se queda en «Action»:
+    // Android e iOS recortan el rótulo del icono hacia los 12 caracteres.
+    name: `${SITE_NAME} — ${BRAND.tagline}`,
     short_name: BRAND.name,
     description: BRAND.shortDescription,
     start_url: "/",

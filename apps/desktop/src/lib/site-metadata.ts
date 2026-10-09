@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { BRAND, SITE_URL, SOCIAL, OG_IMAGE } from "@/lib/seo";
+import { BRAND, SITE_NAME, SITE_URL, SOCIAL, OG_IMAGE } from "@/lib/seo";
 
 /**
  * Metadatos raíz del sitio, compartidos por los DOS layouts raíz
@@ -27,7 +27,7 @@ export const ROOT_METADATA: Metadata = {
   },
   description: HOME_DESCRIPTION,
   keywords: [...BRAND.keywords],
-  applicationName: BRAND.name,
+  applicationName: SITE_NAME,
   authors: [{ name: BRAND.legalName, url: SITE_URL }],
   creator: BRAND.legalName,
   publisher: BRAND.legalName,
@@ -39,7 +39,7 @@ export const ROOT_METADATA: Metadata = {
     type: "website",
     locale: BRAND.locale,
     url: SITE_URL,
-    siteName: BRAND.name,
+    siteName: SITE_NAME,
     title: `${BRAND.name} — ${BRAND.tagline}`,
     description: HOME_DESCRIPTION,
     images: [

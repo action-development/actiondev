@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ORGANIZATION_ID, WEBSITE_ID, hasCaseStudy, projects } from "@actiondev/shared";
-import { BRAND, BUSINESS, SITE_URL, absoluteUrl, ogImage } from "@/lib/seo";
+import { BUSINESS, SITE_NAME, SITE_URL, absoluteUrl, ogImage } from "@/lib/seo";
 
 /**
  * Metadatos y JSON-LD del índice `/projects`: una sola fuente para la sala
@@ -19,7 +19,7 @@ export const PROJECTS_METADATA: Metadata = {
     type: "website",
     locale: "es_ES",
     url: absoluteUrl("/projects"),
-    siteName: BRAND.name,
+    siteName: SITE_NAME,
     title: `${TITLE} — Action`,
     description: "Una máquina recreativa por cada proyecto de Action. Elige una y juega.",
     images: [ogImage(`${TITLE} — Action`)],

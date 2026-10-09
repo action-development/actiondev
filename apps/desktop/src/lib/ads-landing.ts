@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { projects, type Project } from "@actiondev/shared";
 import type { AdsCase, AdsLanding } from "@/data/ads-landings";
 import { GOOGLE_REVIEW_COUNT, testimonials, type Testimonial } from "@/data/testimonials";
-import { OG_IMAGE, absoluteUrl } from "@/lib/seo";
+import { OG_IMAGE, SITE_NAME, absoluteUrl } from "@/lib/seo";
 
 /**
  * Landings de campaña (`/hablemos/[oferta]`): metadatos y contenido resuelto.
@@ -24,7 +24,7 @@ export function adsLandingMetadata(landing: AdsLanding): Metadata {
       type: "website",
       locale: "es_ES",
       url: absoluteUrl(path),
-      siteName: "Action",
+      siteName: SITE_NAME,
       title: `${landing.title} — Action`,
       description: landing.metaDescription,
       images: [

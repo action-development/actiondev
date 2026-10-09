@@ -9,7 +9,7 @@ import {
   type Project,
 } from "@actiondev/shared";
 import { projectCategoryLabel, relatedService } from "@/lib/project-case";
-import { SITE_URL, absoluteUrl, metaDescription, ogImage } from "@/lib/seo";
+import { SITE_NAME, SITE_URL, absoluteUrl, metaDescription, ogImage } from "@/lib/seo";
 
 /**
  * SEO de la ficha de proyecto (`/projects/[slug]`): una sola fuente para la
@@ -71,7 +71,7 @@ export function projectMetadata(project: Project): Metadata {
       type: "article",
       locale: "es_ES",
       url: absoluteUrl(`/projects/${project.slug}`),
-      siteName: "Action",
+      siteName: SITE_NAME,
       title: `${title} — Action`,
       description,
       images: [image],

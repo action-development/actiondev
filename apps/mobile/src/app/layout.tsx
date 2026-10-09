@@ -45,7 +45,8 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: locale === "es" ? "es_ES" : "en_US",
       type: "website",
       url: SITE_URL,
-      siteName: "Action",
+      // El nombre largo de la entidad, como el `WebSite` del JSON-LD y la web de escritorio.
+      siteName: BUSINESS.alternateName,
       images: [{ url: OG_IMAGE_URL, width: 1200, height: 630, alt: t.title }],
     },
     twitter: {

@@ -21,6 +21,9 @@ export const RESENAS_METADATA: Metadata = {
     type: "website",
     locale: "es_ES",
     url: absoluteUrl("/resenas"),
+    // «Action» y no `SITE_NAME` mientras siga la copia: la página de escritorio
+    // (`(site)/resenas/page.tsx`, sin commitear) emite `BRAND.name`, y los dos
+    // árboles tienen que servir el mismo Open Graph. Unificar al commitearla.
     siteName: BRAND.name,
     title: "Reseñas de clientes en Vigo — Action",
     description: "Lo que opinan nuestros clientes de Action, en una plaza 3D interactiva.",

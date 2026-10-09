@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ORGANIZATION_ID, WEBSITE_ID } from "@actiondev/shared";
-import { BRAND, BUSINESS, SITE_URL, absoluteUrl, ogImage } from "@/lib/seo";
+import { BUSINESS, SITE_NAME, SITE_URL, absoluteUrl, ogImage } from "@/lib/seo";
 
 /**
  * Metadatos de `/contact`: una sola fuente para la calle 3D de escritorio
@@ -19,7 +19,7 @@ export const CONTACT_METADATA: Metadata = {
     type: "website",
     locale: "es_ES",
     url: absoluteUrl("/contact"),
-    siteName: BRAND.name,
+    siteName: SITE_NAME,
     title: "Contacto — Agencia de desarrollo en Vigo — Action",
     description: "WhatsApp, email o te llamamos nosotros: te responde una persona del equipo.",
     images: [ogImage(`${TITLE} — Action`)],

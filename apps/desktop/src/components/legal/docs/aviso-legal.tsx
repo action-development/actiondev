@@ -5,6 +5,7 @@ import {
   LEGAL_ENTITY,
   ogImage,
   REGISTERED_ADDRESS_LINE,
+  SITE_NAME,
   SITE_URL,
   absoluteUrl,
 } from "@/lib/seo";
@@ -31,7 +32,7 @@ export const AVISO_LEGAL_METADATA: Metadata = {
     type: "website",
     locale: "es_ES",
     url: absoluteUrl("/legal/aviso-legal"),
-    siteName: BUSINESS.name,
+    siteName: SITE_NAME,
     title: "Aviso legal — Action",
     description:
       "Datos identificativos del titular de actiondev.es: Alcasi Systems, S.L., CIF B72910664.",

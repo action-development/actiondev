@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ORGANIZATION_ID, WEBSITE_ID } from "@actiondev/shared";
 import { landings, type Landing } from "@/data/landings";
-import { SITE_URL, absoluteUrl, ogImage } from "@/lib/seo";
+import { SITE_NAME, SITE_URL, absoluteUrl, ogImage } from "@/lib/seo";
 
 /**
  * Hub /servicios: grupos, metadatos y JSON-LD. Fuente ÚNICA compartida por la
@@ -57,7 +57,7 @@ export const SERVICIOS_METADATA: Metadata = {
     type: "website",
     locale: "es_ES",
     url: absoluteUrl("/servicios"),
-    siteName: "Action",
+    siteName: SITE_NAME,
     title: "Servicios: Apps, Software a Medida y Webs — Action",
     description:
       "Desarrollo de aplicaciones, software a medida, desarrollo y diseño web y tiendas online para empresas de Vigo, Pontevedra y Galicia.",
@@ -79,7 +79,7 @@ export const SERVICIOS_JSON_LD = {
       "@type": "CollectionPage",
       "@id": SERVICIOS_URL,
       url: SERVICIOS_URL,
-      name: "Servicios de Action — Desarrollo de aplicaciones y diseño web",
+      name: "Servicios de Action Development — Desarrollo de aplicaciones y diseño web",
       inLanguage: "es",
       isPartOf: { "@id": WEBSITE_ID },
       about: { "@id": ORGANIZATION_ID },
