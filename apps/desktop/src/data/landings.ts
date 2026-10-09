@@ -553,7 +553,7 @@ export const landings: Landing[] = [
       { slug: "desarrollo-web-pontevedra", label: "Diseño y desarrollo web en la provincia" },
     ],
     hubSummary:
-      "Dirección de arte, motion y 3D para marcas que no quieren una plantilla. Casos: Samoa Café, Almudena Muhle y Patricia Avendaño.",
+      "Dirección de arte, motion y 3D (como esta misma web) para marcas que no quieren una plantilla. Casos: Samoa Café, Almudena Muhle y Patricia Avendaño.",
   },
 
   // ───────────────────────────────────────────────────────────────────
