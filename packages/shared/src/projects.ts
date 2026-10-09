@@ -726,12 +726,12 @@ export const projects: Project[] = [
     featured: true,
     color: "#171717",
     brief: [
-      "A bilingual website that conveyed her international trajectory — 100+ stores across Spain and expansion into Mexico, Japan and Europe",
+      "A bilingual website that conveyed her international presence, with points of sale in Europe, the Middle East and the Americas",
       "Bridal and evening collections presented full screen",
       "Her story and an atelier appointment, straight from the website",
     ],
     briefEs: [
-      "Web bilingüe que transmitiera su trayectoria internacional —más de 100 tiendas en España y expansión a México, Japón y Europa",
+      "Web bilingüe que transmitiera su presencia internacional, con puntos de venta en Europa, Oriente Medio y América",
       "Colecciones de novia y de fiesta presentadas a pantalla completa",
       "Su historia y la cita en el atelier, desde la propia web",
     ],

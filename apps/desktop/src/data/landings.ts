@@ -587,7 +587,7 @@ export const landings: Landing[] = [
       },
       {
         title: "Ecommerce a medida",
-        text: "React y Node.js cuando necesitas algo que la plataforma no permite: reglas de precio propias, experiencias en tiempo real o un flujo de compra poco habitual, como en Koopey.",
+        text: "React y Node.js cuando necesitas algo que la plataforma no permite: reglas de precio propias, experiencias en tiempo real o un flujo de compra poco habitual.",
       },
       {
         title: "Venta de productos digitales",
@@ -610,7 +610,7 @@ export const landings: Landing[] = [
       },
       {
         slug: "koopey",
-        note: "Marca de moda que se hizo viral a nivel nacional en su lanzamiento, con cobertura en Modaes y El Español. Tienda a medida con React, Node.js y WebSocket.",
+        note: "Marca de moda que se hizo viral a nivel nacional en su lanzamiento, con cobertura en Modaes y El Español. Tienda online con un catálogo a la altura de la marca y un checkout rápido.",
       },
       {
         slug: "cliche",
@@ -1509,7 +1509,7 @@ export const landings: Landing[] = [
       },
       {
         slug: "patricia-avendano",
-        note: "Web bilingüe para una diseñadora de moda nupcial con más de 100 tiendas en España y presencia en México, Japón y Europa.",
+        note: "Web bilingüe para una diseñadora de novia y de fiesta nacida en Vigo, con puntos de venta en Europa, Oriente Medio y América.",
       },
     ],
     sections: [
