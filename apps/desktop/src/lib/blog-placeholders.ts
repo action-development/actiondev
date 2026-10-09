@@ -14,11 +14,11 @@ export const PLACEHOLDER_POSTS: BlogPost[] = [
   {
     id: "placeholder-1",
     slug: "apps-nativas-o-multiplataforma",
-    title: "Apps nativas o multiplataforma: cómo decidir sin equivocarte",
+    title: "App nativa o multiplataforma: cómo decidir",
     metaDescription:
       "Nativas vs. multiplataforma para tu próxima app: rendimiento, coste, tiempos y cuándo cada opción es la correcta. Guía de Action, agencia de desarrollo en Vigo.",
     category: "Desarrollo de apps",
-    date: "2026-09-08",
+    date: "2026-09-30",
     readingTime: 6,
     h1: "Apps nativas o multiplataforma: cómo decidir sin equivocarte",
     excerpt:
@@ -60,11 +60,11 @@ export const PLACEHOLDER_POSTS: BlogPost[] = [
   {
     id: "placeholder-2",
     slug: "senales-web-pierde-clientes",
-    title: "Cinco señales de que tu web está perdiendo clientes sin que lo sepas",
+    title: "Cinco señales de que tu web pierde clientes",
     metaDescription:
       "Velocidad, mobile, CTAs, SEO local y confianza: las cinco señales técnicas que indican que tu web está perdiendo clientes en Google. Guía de Action, Vigo.",
     category: "SEO y diseño web",
-    date: "2026-08-22",
+    date: "2026-09-30",
     readingTime: 5,
     h1: "Cinco señales de que tu web está perdiendo clientes sin que lo sepas",
     excerpt:
@@ -101,14 +101,16 @@ export const PLACEHOLDER_POSTS: BlogPost[] = [
   },
   {
     id: "placeholder-3",
-    slug: "que-mirar-antes-de-contratar-agencia-vigo",
-    title: "Qué mirar antes de contratar una agencia de desarrollo en Vigo",
+    // `que-mirar-antes-de-contratar-agencia-vigo` hace 301 aquí (next.config.ts):
+    // el ejemplo vive ya en el slug de destino, como en Firestore.
+    slug: "como-elegir-agencia-desarrollo-web-galicia",
+    title: "Cómo elegir agencia de desarrollo web en Galicia",
     metaDescription:
-      "Preguntas clave antes de contratar una agencia de desarrollo web o de apps en Vigo: equipo real, subcontratas, presupuesto cerrado y mantenimiento. Guía de Action.",
-    category: "Guías",
-    date: "2026-07-30",
+      "Criterios para elegir agencia de desarrollo web en Galicia: trabajo verificable, trato directo, presupuesto cerrado, código propio y mantenimiento.",
+    category: "Desarrollo web",
+    date: "2026-09-29",
     readingTime: 4,
-    h1: "Qué mirar antes de contratar una agencia de desarrollo en Vigo",
+    h1: "Cómo elegir una agencia de desarrollo web en Galicia",
     excerpt:
       "El presupuesto más barato casi nunca es el más barato al final. Esto es lo que preguntamos que nos pregunten antes de empezar un proyecto.",
     status: "published",
