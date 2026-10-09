@@ -828,3 +828,70 @@ test.describe("Conversión: landings SEO, banner de cookies y Header móvil", ()
     });
   }
 });
+
+test.describe("Sobre nosotros (página de la entidad)", () => {
+  const H1 = "Action Development, estudio de desarrollo de apps y software en Vigo";
+  const ORG = "https://actiondev.es/#organization";
+
+  test("datos, casos y preguntas visibles, con AboutPage → organización y FAQPage", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (err) => errors.push(err.message));
+    const response = await page.goto("/sobre-nosotros");
+    expect(response?.status()).toBe(200);
+
+    await expect(page.locator("h1")).toHaveCount(1);
+    await expect(page.locator("h1")).toHaveText(H1);
+    await expect(page).toHaveTitle("Sobre nosotros: estudio de apps y software en Vigo — Action");
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://actiondev.es/sobre-nosotros");
+    await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute("content", "Action Development");
+    const description = await page.locator('meta[name="description"]').getAttribute("content");
+    expect(description?.length).toBeLessThanOrEqual(155);
+
+    // Ficha de la entidad: un <dl> con titular, oficina y fundador, todo visible.
+    const facts = page.getByTestId("about-facts");
+    await expect(facts).toBeVisible();
+    for (const text of ["Alcasi Systems, S.L.", "B72910664", "Rúa Colón, 20", "Pablo Cabaleiro", "React Native"]) {
+      await expect(facts).toContainText(text);
+    }
+    await expect(facts).not.toContainText("Flutter");
+    await expect(page.locator('main a[href^="tel:"]')).toHaveCount(0);
+
+    // Casos reales enlazados a su ficha y todos los proyectos.
+    for (const slug of ["autoescuela-gti", "xaulabs", "pbb-porrino", "ticketera-la-fabrica", "nautirent"]) {
+      await expect(page.locator(`main a[href="/projects/${slug}"]`)).toHaveCount(1);
+    }
+    await expect(page.getByTestId("about-all-projects")).toHaveAttribute("href", "/projects");
+
+    // Preguntas: todas abiertas (sin acordeón), con la desambiguación de la cadena Action.
+    const faq = page.getByTestId("about-faq");
+    await expect(faq.locator("details")).toHaveCount(0);
+    await expect(faq.locator("h3")).toHaveCount(9);
+    await expect(faq).toContainText("no tiene relación con la cadena de tiendas de descuento Action");
+
+    // JSON-LD: AboutPage → #organization, FAQPage con las mismas preguntas, migas. Nunca valoraciones marcadas.
+    const blocks = await page.locator('script[type="application/ld+json"]').allTextContents();
+    const nodes = blocks.flatMap((b) => {
+      const json = JSON.parse(b);
+      return json["@graph"] ?? [json];
+    });
+    const about = nodes.find((n) => n["@type"] === "AboutPage");
+    expect(about?.mainEntity).toEqual({ "@id": ORG });
+    const faqPage = nodes.find((n) => n["@type"] === "FAQPage");
+    expect(faqPage?.mainEntity).toHaveLength(9);
+    expect(nodes.find((n) => n["@type"] === "BreadcrumbList")?.itemListElement).toHaveLength(2);
+    const org = nodes.find((n) => n["@id"] === ORG);
+    expect(org?.name).toBe("Action Development");
+    expect(org?.description).toMatch(/^Action Development es /);
+    expect(org?.founder?.["@id"]).toBe("https://pablo.actiondev.es/#person");
+    expect(org?.geo).toMatchObject({ latitude: 42.2372544, longitude: -8.7206586 });
+    expect(blocks.join(" ")).not.toMatch(/aggregateRating|"Review"/);
+    expect(errors).toHaveLength(0);
+  });
+
+  test("la enlazan el pie de las páginas de lectura y el sitemap", async ({ page, request }) => {
+    await page.goto("/servicios");
+    await expect(page.locator('footer a[href="/sobre-nosotros"]')).toHaveText("Action Development");
+    const sitemap = await (await request.get("/sitemap.xml")).text();
+    expect(sitemap).toContain("<loc>https://actiondev.es/sobre-nosotros</loc>");
+  });
+});

@@ -177,7 +177,8 @@ test.describe("Móvil v2 · base", () => {
     await expect(footer).toContainText("Rúa Colón, 20");
     await expect(page.getByTestId("m-footer-whatsapp")).toHaveAttribute("href", WHATSAPP);
     await expect(page.getByTestId("m-footer-email")).toHaveAttribute("href", "mailto:hi@actiondev.es");
-    // Rejilla 2 × 3: las mismas secciones que enlaza el Header de escritorio, más Google y contacto.
+    // Rejilla 2 × 3: las mismas secciones que enlaza el Header de escritorio, más Google y contacto,
+    // y una fila entera con la página de la entidad.
     expect(await page.getByTestId("m-footer-nav").locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")))).toEqual([
       "/projects",
       "/servicios",
@@ -185,6 +186,7 @@ test.describe("Móvil v2 · base", () => {
       "/blog",
       "https://maps.google.com/?cid=18162141466997281764",
       "/contact",
+      "/sobre-nosotros",
     ]);
     const legal = page.getByTestId("m-footer-legal");
     expect(await legal.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")))).toEqual([
