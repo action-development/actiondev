@@ -1,4 +1,4 @@
-import { GOOGLE_RATING, GOOGLE_RATING_TEXT, hasCaseStudy, projects, type BlogPost } from "@actiondev/shared";
+import { AUTHORS, GOOGLE_RATING, GOOGLE_RATING_TEXT, hasCaseStudy, projects, type BlogPost } from "@actiondev/shared";
 import { formatLegalDate } from "@/components/legal/legal-entity";
 import { landings, type Landing } from "@/data/landings";
 import {
@@ -44,13 +44,18 @@ const CLIENT_LOCALITIES = [...new Set(projects.flatMap((p) => (p.location ? [p.l
 );
 
 /**
- * Tecnologías de los proyectos publicados (`technologies` de `projects.ts`,
- * comprobadas en vivo) más las de esta misma web. Fuera lo que no es una
- * tecnología («SEO», «Mobile App», «i18n»…) y lo pendiente («TBD»).
+ * Tecnologías de los casos comprobados en vivo el 2026-10-09: React Native y
+ * Expo (XauLabs, Óscar Soto, Tratum), React con Next.js (PBB) o Vite (Musa,
+ * Samoa, Almudena Muhle, Patricia Avendaño), Node.js (Timetracker) y Shopify
+ * (Canelita, Cliché, Koopey). Escritas aquí y no sacadas de
+ * `projects.ts.technologies`, donde aún quedan datos sin revisar. Las de esta
+ * misma web van aparte.
  */
-const NOT_A_TECHNOLOGY = new Set(["TBD", "SEO", "Mobile App", "Real Estate", "i18n", "iOS", "Android", "Figma"]);
+const PROJECT_STACK = ["React Native", "Expo", "React", "Next.js", "Vite", "Node.js", "Shopify"];
 const THIS_SITE_STACK = ["Next.js", "TypeScript", "Three.js / React Three Fiber", "GSAP", "Tailwind CSS"];
-const PROJECT_STACK = [...new Set(projects.flatMap((p) => p.technologies))].filter((t) => !NOT_A_TECHNOLOGY.has(t));
+
+/** Pablo Cabaleiro con el cargo que publican su web y la firma del blog; sin «fundador» (pendiente de confirmar). */
+const TEAM_MEMBER = AUTHORS["pablo-cabaleiro"];
 
 const link = (label: string, path: string) => `[${label}](${absoluteUrl(path)})`;
 
@@ -106,13 +111,13 @@ export function buildLlmsTxt(posts: BlogPost[]): string {
     `- **Aviso legal**: ${link("actiondev.es/legal/aviso-legal", "/legal/aviso-legal")}`,
     `- **Sobre la empresa**: ${link(`actiondev.es${ABOUT_PATH}`, ABOUT_PATH)} — datos, casos, cómo trabaja y preguntas frecuentes`,
     `- **Oficina**: ${BUSINESS.address.street} — ${BUSINESS.address.postalCode} ${BUSINESS.address.locality}, ${BUSINESS.address.region}, España`,
-    `- **Fundador**: ${BUSINESS.founder.name} (${BUSINESS.founder.url})`,
+    `- **Equipo**: interno, sin subcontratas; en él está ${TEAM_MEMBER.name}, ${TEAM_MEMBER.role.toLowerCase()} (${TEAM_MEMBER.url})`,
     `- **Teléfono / WhatsApp**: ${BUSINESS.phoneDisplay}`,
     `- **Email**: ${BUSINESS.email}`,
     `- **Dominio canónico**: ${SITE_URL}`,
     `- **Google Business Profile**: ${RATING_LINE} — [ficha de Google «${SITE_NAME}»](${BUSINESS.mapsUrl})`,
     `- **Perfiles oficiales**: [Instagram @actiondev.es](${BUSINESS.social.instagram}) · [LinkedIn](${BUSINESS.social.linkedin})`,
-    `- **Proyectos publicados**: ${projects.length} en ${absoluteUrl("/projects")}, con clientes en ${list.format(CLIENT_LOCALITIES)}, entre otros`,
+    `- **Portfolio**: ${projects.length} proyectos en ${absoluteUrl("/projects")}, con clientes en ${list.format(CLIENT_LOCALITIES)}, entre otros`,
     "- **Área de servicio**: Vigo, su área (Redondela, O Porriño, Cangas, Nigrán, Baiona…) y la provincia de Pontevedra, en persona; resto de Galicia y de España, a distancia",
     "- **Idiomas**: español e inglés",
     "",
@@ -139,7 +144,7 @@ export function buildLlmsTxt(posts: BlogPost[]): string {
     "",
     "- **Type**: Software studio: mobile apps (iOS and Android), custom business software and websites",
     "- **Apps**: React Native with Expo, one codebase for iOS and Android; native development is considered when the app relies heavily on the phone's hardware",
-    `- **Stack used in published projects**: ${PROJECT_STACK.join(", ")}`,
+    `- **Stack used in client projects (checked live)**: ${PROJECT_STACK.join(", ")}`,
     `- **Stack of this website**: ${THIS_SITE_STACK.join(", ")}`,
     `- **Based in**: ${BUSINESS.address.street}, ${BUSINESS.address.postalCode} Vigo, Galicia (Spain) — in person across Vigo and the province of Pontevedra, remotely across Spain`,
     "",

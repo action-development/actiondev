@@ -909,7 +909,7 @@ test.describe("AEO: landings, valoración única y llms.txt", () => {
       const facts = page.getByTestId("landing-key-facts");
       await expect(facts.locator("dt"), slug).toHaveCount(7);
       await expect(facts, slug).toContainText(RATING);
-      await expect(facts.locator('a[href="/projects"]'), slug).toContainText("publicados");
+      await expect(facts.locator('a[href="/projects"]'), slug).toContainText("en el portfolio");
       await expect(page.locator("main"), slug).not.toContainText("22 reseñas");
     }
   });

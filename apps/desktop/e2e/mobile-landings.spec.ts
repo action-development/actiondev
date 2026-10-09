@@ -174,7 +174,7 @@ test.describe("Móvil v2 · landings SEO", () => {
     await page.goto("/desarrollo-de-aplicaciones-vigo");
     const facts = page.getByTestId("m-landing-key-facts");
     await expect(facts).toContainText("5,0 sobre 5 · 23 reseñas");
-    await expect(facts.locator('a[href="/projects"]')).toContainText("publicados");
+    await expect(facts.locator('a[href="/projects"]')).toContainText("en el portfolio");
     await expect(facts).toContainText("React Native y Expo");
   });
 

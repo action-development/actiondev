@@ -151,8 +151,8 @@ function landingKind(landing: Landing): LandingKind {
  * Qué se hace y con qué tecnología, por tipo. SOLO lo que respaldan los
  * proyectos (`technologies` de `projects.ts`, comprobadas en vivo el
  * 2026-10-09) o esta misma web: React Native y Expo (XauLabs, Óscar Soto,
- * Tratum), React y Node.js (Timetracker, Koopey), Next.js (PBB), Vite (Musa,
- * Samoa, Almudena Muhle, Patricia Avendaño), Shopify (Canelita, Cliché) y
+ * Tratum), React y Node.js (Timetracker), Next.js (PBB), Vite (Musa, Samoa,
+ * Almudena Muhle, Patricia Avendaño), Shopify (Canelita, Cliché, Koopey) y
  * Three.js (actiondev.es).
  */
 const KIND_FACTS: Record<LandingKind, { service: string; tech: string }> = {
@@ -160,7 +160,7 @@ const KIND_FACTS: Record<LandingKind, { service: string; tech: string }> = {
   software: { service: "ERP, control horario e integraciones", tech: "React y Node.js" },
   web: { service: "Webs a medida: entradas, cuotas, reservas", tech: "React con Next.js o Vite" },
   design: { service: "Diseño web con identidad, motion y 3D", tech: "React, Vite y Three.js" },
-  shop: { service: "Tiendas en Shopify o a medida", tech: "Shopify, React y Node.js" },
+  shop: { service: "Tiendas en Shopify o a medida", tech: "Shopify" },
 };
 
 export interface LandingKeyFact {
@@ -187,7 +187,8 @@ export function landingKeyFacts(landing: Landing): LandingKeyFact[] {
       href: BUSINESS.mapsUrl,
     },
     { id: "office", label: "Oficina", value: `${BUSINESS.address.street}, ${BUSINESS.address.locality}` },
-    { id: "projects", label: "Proyectos", value: `${projects.length} publicados`, href: "/projects" },
+    // «En el portfolio» y no «publicados»: la lista incluye Tratum, aún en desarrollo.
+    { id: "projects", label: "Proyectos", value: `${projects.length} en el portfolio`, href: "/projects" },
     { id: "response", label: "Respuesta", value: "En 24 horas laborables" },
     { id: "service", label: "Qué hacemos", value: kind.service },
     { id: "tech", label: "Tecnología", value: kind.tech },
