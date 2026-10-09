@@ -234,6 +234,10 @@ export const landings: Landing[] = [
         a: "Sí, y casi siempre lo recomendamos. Una primera versión con lo imprescindible llega antes a tus usuarios, y lo que aprendes de su uso real decide mejor que cualquier reunión qué construir después.",
       },
       {
+        q: "¿Hacéis apps nativas o multiplataforma?",
+        a: "Multiplataforma por defecto: con React Native y Expo publicamos en iOS y Android con una sola base de código, como en XauLabs. Cuando la app depende a fondo del hardware del teléfono — cámara, Bluetooth o localización en segundo plano con requisitos exigentes —, valoramos el desarrollo nativo.",
+      },
+      {
         q: "¿Puedo reunirme con vosotros en persona?",
         a: "Sí. La oficina está en Rúa Colón, 20 (36201 Vigo). Con clientes de Vigo y su área hacemos en persona las reuniones importantes — arranque, validación del prototipo y entrega — y el día a día avanza por videollamada, WhatsApp y versiones de prueba.",
       },
@@ -815,6 +819,10 @@ export const landings: Landing[] = [
       {
         q: "¿Qué diferencia hay entre software a medida y programación a medida?",
         a: "En la práctica, ninguna: los dos términos describen software escrito específicamente para tu empresa, en lugar de un producto genérico al que te adaptas tú. También es programación a medida una integración o una automatización, aunque no tenga pantallas.",
+      },
+      {
+        q: "¿Podéis hacer un ERP a medida para una pyme de Vigo o Pontevedra?",
+        a: "Sí. Hicimos el ERP de Autoescuela GTI, con matrículas, prácticas, exámenes y flota de coches, conectado a una app para los alumnos. Empezamos por los procesos que hoy se hacen a mano y lo construimos por módulos, para que la primera parte funcione cuanto antes.",
       },
       {
         q: "¿Podéis conectar mi ERP actual con la web o con una app?",
