@@ -129,16 +129,16 @@ Severidad: **Alta** (afecta a indexación o a cómo entiende Google la página),
 
 | URL / ámbito | Problema | Sev. | Por qué sigue abierto |
 |---|---|---|---|
-| Web móvil v2 (fase 1, pública): `/projects`, `/resenas` y las 33 fichas | No enlazan a `/blog`, y el escritorio sí (Header). Rompe la regla de oro de enlaces. En móvil, `/blog` solo recibe enlaces de la home y de los propios artículos | Media | El menú (5 entradas) y el pie (rejilla 2 × 2) son de la maqueta aprobada (DESIGN.md §7). Propuesta: pie 2 × 3 con «Blog» y «Reseñas». **Decisión de diseño** |
+| Web móvil v2 (fase 1, pública): `/projects`, `/resenas` y las 33 fichas | No enlazaban a `/blog`, y el escritorio sí (Header). Rompía la regla de oro de enlaces | Media | ✅ 9 oct (sección 9): Blog en el menú y pie 2 × 3 con Reseñas y Blog |
 | `/`, `/projects`, `/resenas` | H1 distinto en escritorio (`sr-only`) y en móvil. En `/` y `/projects` el móvil, que es el que indexa Google, es el más flojo | Media | Es copy: ver sección 5 |
 | `/resenas` | Sin `og:image:alt`. El metadata de escritorio sigue duplicado en `lib/resenas-seo.ts` | Baja | `app/(site)/resenas/page.tsx` tiene un cambio sin commitear del dueño y no se toca. Unificar cuando se commitee |
-| 404 dentro de un árbol (`/blog/x`, `/projects/x`) | Heredan title, canonical a la home e `index, follow` del layout (con el `noindex` de Next) | Baja | `not-found.tsx` no admite `metadata`. Arreglarlo exige quitar el canonical `/` de `ROOT_METADATA` y darle a la home de escritorio (client component) un layout propio. Google ignora el canonical de un 404 |
+| 404 dentro de un árbol (`/blog/x`, `/projects/x`) | Heredaban title, canonical a la home e `index, follow` del layout (con el `noindex` de Next) | Baja | ✅ 9 oct (sección 9): `not-found.tsx` server con `NOT_FOUND_METADATA` en los dos árboles |
 | `http://www.actiondev.es/` | Dos saltos: `http://www` → `https://www` → apex | Baja | Configuración de dominios de Vercel, no código |
 | Rutas con árbol móvil | `Vary: User-Agent` no llega en Vercel | Baja | Conocido (CLAUDE.md `[DEPLOY]`). La separación de cachés es correcta por el rewrite |
-| Web móvil v2, todas | 9 tipografías precargadas, una de ellas Space Grotesk, que no se usa. Render delay de LCP de 1,2-1,8 s (laboratorio) | Media | Hay que confirmar el origen (hipótesis: `global-not-found` importa el layout de escritorio) y decidir si bajar pesos de Saira o pasar a la variable. Puede cambiar el render del texto: no es «seguro» sin revisión visual |
+| Web móvil v2, todas | 9 tipografías precargadas, una de ellas Space Grotesk, que no se usa | Media | ✅ 9 oct (sección 9): causa confirmada (`global-not-found` en la capa raíz de todas las rutas importaba el layout de escritorio). Quedan las 8 de Saira, y se usan las ocho |
 | `/projects` y `/` en escritorio | TBT de 1,2 s y 240 ms, 2,1 y 1,6 MB | Media | Escenas 3D por diseño. Margen: diferir más la escena, o servir el HUD antes |
-| Fichas en escritorio | Sin enlaces a otros proyectos. Las de móvil sí los tienen (anterior/siguiente); en escritorio, Óscar Soto y Tratum solo reciben 1 enlace | Baja | Es un bloque nuevo en la ficha de escritorio. Propuesta: «Más proyectos» con los mismos vecinos que el móvil |
-| Manifest | Sin icono `maskable` | Baja | Ya estaba pendiente en CLAUDE.md |
+| Fichas en escritorio | Sin enlaces a otros proyectos; Óscar Soto y Tratum solo recibían 1 enlace | Baja | ✅ 9 oct (sección 9): «Más proyectos» en los dos árboles |
+| Manifest | Sin icono `maskable` | Baja | ✅ Ya existía (`f8a95a2`): `icon-maskable-192/512.png`, fondo lima con el globo dentro del círculo seguro. La nota de CLAUDE.md estaba desfasada y ya está corregida |
 | Medición | Sin CrUX ni datos de campo | Media | Hace falta una clave de API de PageSpeed/CrUX o Search Console con datos |
 | `og:site_name` | «Action» en todas, y el `WebSite` ahora es «Action Development» | Baja | Va con la decisión de negocio n.º 6 de la auditoría del 2 oct (sufijo « — Action Development») |
 
@@ -305,3 +305,27 @@ Propuesta, sin cambiar la marca personal ni el diseño:
   - `og:image:alt` y `apple-touch-icon` están presentes;
   - el 404 global sale con su título y `noindex, follow`.
 - **«Guías relacionadas»:** en local no hay Firestore, así que se probaron marcando dos posts de relleno con `targetLanding`, sin commitear. Salen en escritorio y en móvil con los mismos enlaces. Con datos reales, se verán al desplegar.
+
+---
+
+## 9. Segunda tanda (9 de octubre)
+
+| Ámbito | Cambio | Commit |
+|---|---|---|
+| Web móvil v2: menú y pie | «Blog» en el menú (seis entradas) y pie 2 × 3 con Reseñas y Blog. El menú decide en el servidor qué entradas navegan dentro del árbol móvil (`next/link`) y cuáles con `<a>`. Así se recupera la paridad de enlaces con el Header de escritorio | `ba02755` |
+| Web móvil v2: tipografías | **Causa confirmada:** Next mete `app/global-not-found.tsx` en la capa raíz de todas las rutas, y ese archivo importaba `(site)/layout` con Space Grotesk precargada. Ahora `global-not-found` usa `SiteDocument` y una instancia propia `preload: false`. El manifiesto de la móvil (`next-font-manifest.json` de `next dev`) pasa de 9 archivos a los 8 de Saira, y se usan los ocho (medido con Playwright en 13 rutas). Escritorio no cambia | `767ce27` |
+| Todos los 404 | `NOT_FOUND_METADATA`: «Página no encontrada — Action», `noindex, follow`, sin descripción, canonical ni Open Graph, en el 404 global y en los de cada árbol | `cae0beb` |
+| Fichas de proyecto | «Más proyectos»: 3 fichas indexables, misma categoría primero, en los dos árboles y con los mismos enlaces (e2e) | `d3aa656` |
+| Fichas de proyecto | «Caso contado en el blog» para los 10 proyectos del mapa, solo con el artículo publicado. Si Firestore falla, no se pinta y la ficha no se rompe. `subjectOf` en el `CreativeWork`, `revalidate` de 1 h y webhook | `d75b6fb` |
+| Manifest | El icono maskable ya existía (`icon-maskable-192/512.png`, globo dentro del círculo seguro): no hacía falta nada | — |
+
+A 9 oct no hay publicado ninguno de los 7 artículos del mapa: todos dan 404 en producción. El bloque «Caso contado en el blog» aparecerá en cuanto se publiquen; el webhook revalida esas fichas.
+
+**Validación de la segunda tanda** (local, sin build):
+- `tsc --noEmit` y ESLint sin errores en lo tocado.
+- **e2e `mobile`:** 123 de 125. Los 2 fallos (`mobile-blog.spec` 37 y 93) son del entorno local: sin Firestore se usan los posts de relleno, y uno de ellos (`que-mirar-antes-de-contratar-agencia-vigo`) tiene ya la 301 de la fusión hacia `como-elegir-agencia-desarrollo-web-galicia`, que no está entre los de relleno, así que da 404. Viene de la fusión del agente de contenido, no de estos cambios.
+- **e2e `chromium`:** 63 de 68 en la pasada completa. Con el servidor caliente pasan también `home.spec` 80 y `smoke.spec` 275. Siguen fallando los 3 de acoplar la recreativa (`smoke.spec` 181, 210 y 226), que también fallan en `origin/main` con WebGL en `chrome-headless-shell`.
+- **`curl` con el UA de Googlebot Smartphone:**
+  - fichas con title, robots y canonical dentro del `<head>`, y con «Más proyectos»;
+  - `/blog/no-existe` con «Página no encontrada — Action» y `noindex, follow`, sin canonical.
+- **Manifiestos de tipografías de `next dev`:** las 14 rutas del árbol móvil tienen 8 archivos, sin Space Grotesk.
