@@ -235,7 +235,7 @@ export const landings: Landing[] = [
       },
       {
         q: "¿Hacéis apps nativas o multiplataforma?",
-        a: "Multiplataforma por defecto: con React Native y Expo publicamos en iOS y Android con una sola base de código, como en XauLabs. Cuando la app depende a fondo del hardware del teléfono — cámara, Bluetooth o localización en segundo plano con requisitos exigentes —, valoramos el desarrollo nativo.",
+        a: "Multiplataforma por defecto: React Native y Expo, con una sola base de código para iOS y Android; XauLabs, por ejemplo, es una app de React Native para los dos sistemas. Cuando la app depende a fondo del hardware del teléfono — cámara, Bluetooth o localización en segundo plano con requisitos exigentes —, valoramos el desarrollo nativo.",
       },
       {
         q: "¿Puedo reunirme con vosotros en persona?",

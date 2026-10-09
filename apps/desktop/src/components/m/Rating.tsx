@@ -1,4 +1,4 @@
-import { BUSINESS, GOOGLE_RATING } from "@actiondev/shared";
+import { BUSINESS } from "@actiondev/shared";
 import { reviewSummary } from "@/lib/ads-landing";
 import { Icon } from "./Icon";
 import { UnderlineLink } from "./UnderlineLink";
@@ -17,8 +17,6 @@ const summary = reviewSummary();
 export const REVIEW_AVERAGE = summary.rating;
 /** Nº de reseñas de la ficha de Google (23). */
 export const REVIEW_COUNT = summary.count;
-/** ¿Todas de 5 estrellas? Solo si la media de la ficha es un 5 exacto. */
-export const ALL_FIVE_STARS = GOOGLE_RATING.value === 5;
 /** «5,0 en Google · 23 reseñas»: la línea de prueba del hero (home y campaña). */
 export const RATING_SUMMARY = `${REVIEW_AVERAGE} en Google · ${REVIEW_COUNT} reseñas`;
 
@@ -52,8 +50,9 @@ export function Stars({
 
 /**
  * Banda de valoración (`.rating`, el elemento firma): tinta, «5,0» a 132 px,
- * estrellas, «23 reseñas en Google», «Todas de 5 estrellas» y «Leerlas en
- * Google» a la ficha real (`mapsUrl`). `titleId` convierte el rótulo en el
+ * estrellas, «23 reseñas en Google» y «Leerlas en Google» a la ficha real
+ * (`mapsUrl`). Sin «Todas de 5 estrellas»: un 5,0 de Google puede esconder
+ * alguna de 4, y las reseñas solo de estrellas no se pueden comprobar. `titleId` convierte el rótulo en el
  * `<h2>` de la sección (home); `reviewLink` añade «Deja tu reseña»
  * (`reviewUrl`, en `/resenas`).
  */
@@ -72,7 +71,6 @@ export function RatingBand({ titleId, reviewLink = false }: { titleId?: string; 
         </Title>
       </div>
       <div className="col-span-full mt-[22px] flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-line-dark pt-2">
-        {ALL_FIVE_STARS && <p className="text-sm leading-[1.4] text-muted-dark">Todas de 5 estrellas</p>}
         <UnderlineLink href={BUSINESS.mapsUrl} data-testid="m-google-profile">
           Leerlas en Google
         </UnderlineLink>

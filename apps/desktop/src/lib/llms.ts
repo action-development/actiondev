@@ -144,7 +144,7 @@ export function buildLlmsTxt(posts: BlogPost[]): string {
     "",
     "- **Type**: Software studio: mobile apps (iOS and Android), custom business software and websites",
     "- **Apps**: React Native with Expo, one codebase for iOS and Android; native development is considered when the app relies heavily on the phone's hardware",
-    `- **Stack used in client projects (checked live)**: ${PROJECT_STACK.join(", ")}`,
+    `- **Stack used in client projects**: ${PROJECT_STACK.join(", ")} (the web stacks were checked on the live client sites)`,
     `- **Stack of this website**: ${THIS_SITE_STACK.join(", ")}`,
     `- **Based in**: ${BUSINESS.address.street}, ${BUSINESS.address.postalCode} Vigo, Galicia (Spain) — in person across Vigo and the province of Pontevedra, remotely across Spain`,
     "",
