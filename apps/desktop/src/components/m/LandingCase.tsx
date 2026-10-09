@@ -1,10 +1,10 @@
 import type { ResolvedLandingCase } from "@/lib/landing-seo";
-import { Label } from "../Cell";
-import { Icon } from "../Icon";
-import { MLink } from "../MLink";
-import { KindChips } from "../ProjectKind";
-import { ProjectCover } from "../ProjectParts";
-import { ResultBand } from "../ResultBand";
+import { Label } from "./Cell";
+import { Icon } from "./Icon";
+import { MLink } from "./MLink";
+import { KindChips } from "./ProjectKind";
+import { ProjectCover } from "./ProjectParts";
+import { ResultBand } from "./ResultBand";
 
 /**
  * Caso real de una landing SEO (DESIGN.md §7, `.case`): portada a sangre →
@@ -14,6 +14,9 @@ import { ResultBand } from "../ResultBand";
  *
  * Toda la tarjeta enlaza a la ficha `/projects/{slug}` en la misma pestaña,
  * como en escritorio (aquí no hay anuncio que proteger).
+ *
+ * En la raíz de `m/` porque la usan dos zonas: las landings SEO y
+ * `/sobre-nosotros` (cada una con sus notas).
  */
 export function LandingCase({ item }: { item: ResolvedLandingCase }) {
   const { project, note } = item;

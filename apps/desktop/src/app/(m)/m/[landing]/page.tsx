@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Faq } from "@/components/m/Faq";
 import { GuideList } from "@/components/m/GuideList";
-import { LandingCase } from "@/components/m/landing/LandingCase";
+import { LandingCase } from "@/components/m/LandingCase";
 import { LandingHero } from "@/components/m/landing/LandingHero";
 import { LandingRelated } from "@/components/m/landing/LandingRelated";
 import { LandingText } from "@/components/m/landing/LandingText";

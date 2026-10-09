@@ -74,6 +74,8 @@ describe("fase 2: landings SEO, blog y legales", () => {
     expect(hasMobileTree("/diseno-web-pontevedra")).toBe(false);
     for (const doc of ["aviso-legal", "privacy", "terms", "cookies"]) expect(hasMobileTree(`/legal/${doc}`)).toBe(true);
     expect(hasMobileTree("/legales")).toBe(false);
+    expect(hasMobileTree("/sobre-nosotros")).toBe(true);
+    expect(hasMobileTree("/sobre-nosotros-2")).toBe(false);
   });
   it("qa con cookie: vista previa de las rutas de fase 2", () => {
     expect(servesMobileTree("qa", "/desarrollo-web-vigo", true, [])).toBe(true);

@@ -17,6 +17,8 @@ const CORE_LANDING = "desarrollo-de-aplicaciones-vigo";
 // contra las webs de los clientes en vivo.
 const CONTENT_UPDATED = new Date("2026-10-09");
 const LEGAL_LAST_MODIFIED = new Date(LEGAL_UPDATED);
+/** `/sobre-nosotros`: publicada el 2026-10-09. Subirla al cambiar su texto (`lib/about-seo.ts`). */
+const ABOUT_UPDATED = new Date("2026-10-09");
 
 // Se genera en el build: sin esto, un post publicado desde el admin no
 // entraba en el sitemap (ni en `pnpm seo:indexnow`, que lo lee) hasta el
@@ -60,6 +62,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     {
       url: `${SITE_URL}/resenas`,
       lastModified: CONTENT_UPDATED,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    // La página de la entidad (plan AEO, §4.2): la que deben citar los motores
+    // de IA para «qué es Action Development».
+    {
+      url: `${SITE_URL}/sobre-nosotros`,
+      lastModified: ABOUT_UPDATED,
       changeFrequency: "monthly",
       priority: 0.7,
     },

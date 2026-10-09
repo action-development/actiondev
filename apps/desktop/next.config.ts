@@ -90,7 +90,15 @@ const nextConfig: NextConfig = {
       // con UA móvil + flag el middleware las sirve desde `app/(m)/m`. Las
       // fichas, solo slugs sin punto: las imágenes de `public/projects/` no
       // varían por dispositivo.
-      ...["/servicios", "/projects", "/projects/:slug([^/.]+)", "/resenas", "/contact", "/hablemos/:path*"].map(
+      ...[
+        "/servicios",
+        "/projects",
+        "/projects/:slug([^/.]+)",
+        "/resenas",
+        "/contact",
+        "/hablemos/:path*",
+        "/sobre-nosotros",
+      ].map(
         (source) => ({ source, headers: [{ key: "Vary", value: "User-Agent" }] }),
       ),
       // Static assets — content-addressed via filename, safe to cache for 1 year
