@@ -16,13 +16,24 @@ const FOOTER_NAV = [
   { href: "/contact", label: "Contacto" },
 ] as const;
 
+/**
+ * Fila entera bajo la rejilla: la página de la entidad (plan AEO, §4.2), con
+ * el nombre largo como ancla. En escritorio la enlaza la marca del pie de las
+ * páginas de lectura; aquí está en todas las páginas.
+ */
+const ABOUT_LINK = { href: "/sobre-nosotros", label: "Sobre Action Development" } as const;
+
+const footerNavLinkClass =
+  "flex min-h-14 items-center bg-ink px-4 font-display text-xl font-extrabold uppercase hover:bg-paper hover:text-ink active:bg-paper active:text-ink";
+
 const legalLinkClass =
   "font-display text-[13px] font-bold uppercase tracking-[0.1em] hover:text-paper hover:underline active:text-paper";
 
 /**
  * Pie de la web móvil v2 (DESIGN.md §7, `.ftr`), sobre tinta: logo en papel a
  * todo el ancho → oficina, WhatsApp y email → seis enlaces 2 × 3 (con Reseñas
- * y Blog, que enlaza el Header de escritorio en todas las páginas) →
+ * y Blog, que enlaza el Header de escritorio en todas las páginas) y una fila
+ * entera «Sobre Action Development» →
  * titularidad (LSSI art. 10: razón social, CIF, registro, oficina y domicilio
  * social) y enlaces legales con «Preferencias de cookies».
  *
@@ -77,14 +88,13 @@ export function MobileFooter({
           className="grid grid-cols-2 gap-px border-b border-line-dark bg-line-dark"
         >
           {FOOTER_NAV.map((item) => (
-            <MLink
-              key={item.href}
-              href={item.href}
-              className="flex min-h-14 items-center bg-ink px-4 font-display text-xl font-extrabold uppercase hover:bg-paper hover:text-ink active:bg-paper active:text-ink"
-            >
+            <MLink key={item.href} href={item.href} className={footerNavLinkClass}>
               {item.label}
             </MLink>
           ))}
+          <MLink href={ABOUT_LINK.href} data-testid="m-footer-about" className={`${footerNavLinkClass} col-span-full`}>
+            {ABOUT_LINK.label}
+          </MLink>
         </nav>
       )}
 

@@ -143,7 +143,11 @@ export default function ServiciosPage() {
       <footer className="border-t border-border">
         <div className="container-editorial flex flex-col gap-3 pt-10 pb-5 font-mono text-xs uppercase tracking-widest text-muted md:flex-row md:items-center md:justify-between">
           <p>
-            Action — {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
+            {/* La marca enlaza a la página de la entidad (plan AEO, §4.2). */}
+            <Link href="/sobre-nosotros" className="link-sweep text-foreground hover:text-accent">
+              {BUSINESS.alternateName}
+            </Link>{" "}
+            — {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
             {BUSINESS.address.locality}, {BUSINESS.address.region}
           </p>
           <p>

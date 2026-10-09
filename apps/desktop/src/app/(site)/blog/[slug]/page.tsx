@@ -335,7 +335,14 @@ export default async function BlogPostPage({ params }: PostPageProps) {
       <footer className="border-t border-border">
         <div className="container-editorial flex flex-col gap-2 pt-10 pb-5 text-sm text-muted md:flex-row md:items-center md:justify-between">
           <p>
-            Action — {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
+            {/* La marca enlaza a la página de la entidad (plan AEO, §4.2). */}
+            <Link
+              href="/sobre-nosotros"
+              className="text-foreground underline decoration-border decoration-2 underline-offset-4 hover:decoration-foreground"
+            >
+              {BUSINESS.alternateName}
+            </Link>{" "}
+            — {BUSINESS.address.street}, {BUSINESS.address.postalCode}{" "}
             {BUSINESS.address.locality}, {BUSINESS.address.region}
           </p>
           <p>
