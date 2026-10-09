@@ -4,9 +4,14 @@ import { notFound } from "next/navigation";
 import { getLanding, landings } from "@/data/landings";
 import { getPosts } from "@/lib/blog";
 import { landingGuides } from "@/lib/blog-seo";
-import { LANDING_FORM_ID, buildLandingJsonLd, landingMetadata, resolveLandingContent } from "@/lib/landing-seo";
+import {
+  LANDING_FORM_ID,
+  buildLandingJsonLd,
+  landingKeyFacts,
+  landingMetadata,
+  resolveLandingContent,
+} from "@/lib/landing-seo";
 import { BUSINESS } from "@/lib/seo";
-import { reviewSummary } from "@/lib/ads-landing";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { HoloBar } from "@/components/layout/HoloBar";
 import { LegalLinks } from "@/components/layout/LegalLinks";
@@ -62,6 +67,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
 
   const { cases, quotes } = resolveLandingContent(landing);
   const guides = landingGuides(await getPosts(), landing.slug);
+  const keyFacts = landingKeyFacts(landing);
 
   return (
     <>
@@ -132,15 +138,48 @@ export default async function LandingPage({ params }: LandingPageProps) {
               </HoloButton>
             </div>
 
-            {/* Franja de confianza */}
-            <ul className="mt-10 flex flex-wrap gap-x-8 gap-y-3 font-mono text-xs uppercase tracking-widest text-muted">
-              <li>
-                <span className="text-accent">★ {reviewSummary().rating}</span> · {reviewSummary().count} reseñas en
-                Google
-              </li>
-              <li>Respuesta en 24 horas laborables</li>
-              <li>Equipo senior · Sin subcontratas</li>
-            </ul>
+            {/* Datos clave (plan AEO §4.4): hechos cortos y comprobables junto
+                al primer CTA. Los mismos que las celdas del hero móvil
+                (`landingKeyFacts`, con la valoración de `GOOGLE_RATING`). */}
+            <section
+              aria-labelledby="datos-clave"
+              className="holo-surface holo-corners mt-10 px-6 py-6 md:px-7"
+              data-testid="landing-key-facts"
+            >
+              <h2 id="datos-clave" className="micro-label micro-label-accent">
+                Datos clave
+              </h2>
+              <dl className="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
+                {keyFacts.map((fact) => (
+                  <div key={fact.id} className={fact.id === "service" ? "sm:col-span-2" : undefined}>
+                    <dt className="micro-label">{fact.label}</dt>
+                    <dd className="mt-2 text-[0.95rem] leading-snug text-foreground">
+                      {fact.id === "rating" && (
+                        <span aria-hidden className="text-accent">
+                          ★{" "}
+                        </span>
+                      )}
+                      {fact.href?.startsWith("/") ? (
+                        <Link href={fact.href} className="link-sweep hover:text-accent">
+                          {fact.value} <span aria-hidden className="text-muted">→</span>
+                        </Link>
+                      ) : fact.href ? (
+                        <a
+                          href={fact.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="link-sweep hover:text-accent"
+                        >
+                          {fact.value} <span aria-hidden className="text-muted">↗</span>
+                        </a>
+                      ) : (
+                        fact.value
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
           </div>
 
           {/* Contexto local */}

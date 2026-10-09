@@ -1,9 +1,9 @@
 import type { Landing } from "@/data/landings";
+import { landingKeyFacts, type LandingKeyFact } from "@/lib/landing-seo";
 import { Breadcrumbs } from "../Breadcrumbs";
 import { Cell, Cells } from "../Cell";
 import { CtaBlock } from "../CtaBlock";
-import { OFFICE_SHORT } from "../nav";
-import { RATING_SUMMARY, Stars } from "../Rating";
+import { Stars } from "../Rating";
 import { WhatsappRow } from "../WhatsappRow";
 
 /**
@@ -14,9 +14,9 @@ import { WhatsappRow } from "../WhatsappRow";
  * baja al formulario de la página → fila de WhatsApp → celdas de prueba. A
  * 390 × 844 el CTA queda dentro de la primera pantalla.
  *
- * Las celdas recogen la franja de confianza de escritorio (reseñas, «Equipo
- * senior · Sin subcontratas», respuesta en 24 horas) más la oficina y el
- * presupuesto cerrado de la home.
+ * Las celdas son los «Datos clave» de escritorio (`landingKeyFacts`: Google,
+ * oficina, proyectos, qué hacemos, tecnología, equipo y respuesta, los mismos
+ * textos) más el presupuesto cerrado de la home.
  */
 export function LandingHero({
   landing,
@@ -30,6 +30,10 @@ export function LandingHero({
   whatsappText: string;
 }) {
   const [lead] = landing.intro;
+  const facts = Object.fromEntries(landingKeyFacts(landing).map((f) => [f.id, f])) as Record<
+    LandingKeyFact["id"],
+    LandingKeyFact
+  >;
   return (
     <section id="hero" aria-labelledby="m-landing-h1" data-testid="m-landing-hero">
       <Breadcrumbs
@@ -54,18 +58,27 @@ export function LandingHero({
       />
       <WhatsappRow text={whatsappText} data-testid="m-landing-whatsapp" />
 
-      <Cells>
-        <Cell label="Reseñas" href="#resenas" full data-testid="m-landing-rating">
-          <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-            <Stars />
-            {RATING_SUMMARY}
-          </span>
-        </Cell>
-        <Cell label="Oficina">{OFFICE_SHORT}</Cell>
-        <Cell label="Equipo">Senior · Sin subcontratas</Cell>
-        <Cell label="Presupuesto">Cerrado y por escrito</Cell>
-        <Cell label="Respuesta">En 24 horas laborables</Cell>
-      </Cells>
+      <section aria-label="Datos clave" data-testid="m-landing-key-facts">
+        <Cells>
+          <Cell label={facts.rating.label} href="#resenas" full data-testid="m-landing-rating">
+            <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+              <Stars />
+              {facts.rating.value}
+            </span>
+          </Cell>
+          <Cell label={facts.office.label}>{facts.office.value}</Cell>
+          <Cell label={facts.projects.label} href={facts.projects.href}>
+            {facts.projects.value}
+          </Cell>
+          <Cell label={facts.service.label} full>
+            {facts.service.value}
+          </Cell>
+          <Cell label={facts.tech.label}>{facts.tech.value}</Cell>
+          <Cell label={facts.team.label}>{facts.team.value}</Cell>
+          <Cell label={facts.response.label}>{facts.response.value}</Cell>
+          <Cell label="Presupuesto">Cerrado y por escrito</Cell>
+        </Cells>
+      </section>
     </section>
   );
 }
