@@ -32,7 +32,7 @@ export default function MobileServiciosPage() {
               {SERVICIOS_H1}
             </h1>
             <p className="max-w-[34ch] text-lead">
-              Somos Action, un estudio de desarrollo con oficina en la Rúa Colón, 20, en el centro de Vigo. Hacemos
+              Somos Action Development, un estudio de desarrollo con oficina en la Rúa Colón, 20, en el centro de Vigo. Hacemos
               aplicaciones móviles, software a medida, páginas web y tiendas online, y lo hacemos con el mismo equipo
               de principio a fin: quien diseña y programa tu proyecto es quien lo mantiene después.
             </p>

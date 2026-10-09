@@ -23,7 +23,7 @@
  * - Cada testimonio se cita en UNA sola landing.
  */
 
-import { GOOGLE_RATING_TEXT, LEAD_NEEDS_CAMPAIGN, LEAD_NEEDS_WEB, type LeadNeed } from "@actiondev/shared";
+import { GOOGLE_RATING, GOOGLE_RATING_TEXT, LEAD_NEEDS_CAMPAIGN, LEAD_NEEDS_WEB, type LeadNeed } from "@actiondev/shared";
 
 export interface LandingFaq {
   q: string;
@@ -107,8 +107,8 @@ export const landings: Landing[] = [
       `Desarrollo de aplicaciones en Vigo: apps iOS y Android con React Native, panel de gestión y backend propio. Oficina en Rúa Colón 20. ★ ${GOOGLE_RATING_TEXT} en Google.`,
     h1: "Desarrollo de aplicaciones en Vigo",
     intro: [
-      "Somos Action, un estudio de desarrollo de apps y aplicaciones con oficina en el centro de Vigo, en la Rúa Colón, 20. Diseñamos y programamos apps para iOS y Android, aplicaciones web y el backend que las sostiene, para empresas que necesitan que su app resuelva un problema concreto: reservas, fichajes, pedidos, alumnos, socios o clientes.",
-      "Trabajamos con el mismo equipo de principio a fin — definición, diseño, desarrollo, publicación y mantenimiento —, así que la persona con la que hablas en la primera reunión es la que conoce el código cuando, meses después, hay que añadir una función o corregir un fallo.",
+      `Action Development es un estudio de desarrollo de aplicaciones con oficina en Rúa Colón, 20, en el centro de Vigo, que diseña y programa apps para iOS y Android con React Native, junto con su panel de gestión y su backend. Entre sus trabajos están el ERP y la app de alumnos de Autoescuela GTI y la app de formación XauLabs, y tiene una valoración de ${GOOGLE_RATING_TEXT} en Google con ${GOOGLE_RATING.count} reseñas.`,
+      "Las hacemos para empresas que necesitan que la app resuelva un problema concreto: reservas, fichajes, pedidos, alumnos, socios o clientes. Trabajamos con el mismo equipo de principio a fin — definición, diseño, desarrollo, publicación y mantenimiento —, así que la persona con la que hablas en la primera reunión es la que conoce el código cuando, meses después, hay que añadir una función o corregir un fallo.",
       "En esta página te contamos qué tipo de apps hacemos, con qué casos reales puedes comprobarlo, cómo decidimos la tecnología y qué conviene tener claro antes de pedir presupuesto.",
     ],
     localContext: {
@@ -165,7 +165,7 @@ export const landings: Landing[] = [
       {
         title: "Una empresa de desarrollo de apps en Vigo",
         paragraphs: [
-          "Si comparas empresas de desarrollo de apps en Vigo, pregunta primero quién va a programar la tuya. En Action, quien te escucha en la primera reunión es quien diseña y programa la app: sin comerciales de por medio ni subcontratas. Trabajamos en la oficina de la Rúa Colón, 20, y con los clientes de Vigo y su área nos vemos ahí en persona.",
+          "Si comparas empresas de desarrollo de apps en Vigo, pregunta primero quién va a programar la tuya. En Action Development, quien te escucha en la primera reunión es quien diseña y programa la app: sin comerciales de por medio ni subcontratas. Trabajamos en la oficina de la Rúa Colón, 20, y con los clientes de Vigo y su área nos vemos ahí en persona.",
           "Y el equipo que la construye es el que la mantiene. Cuando Apple o Google cambian sus requisitos, cuando el uso destapa un fallo o cuando quieres añadir una función, hablas con alguien que conoce el código porque lo escribió, no con un servicio técnico que lo abre por primera vez.",
         ],
       },
@@ -276,7 +276,7 @@ export const landings: Landing[] = [
       "Desarrollo web a medida en Vigo: webs que venden entradas, cobran cuotas o gestionan reservas, con código propio. Casos: Musa y PBB. Oficina en Colón 20.",
     h1: "Desarrollo web en Vigo",
     intro: [
-      "Desarrollamos páginas y aplicaciones web a medida desde nuestra oficina de la Rúa Colón, en el centro de Vigo. Webs que hacen algo más que estar: venden entradas, cobran cuotas, reciben reservas o se conectan con el software con el que ya trabajas.",
+      "Action Development diseña y programa páginas y aplicaciones web a medida desde su oficina de la Rúa Colón, en el centro de Vigo, con el mismo equipo que desarrolla sus apps. Webs que hacen algo más que estar: venden entradas, cobran cuotas, reciben reservas o se conectan con el software con el que ya trabajas.",
       "Programamos con React y, cuando el proyecto lo pide, Next.js, sin plantillas ni constructores visuales. No es una cuestión de moda: el código propio nos deja decidir cómo carga cada página, cómo la lee Google y qué pasa cuando tu negocio necesita una función que ningún plugin trae.",
     ],
     localContext: {
@@ -419,7 +419,7 @@ export const landings: Landing[] = [
       "Diseño de páginas web en Vigo con dirección de arte, motion y 3D: webs que no parecen plantillas. Casos: Samoa Café y Almudena Muhle. Estudio en Vigo.",
     h1: "Diseño de páginas web en Vigo",
     intro: [
-      "El diseño de una web decide en pocos segundos si alguien se queda o vuelve a Google. En Action diseñamos páginas web con identidad propia — tipografía, ritmo, movimiento y, cuando el proyecto lo pide, 3D — para marcas de Vigo que no quieren parecerse a la plantilla de su competencia.",
+      "Action Development diseña en Vigo páginas web con identidad propia — tipografía, ritmo, movimiento y, cuando el proyecto lo pide, 3D — para marcas que no quieren parecerse a la plantilla de su competencia, como Samoa Café o Almudena Muhle. El diseño de una web decide en pocos segundos si alguien se queda o vuelve a Google.",
       "Somos un estudio de Vigo donde diseño y programación los hace el mismo equipo. Eso cambia el resultado más de lo que parece: lo que se aprueba en el prototipo es lo que se publica, y los detalles de animación no se pierden en el traspaso a un desarrollador que no estuvo en las reuniones.",
     ],
     localContext: {
@@ -514,7 +514,7 @@ export const landings: Landing[] = [
     faqs: [
       {
         q: "¿Cómo elijo una empresa de diseño web en Vigo?",
-        a: "Mira webs suyas publicadas y ábrelas en tu móvil, pregunta quién diseña y quién programa, y pide un presupuesto cerrado que diga qué incluye. En Action diseño y programación los hace el mismo equipo, en Vigo.",
+        a: "Mira webs suyas publicadas y ábrelas en tu móvil, pregunta quién diseña y quién programa, y pide un presupuesto cerrado que diga qué incluye. En Action Development, diseño y programación los hace el mismo equipo, en Vigo.",
       },
       {
         q: "¿Hacéis también el logo y la identidad de marca?",
@@ -568,7 +568,7 @@ export const landings: Landing[] = [
       "Creamos tiendas online en Vigo: Shopify o ecommerce a medida, pagos y catálogo cuidado. Casos reales: Canelita, en Redondela, Cliché y Koopey.",
     h1: "Diseño de tiendas online en Vigo",
     intro: [
-      "Una tienda online no es una web con un carrito: es un canal de venta que tiene que cargar rápido en el móvil, cobrar sin fricción y encajar con el resto de tu negocio — stock, pedidos, envíos. Diseñamos y desarrollamos tiendas online para marcas y comercios de Vigo y su área que quieren vender más allá de su escaparate.",
+      "Action Development diseña y desarrolla tiendas online para marcas y comercios de Vigo y su área que quieren vender más allá de su escaparate. Una tienda online no es una web con un carrito: es un canal de venta que tiene que cargar rápido en el móvil, cobrar sin fricción y encajar con el resto de tu negocio — stock, pedidos, envíos.",
       "Trabajamos con Shopify y con desarrollo propio, y te decimos cuál te conviene con tu catálogo delante. Hemos montado tiendas Shopify para Canelita, Cliché, Nabi Cosmética o Cachadas, y una tienda a medida con capa en tiempo real para Koopey.",
     ],
     localContext: {
@@ -718,8 +718,8 @@ export const landings: Landing[] = [
       "Empresa de desarrollo de software a medida en Vigo: ERP, control horario, paneles internos e integraciones para pymes gallegas. Caso: Autoescuela GTI.",
     h1: "Software a medida en Vigo",
     intro: [
-      "Desarrollamos software a medida para empresas de Vigo y de Galicia: ERPs, paneles de gestión internos, control horario, portales para clientes y proveedores e integraciones entre los programas que ya usas. Programación a medida para procesos que ningún software estándar resuelve bien.",
-      "Somos una empresa de desarrollo de software con oficina en la Rúa Colón de Vigo. No vendemos licencias ni adaptamos un producto enlatado: escribimos el software alrededor de cómo trabaja tu empresa y después lo mantenemos.",
+      "Action Development desarrolla software a medida para empresas de Vigo y de Galicia desde su oficina de Rúa Colón, 20: ERPs, paneles de gestión internos, control horario, portales para clientes y proveedores e integraciones entre los programas que ya usan. Es el mismo equipo que después lo mantiene.",
+      "Programación a medida para procesos que ningún software estándar resuelve bien: no vendemos licencias ni adaptamos un producto enlatado, escribimos el software alrededor de cómo trabaja tu empresa.",
     ],
     localContext: {
       title: "El software que necesita el tejido de Vigo",
@@ -875,8 +875,8 @@ export const landings: Landing[] = [
       "Apps móviles y web para empresas de Pontevedra y las Rías Baixas: reservas, socios, turismo y gestión interna. Equipo en Vigo, a media hora de la capital.",
     h1: "Desarrollo de aplicaciones en Pontevedra",
     intro: [
-      "Desarrollamos aplicaciones móviles y web para empresas de la provincia de Pontevedra: la capital, Marín, Sanxenxo, O Grove, Cambados, Vilagarcía de Arousa, O Porriño, Ponteareas, Lalín o cualquier punto de las Rías Baixas.",
-      "Nuestra oficina está en Vigo, a una media hora de Pontevedra capital, y la sociedad que hay detrás de Action, Alcasi Systems, S.L., tiene su domicilio social en Marín. Somos de aquí, y eso se nota en algo práctico: podemos sentarnos contigo cuando el proyecto lo pide sin que el desplazamiento sea una partida del presupuesto.",
+      "Action Development desarrolla aplicaciones móviles y web para empresas de toda la provincia de Pontevedra desde su oficina de Vigo (Rúa Colón, 20): la capital, Marín, Sanxenxo, O Grove, Cambados, Vilagarcía de Arousa, O Porriño, Ponteareas, Lalín o cualquier punto de las Rías Baixas. Las reuniones importantes se hacen en persona, y el día a día, por videollamada y con versiones de prueba.",
+      "Nuestra oficina está en Vigo, a una media hora de Pontevedra capital, y la sociedad que hay detrás de Action Development, Alcasi Systems, S.L., tiene su domicilio social en Marín. Somos de aquí, y eso se nota en algo práctico: podemos sentarnos contigo cuando el proyecto lo pide sin que el desplazamiento sea una partida del presupuesto.",
     ],
     localContext: {
       title: "Qué apps necesita la provincia",
@@ -978,7 +978,7 @@ export const landings: Landing[] = [
       },
       {
         q: "¿Podéis contratar con organismos públicos?",
-        a: "Sí. Action es la marca comercial de Alcasi Systems, S.L. (CIF B72910664), inscrita en el Registro Mercantil de Pontevedra, y nuestras condiciones de contratación contemplan el sector público. Los datos registrales están en el aviso legal.",
+        a: "Sí. Action Development es la marca comercial de Alcasi Systems, S.L. (CIF B72910664), inscrita en el Registro Mercantil de Pontevedra, y nuestras condiciones de contratación contemplan el sector público. Los datos registrales están en el aviso legal.",
       },
       {
         q: "Ya tengo una app que no funciona bien. ¿Qué hacemos?",
@@ -1019,7 +1019,7 @@ export const landings: Landing[] = [
       `Diseño y desarrollo de páginas web a medida en Pontevedra y las Rías Baixas: hostelería, eventos, clubes y comercio, con casos en la provincia. ★ ${GOOGLE_RATING_TEXT}`,
     h1: "Diseño y desarrollo web en Pontevedra",
     intro: [
-      "Diseñamos y desarrollamos páginas web a medida para negocios de la provincia de Pontevedra. El mismo equipo hace las dos cosas, la dirección de arte y la programación, así que lo que apruebas en el diseño es exactamente lo que se publica.",
+      "Action Development diseña y desarrolla páginas web a medida para negocios de la provincia de Pontevedra. El mismo equipo hace las dos cosas, la dirección de arte y la programación, así que lo que apruebas en el diseño es exactamente lo que se publica.",
       "Nuestra oficina está en Vigo, y buena parte de los clientes con web publicada que puedes visitar están repartidos por la provincia: una discoteca en Redondela, un club de baloncesto en O Porriño y una empresa de instalaciones eléctricas navales que trabaja desde Vigo y el puerto de Marín. Conocemos el tipo de negocio que hay aquí porque trabajamos para él.",
     ],
     localContext: {
@@ -1166,7 +1166,7 @@ export const landings: Landing[] = [
       "Páginas web y tiendas online para negocios de Redondela, Chapela y Cesantes, a 15 minutos de nuestra oficina de Vigo. Casos: Samoa, La Fábrica y Canelita.",
     h1: "Diseño y desarrollo web en Redondela",
     intro: [
-      "Hacemos páginas web y tiendas online para negocios de Redondela. No es una página de ciudad más: Redondela es uno de los municipios donde más clientes tenemos. Samoa Café, la discoteca La Fábrica y la tienda Canelita tienen su web hecha por nosotros.",
+      "Action Development hace páginas web y tiendas online para negocios de Redondela. No es una página de ciudad más: Redondela es uno de los municipios donde más clientes tenemos. Samoa Café, la discoteca La Fábrica y la tienda Canelita tienen su web hecha por nosotros.",
       "Estamos en Vigo, en la Rúa Colón, a unos quince minutos en coche del centro de Redondela. Lo bastante cerca para pasarnos por tu local a ver cómo trabajas, que es la mejor forma de entender qué necesita tu web.",
     ],
     localContext: {
@@ -1309,7 +1309,7 @@ export const landings: Landing[] = [
       "Estudio gallego de desarrollo de aplicaciones: apps iOS y Android, plataformas de formación y apps de escritorio. Casos como XauLabs, Kairos y PRO Lift.",
     h1: "Desarrollo de aplicaciones en Galicia",
     intro: [
-      "Action es un estudio de desarrollo de aplicaciones con sede en Vigo que trabaja para empresas y emprendedores de toda Galicia. Construimos producto digital completo: la app que usan tus clientes, el panel desde el que tu equipo la gestiona y el backend que conecta ambas cosas.",
+      "Action Development es un estudio de Vigo que diseña y programa aplicaciones móviles para iOS y Android, y el software que las sostiene, para empresas y emprendedores de toda Galicia. El mismo equipo lleva la definición, el diseño, el desarrollo, la publicación en las tiendas y el mantenimiento: la app que usan tus clientes, el panel desde el que tu equipo la gestiona y el backend que conecta ambas cosas.",
       "Una parte importante de nuestro trabajo son productos digitales en sí mismos — plataformas de formación, comunidades, herramientas — donde la app no es un complemento del negocio sino el negocio. Ahí es donde más se nota trabajar con un equipo que piensa en producto y no solo en pantallas.",
     ],
     localContext: {
@@ -1459,7 +1459,7 @@ export const landings: Landing[] = [
       "Agencia de diseño y desarrollo web con sede en Vigo: webs corporativas, tiendas online y aplicaciones web para empresas gallegas, en persona o en remoto.",
     h1: "Agencia de desarrollo web en Galicia",
     intro: [
-      "Action es una agencia de desarrollo web con sede en Vigo que trabaja con empresas de toda Galicia. Construimos webs corporativas, tiendas online y aplicaciones web a medida para negocios de A Coruña, Santiago, Ourense, Lugo y la provincia de Pontevedra.",
+      "Action Development es una agencia de desarrollo web y de apps con oficina en Vigo que trabaja con empresas de toda Galicia — A Coruña, Santiago, Ourense, Lugo y la provincia de Pontevedra —: webs corporativas, tiendas online y aplicaciones web a medida, con clientes en Vigo, Redondela, O Porriño y Noia.",
       "Elegir agencia es elegir con quién vas a hablar los próximos años. Aquí hablas con quien diseña y programa tu web, y ese equipo es el mismo que la mantiene después.",
     ],
     localContext: {
