@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { GOOGLE_RATING_TEXT } from "@actiondev/shared";
 import { BRAND, SITE_NAME, SITE_URL, SOCIAL, OG_IMAGE } from "@/lib/seo";
 
 /**
@@ -16,8 +17,7 @@ import { BRAND, SITE_NAME, SITE_URL, SOCIAL, OG_IMAGE } from "@/lib/seo";
  * pasa de 170 y Google la cortaba). La larga sigue en el texto indexable de
  * `app/(site)/page.tsx`, en el manifest y en el JSON-LD.
  */
-export const HOME_DESCRIPTION =
-  "Agencia de desarrollo de aplicaciones y webs en Vigo: apps iOS y Android, webs a medida y experiencias 3D para empresas de toda Galicia. ★ 5,0 en Google.";
+export const HOME_DESCRIPTION = `Agencia de desarrollo de aplicaciones y webs en Vigo: apps iOS y Android, webs a medida y experiencias 3D para empresas de toda Galicia. ★ ${GOOGLE_RATING_TEXT} en Google.`;
 
 export const ROOT_METADATA: Metadata = {
   metadataBase: new URL(SITE_URL),

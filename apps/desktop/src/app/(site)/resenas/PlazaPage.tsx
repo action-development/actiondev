@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
-import { testimonials } from "@/data/testimonials";
+import { GOOGLE_RATING } from "@actiondev/shared";
 import { PLAZA_PALETTES, currentPlazaMode, type PlazaMode } from "@/components/canvas/plaza/plaza-mode";
 import { Header } from "@/components/layout/Header";
 import { PlazaHud } from "@/components/plaza/PlazaHud";
@@ -86,7 +86,7 @@ export function PlazaPage() {
 
         <PlazaHud
           mode={mode}
-          count={testimonials.length}
+          count={GOOGLE_RATING.count}
           ctaVisible={selectedId === null}
           hintVisible={!hintDone && selectedId === null && !holding}
         />

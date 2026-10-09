@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLanding, landings } from "@/data/landings";
-import { GOOGLE_REVIEW_COUNT, testimonials } from "@/data/testimonials";
 import { getPosts } from "@/lib/blog";
 import { landingGuides } from "@/lib/blog-seo";
 import { LANDING_FORM_ID, buildLandingJsonLd, landingMetadata, resolveLandingContent } from "@/lib/landing-seo";
 import { BUSINESS } from "@/lib/seo";
+import { reviewSummary } from "@/lib/ads-landing";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { HoloBar } from "@/components/layout/HoloBar";
 import { LegalLinks } from "@/components/layout/LegalLinks";
@@ -135,12 +135,8 @@ export default async function LandingPage({ params }: LandingPageProps) {
             {/* Franja de confianza */}
             <ul className="mt-10 flex flex-wrap gap-x-8 gap-y-3 font-mono text-xs uppercase tracking-widest text-muted">
               <li>
-                <span className="text-accent">
-                  ★ {(testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length)
-                    .toFixed(1)
-                    .replace(".", ",")}
-                </span>{" "}
-                · {GOOGLE_REVIEW_COUNT} reseñas en Google
+                <span className="text-accent">★ {reviewSummary().rating}</span> · {reviewSummary().count} reseñas en
+                Google
               </li>
               <li>Respuesta en 24 horas laborables</li>
               <li>Equipo senior · Sin subcontratas</li>

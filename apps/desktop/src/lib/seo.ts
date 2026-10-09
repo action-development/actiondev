@@ -11,6 +11,7 @@
 
 import {
   BUSINESS,
+  GOOGLE_RATING_TEXT,
   LEGAL_ENTITY,
   OFFICE_ADDRESS_LINE,
   REGISTERED_ADDRESS_LINE,
@@ -50,7 +51,7 @@ export const BRAND = {
   legalName: BUSINESS.legalName,
   tagline: "Desarrollo de Aplicaciones y Webs en Vigo",
   shortDescription:
-    "Agencia de desarrollo de aplicaciones y páginas web en Vigo. Apps iOS y Android, webs a medida y experiencias 3D para empresas de Pontevedra y toda Galicia. ★ 5,0 en Google.",
+    `Agencia de desarrollo de aplicaciones y páginas web en Vigo. Apps iOS y Android, webs a medida y experiencias 3D para empresas de Pontevedra y toda Galicia. ★ ${GOOGLE_RATING_TEXT} en Google.`,
   keywords: [
     "desarrollo de aplicaciones Vigo",
     "desarrollo de apps Vigo",

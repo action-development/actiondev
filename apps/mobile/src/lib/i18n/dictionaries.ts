@@ -1,4 +1,10 @@
+import { GOOGLE_RATING } from "@actiondev/shared";
+
 export type Locale = "es" | "en";
+
+/** Nota de la ficha de Google (`GOOGLE_RATING`, shared): «5.0» / «5,0». */
+const RATING_EN = GOOGLE_RATING.value.toFixed(1);
+const RATING_ES = RATING_EN.replace(".", ",");
 
 export const LOCALES: Locale[] = ["es", "en"];
 
@@ -7,7 +13,7 @@ export const dictionaries = {
     metadata: {
       title: "Action — App & Web Development in Vigo",
       description:
-        "App and web development studio in Vigo, Spain: iOS & Android apps, custom websites and 3D experiences for businesses across Galicia. 5.0 on Google.",
+        `App and web development studio in Vigo, Spain: iOS & Android apps, custom websites and 3D experiences for businesses across Galicia. ${RATING_EN} on Google.`,
     },
     nav: {
       home: "Home",
@@ -168,8 +174,7 @@ export const dictionaries = {
   es: {
     metadata: {
       title: "Action — Desarrollo de Aplicaciones y Webs en Vigo",
-      description:
-        "Agencia de desarrollo de aplicaciones y webs en Vigo: apps iOS y Android, webs a medida y experiencias 3D para empresas de toda Galicia. ★ 5,0 en Google.",
+      description: `Agencia de desarrollo de aplicaciones y webs en Vigo: apps iOS y Android, webs a medida y experiencias 3D para empresas de toda Galicia. ★ ${RATING_ES} en Google.`,
     },
     nav: {
       home: "Inicio",

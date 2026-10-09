@@ -13,7 +13,7 @@ interface PlazaHudProps {
   /** Día o noche: de día el cielo es claro y el texto blanco del sitio no se
    * lee, así que el chrome se invierte a tinta oscura. */
   mode: PlazaMode;
-  /** Número de reseñas presentes en la plaza. */
+  /** Nº de reseñas de la ficha de Google (`GOOGLE_RATING`), el mismo que en el resto del sitio. */
   count: number;
   /** Oculta el CTA de abajo cuando ya hay una ficha abierta (lo taparía: en
    * móvil la ficha es una hoja inferior y en desktop sube por la derecha). */

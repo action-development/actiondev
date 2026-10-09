@@ -82,7 +82,9 @@ export function isExternal(href: string): boolean {
 
 // ─── Cifras y datos derivados ───────────────────────────────────────────
 
-const { rating: RATING, count: REVIEW_COUNT } = reviewSummary();
+const { rating: RATING, count: REVIEW_COUNT, checkedAt: RATING_CHECKED } = reviewSummary();
+/** «consultado el 9 de octubre de 2026»: la fecha de `GOOGLE_RATING`. */
+const RATING_DATE = `consultado el ${formatLegalDate(RATING_CHECKED)}`;
 const PROJECT_COUNT = projects.length;
 /**
  * Pablo Cabaleiro con el cargo que ya publican su web y la firma del blog
@@ -181,7 +183,7 @@ export const ABOUT_FACTS: readonly AboutFact[] = [
   {
     label: "Valoración en Google",
     value: [
-      `${RATING} sobre 5 con ${REVIEW_COUNT} reseñas · `,
+      `${RATING} sobre 5 con ${REVIEW_COUNT} reseñas (${RATING_DATE}) · `,
       { text: "ficha de Google", href: BUSINESS.mapsUrl },
       " · ",
       { text: "reseñas en esta web", href: "/resenas" },
@@ -330,7 +332,7 @@ export const ABOUT_FAQS: readonly AboutFaq[] = [
   {
     q: "¿Qué opinan sus clientes?",
     a: [
-      `En Google tiene una valoración de ${RATING} sobre 5 con ${REVIEW_COUNT} reseñas. Se pueden leer en su `,
+      `En Google tiene una valoración de ${RATING} sobre 5 con ${REVIEW_COUNT} reseñas (${RATING_DATE}). Se pueden leer en su `,
       { text: "ficha de Google", href: BUSINESS.mapsUrl },
       " y en la ",
       { text: "página de reseñas", href: "/resenas" },

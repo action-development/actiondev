@@ -101,6 +101,27 @@ export const BUSINESS = {
 } as const;
 
 /**
+ * Valoración de la ficha de Google Business Profile «Action Development»
+ * (`BUSINESS.mapsUrl`): la ÚNICA fuente de la nota y del número de reseñas en
+ * landings, web móvil, `/sobre-nosotros`, metadescripciones, descripciones del
+ * JSON-LD y `llms.txt`. Se actualiza A MANO cuando cambie la ficha (consultada
+ * sin sesión en Google Maps) junto con `checkedAt`. No se calcula con
+ * `testimonials.length` (desktop): esa lista solo lleva las reseñas con texto.
+ * NUNCA va a `aggregateRating` (CLAUDE.md `[SEO]`): es texto, no marcado.
+ */
+export const GOOGLE_RATING = {
+  /** Nota media de la ficha (de 5). */
+  value: 5,
+  /** Nº de reseñas de la ficha, con y sin texto. */
+  count: 23,
+  /** Fecha de la última comprobación (ISO). */
+  checkedAt: "2026-10-09",
+} as const;
+
+/** «5,0»: la nota con coma decimal, como la enseña Google en español. */
+export const GOOGLE_RATING_TEXT = GOOGLE_RATING.value.toFixed(1).replace(".", ",");
+
+/**
  * Titular legal de la marca "Action Development".
  *
  * "Action" / "Action Development" es una MARCA COMERCIAL, no una persona

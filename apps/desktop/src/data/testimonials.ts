@@ -21,14 +21,12 @@ export interface Testimonial {
 }
 
 /**
- * Nº de reseñas de la ficha de Google «Action Development» (5,0 con 23,
- * consultada sin sesión en Google Maps el 2026-10-09). Es la cifra que se
- * enseña. `testimonials` lleva solo las 22 que tienen texto: la de Kev
- * Iglesias es de estrellas, sin texto que citar. Actualizar a mano cuando
- * entre una reseña nueva (y añadirla abajo si trae texto).
+ * Las reseñas de Google CON TEXTO (las que se citan y pueblan la plaza). La
+ * nota y el número que se enseñan NO salen de aquí sino de `GOOGLE_RATING`
+ * (`packages/shared/src/seo.ts`): la ficha tiene además reseñas solo de
+ * estrellas (la de Kev Iglesias). Al entrar una reseña nueva, subir
+ * `GOOGLE_RATING.count` y, si trae texto, añadirla abajo.
  */
-export const GOOGLE_REVIEW_COUNT = 23;
-
 export const testimonials: Testimonial[] = [
   {
     id: "almudena-muhle",

@@ -1,5 +1,4 @@
-import { BUSINESS } from "@actiondev/shared";
-import { testimonials } from "@/data/testimonials";
+import { BUSINESS, GOOGLE_RATING } from "@actiondev/shared";
 import { reviewSummary } from "@/lib/ads-landing";
 import { Icon } from "./Icon";
 import { UnderlineLink } from "./UnderlineLink";
@@ -7,9 +6,9 @@ import { UnderlineLink } from "./UnderlineLink";
 /**
  * Valoración de Google en la web móvil v2 (DESIGN.md §7, `.stars`, `.rating`
  * y celda «Reseñas» del hero). Una sola pieza para la home, `/resenas` y las
- * landings de campaña. Las cifras salen de `testimonials.ts` por el mismo
- * cálculo que escritorio (`reviewSummary()` de `lib/ads-landing.ts`): la media,
- * de las reseñas; el número, de `GOOGLE_REVIEW_COUNT` (el de la ficha).
+ * landings de campaña. Las cifras son las de escritorio (`reviewSummary()` de
+ * `lib/ads-landing.ts`), que las lee de `GOOGLE_RATING`: nunca se escriben a
+ * mano.
  */
 
 const summary = reviewSummary();
@@ -18,8 +17,8 @@ const summary = reviewSummary();
 export const REVIEW_AVERAGE = summary.rating;
 /** Nº de reseñas de la ficha de Google (23). */
 export const REVIEW_COUNT = summary.count;
-/** ¿Todas de 5 estrellas? Solo entonces se dice. */
-export const ALL_FIVE_STARS = testimonials.every((t) => t.rating === 5);
+/** ¿Todas de 5 estrellas? Solo si la media de la ficha es un 5 exacto. */
+export const ALL_FIVE_STARS = GOOGLE_RATING.value === 5;
 /** «5,0 en Google · 23 reseñas»: la línea de prueba del hero (home y campaña). */
 export const RATING_SUMMARY = `${REVIEW_AVERAGE} en Google · ${REVIEW_COUNT} reseñas`;
 

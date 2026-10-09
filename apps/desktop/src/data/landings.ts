@@ -23,7 +23,7 @@
  * - Cada testimonio se cita en UNA sola landing.
  */
 
-import { LEAD_NEEDS_CAMPAIGN, LEAD_NEEDS_WEB, type LeadNeed } from "@actiondev/shared";
+import { GOOGLE_RATING_TEXT, LEAD_NEEDS_CAMPAIGN, LEAD_NEEDS_WEB, type LeadNeed } from "@actiondev/shared";
 
 export interface LandingFaq {
   q: string;
@@ -104,7 +104,7 @@ export const landings: Landing[] = [
     ],
     title: "Desarrollo de Apps en Vigo | Aplicaciones iOS y Android",
     metaDescription:
-      "Desarrollo de aplicaciones en Vigo: apps iOS y Android con React Native, panel de gestión y backend propio. Oficina en Rúa Colón 20. ★ 5,0 en Google.",
+      `Desarrollo de aplicaciones en Vigo: apps iOS y Android con React Native, panel de gestión y backend propio. Oficina en Rúa Colón 20. ★ ${GOOGLE_RATING_TEXT} en Google.`,
     h1: "Desarrollo de aplicaciones en Vigo",
     intro: [
       "Somos Action, un estudio de desarrollo de apps y aplicaciones con oficina en el centro de Vigo, en la Rúa Colón, 20. Diseñamos y programamos apps para iOS y Android, aplicaciones web y el backend que las sostiene, para empresas que necesitan que su app resuelva un problema concreto: reservas, fichajes, pedidos, alumnos, socios o clientes.",
@@ -1016,7 +1016,7 @@ export const landings: Landing[] = [
     // web pontevedra» (10–100): plan de contenidos de 2026-10-08, §5.1.
     title: "Diseño Web en Pontevedra | Desarrollo de Webs a Medida",
     metaDescription:
-      "Diseño y desarrollo de páginas web a medida en Pontevedra y las Rías Baixas: hostelería, eventos, clubes y comercio, con casos en la provincia. ★ 5,0",
+      `Diseño y desarrollo de páginas web a medida en Pontevedra y las Rías Baixas: hostelería, eventos, clubes y comercio, con casos en la provincia. ★ ${GOOGLE_RATING_TEXT}`,
     h1: "Diseño y desarrollo web en Pontevedra",
     intro: [
       "Diseñamos y desarrollamos páginas web a medida para negocios de la provincia de Pontevedra. El mismo equipo hace las dos cosas, la dirección de arte y la programación, así que lo que apruebas en el diseño es exactamente lo que se publica.",
