@@ -46,10 +46,11 @@ export interface AdsLanding {
   /** Ids de `testimonials.ts`. Cada reseña se cita en UNA sola landing. */
   testimonials: string[];
   /**
-   * Reseña del hero, junto al formulario: `id` de `testimonials.ts` y, si hace
-   * falta una sola línea en móvil, un recorte LITERAL de su texto con «…» en
-   * el extremo cortado. Si el recorte no está en la reseña, se pinta entera.
-   * No se repite en la sección de reseñas de la página.
+   * Reseña del hero de escritorio, junto al formulario: `id` de
+   * `testimonials.ts` y, si hace falta, un recorte LITERAL de su texto con «…»
+   * en el extremo cortado. Si el recorte no está en la reseña, se pinta
+   * entera. En móvil no va en el hero: abre la sección de reseñas, entera. No
+   * se repite en la página.
    */
   heroReview: { id: string; excerpt?: string };
   /** Mensaje precargado de los enlaces de WhatsApp de la landing (barra, barra fija). */

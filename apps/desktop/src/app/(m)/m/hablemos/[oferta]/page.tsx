@@ -10,7 +10,8 @@ import { MobileHeader } from "@/components/m/MobileHeader";
 import { RATING_SUMMARY, RatingBand, Stars } from "@/components/m/Rating";
 import { StickyCta } from "@/components/m/StickyCta";
 import { adsLandings, getAdsLanding } from "@/data/ads-landings";
-import { adsLandingMetadata, resolveAdsLandingContent, resolveHeroReview } from "@/lib/ads-landing";
+import { testimonials } from "@/data/testimonials";
+import { adsLandingMetadata, resolveAdsLandingContent } from "@/lib/ads-landing";
 import { whatsappHref } from "@/lib/leads/whatsapp";
 
 /**
@@ -56,7 +57,9 @@ export default async function MobileAdsLandingPage({ params }: PageProps) {
   if (!landing) notFound();
 
   const { cases, quotes } = resolveAdsLandingContent(landing);
-  const heroReview = resolveHeroReview(landing);
+  // La reseña del hero abre «Lo que dicen en Google», entera; `quotes` ya la excluye, así que no se repite.
+  const hero = testimonials.find((x) => x.id === landing.heroReview.id);
+  const reviews = hero ? [hero, ...quotes] : quotes;
   const wa = whatsappHref(landing.whatsappText);
 
   return (
@@ -64,12 +67,13 @@ export default async function MobileAdsLandingPage({ params }: PageProps) {
       <MobileHeader menu={false} logoHref={null} whatsappText={landing.whatsappText} />
       <main id="main-content">
         {/*
-          Hero corto a propósito: H1 (el mismo del anuncio), la valoración, la
-          oferta de los anuncios («Primera reunión gratis», «Oficina en Vigo»)
-          y la reseña. Lo que vende cabe en la primera pantalla real de Safari
-          con el banner de cookies abierto; a pantalla completa (390×844),
-          también el paso 1 entero. La entradilla (`subtitle`) abre «Cómo lo
-          hacemos», justo debajo del formulario.
+          Hero corto a propósito: H1 (el mismo del anuncio), la valoración y la
+          oferta de los anuncios («Primera reunión gratis», «Oficina en Vigo»).
+          Lo que vende cabe en la primera pantalla real de Safari con el banner
+          de cookies abierto; a pantalla completa (390×844), también el paso 1
+          entero. La reseña del hero no va aquí: abre «Lo que dicen en Google»,
+          entera. La entradilla (`subtitle`) abre «Cómo lo hacemos», justo
+          debajo del formulario.
         */}
         <section id={HERO_ID} aria-labelledby="m-ads-h1" className="grid gap-2 border-b-2 border-ink px-4 pt-4 pb-3.5">
           <h1
@@ -89,14 +93,6 @@ export default async function MobileAdsLandingPage({ params }: PageProps) {
           <p data-testid="m-ads-offer" className="text-[15px] font-semibold leading-[1.35]">
             {ADS_OFFER_LINE}
           </p>
-          {heroReview && (
-            <figure data-testid="m-ads-hero-review" className="text-[15px] leading-[1.35]">
-              <blockquote className="inline">
-                <p className="inline">«{heroReview.text}»</p>
-              </blockquote>{" "}
-              <figcaption className="inline text-muted">— {heroReview.name}</figcaption>
-            </figure>
-          )}
         </section>
 
         <CampaignLeadForm
@@ -134,8 +130,8 @@ export default async function MobileAdsLandingPage({ params }: PageProps) {
             Lo que dicen en Google
           </h2>
           <RatingBand />
-          {quotes.map((t, i) => (
-            <ReviewQuote key={t.id} testimonial={t} last={i === quotes.length - 1} />
+          {reviews.map((t, i) => (
+            <ReviewQuote key={t.id} testimonial={t} last={i === reviews.length - 1} />
           ))}
         </section>
 

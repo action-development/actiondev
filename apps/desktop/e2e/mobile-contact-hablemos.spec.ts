@@ -30,8 +30,8 @@ const ADSBOT_UA =
 const DESKTOP_UA = devices["Desktop Chrome"].userAgent;
 
 const OFFERS = [
-  { slug: "app", text: "Hola, vengo de vuestra web y quiero hablar de una app a medida", faqs: 5 },
-  { slug: "software", text: "Hola, vengo de vuestra web y quiero hablar de un software de gestión a medida", faqs: 6 },
+  { slug: "app", text: "Hola, vengo de vuestra web y quiero hablar de una app a medida", faqs: 5, review: "Rapeal John" },
+  { slug: "software", text: "Hola, vengo de vuestra web y quiero hablar de un software de gestión a medida", faqs: 6, review: "Julio Walker" },
 ] as const;
 
 /** La oferta de los anuncios en la primera pantalla (`components/leads/copy.ts`). */
@@ -115,7 +115,7 @@ async function mockLead(page: Page) {
 }
 
 test.describe("Móvil v2 · /hablemos/[oferta]", () => {
-  for (const { slug, text, faqs } of OFFERS) {
+  for (const { slug, text, faqs, review } of OFFERS) {
     test(`/hablemos/${slug}: árbol móvil, noindex, sin fugas y WhatsApp con el mensaje de la oferta`, async ({ page }) => {
       await withConsent(page, "denied");
       await blockExternal(page);
@@ -147,8 +147,11 @@ test.describe("Móvil v2 · /hablemos/[oferta]", () => {
         expect(decodeURIComponent(href), id).toContain(text);
       }
 
-      // Contenido de `ads-landings.ts`: reseña del hero, casos en pestaña nueva, pasos y FAQ.
-      await expect(page.getByTestId("m-ads-hero-review")).toBeVisible();
+      // Contenido de `ads-landings.ts`: la reseña del hero abre las reseñas (entera, sin recorte), casos en pestaña nueva, pasos y FAQ.
+      await expect(page.getByTestId("m-ads-hero-review")).toHaveCount(0);
+      const first = page.locator('[aria-labelledby="m-ads-resenas"] figure').first();
+      await expect(first).toContainText(review);
+      await expect(first.locator("blockquote")).not.toContainText("…");
       await expect(page.getByTestId("m-ads-rating")).toContainText("5,0 en Google · 23 reseñas");
       await expect(page.getByTestId("m-ads-offer")).toHaveText(OFFER_LINE);
       const cases = page.locator('[data-testid^="m-ads-case-"]');
