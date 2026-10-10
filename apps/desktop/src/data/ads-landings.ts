@@ -68,7 +68,7 @@ export const adsLandings: AdsLanding[] = [
       "Desarrollo de apps para empresas: iOS y Android con panel de gestión y servidor, publicadas en App Store y Google Play. Propuesta cerrada. Rúa Colón, Vigo.",
     h1: "Desarrollo de apps para empresas, de la idea a App Store y Google Play",
     subtitle:
-      "Diseñamos y programamos tu app para iOS y Android, con su panel de gestión y su servidor. De la primera reunión sales con el alcance de la primera versión; después, presupuesto cerrado por escrito.",
+      "Diseñamos y programamos tu app para iOS y Android, con su panel de gestión y su servidor. Desde Rúa Colón, 20 (Vigo), con propuesta cerrada y el alcance por escrito.",
     defaultNeed: "app",
     bullets: [
       "Un solo equipo de principio a fin: quien te atiende en la primera reunión es quien conoce el código después.",
