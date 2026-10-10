@@ -30,8 +30,8 @@ const ADSBOT_UA =
 const DESKTOP_UA = devices["Desktop Chrome"].userAgent;
 
 const OFFERS = [
-  { slug: "app", text: "Hola, vengo de vuestra web y quiero hablar de una app a medida", faqs: 5, review: "Rapeal John" },
-  { slug: "software", text: "Hola, vengo de vuestra web y quiero hablar de un software de gestión a medida", faqs: 6, review: "Julio Walker" },
+  { slug: "app", text: "Hola, vengo de vuestra web y quiero hablar de una app a medida", faqs: 6, review: "Rapeal John" },
+  { slug: "software", text: "Hola, vengo de vuestra web y quiero hablar de un software de gestión a medida", faqs: 7, review: "Julio Walker" },
 ] as const;
 
 /** La oferta de los anuncios en la primera pantalla (`components/leads/copy.ts`). */

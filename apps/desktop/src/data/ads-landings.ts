@@ -11,7 +11,10 @@ import type { LeadNeed } from "@actiondev/shared";
  * `packages/shared/src/projects.ts`; reseñas → `id` de `testimonials.ts`.
  * Cada `note` es literal o fiel al `brief`/`result` del proyecto y a la nota
  * que ya usa `landings.ts` para el mismo caso. Nada de cifras, plazos ni
- * precios que no estén ahí. El proceso sigue el de `landings.ts`.
+ * precios que no estén ahí, salvo plazos ya publicados en el blog y
+ * aprobados por el dueño (UD-9, 10/10/2026 11:22-11:23) y la mención al
+ * servicio urgente, aprobada por el dueño sin plazo ni precio (UD-9,
+ * 10/10/2026 11:22). El proceso sigue el de `landings.ts`.
  */
 
 export interface AdsCase {
@@ -112,6 +115,13 @@ export const adsLandings: AdsLanding[] = [
         q: "¿Cuánto cuesta una app?",
         a: "Depende de las pantallas y tipos de usuario, de si se conecta con programas que ya usas y de si funciona sin conexión. Tras la reunión de definición te enviamos una propuesta cerrada.",
       },
+      // Plazo publicado en /blog/cuanto-cuesta-desarrollar-una-app y /blog/mvp-de-una-app; aprobado
+      // por el dueño (UD-9, 10/10/2026 11:22-11:23). Servicio urgente: aprobado por el dueño sin
+      // plazo ni precio (UD-9, 10/10/2026 11:22).
+      {
+        q: "¿Cuánto se tarda?",
+        a: "Una app bien definida suele estar en las tiendas entre 2 y 4 meses. Si lleva un servidor complejo o integraciones con sistemas que ya usas, puede llevar más; el calendario realista sale de la fase de definición. Si tu proyecto no puede esperar, tenemos servicio urgente: indícalo al contarnos tu idea y en la primera reunión te decimos qué plazo es posible.",
+      },
       {
         q: "¿iOS, Android o las dos?",
         a: "Las dos, con una sola app para iPhone y Android: para la mayoría de apps de negocio es la opción que mejor equilibra coste, plazo y experiencia. Solo hacemos una versión aparte para cada sistema si la app necesita algo muy concreto del teléfono.",
@@ -200,6 +210,15 @@ export const adsLandings: AdsLanding[] = [
       {
         q: "¿Cómo se presupuesta?",
         a: "Por módulos, con lo que incluye y lo que no cada uno. Así decides por dónde empezar y cuánto invertir en cada fase.",
+      },
+      // Sin plazo en cifras. Bases: «Módulos que entran en uso por separado» (`bullets` de esta
+      // landing, /hablemos/software) y «lo construimos por módulos, para que la primera parte
+      // funcione cuanto antes» (FAQ de /software-a-medida-vigo en `landings.ts`). Texto aprobado
+      // por el dueño (UD-9, 10/10/2026 11:22-11:23). Servicio urgente: aprobado por el dueño sin
+      // plazo ni precio (UD-9, 10/10/2026 11:22).
+      {
+        q: "¿Cuánto se tarda?",
+        a: "Lo construimos por módulos que entran en uso por separado, para que la primera parte funcione cuanto antes. Si lo necesitas con urgencia, tenemos servicio urgente: indícalo al contarnos tu caso y en la primera reunión te decimos qué plazo es posible.",
       },
       {
         q: "¿Funciona en el móvil?",
