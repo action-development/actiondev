@@ -87,7 +87,10 @@ export const adsLandings: AdsLanding[] = [
       },
     ],
     testimonials: ["rapeal-john", "dominik-saworski"],
-    heroReview: { id: "rapeal-john", excerpt: "…el resultado ha sido espectacular" },
+    heroReview: {
+      id: "rapeal-john",
+      excerpt: "Contratamos a Action Development para desarrollar nuestra app en Vigo y el resultado ha sido espectacular…",
+    },
     whatsappText: "Hola, vengo de vuestra web y quiero hablar de una app a medida",
     steps: [
       {
@@ -168,7 +171,7 @@ export const adsLandings: AdsLanding[] = [
       },
     ],
     testimonials: ["julio-walker", "pablo-r", "samuel-flores"],
-    heroReview: { id: "julio-walker", excerpt: "Tienen solución para literalmente todo…" },
+    heroReview: { id: "pablo-r", excerpt: "…Cumplieron todos los plazos acordados y destaca la atención al detalle." },
     whatsappText: "Hola, vengo de vuestra web y quiero hablar de un software de gestión a medida",
     steps: [
       {
