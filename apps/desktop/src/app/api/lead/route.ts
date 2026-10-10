@@ -65,9 +65,19 @@ export async function POST(request: Request) {
   const { lead, honeypot, elapsedMs, submissionId } = parsed.value;
 
   // Bot (honeypot relleno o demasiado rápido): éxito FALSO y sin guardar, para
-  // no darle pistas de qué lo ha delatado.
+  // no darle pistas de qué lo ha delatado. Deja rastro en los logs para poder
+  // contar los descartes, sin datos personales (ni nombre, ni teléfono, ni
+  // email, ni notas).
   const minElapsed = lead.source === "callback_form" ? MIN_ELAPSED_CALLBACK_MS : MIN_ELAPSED_MS;
   if (honeypot.trim() !== "" || elapsedMs === null || elapsedMs < minElapsed) {
+    console.warn("[lead] descartado como posible bot", {
+      source: lead.source,
+      honeypot: honeypot.trim() !== "",
+      elapsedMs,
+      landingPath: lead.attribution.landingPath ?? null,
+      utmSource: lead.attribution.utmSource ?? null,
+      clickId: Boolean(lead.attribution.gclid || lead.attribution.gbraid || lead.attribution.wbraid || lead.attribution.fbclid),
+    });
     return json({ ok: true });
   }
 

@@ -148,6 +148,33 @@ describe("POST /api/lead", () => {
     expect(mocks.after).toHaveLength(0);
   });
 
+  it("bot descartado: un console.warn con el rastro y sin nombre, teléfono ni email", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const res = await send({
+        ...valid,
+        website: "spam",
+        attribution: { landingPath: "/hablemos/app", utmSource: "google", gclid: "abc123" },
+      });
+      expect(await res.json()).toEqual({ ok: true });
+      expect(warn).toHaveBeenCalledTimes(1);
+      const [message, info] = warn.mock.calls[0] as [string, Record<string, unknown>];
+      expect(message).toBe("[lead] descartado como posible bot");
+      expect(info).toEqual({
+        source: "ads_landing",
+        honeypot: true,
+        elapsedMs: 9000,
+        landingPath: "/hablemos/app",
+        utmSource: "google",
+        clickId: true,
+      });
+      const logged = JSON.stringify(info);
+      for (const personal of [valid.name, valid.phone, valid.email]) expect(logged).not.toContain(personal);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it("rechaza el origen de Meta y los orígenes desconocidos", async () => {
     for (const source of ["meta_lead_form", "contact"]) {
       const res = await send({ ...valid, source });
