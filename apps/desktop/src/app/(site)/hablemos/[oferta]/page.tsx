@@ -108,6 +108,8 @@ export default async function AdsLandingPage({ params }: PageProps) {
         >
           <LeadForm
             defaultNeed={landing.defaultNeed}
+            // UD-10 = sí, solo /hablemos/* (orquestador, 10/10/2026 10:00 CEST, con la autorización del dueño).
+            privacyBelowSubmit
             source="ads_landing"
             whatsappText={landing.whatsappText}
             offer={landing.slug}

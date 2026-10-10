@@ -380,6 +380,25 @@ test.describe("Móvil v2 · /hablemos/[oferta]", () => {
     expect(await recordedEvents(page, "lead_submit_error")).toHaveLength(0);
   });
 
+  test("primera capa RGPD debajo de «Enviar mi proyecto» (UD-10): nota encima del botón y título debajo", async ({ page }) => {
+    await withConsent(page, "denied");
+    for (const { slug } of OFFERS) {
+      await page.goto(`/hablemos/${slug}`);
+      await page.getByTestId("m-lead-field-stage-idea").check();
+      await page.getByTestId("m-lead-next").click();
+      await expect(page.getByTestId("m-lead-step-2")).toBeVisible();
+      await expect(page.getByTestId("m-lead-privacy-note")).toHaveText("Lee abajo la información básica sobre protección de datos.");
+      await expect(page.getByTestId("m-lead-privacy-title")).toHaveText("Información básica sobre protección de datos");
+      const box = async (id: string) => (await page.getByTestId(id).boundingBox())!;
+      const note = await box("m-lead-privacy-note");
+      const submit = await box("m-lead-submit");
+      const title = await box("m-lead-privacy-title");
+      expect(note.y + note.height, `${slug}: nota encima del botón`).toBeLessThanOrEqual(submit.y);
+      expect(submit.y + submit.height, `${slug}: título debajo del botón`).toBeLessThanOrEqual(title.y);
+      await expect(page.getByTestId("m-lead-privacy").getByTestId("m-lead-privacy-title")).toHaveCount(1);
+    }
+  });
+
   test("embudo medible: lead_form_step y whatsapp_click con link_location; click_whatsapp no cambia", async ({ page }) => {
     await withConsent(page, "granted");
     await blockExternal(page);

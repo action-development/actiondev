@@ -18,7 +18,7 @@ import {
 import { HoloButton } from "@/components/ui/HoloButton";
 import { whatsappHref, whatsappTextForNeed } from "@/lib/leads/whatsapp";
 import { LEAD_LIMITS } from "@/lib/leads/validation";
-import { FIRST_MEETING_OFFER, RECEIVED_MESSAGE, SUBMIT_ERROR_MESSAGE } from "./copy";
+import { FIRST_MEETING_OFFER, PRIVACY_NOTE, PRIVACY_TITLE, RECEIVED_MESSAGE, SUBMIT_ERROR_MESSAGE } from "./copy";
 import { useLeadForm } from "./useLeadForm";
 
 /**
@@ -46,6 +46,16 @@ interface LeadFormProps {
    */
   needs?: readonly LeadNeed[];
   source: LeadSource;
+  /**
+   * Primera capa RGPD DEBAJO de «Enviar mi proyecto». Por defecto `false`: encima
+   * del botón, como en el resto del sitio. Solo la pasan las dos `page.tsx` de
+   * `/hablemos/[oferta]`: UD-10 = sí, con el alcance «solo /hablemos/*»,
+   * decidido por el orquestador el 10/10/2026 a las 10:00 CEST con la
+   * autorización del dueño. Condiciones del memorando de privacidad (§3.1):
+   * `PRIVACY_NOTE` encima del botón y, tras la frase de las 24 horas, el mismo
+   * bloque, sin plegar, con `PRIVACY_TITLE`.
+   */
+  privacyBelowSubmit?: boolean;
   /** Identifica la landing (`app`, `software`…): va al aviso interno, no al documento. */
   offer: string;
   /**
@@ -104,6 +114,7 @@ export function LeadForm({
   defaultNeed,
   needs = LEAD_NEEDS_CAMPAIGN,
   source,
+  privacyBelowSubmit = false,
   offer,
   offerLine = FIRST_MEETING_OFFER,
   testIdPrefix = "lead",
@@ -144,6 +155,37 @@ export function LeadForm({
     goNext,
     onSubmit,
   } = useLeadForm({ defaultNeed, source, offer });
+
+  // Primera capa RGPD (art. 13): sin casillas, el tratamiento es precontractual.
+  // Va encima del botón; con `privacyBelowSubmit` (`/hablemos/*`, UD-10), debajo,
+  // con el título, y una nota encima del botón remite a ella.
+  const privacy = (
+    <p data-testid={tid("privacy")} className="mt-5 text-xs leading-relaxed text-foreground/70">
+      {privacyBelowSubmit && (
+        <strong className="block" data-testid={tid("privacy-title")}>
+          {PRIVACY_TITLE}
+        </strong>
+      )}
+      <strong className="font-semibold text-foreground">Responsable:</strong> Alcasi Systems, S.L.{" "}
+      <strong className="font-semibold text-foreground">Finalidad:</strong> responder a tu solicitud y preparar un
+      presupuesto. <strong className="font-semibold text-foreground">Legitimación:</strong> medidas precontractuales
+      a petición tuya. <strong className="font-semibold text-foreground">Destinatarios:</strong> proveedores de
+      alojamiento, correo y CRM (Google Firebase, Vercel, Supabase, one.com y, si está activado, Telegram) como encargados del
+      tratamiento y, solo si aceptas las cookies, Google y Meta para medir campañas; no se ceden a terceros salvo
+      obligación legal. Los datos se alojan en Google Firebase (EE. UU.) con garantías adecuadas.{" "}
+      <strong className="font-semibold text-foreground">Derechos:</strong> acceso, rectificación, supresión y otros en
+      hi@actiondev.es. Más información en la{" "}
+      <Link
+        href="/legal/privacy"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="link-sweep text-accent hover:text-foreground"
+      >
+        Política de privacidad
+      </Link>
+      .
+    </p>
+  );
 
   return (
     <form
@@ -440,27 +482,8 @@ export function LeadForm({
             </label>
           </div>
 
-          {/* Primera capa RGPD (art. 13): sin casillas, el tratamiento es precontractual. */}
-          <p data-testid={tid("privacy")} className="mt-5 text-xs leading-relaxed text-foreground/70">
-            <strong className="font-semibold text-foreground">Responsable:</strong> Alcasi Systems, S.L.{" "}
-            <strong className="font-semibold text-foreground">Finalidad:</strong> responder a tu solicitud y preparar un
-            presupuesto. <strong className="font-semibold text-foreground">Legitimación:</strong> medidas precontractuales
-            a petición tuya. <strong className="font-semibold text-foreground">Destinatarios:</strong> proveedores de
-            alojamiento, correo y CRM (Google Firebase, Vercel, Supabase, one.com y, si está activado, Telegram) como encargados del
-            tratamiento y, solo si aceptas las cookies, Google y Meta para medir campañas; no se ceden a terceros salvo
-            obligación legal. Los datos se alojan en Google Firebase (EE. UU.) con garantías adecuadas.{" "}
-            <strong className="font-semibold text-foreground">Derechos:</strong> acceso, rectificación, supresión y otros en
-            hi@actiondev.es. Más información en la{" "}
-            <Link
-              href="/legal/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="link-sweep text-accent hover:text-foreground"
-            >
-              Política de privacidad
-            </Link>
-            .
-          </p>
+          {/* Primera capa RGPD: encima del botón salvo con `privacyBelowSubmit` (ver `privacy`, arriba). */}
+          {!privacyBelowSubmit && privacy}
 
           {status === "error" && (
             <div data-testid={tid("error")} role="alert" className="lead-step mt-4 border-2 border-foreground p-3.5">
@@ -471,6 +494,13 @@ export function LeadForm({
                 </HoloButton>
               </div>
             </div>
+          )}
+
+          {/* Con la primera capa debajo: la nota, sin enlace, en el campo de visión del botón. */}
+          {privacyBelowSubmit && (
+            <p data-testid={tid("privacy-note")} className="mt-3 text-xs leading-relaxed text-foreground/70">
+              {PRIVACY_NOTE}
+            </p>
           )}
 
           {status === "received" ? (
@@ -489,6 +519,7 @@ export function LeadForm({
             </button>
           )}
           <p className="mt-2.5 text-center text-[13px] text-muted">Primera reunión gratis y sin compromiso. Te respondemos en 24 horas laborables.</p>
+          {privacyBelowSubmit && privacy}
         </div>
       )}
     </form>

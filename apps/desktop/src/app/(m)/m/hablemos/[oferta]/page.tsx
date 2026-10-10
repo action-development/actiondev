@@ -97,6 +97,8 @@ export default async function MobileAdsLandingPage({ params }: PageProps) {
 
         <CampaignLeadForm
           id={FORM_ID}
+          // UD-10 = sí, solo /hablemos/* (orquestador, 10/10/2026 10:00 CEST, con la autorización del dueño).
+          privacyBelowSubmit
           defaultNeed={landing.defaultNeed}
           needs={LEAD_NEEDS_CAMPAIGN}
           source="ads_landing"

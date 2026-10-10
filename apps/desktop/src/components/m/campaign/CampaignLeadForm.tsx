@@ -10,6 +10,7 @@ import { MobileLeadForm } from "../leads/MobileLeadForm";
  */
 export function CampaignLeadForm({
   id,
+  privacyBelowSubmit,
   defaultNeed,
   needs = LEAD_NEEDS_CAMPAIGN,
   source,
@@ -17,6 +18,8 @@ export function CampaignLeadForm({
   whatsappText,
 }: {
   id: string;
+  /** Primera capa RGPD debajo del botón (UD-10, solo `/hablemos/*`): ver `MobileLeadForm`. */
+  privacyBelowSubmit?: boolean;
   defaultNeed: LeadNeed;
   needs?: readonly LeadNeed[];
   source: "ads_landing";
@@ -27,6 +30,7 @@ export function CampaignLeadForm({
   return (
     <MobileLeadForm
       id={id}
+      privacyBelowSubmit={privacyBelowSubmit}
       defaultNeed={defaultNeed}
       needs={needs}
       source={source}

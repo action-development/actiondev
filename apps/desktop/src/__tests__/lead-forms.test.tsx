@@ -607,3 +607,62 @@ describe("useLeadForm", () => {
     expect(result.current.status).toBe("sent");
   });
 });
+
+/** Primera capa RGPD debajo del botón: solo con `privacyBelowSubmit` (UD-10, `/hablemos/*`). */
+const PRIVACY_BELOW = [
+  {
+    name: "LeadForm (escritorio)",
+    prefix: "lead",
+    mount: (below?: boolean) => render(<LeadForm {...PROPS} privacyBelowSubmit={below} />),
+    chooseBudget: () => fireEvent.change(screen.getByTestId("lead-field-budget"), { target: { value: "lt5k" } }),
+  },
+  {
+    name: "MobileLeadForm",
+    prefix: "m-lead",
+    mount: (below?: boolean) => render(<MobileLeadForm {...PROPS} privacyBelowSubmit={below} />),
+    chooseBudget: () => fireEvent.click(screen.getByTestId("m-lead-field-budget-lt5k")),
+  },
+] as const;
+
+describe.each(PRIVACY_BELOW)("$name: primera capa RGPD debajo del botón (`privacyBelowSubmit`)", ({ prefix, mount, chooseBudget }) => {
+  const t = (name: string) => screen.getByTestId(`${prefix}-${name}`);
+  const q = (name: string) => screen.queryByTestId(`${prefix}-${name}`);
+  const precedes = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+  const toStep2 = () => {
+    fireEvent.click(t("field-stage-idea"));
+    fireEvent.click(t("next"));
+  };
+
+  it("con la prop: error, nota, botón, frase de las 24 horas y el mismo bloque con su título", async () => {
+    mount(true);
+    toStep2();
+    fireEvent.change(t("field-name"), { target: { value: "Ana" } });
+    fireEvent.change(t("field-phone"), { target: { value: "600123456" } });
+    fireEvent.change(t("field-email"), { target: { value: "ana@empresa.es" } });
+    chooseBudget();
+    respond(502, { ok: false });
+    fireEvent.click(t("submit"));
+    const error = await screen.findByTestId(`${prefix}-error`);
+
+    const note = t("privacy-note");
+    const reassurance = screen.getByText(/Primera reunión gratis y sin compromiso/);
+    expect(note.textContent).toBe("Lee abajo la información básica sobre protección de datos.");
+    expect(note.querySelector("a")).toBeNull();
+    expect(t("privacy-title").textContent).toBe("Información básica sobre protección de datos");
+    expect(t("privacy").firstElementChild).toBe(t("privacy-title"));
+    expect(t("privacy")).toHaveTextContent("Google Firebase, Vercel, Supabase, one.com");
+    expect(screen.getAllByRole("link", { name: "Política de privacidad" })).toHaveLength(1);
+    expect(precedes(error, note)).toBe(true);
+    expect(precedes(note, t("submit"))).toBe(true);
+    expect(precedes(t("submit"), reassurance)).toBe(true);
+    expect(precedes(reassurance, t("privacy"))).toBe(true);
+  });
+
+  it("sin la prop (resto del sitio): el bloque sigue encima del botón, sin nota ni título", () => {
+    mount();
+    toStep2();
+    expect(q("privacy-note")).toBeNull();
+    expect(q("privacy-title")).toBeNull();
+    expect(precedes(t("privacy"), t("submit"))).toBe(true);
+  });
+});

@@ -41,3 +41,12 @@ export const SUBMIT_ERROR_MESSAGE =
 
 /** Envío aceptado sin `id` (la API lo descartó como bot): confirmación neutra, sin conversión ni redirección. */
 export const RECEIVED_MESSAGE = "Recibido. Te contactamos en 24 horas laborables.";
+
+/**
+ * Primera capa RGPD debajo de «Enviar mi proyecto» (prop `privacyBelowSubmit`,
+ * solo `/hablemos/*`): la nota, sin enlace, va encima del botón y el título,
+ * en negrita, abre el bloque de debajo. Textos del memorando de privacidad
+ * (§3.1), que siguen la guía de la AEPD sobre el deber de informar (§6).
+ */
+export const PRIVACY_NOTE = "Lee abajo la información básica sobre protección de datos.";
+export const PRIVACY_TITLE = "Información básica sobre protección de datos";

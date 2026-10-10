@@ -692,6 +692,32 @@ test.describe("Landings de campaña", () => {
     });
   }
 
+  test("primera capa RGPD debajo de «Enviar mi proyecto» solo en /hablemos/* (UD-10): nota encima y título debajo", async ({ page }) => {
+    for (const offer of ["app", "software"]) {
+      await page.goto(`/hablemos/${offer}`);
+      await page.getByTestId("lead-field-stage-idea").check();
+      await page.getByTestId("lead-next").click();
+      await expect(page.getByTestId("lead-step-2")).toBeVisible();
+      await expect(page.getByTestId("lead-privacy-note")).toHaveText("Lee abajo la información básica sobre protección de datos.");
+      await expect(page.getByTestId("lead-privacy-title")).toHaveText("Información básica sobre protección de datos");
+      const box = async (id: string) => (await page.getByTestId(id).boundingBox())!;
+      const note = await box("lead-privacy-note");
+      const submit = await box("lead-submit");
+      const title = await box("lead-privacy-title");
+      expect(note.y + note.height, `${offer}: nota encima del botón`).toBeLessThanOrEqual(submit.y);
+      expect(submit.y + submit.height, `${offer}: título debajo del botón`).toBeLessThanOrEqual(title.y);
+      await expect(page.getByTestId("lead-privacy").getByTestId("lead-privacy-title")).toHaveCount(1);
+    }
+    // Fuera de /hablemos/* (landing SEO), sin cambios: ni nota ni título.
+    await page.goto("/desarrollo-de-aplicaciones-vigo");
+    await page.getByTestId("lead-field-stage-idea").check();
+    await page.getByTestId("lead-next").click();
+    await expect(page.getByTestId("lead-step-2")).toBeVisible();
+    await expect(page.getByTestId("lead-privacy")).toBeVisible();
+    await expect(page.getByTestId("lead-privacy-note")).toHaveCount(0);
+    await expect(page.getByTestId("lead-privacy-title")).toHaveCount(0);
+  });
+
   test("/legal redirige a /legal/aviso-legal", async ({ request }) => {
     const res = await request.get("/legal", { maxRedirects: 0 });
     expect(res.status()).toBe(308);

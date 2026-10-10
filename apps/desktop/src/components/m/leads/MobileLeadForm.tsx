@@ -12,7 +12,7 @@ import {
   type LeadNeed,
   type LeadSource,
 } from "@actiondev/shared";
-import { RECEIVED_MESSAGE, SUBMIT_ERROR_MESSAGE } from "@/components/leads/copy";
+import { PRIVACY_NOTE, PRIVACY_TITLE, RECEIVED_MESSAGE, SUBMIT_ERROR_MESSAGE } from "@/components/leads/copy";
 import { useLeadForm } from "@/components/leads/useLeadForm";
 import { whatsappHref, whatsappTextForNeed } from "@/lib/leads/whatsapp";
 import { LEAD_LIMITS } from "@/lib/leads/validation";
@@ -59,6 +59,16 @@ interface MobileLeadFormProps {
    * abierto. El paso 2 no cambia: allí el visitante ya se ha decidido.
    */
   compact?: boolean;
+  /**
+   * Primera capa RGPD DEBAJO de «Enviar mi proyecto». Por defecto `false`: encima
+   * del botón, como en el resto del sitio. Solo la pasa `/hablemos/[oferta]` (vía
+   * `CampaignLeadForm`): UD-10 = sí, con el alcance «solo /hablemos/*», decidido
+   * por el orquestador el 10/10/2026 a las 10:00 CEST con la autorización del
+   * dueño. Condiciones del memorando de privacidad (§3.1): `PRIVACY_NOTE`
+   * encima del botón y, tras la frase de las 24 horas, el mismo bloque, sin
+   * plegar, con `PRIVACY_TITLE`.
+   */
+  privacyBelowSubmit?: boolean;
 }
 
 const focusRing = "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink";
@@ -161,6 +171,7 @@ export function MobileLeadForm({
   testIdPrefix = "m-lead",
   id,
   compact = false,
+  privacyBelowSubmit = false,
 }: MobileLeadFormProps) {
   const uid = useId();
   const tid = (name: string) => `${testIdPrefix}-${name}`;
@@ -208,6 +219,37 @@ export function MobileLeadForm({
   const needText = compact ? "text-[17px]" : "text-xl";
   const stageTile = compact ? "min-h-[46px] py-1.5" : "min-h-16 py-3";
   const nextButton = compact ? buttonBase.replace("min-h-16", "min-h-14") : buttonBase;
+
+  // Primera capa RGPD (art. 13): sin casillas, el tratamiento es precontractual. Texto idéntico al de `LeadForm`.
+  // Va encima del botón; con `privacyBelowSubmit` (`/hablemos/*`, UD-10), debajo, con el título, y una nota
+  // encima del botón remite a ella.
+  const privacy = (
+    <p data-testid={tid("privacy")} className="text-[13px] leading-relaxed text-muted">
+      {privacyBelowSubmit && (
+        <strong className="block" data-testid={tid("privacy-title")}>
+          {PRIVACY_TITLE}
+        </strong>
+      )}
+      <strong className="font-semibold text-ink">Responsable:</strong> Alcasi Systems, S.L.{" "}
+      <strong className="font-semibold text-ink">Finalidad:</strong> responder a tu solicitud y preparar un
+      presupuesto. <strong className="font-semibold text-ink">Legitimación:</strong> medidas precontractuales a
+      petición tuya. <strong className="font-semibold text-ink">Destinatarios:</strong> proveedores de alojamiento,
+      correo y CRM (Google Firebase, Vercel, Supabase, one.com y, si está activado, Telegram) como encargados del
+      tratamiento y, solo si aceptas las cookies, Google y Meta para medir campañas; no se ceden a terceros salvo
+      obligación legal. Los datos se alojan en Google Firebase (EE. UU.) con garantías adecuadas.{" "}
+      <strong className="font-semibold text-ink">Derechos:</strong> acceso, rectificación, supresión y otros en
+      hi@actiondev.es. Más información en la{" "}
+      <a
+        href="/legal/privacy"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`text-ink underline underline-offset-2 ${focusRing}`}
+      >
+        Política de privacidad
+      </a>
+      .
+    </p>
+  );
 
   return (
     <form
@@ -507,27 +549,8 @@ export function MobileLeadForm({
           </div>
 
           <div className="grid gap-3 px-5 pb-6 pt-5">
-            {/* Primera capa RGPD (art. 13): sin casillas, el tratamiento es precontractual. Texto idéntico al de `LeadForm`. */}
-            <p data-testid={tid("privacy")} className="text-[13px] leading-relaxed text-muted">
-              <strong className="font-semibold text-ink">Responsable:</strong> Alcasi Systems, S.L.{" "}
-              <strong className="font-semibold text-ink">Finalidad:</strong> responder a tu solicitud y preparar un
-              presupuesto. <strong className="font-semibold text-ink">Legitimación:</strong> medidas precontractuales a
-              petición tuya. <strong className="font-semibold text-ink">Destinatarios:</strong> proveedores de alojamiento,
-              correo y CRM (Google Firebase, Vercel, Supabase, one.com y, si está activado, Telegram) como encargados del
-              tratamiento y, solo si aceptas las cookies, Google y Meta para medir campañas; no se ceden a terceros salvo
-              obligación legal. Los datos se alojan en Google Firebase (EE. UU.) con garantías adecuadas.{" "}
-              <strong className="font-semibold text-ink">Derechos:</strong> acceso, rectificación, supresión y otros en
-              hi@actiondev.es. Más información en la{" "}
-              <a
-                href="/legal/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`text-ink underline underline-offset-2 ${focusRing}`}
-              >
-                Política de privacidad
-              </a>
-              .
-            </p>
+            {/* Primera capa RGPD: encima del botón salvo con `privacyBelowSubmit` (ver `privacy`, arriba). */}
+            {!privacyBelowSubmit && privacy}
 
             {status === "error" && (
               <div data-testid={tid("error")} role="alert" className="grid gap-3 border-[3px] border-ink p-3.5">
@@ -542,6 +565,13 @@ export function MobileLeadForm({
                   Escribir por WhatsApp
                 </a>
               </div>
+            )}
+
+            {/* Con la primera capa debajo: la nota, sin enlace, en el campo de visión del botón. */}
+            {privacyBelowSubmit && (
+              <p data-testid={tid("privacy-note")} className="text-[13px] leading-relaxed text-muted">
+                {PRIVACY_NOTE}
+              </p>
             )}
 
             {status === "received" ? (
@@ -562,6 +592,7 @@ export function MobileLeadForm({
             <p className="text-center text-[15px]">
               Primera reunión gratis y sin compromiso. Te respondemos en 24 horas laborables.
             </p>
+            {privacyBelowSubmit && privacy}
           </div>
         </div>
       )}
