@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { CONSENT_STORAGE_KEY, LEAD_BUDGET_LABELS, LEAD_NEEDS } from "@actiondev/shared";
+import { CallbackForm } from "@/components/contact/CallbackForm";
 import { LeadForm } from "@/components/leads/LeadForm";
 import { ADS_OFFER_LINE, CONTACT_EXPECTATION, FIRST_MEETING_OFFER } from "@/components/leads/copy";
 import { LEAD_SUBMIT_TIMEOUT_MS, useLeadForm } from "@/components/leads/useLeadForm";
@@ -490,6 +491,42 @@ describe("MobileLeadForm: específico", () => {
     fireEvent.click(screen.getByTestId("m-lead-submit"));
     expect(screen.getByTestId("m-lead-error-budget")).toBeInTheDocument();
     expect(screen.getByTestId("m-lead-field-budget-lt5k")).toHaveFocus();
+  });
+});
+
+describe("CallbackForm («llámame tú»)", () => {
+  const sendPhone = () => {
+    const { container } = render(<CallbackForm />);
+    fireEvent.change(container.querySelector("#contact-callback-phone")!, { target: { value: "600 123 456" } });
+    fireEvent.submit(screen.getByTestId("callback-form"));
+  };
+
+  it("un 200 sin id (descartado como bot) confirma, pero sin generate_lead ni id inventado", async () => {
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, "granted");
+    respond(200, { ok: true });
+    sendPhone();
+    expect(await screen.findByTestId("callback-success")).toBeInTheDocument();
+    expect(lastPayload()).toMatchObject({ source: "callback_form", phone: "600 123 456" });
+    expect(leadEvents()).toHaveLength(0);
+  });
+
+  it("un 200 con id: un generate_lead con ese id y el teléfono en user_data", async () => {
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, "granted");
+    respond(200, { ok: true, id: "cb-1" });
+    sendPhone();
+    await screen.findByTestId("callback-success");
+    expect(leadEvents()).toEqual([
+      {
+        event: "generate_lead",
+        lead_id: "cb-1",
+        transaction_id: "cb-1",
+        lead_source: "callback_form",
+        lead_need: "not_asked",
+        lead_budget: "not_asked",
+        page_path: "/hablemos/app",
+        user_data: { phone_number: "+34600123456" },
+      },
+    ]);
   });
 });
 

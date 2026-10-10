@@ -60,18 +60,22 @@ export function CallbackForm() {
       const data = (await response.json().catch(() => null)) as { ok?: boolean; id?: string } | null;
       if (!response.ok || data?.ok !== true) throw new Error(`lead ${response.status}`);
 
-      const leadId = data.id ?? `callback-${Date.now()}`;
-      trackLead(
-        {
-          lead_id: leadId,
-          transaction_id: leadId,
-          lead_source: "callback_form",
-          lead_need: "not_asked",
-          lead_budget: "not_asked",
-          page_path: window.location.pathname,
-        },
-        { phone_number: trimmed },
-      );
+      // La conversión solo sale con el id real del lead guardado. Un 200 sin
+      // `id` es un envío descartado como bot: se confirma igual, sin medir.
+      const leadId = data.id;
+      if (leadId) {
+        trackLead(
+          {
+            lead_id: leadId,
+            transaction_id: leadId,
+            lead_source: "callback_form",
+            lead_need: "not_asked",
+            lead_budget: "not_asked",
+            page_path: window.location.pathname,
+          },
+          { phone_number: trimmed },
+        );
+      }
       setStatus("sent");
     } catch (error) {
       console.error("[contact] no se pudo guardar el lead:", error);
