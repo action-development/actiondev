@@ -6,6 +6,7 @@ import { PLACEHOLDER_IMAGE } from "@actiondev/shared";
 import { adsLandings, getAdsLanding, type AdsLanding } from "@/data/ads-landings";
 import { FormJumpLink, LEAD_FORM_ID } from "@/components/leads/FormJump";
 import { LeadForm } from "@/components/leads/LeadForm";
+import { ADS_OFFER_LINE } from "@/components/leads/copy";
 import { adsLandingMetadata, resolveAdsLandingContent, resolveHeroReview, reviewSummary } from "@/lib/ads-landing";
 import { BUSINESS } from "@/lib/seo";
 
@@ -109,6 +110,7 @@ export default async function AdsLandingPage({ params }: PageProps) {
             defaultNeed={landing.defaultNeed}
             source="ads_landing"
             offer={landing.slug}
+            offerLine={ADS_OFFER_LINE}
           />
         </div>
 

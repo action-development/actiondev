@@ -35,7 +35,7 @@ const OFFERS = [
 ] as const;
 
 /** La oferta de los anuncios en la primera pantalla (`components/leads/copy.ts`). */
-const OFFER_LINE = "Primera reunión gratis, en Vigo o por videollamada.";
+const OFFER_LINE = "Para empresas de toda Galicia. Primera reunión gratis, en Vigo o por videollamada.";
 
 const PAGES = ["/hablemos/app", "/hablemos/software", "/hablemos/gracias?tipo=app", "/contact"] as const;
 

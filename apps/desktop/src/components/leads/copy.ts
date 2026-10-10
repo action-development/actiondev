@@ -9,11 +9,19 @@ import { BUSINESS } from "@actiondev/shared";
  */
 
 /**
- * La oferta de los anuncios («Primera reunión gratis», «Reunión inicial sin
- * coste», «Oficina en Vigo») en la primera pantalla: bajo la valoración en
- * móvil y bajo «Siguiente» en escritorio.
+ * La oferta de la primera reunión («Primera reunión gratis», «Reunión inicial
+ * sin coste», «Oficina en Vigo») bajo «Siguiente» en el formulario de las
+ * landings SEO (`lead-offer`). En `/hablemos/*` va `ADS_OFFER_LINE`.
  */
 export const FIRST_MEETING_OFFER = "Primera reunión gratis, en Vigo o por videollamada.";
+
+/**
+ * La oferta de los anuncios en la primera pantalla de `/hablemos/*`: bajo la
+ * valoración en móvil (`m-ads-offer`) y bajo «Siguiente» en escritorio
+ * (`lead-offer`, prop `offerLine` de `LeadForm`). Sale de los RSA Local
+ * aprobados ("…para empresas de toda Galicia") y del hero.
+ */
+export const ADS_OFFER_LINE = "Para empresas de toda Galicia. Primera reunión gratis, en Vigo o por videollamada.";
 
 /** «614 02 74 10»: el número público, sin prefijo, como se reconoce al recibir la llamada. */
 const PUBLIC_PHONE = BUSINESS.phoneDisplay.replace(/^\+34\s*/, "");

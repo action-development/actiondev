@@ -481,7 +481,7 @@ test.describe("Landings de campaña", () => {
       // La oferta de los anuncios, justo bajo «Siguiente» y dentro de la primera pantalla.
       const next = (await page.getByTestId("lead-next").boundingBox())!;
       const offerLine = page.getByTestId("lead-offer");
-      await expect(offerLine).toHaveText("Primera reunión gratis, en Vigo o por videollamada.");
+      await expect(offerLine).toHaveText("Para empresas de toda Galicia. Primera reunión gratis, en Vigo o por videollamada.");
       const offerBox = (await offerLine.boundingBox())!;
       expect(offerBox.y).toBeGreaterThanOrEqual(next.y + next.height);
       expect(offerBox.y + offerBox.height).toBeLessThanOrEqual(900);

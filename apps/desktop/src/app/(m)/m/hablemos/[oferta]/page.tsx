@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LEAD_NEEDS_CAMPAIGN } from "@actiondev/shared";
-import { FIRST_MEETING_OFFER } from "@/components/leads/copy";
+import { ADS_OFFER_LINE } from "@/components/leads/copy";
 import { CampaignLeadForm } from "@/components/m/campaign/CampaignLeadForm";
 import { CaseCard } from "@/components/m/campaign/CaseCard";
 import { Checklist, CtaFinal, FaqList, ProcessSteps, ReviewQuote, SectionTitle } from "@/components/m/campaign/parts";
@@ -87,7 +87,7 @@ export default async function MobileAdsLandingPage({ params }: PageProps) {
             {RATING_SUMMARY}
           </p>
           <p data-testid="m-ads-offer" className="text-[15px] font-semibold leading-[1.35]">
-            {FIRST_MEETING_OFFER}
+            {ADS_OFFER_LINE}
           </p>
           {heroReview && (
             <figure data-testid="m-ads-hero-review" className="text-[15px] leading-[1.35]">

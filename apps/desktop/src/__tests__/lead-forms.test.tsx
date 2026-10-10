@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { CONSENT_STORAGE_KEY, LEAD_BUDGET_LABELS, LEAD_NEEDS } from "@actiondev/shared";
 import { LeadForm } from "@/components/leads/LeadForm";
-import { CONTACT_EXPECTATION, FIRST_MEETING_OFFER } from "@/components/leads/copy";
+import { ADS_OFFER_LINE, CONTACT_EXPECTATION, FIRST_MEETING_OFFER } from "@/components/leads/copy";
 import { LEAD_SUBMIT_TIMEOUT_MS, useLeadForm } from "@/components/leads/useLeadForm";
 import { WhatsappClickTracking } from "@/components/leads/useWhatsappClickTracking";
 import { MobileLeadForm, MOBILE_NEED_LABELS } from "@/components/m/leads/MobileLeadForm";
@@ -378,12 +378,18 @@ describe.each(SKINS)("$name", ({ prefix, mount, chooseBudget }) => {
 });
 
 describe("LeadForm: específico", () => {
-  it("la oferta va bajo «Siguiente» en el paso 1", () => {
+  it("la oferta va bajo «Siguiente» en el paso 1; sin `offerLine`, la de la primera reunión (landings SEO)", () => {
     render(<LeadForm {...PROPS} />);
     const next = screen.getByTestId("lead-next");
     const offer = screen.getByTestId("lead-offer");
-    expect(offer).toHaveTextContent(FIRST_MEETING_OFFER);
+    expect(offer.textContent).toBe(FIRST_MEETING_OFFER);
     expect(next.compareDocumentPosition(offer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("con `offerLine` (/hablemos/*), la oferta de los anuncios", () => {
+    expect(ADS_OFFER_LINE).toBe("Para empresas de toda Galicia. Primera reunión gratis, en Vigo o por videollamada.");
+    render(<LeadForm {...PROPS} offerLine={ADS_OFFER_LINE} />);
+    expect(screen.getByTestId("lead-offer").textContent).toBe(ADS_OFFER_LINE);
   });
 });
 

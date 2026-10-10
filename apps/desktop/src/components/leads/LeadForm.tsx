@@ -48,6 +48,11 @@ interface LeadFormProps {
   source: LeadSource;
   /** Identifica la landing (`app`, `software`…): va al aviso interno, no al documento. */
   offer: string;
+  /**
+   * Línea de oferta bajo «Siguiente» (`lead-offer`). Por defecto
+   * `FIRST_MEETING_OFFER` (landings SEO); `/hablemos/*` pasa `ADS_OFFER_LINE`.
+   */
+  offerLine?: string;
   /** Prefijo de los `data-testid`. Por defecto `lead`. */
   testIdPrefix?: string;
 }
@@ -94,6 +99,7 @@ export function LeadForm({
   needs = LEAD_NEEDS_CAMPAIGN,
   source,
   offer,
+  offerLine = FIRST_MEETING_OFFER,
   testIdPrefix = "lead",
 }: LeadFormProps) {
   const uid = useId();
@@ -201,7 +207,7 @@ export function LeadForm({
           </button>
           {/* La oferta de los anuncios junto a la decisión (hay hueco libre bajo «Siguiente»). */}
           <p data-testid={tid("offer")} className="mt-2.5 text-center text-[13px] text-muted">
-            {FIRST_MEETING_OFFER}
+            {offerLine}
           </p>
         </div>
       ) : (
