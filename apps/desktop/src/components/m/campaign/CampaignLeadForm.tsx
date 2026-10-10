@@ -22,6 +22,13 @@ export function CampaignLeadForm({
   offer: string;
 }) {
   return (
-    <MobileLeadForm id={id} defaultNeed={defaultNeed} needs={needs} source={source} offer={offer} compact />
+    <MobileLeadForm
+      id={id}
+      defaultNeed={defaultNeed}
+      needs={needs}
+      source={source}
+      offer={offer}
+      compact
+    />
   );
 }

@@ -105,7 +105,11 @@ export default async function AdsLandingPage({ params }: PageProps) {
           id={LEAD_FORM_ID}
           className="scroll-mt-4 max-sm:-mt-3 lg:sticky lg:top-6 lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto"
         >
-          <LeadForm defaultNeed={landing.defaultNeed} source="ads_landing" offer={landing.slug} />
+          <LeadForm
+            defaultNeed={landing.defaultNeed}
+            source="ads_landing"
+            offer={landing.slug}
+          />
         </div>
 
         <div className="space-y-16 lg:col-span-7 lg:space-y-20">
