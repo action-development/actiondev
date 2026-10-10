@@ -14,12 +14,15 @@ export function CampaignLeadForm({
   needs = LEAD_NEEDS_CAMPAIGN,
   source,
   offer,
+  whatsappText,
 }: {
   id: string;
   defaultNeed: LeadNeed;
   needs?: readonly LeadNeed[];
   source: "ads_landing";
   offer: string;
+  /** Mensaje fijo de los WhatsApp del formulario (`AdsLanding.whatsappText`). */
+  whatsappText?: string;
 }) {
   return (
     <MobileLeadForm
@@ -28,6 +31,7 @@ export function CampaignLeadForm({
       needs={needs}
       source={source}
       offer={offer}
+      whatsappText={whatsappText}
       compact
     />
   );

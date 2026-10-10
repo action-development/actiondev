@@ -41,6 +41,12 @@ interface MobileLeadFormProps {
   source: LeadSource;
   /** Identifica la landing (`app`, `software`…): va al aviso interno, no al documento. */
   offer: string;
+  /**
+   * Mensaje fijo de los enlaces de WhatsApp del formulario (paso 1 y error):
+   * `/hablemos/*` pasa el de la oferta (`AdsLanding.whatsappText`); sin él,
+   * `whatsappTextForNeed(need)`. Nunca lleva valores de la URL.
+   */
+  whatsappText?: string;
   /** Prefijo de los `data-testid`. Por defecto `m-lead`. */
   testIdPrefix?: string;
   /** Id del `<form>`, para anclas (`#proyecto`). */
@@ -151,6 +157,7 @@ export function MobileLeadForm({
   needs = LEAD_NEEDS_CAMPAIGN,
   source,
   offer,
+  whatsappText,
   testIdPrefix = "m-lead",
   id,
   compact = false,
@@ -280,7 +287,7 @@ export function MobileLeadForm({
               Siguiente
             </button>
             <a
-              href={whatsappHref(whatsappTextForNeed(need))}
+              href={whatsappHref(whatsappText ?? whatsappTextForNeed(need))}
               target="_blank"
               rel="noopener noreferrer"
               data-testid={tid("whatsapp-step-1")}
@@ -526,7 +533,7 @@ export function MobileLeadForm({
               <div data-testid={tid("error")} role="alert" className="grid gap-3 border-[3px] border-ink p-3.5">
                 <p className="text-[15px]">{SUBMIT_ERROR_MESSAGE}</p>
                 <a
-                  href={whatsappHref(whatsappTextForNeed(need))}
+                  href={whatsappHref(whatsappText ?? whatsappTextForNeed(need))}
                   target="_blank"
                   rel="noopener noreferrer"
                   data-testid={tid("whatsapp")}

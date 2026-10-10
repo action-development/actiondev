@@ -55,6 +55,12 @@ interface LeadFormProps {
   offerLine?: string;
   /** Prefijo de los `data-testid`. Por defecto `lead`. */
   testIdPrefix?: string;
+  /**
+   * Mensaje fijo del WhatsApp de salida cuando falla el envío: `/hablemos/*`
+   * pasa el de la oferta (`AdsLanding.whatsappText`); sin él,
+   * `whatsappTextForNeed(need)`. Nunca lleva valores de la URL.
+   */
+  whatsappText?: string;
 }
 
 const inputClass =
@@ -101,6 +107,7 @@ export function LeadForm({
   offer,
   offerLine = FIRST_MEETING_OFFER,
   testIdPrefix = "lead",
+  whatsappText,
 }: LeadFormProps) {
   const uid = useId();
   const tid = (name: string) => `${testIdPrefix}-${name}`;
@@ -459,7 +466,7 @@ export function LeadForm({
             <div data-testid={tid("error")} role="alert" className="lead-step mt-4 border-2 border-foreground p-3.5">
               <p className="text-sm text-foreground">{SUBMIT_ERROR_MESSAGE}</p>
               <div className="mt-3">
-                <HoloButton href={whatsappHref(whatsappTextForNeed(need))} size="sm" data-testid={tid("whatsapp")}>
+                <HoloButton href={whatsappHref(whatsappText ?? whatsappTextForNeed(need))} size="sm" data-testid={tid("whatsapp")}>
                   Escribir por WhatsApp
                 </HoloButton>
               </div>

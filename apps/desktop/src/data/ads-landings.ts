@@ -53,7 +53,7 @@ export interface AdsLanding {
    * se repite en la página.
    */
   heroReview: { id: string; excerpt?: string };
-  /** Mensaje precargado de los enlaces de WhatsApp de la landing (barra, barra fija). */
+  /** Mensaje precargado de los enlaces de WhatsApp de la landing (barra, barra fija y formulario). */
   whatsappText: string;
   steps: AdsStep[];
   faqs: AdsFaq[];

@@ -6,8 +6,9 @@ import { LeadForm } from "@/components/leads/LeadForm";
 import { ADS_OFFER_LINE, CONTACT_EXPECTATION, FIRST_MEETING_OFFER } from "@/components/leads/copy";
 import { LEAD_SUBMIT_TIMEOUT_MS, useLeadForm } from "@/components/leads/useLeadForm";
 import { WhatsappClickTracking } from "@/components/leads/useWhatsappClickTracking";
+import { CampaignLeadForm } from "@/components/m/campaign/CampaignLeadForm";
 import { MobileLeadForm, MOBILE_NEED_LABELS } from "@/components/m/leads/MobileLeadForm";
-import { GENERIC_WHATSAPP_TEXT, whatsappHref } from "@/lib/leads/whatsapp";
+import { GENERIC_WHATSAPP_TEXT, whatsappHref, whatsappTextForNeed } from "@/lib/leads/whatsapp";
 
 // jsdom + Node reciente: sin `localStorage` utilizable (mismo shim que `leads.test.ts`).
 const store = new Map<string, string>();
@@ -440,6 +441,39 @@ describe("whatsapp_click (link_location)", () => {
     fireEvent.click(link);
     expect(eventsNamed("whatsapp_click")).toHaveLength(1);
     link.remove();
+  });
+});
+
+describe("WhatsApp con el texto fijo de la landing (`whatsappText`)", () => {
+  const LANDING_TEXT = "Hola, vengo de vuestra web y quiero hablar de una app a medida";
+  const decodedHref = (el: HTMLElement) => decodeURIComponent(el.getAttribute("href") ?? "");
+  /** Paso 1 → paso 2 → datos válidos → envío con `fetch` que falla: sale el error con WhatsApp. */
+  const failSubmit = () => {
+    fireEvent.click(screen.getByTestId("lead-field-stage-idea"));
+    fireEvent.click(screen.getByTestId("lead-next"));
+    fireEvent.change(screen.getByTestId("lead-field-name"), { target: { value: "Ana" } });
+    fireEvent.change(screen.getByTestId("lead-field-phone"), { target: { value: "600123456" } });
+    fireEvent.change(screen.getByTestId("lead-field-email"), { target: { value: "ana@empresa.es" } });
+    fireEvent.change(screen.getByTestId("lead-field-budget"), { target: { value: "lt5k" } });
+    fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    fireEvent.click(screen.getByTestId("lead-submit"));
+  };
+
+  it("LeadForm con `whatsappText`: la salida del error lleva ese texto", async () => {
+    render(<LeadForm {...PROPS} whatsappText={LANDING_TEXT} />);
+    failSubmit();
+    expect(decodedHref(await screen.findByTestId("lead-whatsapp"))).toContain(LANDING_TEXT);
+  });
+
+  it("LeadForm sin la prop: el texto de la necesidad elegida", async () => {
+    render(<LeadForm {...PROPS} />);
+    failSubmit();
+    expect(decodedHref(await screen.findByTestId("lead-whatsapp"))).toContain(whatsappTextForNeed("app"));
+  });
+
+  it("CampaignLeadForm la reenvía al enlace del paso 1 de MobileLeadForm", () => {
+    render(<CampaignLeadForm id="proyecto" defaultNeed="app" source="ads_landing" offer="app" whatsappText={LANDING_TEXT} />);
+    expect(decodedHref(screen.getByTestId("m-lead-whatsapp-step-1"))).toContain(LANDING_TEXT);
   });
 });
 

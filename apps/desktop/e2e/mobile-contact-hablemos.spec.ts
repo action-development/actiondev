@@ -141,7 +141,7 @@ test.describe("Móvil v2 · /hablemos/[oferta]", () => {
 
       // WhatsApp: siempre `wa.me` con el mensaje de la oferta. Ningún `tel:`.
       await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
-      for (const id of ["m-header-whatsapp", "m-sticky-cta-whatsapp", "m-footer-whatsapp", "m-ads-closing-whatsapp"]) {
+      for (const id of ["m-header-whatsapp", "m-sticky-cta-whatsapp", "m-footer-whatsapp", "m-ads-closing-whatsapp", "m-lead-whatsapp-step-1"]) {
         const href = (await page.getByTestId(id).getAttribute("href")) ?? "";
         expect(href, id).toMatch(/^https:\/\/wa\.me\/34614027410\?text=/);
         expect(decodeURIComponent(href), id).toContain(text);

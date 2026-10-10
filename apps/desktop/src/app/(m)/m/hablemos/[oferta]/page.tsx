@@ -101,6 +101,7 @@ export default async function MobileAdsLandingPage({ params }: PageProps) {
           needs={LEAD_NEEDS_CAMPAIGN}
           source="ads_landing"
           offer={landing.slug}
+          whatsappText={landing.whatsappText}
         />
 
         <section aria-labelledby="m-ads-como" className="border-t-2 border-ink">

@@ -109,6 +109,7 @@ export default async function AdsLandingPage({ params }: PageProps) {
           <LeadForm
             defaultNeed={landing.defaultNeed}
             source="ads_landing"
+            whatsappText={landing.whatsappText}
             offer={landing.slug}
             offerLine={ADS_OFFER_LINE}
           />
