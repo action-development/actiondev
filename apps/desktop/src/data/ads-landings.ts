@@ -129,7 +129,7 @@ export const adsLandings: AdsLanding[] = [
       },
       {
         q: "¿Podemos vernos en persona?",
-        a: "Sí. La oficina está en Rúa Colón, 20 (Vigo): con empresas de Vigo y su área, el arranque, el prototipo y la entrega los hacemos en persona. Con el resto de Galicia y España trabajamos en remoto con el mismo método.",
+        a: "Sí. La oficina está en Rúa Colón, 20 (Vigo): con empresas de Vigo y su área, el arranque, el prototipo y la entrega los hacemos en persona. Con el resto de Galicia y España trabajamos en remoto con el mismo método, y a A Coruña, Santiago, Lugo u Ourense nos desplazamos para las sesiones clave.",
       },
     ],
     cta: {
