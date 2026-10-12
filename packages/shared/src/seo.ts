@@ -200,6 +200,26 @@ export const SERVICE_LANDINGS = [
   { slug: "agencia-desarrollo-web-galicia", label: "Agencia de desarrollo web en Galicia" },
 ] as const;
 
+/**
+ * Favicon = la MASCOTA (círculo lima con ojos, sin fondo), fuente en
+ * `Marca/mascota-favicon/mascota-master.svg`. Lo declaran desktop (y la web
+ * móvil v2) y la zona mobile antigua, que en actiondev.es tira de estos
+ * archivos del `public/` de desktop (el middleware solo le manda `/` y sus
+ * assets propios). Nombres nuevos (`mascota*`) para que ningún navegador
+ * reutilice el globo cacheado. El ico va antes que el SVG y con tamaño fijo:
+ * así Chrome elige el SVG y Safari el ico.
+ *
+ * Todo con transparencia, también el de iOS: Apple pinta de negro el alfa,
+ * y sobre negro el círculo lima se sigue leyendo.
+ */
+export const SITE_ICONS = {
+  icon: [
+    { url: "/favicon.ico", sizes: "48x48" },
+    { url: "/icons/mascota.svg", type: "image/svg+xml" },
+  ],
+  apple: [{ url: "/icons/mascota-180.png", type: "image/png", sizes: "180x180" }],
+};
+
 /** `@id` de la entidad de negocio. Desktop, mobile y landings apuntan aquí. */
 export const ORGANIZATION_ID = `${BUSINESS.domain}/#organization`;
 

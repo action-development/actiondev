@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { GOOGLE_RATING_TEXT } from "@actiondev/shared";
+import { GOOGLE_RATING_TEXT, SITE_ICONS } from "@actiondev/shared";
 import { BRAND, SITE_NAME, SITE_URL, SOCIAL, OG_IMAGE } from "@/lib/seo";
 
 /**
@@ -70,27 +70,14 @@ export const ROOT_METADATA: Metadata = {
     },
   },
   /*
-   * Favicon = el globo de MARCA, no el `src/app/icon.svg` genérico (que Next
-   * serviría por convención de archivo si esto no estuviera): la pestaña es
-   * branding, y el símbolo dibujado a mano no es el logo.
-   *
-   * Lo que sí se corrige es el peso: se declaraba `/logos/action_globe.webp`,
-   * 1024×1024 y 35 KB descargados en CADA página para pintar 16px de pestaña.
-   * `action_globe-64.png` es el MISMO glifo reescalado a 64px (2,2 KB). El
-   * webp de 1024 sigue donde hace falta resolución: la textura de los
-   * contenedores del hero (`canvas/port/container-textures.ts`) y el icono
-   * del manifest.
+   * Favicon = la mascota (`SITE_ICONS` de shared, el mismo que la zona
+   * mobile). NO volver a poner un `app/icon.svg` de convención: con dos
+   * layouts raíz Next no lo enlaza en el HTML, pero se servía en `/icon.svg`
+   * (el manifest apuntaba ahí) con un símbolo dibujado a mano que no es la
+   * marca. `/apple-touch-icon.png` sigue en la raíz para los que lo piden
+   * ahí sin leer el HTML.
    */
-  icons: {
-    icon: [
-      { url: "/logos/action_globe-64.png", type: "image/png", sizes: "64x64" },
-      { url: "/favicon.ico", sizes: "48x48" },
-    ],
-    // iOS (pantalla de inicio) y los bots que lo piden en la raíz: daba 404.
-    // El mismo globo sobre blanco y sin transparencia (iOS pinta de negro el
-    // alfa, y el glifo es negro).
-    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
-  },
+  icons: SITE_ICONS,
   formatDetection: {
     email: false,
     address: false,

@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { detectLocale } from "@/lib/i18n";
 import { dictionaries } from "@/lib/i18n/dictionaries";
-import { BUSINESS } from "@actiondev/shared";
+import { BUSINESS, SITE_ICONS } from "@actiondev/shared";
 import { I18nProvider } from "@/lib/i18n/context";
 import { StructuredData } from "@/components/StructuredData";
 import { SeoIntro } from "@/components/SeoIntro";
@@ -66,9 +66,8 @@ export async function generateMetadata(): Promise<Metadata> {
         "max-snippet": -1,
       },
     },
-    icons: {
-      icon: [{ url: "/logos/action_globe-64.png", sizes: "64x64", type: "image/png" }],
-    },
+    // Favicon = la mascota; mismos archivos que desktop (ver `SITE_ICONS`).
+    icons: SITE_ICONS,
     alternates: {
       // La zona mobile se sirve bajo actiondev.es vía rewrite del middleware
       // desktop. El canonical fijo evita que la URL directa de la zona
