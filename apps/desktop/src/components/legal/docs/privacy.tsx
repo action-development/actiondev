@@ -24,9 +24,14 @@ import type { LegalSlots } from "../LegalSlots";
  * EE. UU.: de ahí la transferencia internacional del apartado 5), con su
  * atribución publicitaria (UTM, gclid, fbclid). Aviso interno por SMTP de
  * one.com y, si hay variables de entorno, Telegram. Copia en el CRM interno
- * (ActionERP, Supabase UE) vía `LEAD_ERP_URL`. Los formularios instantáneos de
- * los anuncios de Meta (Lead Ads) entran en ese MISMO pipeline leídos por la
- * Graph API (`app/api/meta/leads`, sin intermediarios): apartado 2.2. Hay analítica y medición
+ * (ActionERP, Supabase UE) vía `LEAD_ERP_URL`. Formularios instantáneos de los
+ * anuncios de Meta (Lead Ads), apartado 2.2: hoy el equipo descarga los leads
+ * del centro de clientes potenciales o de la API de Meta. La entrada automática
+ * (`app/api/meta/leads`, mismo pipeline que la web) está en el código pero NO
+ * activa en producción (sin variables `META_*`: el webhook responde 503
+ * `not_configured`, comprobado el 2026-10-13). ANTES de activarla o de llevar
+ * esos leads al ERP: volver a declarar para el 2.2 Firestore (EE. UU.), Vercel,
+ * el aviso interno y el CRM (apartados 2.2 y 5) y subir `LEGAL_UPDATED`. Hay analítica y medición
  * de campañas (Google Tag Manager → GA4, Google Ads, Meta Pixel, solo tras
  * consentimiento — ver `/legal/cookies`) pero no base de datos propia de
  * analítica. Mantener este documento alineado con `packages/shared/src/leads.ts`,
@@ -168,9 +173,8 @@ export function PrivacyBody({ Prose }: Pick<LegalSlots, "Prose">) {
           Algunos de nuestros anuncios en Facebook e Instagram llevan un
           formulario que se rellena sin salir de la aplicación. Si nos dejas
           tus datos en uno de ellos, <strong>Meta Platforms Ireland Ltd.</strong>{" "}
-          los recoge por cuenta nuestra y nos los entrega mediante su interfaz
-          de programación (API) directamente a nuestros sistemas, sin
-          intermediarios. El formulario recoge tu <strong>nombre</strong>, tu{" "}
+          los recoge por cuenta nuestra y nos los entrega. El formulario
+          recoge tu <strong>nombre</strong>, tu{" "}
           <strong>correo electrónico</strong>, tu <strong>teléfono</strong> y
           el <strong>nombre de tu empresa</strong> (Meta puede rellenarlos con
           los datos de tu perfil; puedes cambiarlos antes de enviar), y tus
@@ -182,16 +186,24 @@ export function PrivacyBody({ Prose }: Pick<LegalSlots, "Prose">) {
           atribución del apartado 2.3); ningún otro dato de tu perfil.
         </p>
         <p>
-          A partir de ahí, la solicitud recibe{" "}
-          <strong>el mismo tratamiento que las de la web</strong> (apartado
-          2.1): se guarda en nuestra base de datos con la versión de esta
-          política vigente, nos llega el mismo aviso interno y se copia en
-          nuestro CRM, con la misma finalidad, base legal y plazos de
-          conservación (apartados 3 y 4). Una copia queda además en el centro
-          de clientes potenciales de Meta, al que solo accede nuestro equipo.
-          No enviamos a Meta ningún dato de vuelta sobre tu solicitud. Lo que
-          Meta haga con tu actividad en sus plataformas se rige por su propia
-          política de privacidad.
+          Nuestro equipo descarga estas solicitudes del centro de clientes
+          potenciales de Meta o mediante su interfaz de programación (API) y
+          las incorpora a nuestros sistemas internos para atenderlas. Se
+          tratan con{" "}
+          <strong>
+            las mismas finalidades, bases legales y plazos de conservación que
+            las solicitudes de la web
+          </strong>{" "}
+          (apartados 3 y 4): atender tu solicitud y, en su caso, preparar una
+          propuesta, como aplicación de medidas precontractuales a petición
+          tuya (art. 6.1.b RGPD), y saber de qué anuncio y campaña llegó, por
+          nuestro interés legítimo en medir nuestra propia publicidad (art.
+          6.1.f RGPD). Una copia queda además en el centro de clientes
+          potenciales de Meta, al que solo accede nuestro equipo. No enviamos a
+          Meta ningún dato de vuelta sobre tu solicitud. Sobre estos datos
+          puedes ejercer los derechos del apartado 6. Lo que Meta haga con tu
+          actividad en sus plataformas se rige por su propia política de
+          privacidad.
         </p>
 
         <h3>2.3. Atribución publicitaria</h3>
@@ -377,19 +389,19 @@ export function PrivacyBody({ Prose }: Pick<LegalSlots, "Prose">) {
           </li>
           <li>
             <strong>Google Cloud (Google Firebase / Cloud Firestore)</strong> —
-            encargado del tratamiento que almacena las solicitudes de los
-            apartados 2.1 y 2.2 (con su atribución publicitaria), en servidores de{" "}
+            encargado del tratamiento que almacena las solicitudes del
+            apartado 2.1 (con su atribución publicitaria), en servidores de{" "}
             <strong>Estados Unidos</strong>.
           </li>
           <li>
             <strong>Vercel Inc.</strong> — alojamiento web y ejecución del
-            servicio que recibe las solicitudes del formulario y las de los
-            formularios de anuncios de Meta; encargado del tratamiento. Puede tratar datos en Estados Unidos.
+            servicio que recibe las solicitudes del formulario; encargado del
+            tratamiento. Puede tratar datos en Estados Unidos.
           </li>
           <li>
             <strong>Supabase Inc.</strong> — base de datos de nuestro sistema
             interno de gestión comercial (CRM), al que se copian las solicitudes
-            de los apartados 2.1 y 2.2 para su seguimiento; encargado del tratamiento, con
+            del apartado 2.1 para su seguimiento; encargado del tratamiento, con
             servidores en la Unión Europea (París). La aplicación se ejecuta en
             Vercel.
           </li>
@@ -432,7 +444,8 @@ export function PrivacyBody({ Prose }: Pick<LegalSlots, "Prose">) {
             enviado una solicitud en la web, para medir campañas.{" "}
             <strong>Formularios de anuncios</strong> (apartado 2.2): gestiona
             el formulario y recoge los datos por cuenta nuestra, como
-            encargado del tratamiento, y nos los entrega por su API. Puede
+            encargado del tratamiento, y nos los entrega a través de su centro
+            de clientes potenciales o de su API. Puede
             transferir datos a EE. UU. conforme a sus condiciones, al Marco de
             Privacidad de Datos UE-EE. UU. y a las cláusulas contractuales
             tipo.
@@ -440,7 +453,7 @@ export function PrivacyBody({ Prose }: Pick<LegalSlots, "Prose">) {
         </ul>
         <p>
           <strong>Transferencias internacionales:</strong> las solicitudes
-          de los apartados 2.1 y 2.2 se almacenan en Estados Unidos (ubicación{" "}
+          del apartado 2.1 se almacenan en Estados Unidos (ubicación{" "}
           <code>nam5</code>), en la infraestructura de Google Firebase. La transferencia se ampara en la decisión
           de adecuación del Marco de Privacidad de Datos UE-EE. UU. (Comisión
           Europea, 10 de julio de 2023), al que está adherida Google LLC, y en
