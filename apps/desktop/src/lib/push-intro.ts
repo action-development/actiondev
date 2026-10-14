@@ -2,17 +2,15 @@
  * Intro «empuje»: línea de tiempo y pose de la mascota. Puro (sin DOM ni
  * React): lo pinta `components/intro/PushIntro.tsx` y lo prueban los tests.
  *
- * Réplica de la intro de huyml.co. Tiempos, curvas y medidas salen de su
- * código y están verificados al fotograma contra la grabación en
- * `docs/intro-empuje/ANALISIS.md`. Antes de cambiar un número, mirar allí:
- * la gracia está en ellos (las pausas que caen en el esfuerzo máximo, la
- * cuártica del último tramo, el aviso 0,6 s antes de que baje el panel).
+ * Nació como réplica de la intro de huyml.co (`docs/intro-empuje/ANALISIS.md`:
+ * tres empujones con dos pausas). Por decisión del cliente el empuje es ahora
+ * UNO SOLO y continuo: la pared no se para, arranca costando y cede al final.
  */
 
 /** La intro ya se vio en esta sesión (declarada en /legal/cookies). */
 export const INTRO_SESSION_KEY = "action-loaded";
 
-/** Tiempos de móvil del original: por debajo de este ancho, tramos más largos. */
+/** Por debajo de este ancho, empuje algo más largo (la pantalla es más estrecha, la mascota más grande en proporción). */
 export const MOBILE_TIMING_MAX_WIDTH = 767;
 
 export type IntroTiming = "pc" | "mobile";
@@ -22,10 +20,15 @@ export function power2InOut(t: number): number {
   return t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
-/** GSAP `power3.in` → cuártica: arranca muy despacio y acelera al final. */
-export function power3In(t: number): number {
-  return t ** 4;
+/** GSAP `sine.in`: arranca parada (le cuesta mover la pared) y acaba a toda velocidad (cede). */
+export function sineIn(t: number): number {
+  return 1 - Math.cos((t * Math.PI) / 2);
 }
+
+/** Duración del empuje entero (s), de la pared cubriendo a la mascota fuera por la derecha. */
+const PUSH_DURATION: Record<IntroTiming, number> = { pc: 2.7, mobile: 3.2 };
+/** Si lo de debajo no está listo, la pared frena hasta pararse aquí (como la pausa del 60 % del original). */
+export const GATE_PROGRESS = 0.6;
 
 /**
  * Tras echar la pared, la mascota vuelve de un salto al punto final del logo
@@ -34,16 +37,16 @@ export function power3In(t: number): number {
 export const ARRIVAL = 0.55;
 /** Logo solo en pantalla (ya con la mascota en su punto, guiñando). */
 export const FINAL_HOLD = 0.5;
-/** Del aviso a lo de debajo hasta que empieza a bajar el panel. */
+/** Del aviso a lo de debajo hasta que empieza el fundido. */
 export const EXIT_DELAY = 0.6;
-/** Bajada del panel (y subida del rótulo, que así se queda quieto). */
-export const EXIT_DURATION = 1.33;
+/** Fundido de salida: el cristal, el logo y la mascota se desvanecen sobre la web. */
+export const EXIT_DURATION = 0.7;
 
-/** Progreso final mínimo del original: la mascota sale del todo. */
+/** Progreso final mínimo: la mascota sale del todo. */
 const BASE_FINAL: Record<IntroTiming, number> = { pc: 1.28, mobile: 1.4 };
 /** Tope de la pared: ya fuera de pantalla mientras la mascota acaba de salir. */
 const WALL_MAX: Record<IntroTiming, number> = { pc: 1.12, mobile: 1.4 };
-/** Lo que se ensancha la mascota al aterrizar (`sx` máximo de `mascotPose`). */
+/** Holgura de ancho de la mascota (en diámetros) para dar por hecho que ha salido. */
 const MAX_STRETCH_X = 1.34;
 
 interface Segment {
@@ -56,7 +59,7 @@ interface Segment {
 
 export interface IntroPlan {
   segments: Segment[];
-  /** Fin de la pausa del 60 %: si lo de debajo no está listo, el reloj se para aquí. */
+  /** Momento en que la pared pasa por `GATE_PROGRESS`: si lo de debajo no está listo, el reloj frena hasta aquí. */
   gate: number;
   /** Fin del empuje: la pared ya está fuera y la mascota vuelve al logo. */
   pushEnd: number;
@@ -67,29 +70,13 @@ export interface IntroPlan {
   wallMax: number;
 }
 
-/**
- * Tres empujones con dos pausas: 0 → 0,3 (0,65 s) · 0,16 s · 0,3 → 0,6
- * (0,72 s) · 0,2 s · 0,6 → final (1,46 s, cuártica). En móvil el primero y
- * el último duran 0,3 s más.
- */
+/** Un único empuje continuo de 0 al progreso final, con `sineIn`. */
 export function buildPlan(timing: IntroTiming, final: number): IntroPlan {
-  const extra = timing === "mobile" ? 0.3 : 0;
-  const stops = [
-    { to: 0.3, move: 0.65 + extra, hold: 0.16, ease: power2InOut },
-    { to: 0.6, move: 0.72, hold: 0.2, ease: power2InOut },
-    { to: final, move: 1.46 + extra, hold: 0, ease: power3In },
-  ];
-  const segments: Segment[] = [];
-  let t = 0;
-  let from = 0;
-  let gate = 0;
-  stops.forEach((s, i) => {
-    segments.push({ from, to: s.to, start: t, end: t + s.move, ease: s.ease });
-    t += s.move + s.hold;
-    from = s.to;
-    if (i === 1) gate = t;
-  });
-  const pushEnd = segments[segments.length - 1].end;
+  const duration = PUSH_DURATION[timing];
+  const segments: Segment[] = [{ from: 0, to: final, start: 0, end: duration, ease: sineIn }];
+  // Inversa de `sineIn`: cuándo pasa la pared por el 60 %.
+  const gate = duration * (2 / Math.PI) * Math.acos(1 - GATE_PROGRESS / final);
+  const pushEnd = duration;
   const reveal = pushEnd + ARRIVAL + FINAL_HOLD;
   const exitStart = reveal + EXIT_DELAY;
   return {
@@ -113,7 +100,7 @@ export function progressAt(plan: IntroPlan, t: number): number {
   return p;
 }
 
-/** Bajada del panel, de 0 (cubre) a 1 (fuera por abajo). */
+/** Fundido de salida, de 0 (cubre) a 1 (transparente). */
 export function exitAt(plan: IntroPlan, t: number): number {
   if (t <= plan.exitStart) return 0;
   return power2InOut(Math.min(1, (t - plan.exitStart) / EXIT_DURATION));
@@ -131,7 +118,7 @@ export function displayPercent(progress: number, final: number): number {
 }
 
 /**
- * Progreso final: el del original, salvo que la mascota sea más ancha en
+ * Progreso final: el mínimo, salvo que la mascota sea más ancha en
  * proporción (pantallas estrechas) y no le diera para salir del todo.
  */
 export function finalProgress(timing: IntroTiming, mascotDiameter: number, viewportWidth: number): number {
@@ -142,35 +129,17 @@ export function finalProgress(timing: IntroTiming, mascotDiameter: number, viewp
 // ── Mascota ─────────────────────────────────────────────────────────────
 
 /**
- * Embestidas por ancho de pantalla en los tramos 2 y 3. Con 10/3 cada una
- * mueve la pared 0,3: las embestidas acaban en p = 0,3 · 0,6 · 0,9 · 1,2 y
- * las dos pausas del original congelan a la mascota estampada contra la
- * pared (como el ×1,08 del Lottie congela al muñeco con la cabeza gacha).
+ * Empellones por ancho de pantalla: la mascota va pegada a la pared y aprieta
+ * a golpes de cadera (se aplasta un poco más, suelta polvo, le late la vena),
+ * pero la pared NO se para entre uno y otro: el empuje es continuo.
  */
 export const PUSHES_PER_WIDTH = 10 / 3;
-const STEP = 1 / PUSHES_PER_WIDTH;
-/** El primer tramo es solo la carrerilla y el golpe: entra embistiendo. */
-const FIRST_CYCLE_FROM = 0.62;
-
-/** Altura del salto y retroceso tras el rebote, en radios. */
-export const HOP_HEIGHT = 2.4;
-export const BACK_DISTANCE = 3;
-
-/**
- * Fases del ciclo (0 = estampada contra la pared, esfuerzo máximo):
- * suelta y coge impulso → rebota hacia atrás en parábola → aterriza
- * aplastándose → se agacha → carrerilla → se estampa y empuja la pared.
- */
-const TAKEOFF = 0.1;
-const LAND = 0.52;
-const CHARGE = 0.62;
-const SLAM = 0.8;
+/** Esperando a lo de debajo sigue apretando en el sitio, a este ritmo (empellones/s). */
+const STALL_PUSHES_PER_SECOND = 1.6;
 
 /** Nace una gota de sudor al empujar y vive esta fracción del ciclo. */
 const DROP_BORN = 0.86;
 const DROP_LIFE = 0.5;
-/** Esperando a lo de debajo: una gota cada tanto (s). */
-const STALL_DROP_EVERY = 0.7;
 
 export interface DropPose {
   x: number;
@@ -185,7 +154,7 @@ export interface MascotPose {
   x: number;
   /** Altura sobre el suelo, en radios. */
   y: number;
-  /** Giro (grados); en los mortales da la vuelta entera. */
+  /** Giro (grados). */
   rot: number;
   /** Tamaño de toda la mascota (1 = empujando; menor = ya en el punto del logo). */
   scale: number;
@@ -195,22 +164,22 @@ export interface MascotPose {
   anchor: number;
   /** Aplastamiento contra la pared, en radios. */
   flat: number;
-  /** 1 = ojos abiertos (algo más en el aire); ~0,12 = rendija de esfuerzo. */
+  /** 1 = ojos abiertos; ~0,12 = rendija de esfuerzo. */
   eyeOpen: number;
-  /** Giro de las rendijas (grados): «\ /» de apretar o de ir a por ello. */
+  /** Giro de las rendijas (grados): «\ /» de apretar. */
   eyeTilt: number;
   shine: number;
   /** Guiño del ojo derecho: 0 abierto, 1 cerrado. */
   wink: number;
-  /** Vena de esfuerzo (💢) en la nuca mientras empuja; pasa de 1 al aparecer y late en la espera. */
+  /** Vena de esfuerzo (💢) en la nuca mientras empuja; late con cada empellón. */
   vein: number;
-  /** Chispazo del golpe contra la pared (0–1). */
+  /** Chispazo contra la pared (0–1). */
   impact: number;
-  /** Líneas de velocidad en la carrerilla (0–1). */
+  /** Líneas de velocidad detrás (0–1): cuando la pared cede al final. */
   speed: number;
-  /** Polvo del aterrizaje: edad 0–1 y dónde cayó, o `null`. */
+  /** Polvo que levanta al apretar: edad 0–1 y dónde, o `null`. */
   dust: { age: number; x: number } | null;
-  /** Sacudida de pantalla tras el golpe, en radios. */
+  /** Sacudida de pantalla, en radios. */
   shake: number;
   /** Sombra de contacto: 1 en el suelo, menor en el aire. */
   shadow: number;
@@ -223,9 +192,8 @@ const smooth = (a: number, b: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 const frac = (x: number) => x - Math.floor(x);
-const easeOutCubic = (t: number) => 1 - (1 - clamp01(t)) ** 3;
 
-/** Interpola claves `[fase, valor]` con suavizado entre cada par (la primera y la última valen lo mismo). */
+/** Interpola claves `[fase, valor]` con suavizado entre cada par. */
 function keyed(keys: ReadonlyArray<readonly [number, number]>, x: number): number {
   if (x <= keys[0][0]) return keys[0][1];
   for (let i = 1; i < keys.length; i++) {
@@ -239,169 +207,42 @@ function keyed(keys: ReadonlyArray<readonly [number, number]>, x: number): numbe
 }
 
 /**
- * Reloj de ciclos para un progreso. El primer tramo (0 → 0,3) solo recorre
- * la carrerilla y el golpe (0,62 → 1): así la mascota entra embistiendo en
- * vez de rebotar fuera de pantalla. Desde 0,3, un ciclo cada `STEP`.
- */
-export function cycleAt(progress: number): number {
-  if (progress < STEP) return FIRST_CYCLE_FROM + (progress / STEP) * (1 - FIRST_CYCLE_FROM);
-  return 1 + (progress - STEP) * PUSHES_PER_WIDTH;
-}
-
-/**
- * Borde de la pared (en anchos de pantalla). Solo se mueve cuando la mascota
- * se estampa: de golpe y frenando (ease-out), quieta mientras rebota. En las
- * paradas del original (0,3 y 0,6) cae exactamente donde allí.
- */
-export function wallAt(progress: number): number {
-  const c = cycleAt(progress);
-  const n = Math.floor(c);
-  return (n + easeOutCubic((c - n - SLAM) / (1 - SLAM))) * STEP;
-}
-
-// Claves de la pose por fase del ciclo.
-const SX: ReadonlyArray<readonly [number, number]> = [
-  [0, 0.74],
-  [0.05, 1.22],
-  [TAKEOFF, 0.84],
-  [0.31, 1],
-  [0.5, 0.86],
-  [LAND, 1.34],
-  [0.58, 1.12],
-  [CHARGE, 1.24],
-  [0.71, 1.3],
-  [SLAM, 1.22],
-  [0.83, 0.72],
-  [1, 0.74],
-];
-const SY: ReadonlyArray<readonly [number, number]> = [
-  [0, 1.2],
-  [0.05, 0.76],
-  [TAKEOFF, 1.24],
-  [0.31, 1],
-  [0.5, 1.16],
-  [LAND, 0.66],
-  [0.58, 0.9],
-  [CHARGE, 0.76],
-  [0.71, 0.8],
-  [SLAM, 0.84],
-  [0.83, 1.22],
-  [1, 1.2],
-];
-const FLAT: ReadonlyArray<readonly [number, number]> = [
-  [0, 0.24],
-  [0.06, 0],
-  [SLAM, 0],
-  [0.83, 0.27],
-  [1, 0.24],
-];
-const ANCHOR: ReadonlyArray<readonly [number, number]> = [
-  [0, 1],
-  [0.08, 0],
-  [0.78, 0],
-  [SLAM, 1],
-  [1, 1],
-];
-const EYE_OPEN: ReadonlyArray<readonly [number, number]> = [
-  [0, 0.12],
-  [0.07, 1],
-  [0.2, 1.18],
-  [0.45, 1.18],
-  [LAND, 0.45],
-  [0.58, 0.9],
-  [0.64, 0.62],
-  [SLAM, 0.62],
-  [0.83, 0.12],
-  [1, 0.12],
-];
-const EYE_TILT: ReadonlyArray<readonly [number, number]> = [
-  [0, 22],
-  [0.06, 0],
-  [0.58, 0],
-  [0.64, 18],
-  [SLAM, 18],
-  [0.83, 22],
-  [1, 22],
-];
-const SHINE: ReadonlyArray<readonly [number, number]> = [
-  [0, 0],
-  [0.08, 1],
-  [0.58, 1],
-  [0.66, 0.6],
-  [SLAM, 0.6],
-  [0.82, 0],
-  [1, 0],
-];
-const VEIN: ReadonlyArray<readonly [number, number]> = [
-  [0, 1],
-  [0.05, 0],
-  [0.82, 0],
-  [0.85, 1.3],
-  [0.89, 1],
-  [1, 1],
-];
-
-/**
  * Pose de la mascota para un progreso del empuje. Como el Lottie del
- * original, NO depende del tiempo: avanza con la distancia (cero patinaje y
- * quieta en las pausas). `stall` = segundos esperando en la pausa del 60 %
- * a que cargue lo de debajo: ahí aprieta, tiembla y suda. `wait` (0–1) es
- * cuánto se nota la espera; el componente lo apaga suave al soltarse.
+ * original, NO depende del tiempo: avanza con la distancia (cero patinaje).
+ * Siempre pegada a la pared, aplastada y con los ojos en rendija; cada
+ * empellón la aplasta un poco más. `stall` = segundos esperando en el 60 % a
+ * que cargue lo de debajo: ahí sigue apretando en el sitio, tiembla y suda.
+ * `wait` (0–1) es cuánto se nota la espera; el componente lo apaga al soltarse.
  */
 export function mascotPose(progress: number, stall = 0, wait = Math.min(1, stall / 0.3)): MascotPose {
-  const c = cycleAt(progress);
-  const n = Math.floor(c);
-  const phase = c - n;
-  // Con la pared ya fuera, el último salto es hacia delante (no vuelve a entrar).
-  const dir = n * STEP >= 1 ? 1 : -1;
-  const backflip = n % 2 === 1;
-
-  let x = 0;
-  let y = 0;
-  let rot = 0;
-  if (phase >= TAKEOFF && phase < LAND) {
-    // Rebote: x lineal, y parabólica → parábola de verdad.
-    const u = (phase - TAKEOFF) / (LAND - TAKEOFF);
-    x = dir * BACK_DISTANCE * u;
-    y = HOP_HEIGHT * 4 * u * (1 - u);
-    rot = backflip ? dir * 360 * smooth(0.05, 0.95, u) : 30 * dir * Math.sin(Math.PI * u);
-  } else if (phase >= LAND && phase < CHARGE) {
-    x = dir * BACK_DISTANCE;
-  } else if (phase >= CHARGE && phase < SLAM) {
-    // Carrerilla acelerando, inclinada hacia la pared.
-    const u = (phase - CHARGE) / (SLAM - CHARGE);
-    x = dir * BACK_DISTANCE * (1 - u * u);
-    rot = 14 * Math.sin(Math.PI * u);
-  }
-
-  const pulse = wait * 0.5 * (1 - Math.cos(stall * Math.PI * 2 * 1.6));
+  const clock = progress * PUSHES_PER_WIDTH + stall * STALL_PUSHES_PER_SECOND;
+  const phase = frac(clock);
+  // Empellón: aprieta hasta media fase y afloja, sin soltar la pared.
+  const shove = 0.5 * (1 - Math.cos(Math.PI * 2 * phase));
   const tremble = wait * 0.03 * Math.sin(stall * Math.PI * 2 * 17);
-
-  const impact = phase >= SLAM && phase < SLAM + 0.12 ? Math.sin((Math.PI * (phase - SLAM)) / 0.12) : 0;
-  const speed = phase >= 0.64 && phase < 0.81 ? Math.sin((Math.PI * (phase - 0.64)) / 0.17) : 0;
-  const v = (phase - SLAM) / (1 - SLAM);
-  const shake = phase >= SLAM ? 0.14 * Math.sin(Math.PI * 2 * 2.5 * v) * (1 - v) ** 2 : 0;
+  // Al final la pared cede y sale lanzada con ella.
+  const rush = smooth(0.85, 1.05, progress);
 
   return {
-    x: x + tremble,
-    y,
-    rot,
+    x: tremble,
+    y: 0,
+    rot: 0,
     scale: 1,
-    sx: keyed(SX, phase) * (1 + 0.05 * pulse),
-    sy: keyed(SY, phase) * (1 - 0.03 * pulse),
-    anchor: keyed(ANCHOR, phase),
-    flat: keyed(FLAT, phase) * (1 - 0.2 * pulse),
-    eyeOpen: keyed(EYE_OPEN, phase),
-    eyeTilt: keyed(EYE_TILT, phase),
-    shine: keyed(SHINE, phase),
+    sx: 0.8 - 0.07 * shove,
+    sy: 1.14 + 0.07 * shove,
+    anchor: 1,
+    flat: 0.2 + 0.08 * shove,
+    eyeOpen: 0.12,
+    eyeTilt: 22,
+    shine: 0,
     wink: 0,
-    vein: keyed(VEIN, phase) * (1 + 0.22 * pulse),
-    impact,
-    speed,
-    dust: phase >= LAND && phase < SLAM ? { age: (phase - LAND) / (SLAM - LAND), x: dir * BACK_DISTANCE } : null,
-    shake,
-    shadow: 1 - 0.65 * Math.min(1, y / HOP_HEIGHT),
-    drop: dropPose(c + stall / STALL_DROP_EVERY),
+    vein: 1 + 0.2 * shove,
+    impact: 0,
+    speed: rush,
+    dust: { age: phase, x: -0.75 },
+    shake: 0,
+    shadow: 1,
+    drop: dropPose(clock),
   };
 }
 

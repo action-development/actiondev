@@ -217,6 +217,13 @@ El rojo funciona en la original porque es el único color y contrasta con el neg
 - Más enérgica que el original (pedido del cliente): bola más pequeña (`min(14vw, 25vh)`), rebotes en parábola altos con mortal alterno, carrerilla y embestida; la pared solo avanza en el golpe. Esfuerzo = vena 💢 en la nuca (las tres rayitas sobre la cabeza se descartaron: parecían pelo).
 - Vuelta al logo: `ARRIVAL` = 0,55 s entre el fin del empuje y el `FINAL_HOLD`, que retrasa aviso y bajada del panel esos 0,55 s respecto al original.
 
+**Cambios posteriores del cliente (2026-10-14, misma tarde)** — la intro deja de ser réplica exacta:
+
+- **Empuje continuo**: «va a golpes, pega un empujón y luego sigue». Fuera los tres tramos con pausas y los rebotes con carrerilla: un solo tramo de 2,7 s (3,2 en móvil) con `sine.in`; la pared es el progreso y la mascota va pegada a ella apretando, con empellones suaves que no la paran. La pausa del 60 % solo existe si la escena no ha cargado, y se entra y se sale de ella frenando, no de golpe.
+- **Panel de cristal**: en vez del gris opaco, gris piedra al 55 % con `backdrop-filter: blur(22px)`: la web se adivina detrás.
+- **Logo en relieve**: tinta con canto, bisel y sombra (filtro SVG).
+- **Salida por fundido** de 0,7 s en vez de la persiana que bajaba con contra-movimiento.
+
 Vídeos de prueba (arnés Vite + Chromium headless) en `~/Documents/ActionDev/Marca/intro-empuje/`, incluida la comparativa sincronizada original/nuestra.
 
 **Web móvil v2: pendiente.** Falta montarlo en `app/(m)/m/page.tsx` con Saira y los tokens de `mobile.css`, y decidir la frecuencia. «Una vez por sesión» sin parpadeo exige un `<script>` en línea antes del primer paint: React 19 avisa de un `<script>` creado en cliente, no de uno hidratado desde el SSR.

@@ -2,15 +2,17 @@
 /*  INTRO «EMPUJE»  (intro/PushIntro.tsx)                          */
 /*                                                                 */
 /*  Capas de abajo arriba, como el original (docs/intro-empuje):   */
-/*  panel claro → rótulo → pared de tinta → mascota. El bucle rAF  */
-/*  solo escribe variables: --mw (borde de la pared en anchos de    */
-/*  pantalla), --pw (el mismo con tope), --exit (bajada del panel, */
-/*  0-1), --shake (sacudida del golpe) y --w (ancho en px).        */
+/*  cristal → logo → pared de tinta → mascota. El bucle rAF solo   */
+/*  escribe variables: --mw (borde de la pared en anchos de        */
+/*  pantalla), --pw (el mismo con tope), --exit (fundido de        */
+/*  salida, 0-1), --shake (sacudida) y --w (ancho en px).          */
 /* ─────────────────────────────────────────────────────────────── */
 .root {
   --wall: var(--background);
-  /* Gris piedra de la marca (`grey` de docs/mobile-v2/DESIGN.md): papel, no blanco. */
-  --panel: #d9d5cc;
+  /* Cristal esmerilado con el gris piedra de la marca (`grey` de
+     docs/mobile-v2/DESIGN.md): la web se adivina detrás, difuminada. */
+  --panel: rgb(217 213 204 / 0.55);
+  --panel-solid: #d9d5cc;
   --ink: var(--background);
   --mascot: var(--accent);
   /* Diámetro de la mascota: pequeña, para que los saltos tengan recorrido. */
@@ -26,8 +28,7 @@
   z-index: 2147483647;
   overflow: hidden;
   pointer-events: auto;
-  transform: translate3d(var(--shake), calc(var(--exit) * 100%), 0);
-  will-change: transform;
+  transform: translate3d(var(--shake), 0, 0);
 }
 
 /* Escotilla sin JS: si el componente no llega a hidratar, la pared no puede
@@ -43,7 +44,7 @@
   }
 }
 
-/* Bajando el panel ya se ve la escena: los clics le pertenecen. */
+/* Fundiéndose ya se ve la escena: los clics le pertenecen. */
 .root[data-state="exiting"] {
   pointer-events: none;
 }
@@ -54,29 +55,46 @@
   transition: opacity 300ms linear;
 }
 
+/* El fundido va capa a capa y NO en la raíz: un antecesor con `opacity` < 1
+   es raíz de fondo para `backdrop-filter`, y el cristal dejaría de ver la web
+   (se volvería gris liso justo al desvanecerse). */
+.panel,
+.word,
+.mascot {
+  opacity: calc(1 - var(--exit));
+}
+
 .panel {
   position: absolute;
   inset: 0;
   background: var(--panel);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  backdrop-filter: blur(22px) saturate(1.15);
 }
 
-/* Contra-movimiento: sube lo mismo que baja la raíz, así el logo se queda
-   quieto en pantalla y el borde del panel lo va recortando (la mascota, ya en
-   su punto, hace lo mismo desde el bucle). */
+/* Sin `backdrop-filter`, translúcido sin difuminar se leería mal: opaco. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .panel {
+    background: var(--panel-solid);
+  }
+}
+
 .word {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: translate3d(0, calc(var(--exit) * -100%), 0);
+  will-change: opacity;
 }
 
-/* Logo en tinta, sin el punto final: ese hueco es de la mascota. */
+/* Logo en tinta con relieve (filtro SVG del componente), sin el punto final:
+   ese hueco es de la mascota. `overflow: visible` deja salir canto y sombra. */
 .logo {
   display: block;
   width: min(78vw, 150vh);
   height: auto;
+  overflow: visible;
   fill: var(--ink);
 }
 

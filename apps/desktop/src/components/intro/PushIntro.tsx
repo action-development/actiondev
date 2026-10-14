@@ -18,7 +18,6 @@ import {
   progressAt,
   speedPath,
   veinPath,
-  wallAt,
 } from "@/lib/push-intro";
 import { LOGO_D, LOGO_DOT, LOGO_TRANSFORM, LOGO_VIEWBOX } from "./intro-logo";
 import styles from "./PushIntro.module.css";
@@ -26,9 +25,9 @@ import styles from "./PushIntro.module.css";
 interface PushIntroProps {
   /** Lo de debajo ya puede verse (escena 3D montada y compilada). */
   ready: boolean;
-  /** Fin del empuje, 0,6 s antes de que baje el panel: arrancar lo de debajo. */
+  /** Fin del empuje, 0,6 s antes del fundido: arrancar lo de debajo. */
   onReveal: () => void;
-  /** Panel fuera: el padre lo desmonta. */
+  /** Fundido acabado: el padre lo desmonta. */
   onComplete: () => void;
   /** Rótulo del porcentaje para lectores de pantalla. */
   statusLabel: string;
@@ -44,6 +43,13 @@ const READY_GRACE_MS = 800;
 const STALL_TIMEOUT_MS = 25_000;
 /** Al soltarse tras una espera, el temblor se apaga en este tiempo (s). */
 const WAIT_FADE = 0.25;
+/**
+ * Si lo de debajo no está listo, la pared frena al acercarse al 60 %: la
+ * velocidad es proporcional a lo que le queda (s de reloj de la intro), así
+ * que se para sin tirón. Al soltarse recupera la velocidad en `RESUME` s.
+ */
+const GATE_BRAKE = 0.45;
+const RESUME = 0.35;
 /** Con `prefers-reduced-motion`: sin empuje, fundido corto. */
 const REDUCED_FADE_MS = 300;
 
@@ -65,20 +71,84 @@ const DROP_PATH =
 
 type Stage = "waiting" | "pushing" | "exiting";
 
+/** Solo hay una intro a la vez: id fijo (el de `useId` no vale dentro de `url(#…)`). */
+const RELIEF_ID = "push-intro-relief";
+/** Canto del relieve: la silueta repetida hacia abajo a la derecha (unidades del viewBox del logo, ~0,74 px). */
+const EXTRUDE_STEPS = 9;
+const EXTRUDE_STEP = { x: 0.9, y: 1.3 } as const;
+
+/**
+ * Relieve del logo, todo en un filtro SVG (sin capas ni copias del trazado):
+ * sombra suave sobre el cristal, canto gris oscuro hacia abajo a la derecha y
+ * la cara en tinta con un bisel iluminado desde arriba a la izquierda. El
+ * logo no se mueve, así que el navegador lo calcula una vez.
+ */
+function LogoRelief() {
+  const steps = Array.from({ length: EXTRUDE_STEPS }, (_, i) => i + 1);
+  return (
+    <filter
+      id={RELIEF_ID}
+      x="-4%"
+      y="-8%"
+      width="112%"
+      height="130%"
+      colorInterpolationFilters="sRGB"
+    >
+      <feFlood floodColor="#000" floodOpacity="0.32" result="shadowInk" />
+      <feGaussianBlur in="SourceAlpha" stdDeviation="9" result="blurred" />
+      <feOffset in="blurred" dx="10" dy="18" result="shadowShape" />
+      <feComposite in="shadowInk" in2="shadowShape" operator="in" result="shadow" />
+
+      <feFlood floodColor="#3a3935" result="sideInk" />
+      <feComposite in="sideInk" in2="SourceAlpha" operator="in" result="sideShape" />
+      {steps.map((i) => (
+        <feOffset
+          key={i}
+          in="sideShape"
+          dx={EXTRUDE_STEP.x * i}
+          dy={EXTRUDE_STEP.y * i}
+          result={`side${i}`}
+        />
+      ))}
+
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="bump" />
+      <feSpecularLighting
+        in="bump"
+        surfaceScale="5"
+        specularConstant="0.85"
+        specularExponent="16"
+        lightingColor="#fff"
+        result="spec"
+      >
+        <feDistantLight azimuth="225" elevation="40" />
+      </feSpecularLighting>
+      <feComposite in="spec" in2="SourceAlpha" operator="in" result="specFace" />
+      <feComposite in="SourceGraphic" in2="specFace" operator="arithmetic" k2="1" k3="0.45" result="face" />
+
+      <feMerge>
+        <feMergeNode in="shadow" />
+        {[...steps].reverse().map((i) => (
+          <feMergeNode key={i} in={`side${i}`} />
+        ))}
+        <feMergeNode in="face" />
+      </feMerge>
+    </filter>
+  );
+}
+
 /**
  * Intro «empuje» de la home (réplica de huyml.co con la mascota; ver
  * `docs/intro-empuje/ANALISIS.md` y `lib/push-intro.ts`).
  *
  * Una pared de tinta tapa la pantalla desde el primer paint (SSR incluido).
- * La mascota la empuja a embestidas: rebota hacia atrás en parábola (con
- * mortal en saltos alternos), coge carrerilla y se estampa —dos pausas
- * apretando—, la pared avanza a golpes y
- * detrás queda el panel claro con el logo, sin su punto final. Con la pared
- * fuera, la mascota vuelve de un salto, aterriza en ese hueco y guiña. El
- * panel baja como una persiana dejando el logo quieto hasta descubrir la escena.
+ * La mascota la empuja de un tirón, pegada a ella y apretando, y la pared
+ * avanza sin pararse; detrás queda un cristal translúcido (la web difuminada)
+ * con el logo en relieve, sin su punto final. Con la pared fuera, la mascota
+ * vuelve de un salto, aterriza en ese hueco y guiña. Todo se funde y queda la
+ * escena.
  *
- * Hace de pantalla de carga: si la escena no está lista al llegar a la
- * pausa del 60 %, la mascota se queda ahí apretando (tiembla y suda) hasta
+ * Hace de pantalla de carga: si la escena no está lista al llegar al 60 %,
+ * la pared frena y la mascota se queda ahí apretando (tiembla y suda) hasta
  * que lo esté.
  *
  * Sin GSAP a propósito: pelea con la reconciliación de React cuando los dos
@@ -175,9 +245,10 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
       const plan = buildPlan(timing, final);
       root.style.setProperty("--w", `${width}px`);
       const height = root.clientHeight;
-      const arrival = arrivalGeometry(width, height, diameter / 2, wallAt(final));
+      const arrival = arrivalGeometry(width, height, diameter / 2, final);
 
       let t = 0;
+      let speed = 1;
       let stall = 0;
       let wait = 0;
       let last = performance.now();
@@ -192,27 +263,26 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
         const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
         last = now;
 
-        let next = t + dt;
-        if (!isReady(now) && next > plan.gate) {
-          stall += next - Math.max(t, plan.gate);
-          next = plan.gate;
+        if (isReady(now)) {
+          speed = Math.min(1, speed + dt / RESUME);
+          if (wait > 0) wait = Math.max(0, wait - dt / WAIT_FADE);
+        } else {
+          // Aún no ha pasado del 60 % (no puede: aquí nunca llega).
+          speed = Math.min(speed, Math.max(0, (plan.gate - t) / GATE_BRAKE));
+          stall += dt * (1 - speed);
           wait = Math.min(1, stall / 0.3);
-        } else if (wait > 0 && t >= plan.gate) {
-          wait = Math.max(0, wait - dt / WAIT_FADE);
         }
-        t = next;
+        t += dt * speed;
 
+        // La pared ES el progreso: avanza continua, sin golpes.
         const p = progressAt(plan, t);
-        const wall = wallAt(p);
-        root.style.setProperty("--mw", wall.toFixed(5));
-        root.style.setProperty("--pw", Math.min(wall, plan.wallMax).toFixed(5));
-        const exit = exitAt(plan, t);
-        root.style.setProperty("--exit", exit.toFixed(5));
+        root.style.setProperty("--mw", p.toFixed(5));
+        root.style.setProperty("--pw", Math.min(p, plan.wallMax).toFixed(5));
+        root.style.setProperty("--exit", exitAt(plan, t).toFixed(5));
         const shake =
           t < plan.pushEnd
             ? paintMascot(mascotPose(p, stall, wait))
-            : // El panel baja: la mascota sube lo mismo y se queda en su punto, como el logo.
-              paintMascot(arrivalPose(t - plan.pushEnd, arrival), (exit * height) / (diameter / 2));
+            : paintMascot(arrivalPose(t - plan.pushEnd, arrival));
         root.style.setProperty("--shake", `${(shake * diameter) / 2}px`);
 
         const pct = Math.round(displayPercent(p, final) / 10) * 10;
@@ -259,11 +329,11 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
       };
     };
 
-    /** Pinta la pose y devuelve la sacudida (en radios) para la raíz. `lift` sube la mascota entera. */
-    const paintMascot = (pose: MascotPose, lift = 0) => {
+    /** Pinta la pose y devuelve la sacudida (en radios) para la raíz. */
+    const paintMascot = (pose: MascotPose) => {
       const n = (v: number) => v.toFixed(4);
       const a = n(pose.anchor);
-      posRef.current?.setAttribute("transform", `translate(${n(pose.x)} ${n(-pose.y - lift)})`);
+      posRef.current?.setAttribute("transform", `translate(${n(pose.x)} ${n(-pose.y)})`);
       scaleRef.current?.setAttribute("transform", `scale(${n(pose.scale)})`);
       squashRef.current?.setAttribute(
         "transform",
@@ -319,8 +389,8 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
 
     paintMascot(mascotPose(0));
 
-    // Arranca con la tipografía puesta (el rótulo no puede cambiar de fuente a
-    // medio barrido) y con la escena lista o, si tarda, a los `READY_GRACE_MS`.
+    // Arranca con las fuentes puestas y con la escena lista o, si tarda, a los
+    // `READY_GRACE_MS`.
     const fonts = document.fonts?.ready ?? Promise.resolve();
     void fonts.then(() => {
       const start = () => {
@@ -355,7 +425,12 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
           focusable="false"
           data-testid="push-intro-logo"
         >
-          <path transform={LOGO_TRANSFORM} d={LOGO_D} />
+          <defs>
+            <LogoRelief />
+          </defs>
+          <g filter={`url(#${RELIEF_ID})`}>
+            <path transform={LOGO_TRANSFORM} d={LOGO_D} />
+          </g>
         </svg>
       </div>
       <div aria-hidden className={styles.wall} />

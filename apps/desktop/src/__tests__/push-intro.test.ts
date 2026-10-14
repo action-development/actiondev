@@ -2,70 +2,66 @@ import { describe, expect, it } from "vitest";
 import {
   ARRIVAL,
   EXIT_DURATION,
+  FINAL_HOLD,
+  EXIT_DELAY,
+  GATE_PROGRESS,
   arrivalPose,
   bodyPath,
   buildPlan,
   displayPercent,
   exitAt,
   finalProgress,
-  HOP_HEIGHT,
   mascotPose,
   power2InOut,
-  power3In,
   progressAt,
-  wallAt,
+  sineIn,
 } from "@/lib/push-intro";
 
 /**
- * Los números de la intro son los del original (docs/intro-empuje/ANALISIS.md,
- * medidos al fotograma en la grabación). Estos tests fijan esa línea de tiempo.
+ * El empuje es UNO SOLO y continuo (decisión del cliente: los tres empujones
+ * con pausas del original de huyml.co iban «a golpes»).
  */
 describe("intro «empuje» — línea de tiempo", () => {
   const plan = buildPlan("pc", 1.28);
 
-  it("tramos y pausas del original; la vuelta al logo retrasa el aviso y la bajada", () => {
-    expect(plan.segments.map((s) => [s.start, s.end])).toEqual([
-      [0, 0.65],
-      [expect.closeTo(0.81, 6), expect.closeTo(1.53, 6)],
-      [expect.closeTo(1.73, 6), expect.closeTo(3.19, 6)],
-    ]);
-    expect(plan.gate).toBeCloseTo(1.73, 6);
-    expect(plan.pushEnd).toBeCloseTo(3.19, 6);
-    expect(plan.reveal).toBeCloseTo(3.69 + ARRIVAL, 6);
-    expect(plan.exitStart).toBeCloseTo(4.29 + ARRIVAL, 6);
-    expect(plan.end).toBeCloseTo(4.29 + ARRIVAL + EXIT_DURATION, 6);
+  it("un solo tramo de 2,7 s; luego vuelta al logo, aviso y fundido", () => {
+    expect(plan.segments).toHaveLength(1);
+    expect(plan.pushEnd).toBeCloseTo(2.7, 6);
+    expect(plan.reveal).toBeCloseTo(2.7 + ARRIVAL + FINAL_HOLD, 6);
+    expect(plan.exitStart).toBeCloseTo(plan.reveal + EXIT_DELAY, 6);
+    expect(plan.end).toBeCloseTo(plan.exitStart + EXIT_DURATION, 6);
   });
 
-  it("se queda quieto en las pausas y llega a cada parada", () => {
-    expect(progressAt(plan, 0.65)).toBe(0.3);
-    expect(progressAt(plan, 0.75)).toBe(0.3);
-    expect(progressAt(plan, 1.6)).toBe(0.6);
-    expect(progressAt(plan, 3.19)).toBe(1.28);
+  it("la pared no se para nunca entre el arranque y el final", () => {
+    let prev = progressAt(plan, 0);
+    for (let t = 0.05; t <= plan.pushEnd; t += 0.05) {
+      const p = progressAt(plan, t);
+      expect(p).toBeGreaterThan(prev);
+      prev = p;
+    }
+    expect(progressAt(plan, plan.pushEnd)).toBe(1.28);
     expect(progressAt(plan, 10)).toBe(1.28);
   });
 
-  it("el último tramo es la cuártica: la pared sale de pantalla a los 3,009 s", () => {
-    // p = 0,6 + 0,68·u⁴ = 1  →  u = (0,4/0,68)^¼
-    const u = (0.4 / 0.68) ** 0.25;
-    expect(progressAt(plan, 1.73 + 1.46 * u)).toBeCloseTo(1, 6);
-    expect(1.73 + 1.46 * u).toBeCloseTo(3.009, 3);
+  it("la puerta de carga cae justo donde la pared pasa por el 60 %", () => {
+    expect(progressAt(plan, plan.gate)).toBeCloseTo(GATE_PROGRESS, 6);
   });
 
-  it("curvas de GSAP: power2 es cúbica y power3 cuártica", () => {
+  it("curvas: sine.in arranca parada; power2 es cúbica", () => {
+    expect(sineIn(0)).toBe(0);
+    expect(sineIn(1)).toBeCloseTo(1, 6);
+    expect(sineIn(0.01)).toBeLessThan(0.001);
     expect(power2InOut(0.25)).toBeCloseTo(0.0625, 6);
     expect(power2InOut(0.5)).toBeCloseTo(0.5, 6);
-    expect(power2InOut(0.75)).toBeCloseTo(0.9375, 6);
-    expect(power3In(0.5)).toBeCloseTo(0.0625, 6);
   });
 
-  it("móvil: primer y último tramo 0,3 s más largos", () => {
+  it("móvil: empuje más largo y la pared llega más lejos", () => {
     const m = buildPlan("mobile", 1.4);
-    expect(m.segments[0].end).toBeCloseTo(0.95, 6);
-    expect(m.segments[2].end - m.segments[2].start).toBeCloseTo(1.76, 6);
+    expect(m.pushEnd).toBeCloseTo(3.2, 6);
     expect(m.wallMax).toBe(1.4);
   });
 
-  it("la bajada del panel va de 0 a 1 en 1,33 s", () => {
+  it("el fundido va de 0 a 1", () => {
     expect(exitAt(plan, plan.exitStart)).toBe(0);
     expect(exitAt(plan, plan.exitStart + EXIT_DURATION / 2)).toBeCloseTo(0.5, 6);
     expect(exitAt(plan, plan.end + 1)).toBe(1);
@@ -78,7 +74,7 @@ describe("intro «empuje» — línea de tiempo", () => {
     expect(narrow * 390 - 1.12 * 200).toBeGreaterThan(390);
   });
 
-  it("porcentaje por tramos: 30 % y 60 % en las pausas", () => {
+  it("porcentaje por tramos: 30 % y 60 %", () => {
     expect(displayPercent(0.3, 1.28)).toBeCloseTo(30, 6);
     expect(displayPercent(0.6, 1.28)).toBeCloseTo(60, 6);
     expect(displayPercent(1.28, 1.28)).toBeCloseTo(100, 6);
@@ -86,46 +82,41 @@ describe("intro «empuje» — línea de tiempo", () => {
 });
 
 describe("intro «empuje» — mascota", () => {
-  it("la pared avanza a golpes y para donde el original (0,3 · 0,6)", () => {
-    expect(wallAt(0.3)).toBeCloseTo(0.3, 6);
-    expect(wallAt(0.6)).toBeCloseTo(0.6, 6);
-    // A mitad de ciclo la mascota está rebotando: la pared no se mueve.
-    expect(wallAt(0.45)).toBeCloseTo(0.3, 6);
-    // Al final, fuera de pantalla con la mascota detrás.
-    expect(wallAt(1.28)).toBeCloseTo(1.2, 6);
-  });
-
-  it("las dos pausas la congelan estampada (aplastada, ojos en rendija)", () => {
-    for (const p of [0.3, 0.6]) {
+  it("siempre pegada a la pared, aplastada y con los ojos en rendija", () => {
+    for (let p = 0; p <= 1.28; p += 0.01) {
       const pose = mascotPose(p);
-      expect(pose.flat).toBeGreaterThan(0.2);
-      expect(pose.eyeOpen).toBeLessThan(0.2);
+      expect(pose.x).toBe(0);
       expect(pose.y).toBe(0);
-      expect(pose.x).toBeCloseTo(0, 6);
+      expect(pose.flat).toBeGreaterThanOrEqual(0.2);
+      expect(pose.eyeOpen).toBeLessThan(0.2);
+      expect(pose.shake).toBe(0);
     }
   });
 
-  it("rebota hacia atrás en parábola y en saltos alternos hace mortal", () => {
-    // Ápice del rebote del ciclo 1 (fase 0,31).
-    const apex = mascotPose(0.3 + 0.31 / (10 / 3));
-    expect(apex.y).toBeCloseTo(HOP_HEIGHT, 6);
-    expect(apex.x).toBeLessThan(-1);
-    expect(Math.abs(apex.rot)).toBeGreaterThan(90);
-    const noFlip = mascotPose(0.6 + 0.31 / (10 / 3));
-    expect(Math.abs(noFlip.rot)).toBeLessThanOrEqual(30);
+  it("los empellones son suaves: la pose no salta entre fotogramas", () => {
+    for (let p = 0; p < 1.28; p += 0.002) {
+      const a = mascotPose(p);
+      const b = mascotPose(p + 0.002);
+      expect(Math.abs(a.sx - b.sx)).toBeLessThan(0.01);
+      expect(Math.abs(a.flat - b.flat)).toBeLessThan(0.01);
+    }
   });
 
-  it("la pose es continua: sin saltos en el cambio de ciclo", () => {
-    const a = mascotPose(0.6 - 1e-6);
-    const b = mascotPose(0.6 + 1e-6);
-    expect(Math.abs(a.sx - b.sx)).toBeLessThan(1e-3);
-    expect(Math.abs(a.drop.x - b.drop.x)).toBeLessThan(1e-3);
+  it("al final la pared cede: salen las líneas de velocidad", () => {
+    expect(mascotPose(0.5).speed).toBe(0);
+    expect(mascotPose(1.1).speed).toBe(1);
   });
 
-  it("esperando en el 60 % tiembla y sigue sudando", () => {
+  it("esperando en el 60 % sigue apretando, tiembla y suda", () => {
     const drops = new Set<number>();
-    for (let s = 0.4; s < 3; s += 0.1) drops.add(Math.round(mascotPose(0.6, s).drop.y * 100));
+    const squash = new Set<number>();
+    for (let s = 0.4; s < 3; s += 0.1) {
+      const pose = mascotPose(0.6, s);
+      drops.add(Math.round(pose.drop.y * 100));
+      squash.add(Math.round(pose.flat * 1000));
+    }
     expect(drops.size).toBeGreaterThan(5);
+    expect(squash.size).toBeGreaterThan(5);
   });
 
   it("el cuerpo aplastado es un círculo con el lado de la pared cortado", () => {
