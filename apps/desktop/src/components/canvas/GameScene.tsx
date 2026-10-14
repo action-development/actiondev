@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import type { WebGLRenderer } from "three";
 import { useGameState } from "@/hooks/use-game-state";
 import { GameWorld } from "./GameWorld";
@@ -23,13 +23,25 @@ interface GameSceneProps {
   physicsActive?: boolean;
   renderPaused?: boolean;
   onNavigate?: (href: string) => void;
-  /** Contexto WebGL creado: lo más pesado del arranque (~0,7 s de hilo bloqueado en frío) ya ha pasado. */
-  onContext?: () => void;
-  /** Shaders compilados de verdad (`SceneWarmup`): el primer frame ya no bloquea. */
+  /**
+   * Escena lista de verdad: shaders compilados (`SceneWarmup`) y dos frames ya
+   * pintados (el primero sube texturas y compila la sombra en síncrono). Lo
+   * que venga después es barato: la intro puede animar sin tirones.
+   */
   onReady?: () => void;
 }
 
-export function GameScene({ paused = false, physicsPaused = false, physicsActive = false, renderPaused = false, onNavigate, onContext, onReady }: GameSceneProps) {
+/** Avisa al empezar el segundo frame: el primero ya está entero en pantalla. */
+function ReadyAfterFirstFrame({ onReady }: { onReady: () => void }) {
+  const frames = useRef(0);
+  useFrame(() => {
+    frames.current += 1;
+    if (frames.current === 2) onReady();
+  });
+  return null;
+}
+
+export function GameScene({ paused = false, physicsPaused = false, physicsActive = false, renderPaused = false, onNavigate, onReady }: GameSceneProps) {
   const gameState = useGameState();
 
   // Fase del día resuelta UNA vez al montar (hora local o `?hora=`). GameScene
@@ -51,19 +63,15 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
    * de todas las escenas). Antes la home hacía `gl.compile` y avisaba al
    * momento: el primer render se quedaba esperando al driver (~1 s a trozos
    * en la primera visita) justo mientras la intro «empuje» animaba, que va en
-   * el mismo hilo — de ahí el lag. Ahora la intro espera en su pausa del 60 %.
+   * el mismo hilo — de ahí el lag. Ahora la intro no empuja hasta `onReady`.
    */
   const [warm, setWarm] = useState(false);
   const onReadyRef = useRef(onReady);
-  const onContextRef = useRef(onContext);
   useEffect(() => {
     onReadyRef.current = onReady;
-    onContextRef.current = onContext;
-  }, [onReady, onContext]);
-  const handleWarm = useCallback(() => {
-    setWarm(true);
-    onReadyRef.current?.();
-  }, []);
+  }, [onReady]);
+  const handleWarm = useCallback(() => setWarm(true), []);
+  const handleFirstFrame = useCallback(() => onReadyRef.current?.(), []);
 
   /*
    * Sacudida al estrellarse una gaviota contra la pantalla (alerta del faro).
@@ -121,8 +129,6 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
 
     // No cleanup needed — the canvas DOM element is destroyed on Canvas unmount,
     // removing all its listeners automatically.
-
-    onContextRef.current?.();
   }, []);
 
   return (
@@ -157,6 +163,7 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
             <Suspense fallback={null}>
               <GameWorld paused={paused} physicsPaused={physicsPaused} physicsActive={physicsActive} onNavigate={onNavigate} gameState={gameState} palette={palette} mode={mode} />
               <SceneWarmup onDone={handleWarm} />
+              {warm && <ReadyAfterFirstFrame onReady={handleFirstFrame} />}
             </Suspense>
           </Canvas>
         </RapierCrashGuard>

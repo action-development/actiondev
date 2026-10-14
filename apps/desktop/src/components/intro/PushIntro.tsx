@@ -26,12 +26,6 @@ import styles from "./PushIntro.module.css";
 interface PushIntroProps {
   /** Lo de debajo ya puede verse (escena 3D montada y compilada). */
   ready: boolean;
-  /**
-   * Lo de debajo ya pasó su arranque más pesado (crear el contexto WebGL
-   * bloquea el hilo ~0,7 s en la primera visita). Hasta entonces la pared se
-   * queda quieta: ese bloqueo en pleno salto se ve como un tirón.
-   */
-  booted?: boolean;
   /** Fin del empuje, 0,6 s antes del fundido: arrancar lo de debajo. */
   onReveal: () => void;
   /** Fundido acabado: el padre lo desmonta. */
@@ -40,10 +34,15 @@ interface PushIntroProps {
   statusLabel: string;
 }
 
-/** Si `ready` tarda, el empuje arranca igual (con `booted`) y se queda apretando en el 60 %. */
-const READY_GRACE_MS = 800;
-/** Si ni siquiera llega `booted` (red lenta, WebGL roto), arranca igual a los 3 s. */
-const BOOT_GRACE_MS = 3000;
+/**
+ * El empuje no arranca hasta que lo de debajo esté listo: su arranque (montar
+ * la escena, crear el contexto WebGL, compilar, primer frame) bloquea el hilo
+ * principal a trozos de 0,1-0,8 s en la primera visita, y en pleno salto eso
+ * es un tirón. La pared espera quieta, como el original con `window.load`.
+ * Si tarda más que esto (red muy lenta, WebGL roto), arranca igual y se queda
+ * apretando en la pausa del 60 %.
+ */
+const START_TIMEOUT_MS = 6000;
 /**
  * Escotilla (la misma que tenía la persiana de carga): si `ready` no llega
  * nunca (WebGL roto, física que no baja), la intro termina igual y la web
@@ -161,7 +160,7 @@ function LogoRelief() {
  * estructura y tres cambios de estado. Las curvas son las de GSAP, escritas
  * a mano en `lib/push-intro.ts`.
  */
-export function PushIntro({ ready, booted = true, onReveal, onComplete, statusLabel }: PushIntroProps) {
+export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntroProps) {
   const [stage, setStage] = useState<Stage>("waiting");
   const [percent, setPercent] = useState(0);
 
@@ -185,15 +184,12 @@ export function PushIntro({ ready, booted = true, onReveal, onComplete, statusLa
   const dropRef = useRef<SVGPathElement>(null);
 
   const readyRef = useRef(ready);
-  const bootedRef = useRef(booted);
   const onRevealRef = useRef(onReveal);
   const onCompleteRef = useRef(onComplete);
   useEffect(() => {
     readyRef.current = ready;
   }, [ready]);
-  useEffect(() => {
-    bootedRef.current = booted;
-  }, [booted]);
+
   useEffect(() => {
     onRevealRef.current = onReveal;
   }, [onReveal]);
@@ -394,16 +390,12 @@ export function PushIntro({ ready, booted = true, onReveal, onComplete, statusLa
 
     paintMascot(mascotPose(0));
 
-    // Arranca con las fuentes puestas y con la escena lista o, si tarda, a los
-    // `READY_GRACE_MS` con su contexto WebGL ya creado (`BOOT_GRACE_MS` como tope).
+    // Arranca con las fuentes puestas y la escena lista (`START_TIMEOUT_MS` como tope).
     const fonts = document.fonts?.ready ?? Promise.resolve();
     void fonts.then(() => {
       const start = () => {
         if (cancelled) return;
-        const waited = performance.now() - mountedAt;
-        const canStart =
-          readyRef.current || (bootedRef.current && waited >= READY_GRACE_MS) || waited >= BOOT_GRACE_MS;
-        if (!canStart) {
+        if (!readyRef.current && performance.now() - mountedAt < START_TIMEOUT_MS) {
           raf = requestAnimationFrame(start);
           return;
         }
