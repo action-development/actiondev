@@ -230,7 +230,6 @@ interface GameWorldProps {
   gameState: GameState;
   palette: PortPalette;
   mode: SceneMode;
-  onReady?: () => void;
 }
 
 export function GameWorld({
@@ -241,12 +240,11 @@ export function GameWorld({
   gameState,
   palette,
   mode,
-  onReady,
 }: GameWorldProps) {
   const t = useT();
   const keys = useKeyboard();
   const mousePos = useMousePosition();
-  const { camera, gl, scene } = useThree();
+  const { camera, gl } = useThree();
 
   // --- Easter egg: caza de gaviotas ---
   const gullTargets = useRef(new Map<number, GullTarget>()).current;
@@ -336,13 +334,6 @@ export function GameWorld({
     gameState.reset();
     return () => gameState.reset();
   }, [gameState]);
-
-  // Pre-compila shaders con la intro aún tapando (ver `intro/PushIntro`).
-  useEffect(() => {
-    gl.compile(scene, camera);
-    onReady?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   /** Nombre visible y destino de cada contenedor, para la HUD. */
   const cargoInfo = useMemo(

@@ -15,6 +15,7 @@ import Image from "next/image";
 import { PALETTES, resolveTimeOfDay } from "./port/time-of-day";
 import { CAMERA_FOV, PAINTED_BACKDROPS, resolveSceneMode } from "./port/painted-backdrops";
 import { RapierCrashGuard } from "./RapierCrashGuard";
+import { SceneWarmup } from "./SceneWarmup";
 
 interface GameSceneProps {
   paused?: boolean;
@@ -22,10 +23,13 @@ interface GameSceneProps {
   physicsActive?: boolean;
   renderPaused?: boolean;
   onNavigate?: (href: string) => void;
+  /** Contexto WebGL creado: lo más pesado del arranque (~0,7 s de hilo bloqueado en frío) ya ha pasado. */
+  onContext?: () => void;
+  /** Shaders compilados de verdad (`SceneWarmup`): el primer frame ya no bloquea. */
   onReady?: () => void;
 }
 
-export function GameScene({ paused = false, physicsPaused = false, physicsActive = false, renderPaused = false, onNavigate, onReady }: GameSceneProps) {
+export function GameScene({ paused = false, physicsPaused = false, physicsActive = false, renderPaused = false, onNavigate, onContext, onReady }: GameSceneProps) {
   const gameState = useGameState();
 
   // Fase del día resuelta UNA vez al montar (hora local o `?hora=`). GameScene
@@ -41,6 +45,25 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
   // Incremented to force a full Canvas remount after WebGL context loss.
   // This re-creates the renderer and re-uploads all GPU resources cleanly.
   const [canvasKey, setCanvasKey] = useState(0);
+
+  /*
+   * Sin frames hasta tener los shaders compilados (`SceneWarmup`, el contrato
+   * de todas las escenas). Antes la home hacía `gl.compile` y avisaba al
+   * momento: el primer render se quedaba esperando al driver (~1 s a trozos
+   * en la primera visita) justo mientras la intro «empuje» animaba, que va en
+   * el mismo hilo — de ahí el lag. Ahora la intro espera en su pausa del 60 %.
+   */
+  const [warm, setWarm] = useState(false);
+  const onReadyRef = useRef(onReady);
+  const onContextRef = useRef(onContext);
+  useEffect(() => {
+    onReadyRef.current = onReady;
+    onContextRef.current = onContext;
+  }, [onReady, onContext]);
+  const handleWarm = useCallback(() => {
+    setWarm(true);
+    onReadyRef.current?.();
+  }, []);
 
   /*
    * Sacudida al estrellarse una gaviota contra la pantalla (alerta del faro).
@@ -86,14 +109,20 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
     const onLost = (e: Event) => e.preventDefault();
 
     // Full remount on restoration: Three.js state (textures, shaders, buffers)
-    // is already gone; cheapest correct recovery is a fresh Canvas.
-    const onRestored = () => setCanvasKey((k) => k + 1);
+    // is already gone; cheapest correct recovery is a fresh Canvas — y vuelta
+    // a compilar antes de pintar.
+    const onRestored = () => {
+      setWarm(false);
+      setCanvasKey((k) => k + 1);
+    };
 
     canvas.addEventListener("webglcontextlost", onLost);
     canvas.addEventListener("webglcontextrestored", onRestored);
 
     // No cleanup needed — the canvas DOM element is destroyed on Canvas unmount,
     // removing all its listeners automatically.
+
+    onContextRef.current?.();
   }, []);
 
   return (
@@ -121,12 +150,13 @@ export function GameScene({ paused = false, physicsPaused = false, physicsActive
             // antialias ON: el contorno de cómic sin MSAA se ve en dientes de sierra.
             gl={{ antialias: true, alpha: mode === "painted", powerPreference: "high-performance" }}
             dpr={[1, 1.5]}
-            frameloop={renderPaused ? "never" : "always"}
+            frameloop={renderPaused || !warm ? "never" : "always"}
             style={{ width: "100vw", height: "100vh", position: "relative" }}
             onCreated={handleCreated}
           >
             <Suspense fallback={null}>
-              <GameWorld paused={paused} physicsPaused={physicsPaused} physicsActive={physicsActive} onNavigate={onNavigate} gameState={gameState} palette={palette} mode={mode} onReady={onReady} />
+              <GameWorld paused={paused} physicsPaused={physicsPaused} physicsActive={physicsActive} onNavigate={onNavigate} gameState={gameState} palette={palette} mode={mode} />
+              <SceneWarmup onDone={handleWarm} />
             </Suspense>
           </Canvas>
         </RapierCrashGuard>

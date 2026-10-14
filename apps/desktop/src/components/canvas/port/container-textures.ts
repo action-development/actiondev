@@ -283,7 +283,9 @@ function loadLogoMask() {
       const c = document.createElement("canvas");
       c.width = size;
       c.height = size;
-      const ctx = c.getContext("2d")!;
+      // En CPU: leer un canvas acelerado obliga a traerlo de la GPU (~0,2 s
+      // en frío, en plena intro de la home).
+      const ctx = c.getContext("2d", { willReadFrequently: true })!;
       ctx.drawImage(img, 0, 0, size, size);
       const im = ctx.getImageData(0, 0, size, size);
       const d = im.data;

@@ -18,6 +18,7 @@ import {
   progressAt,
   speedPath,
   veinPath,
+  wallAt,
 } from "@/lib/push-intro";
 import { LOGO_D, LOGO_DOT, LOGO_TRANSFORM, LOGO_VIEWBOX } from "./intro-logo";
 import styles from "./PushIntro.module.css";
@@ -25,6 +26,12 @@ import styles from "./PushIntro.module.css";
 interface PushIntroProps {
   /** Lo de debajo ya puede verse (escena 3D montada y compilada). */
   ready: boolean;
+  /**
+   * Lo de debajo ya pasó su arranque más pesado (crear el contexto WebGL
+   * bloquea el hilo ~0,7 s en la primera visita). Hasta entonces la pared se
+   * queda quieta: ese bloqueo en pleno salto se ve como un tirón.
+   */
+  booted?: boolean;
   /** Fin del empuje, 0,6 s antes del fundido: arrancar lo de debajo. */
   onReveal: () => void;
   /** Fundido acabado: el padre lo desmonta. */
@@ -33,8 +40,10 @@ interface PushIntroProps {
   statusLabel: string;
 }
 
-/** Si `ready` tarda, el empuje arranca igual y se queda apretando en el 60 %. */
+/** Si `ready` tarda, el empuje arranca igual (con `booted`) y se queda apretando en el 60 %. */
 const READY_GRACE_MS = 800;
+/** Si ni siquiera llega `booted` (red lenta, WebGL roto), arranca igual a los 3 s. */
+const BOOT_GRACE_MS = 3000;
 /**
  * Escotilla (la misma que tenía la persiana de carga): si `ready` no llega
  * nunca (WebGL roto, física que no baja), la intro termina igual y la web
@@ -43,13 +52,6 @@ const READY_GRACE_MS = 800;
 const STALL_TIMEOUT_MS = 25_000;
 /** Al soltarse tras una espera, el temblor se apaga en este tiempo (s). */
 const WAIT_FADE = 0.25;
-/**
- * Si lo de debajo no está listo, la pared frena al acercarse al 60 %: la
- * velocidad es proporcional a lo que le queda (s de reloj de la intro), así
- * que se para sin tirón. Al soltarse recupera la velocidad en `RESUME` s.
- */
-const GATE_BRAKE = 0.45;
-const RESUME = 0.35;
 /** Con `prefers-reduced-motion`: sin empuje, fundido corto. */
 const REDUCED_FADE_MS = 300;
 
@@ -141,14 +143,15 @@ function LogoRelief() {
  * `docs/intro-empuje/ANALISIS.md` y `lib/push-intro.ts`).
  *
  * Una pared de tinta tapa la pantalla desde el primer paint (SSR incluido).
- * La mascota la empuja de un tirón, pegada a ella y apretando, y la pared
- * avanza sin pararse; detrás queda un cristal translúcido (la web difuminada)
- * con el logo en relieve, sin su punto final. Con la pared fuera, la mascota
- * vuelve de un salto, aterriza en ese hueco y guiña. Todo se funde y queda la
- * escena.
+ * La mascota la empuja a embestidas: rebota hacia atrás en parábola (con
+ * mortal en saltos alternos), coge carrerilla y se estampa —dos pausas
+ * apretando—, la pared avanza a golpes y detrás queda un cristal translúcido
+ * (la web difuminada) con el logo en relieve, sin su punto final. Con la
+ * pared fuera, la mascota vuelve de un salto, aterriza en ese hueco y guiña.
+ * Todo se funde y queda la escena.
  *
- * Hace de pantalla de carga: si la escena no está lista al llegar al 60 %,
- * la pared frena y la mascota se queda ahí apretando (tiembla y suda) hasta
+ * Hace de pantalla de carga: si la escena no está lista al llegar a la
+ * pausa del 60 %, la mascota se queda ahí apretando (tiembla y suda) hasta
  * que lo esté.
  *
  * Sin GSAP a propósito: pelea con la reconciliación de React cuando los dos
@@ -158,7 +161,7 @@ function LogoRelief() {
  * estructura y tres cambios de estado. Las curvas son las de GSAP, escritas
  * a mano en `lib/push-intro.ts`.
  */
-export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntroProps) {
+export function PushIntro({ ready, booted = true, onReveal, onComplete, statusLabel }: PushIntroProps) {
   const [stage, setStage] = useState<Stage>("waiting");
   const [percent, setPercent] = useState(0);
 
@@ -182,11 +185,15 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
   const dropRef = useRef<SVGPathElement>(null);
 
   const readyRef = useRef(ready);
+  const bootedRef = useRef(booted);
   const onRevealRef = useRef(onReveal);
   const onCompleteRef = useRef(onComplete);
   useEffect(() => {
     readyRef.current = ready;
   }, [ready]);
+  useEffect(() => {
+    bootedRef.current = booted;
+  }, [booted]);
   useEffect(() => {
     onRevealRef.current = onReveal;
   }, [onReveal]);
@@ -245,10 +252,9 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
       const plan = buildPlan(timing, final);
       root.style.setProperty("--w", `${width}px`);
       const height = root.clientHeight;
-      const arrival = arrivalGeometry(width, height, diameter / 2, final);
+      const arrival = arrivalGeometry(width, height, diameter / 2, wallAt(final));
 
       let t = 0;
-      let speed = 1;
       let stall = 0;
       let wait = 0;
       let last = performance.now();
@@ -263,21 +269,20 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
         const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
         last = now;
 
-        if (isReady(now)) {
-          speed = Math.min(1, speed + dt / RESUME);
-          if (wait > 0) wait = Math.max(0, wait - dt / WAIT_FADE);
-        } else {
-          // Aún no ha pasado del 60 % (no puede: aquí nunca llega).
-          speed = Math.min(speed, Math.max(0, (plan.gate - t) / GATE_BRAKE));
-          stall += dt * (1 - speed);
+        let next = t + dt;
+        if (!isReady(now) && next > plan.gate) {
+          stall += next - Math.max(t, plan.gate);
+          next = plan.gate;
           wait = Math.min(1, stall / 0.3);
+        } else if (wait > 0 && t >= plan.gate) {
+          wait = Math.max(0, wait - dt / WAIT_FADE);
         }
-        t += dt * speed;
+        t = next;
 
-        // La pared ES el progreso: avanza continua, sin golpes.
         const p = progressAt(plan, t);
-        root.style.setProperty("--mw", p.toFixed(5));
-        root.style.setProperty("--pw", Math.min(p, plan.wallMax).toFixed(5));
+        const wall = wallAt(p);
+        root.style.setProperty("--mw", wall.toFixed(5));
+        root.style.setProperty("--pw", Math.min(wall, plan.wallMax).toFixed(5));
         root.style.setProperty("--exit", exitAt(plan, t).toFixed(5));
         const shake =
           t < plan.pushEnd
@@ -390,12 +395,15 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
     paintMascot(mascotPose(0));
 
     // Arranca con las fuentes puestas y con la escena lista o, si tarda, a los
-    // `READY_GRACE_MS`.
+    // `READY_GRACE_MS` con su contexto WebGL ya creado (`BOOT_GRACE_MS` como tope).
     const fonts = document.fonts?.ready ?? Promise.resolve();
     void fonts.then(() => {
       const start = () => {
         if (cancelled) return;
-        if (!readyRef.current && performance.now() - mountedAt < READY_GRACE_MS) {
+        const waited = performance.now() - mountedAt;
+        const canStart =
+          readyRef.current || (bootedRef.current && waited >= READY_GRACE_MS) || waited >= BOOT_GRACE_MS;
+        if (!canStart) {
           raf = requestAnimationFrame(start);
           return;
         }

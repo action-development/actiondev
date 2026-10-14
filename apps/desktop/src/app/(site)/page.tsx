@@ -73,9 +73,12 @@ export default function HomePage() {
   const [gamePaused, setGamePaused] = useState(false);
   const [physicsActive, setPhysicsActive] = useState(false);
   const [loadingReady, setLoadingReady] = useState(false);
+  /** Contexto WebGL creado: la intro ya puede empezar a empujar sin tirones. */
+  const [sceneBooted, setSceneBooted] = useState(false);
+  const handleSceneContext = useCallback(() => setSceneBooted(true), []);
   const homeRef = useRef<HTMLElement>(null);
 
-  // Fired once when GameWorld mounts + shaders are compiled.
+  // Fired once when GameWorld mounts + shaders are compiled (`SceneWarmup`).
   // Hasta entonces la intro se queda empujando en la pausa del 60 %.
   const gameReadyRef  = useRef(false);
   const revealStarted = useRef(false);
@@ -213,12 +216,13 @@ export default function HomePage() {
           {loading && (
             <PushIntro
               ready={loadingReady}
+              booted={sceneBooted}
               onReveal={handleIntroReveal}
               onComplete={handleIntroComplete}
               statusLabel={t.loading.ariaLabel}
             />
           )}
-          <GameScene paused={covered || gamePaused} physicsPaused={gamePaused} renderPaused={gamePaused} physicsActive={physicsActive} onNavigate={handleNavigate} onReady={handleGameReady} />
+          <GameScene paused={covered || gamePaused} physicsPaused={gamePaused} renderPaused={gamePaused} physicsActive={physicsActive} onNavigate={handleNavigate} onContext={handleSceneContext} onReady={handleGameReady} />
         </section>
       </main>
     </>
