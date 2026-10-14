@@ -141,8 +141,12 @@ export const es: Translations = {
     },
   },
   notFound: {
-    subtitle: "La página que buscas no existe — o nunca existió.",
+    code: "Error 404",
+    title: "Esta página no existe",
+    subtitle: "Puede que la dirección esté mal escrita o que la página se haya movido. Nuestra mascota la está buscando, pero no aparece.",
+    pathLabel: "No hay nada en",
     cta: "Volver al inicio",
+    navLabel: "Otras páginas",
   },
   cookieConsent: {
     message:

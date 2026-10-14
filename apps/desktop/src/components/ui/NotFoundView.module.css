@@ -1,0 +1,86 @@
+/* ─────────────────────────────────────────────────────────────── */
+/*  404  (ui/NotFoundView.tsx)                                     */
+/*  Solo el dibujo del número: la maqueta va con Tailwind en el    */
+/*  JSX. Las transformaciones las escribe el bucle rAF.            */
+/* ─────────────────────────────────────────────────────────────── */
+
+/* Ancho por la altura disponible: el número nunca empuja el texto fuera de
+   la pantalla (viewBox 2072 × 790 → 92vh de ancho = ~35vh de alto). Sin
+   recorte: la mascota cae desde arriba y salta por encima. */
+.numeral {
+  width: min(86vw, 92vh);
+  height: auto;
+  overflow: visible;
+}
+
+.four {
+  fill: var(--foreground);
+}
+
+/* El 0 que falta: su silueta a trazos, el hueco que la mascota viene a tapar.
+   Se ve mientras cae y cuando salta. */
+.slot {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 6;
+  stroke-dasharray: 22 20;
+  opacity: 0.55;
+}
+
+/* Sobre fondo de tinta una sombra no se ve: la bola deja un halo lima. */
+.halo {
+  fill: var(--accent);
+}
+
+.question {
+  fill: var(--foreground);
+}
+
+.mascot {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.body {
+  fill: var(--accent);
+}
+
+.ink {
+  fill: var(--background);
+}
+
+/* Brillo de los ojos: blanco puro, como en la mascota de marca. */
+.shine {
+  fill: #fff;
+}
+
+/* La ruta pedida es un dato: tal cual, sin caja alta, y partida donde haga
+   falta (una URL larga no puede desbordar). */
+.path {
+  max-width: 100%;
+  font-family: var(--font-primary);
+  font-size: 0.875rem;
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+}
+
+/* Hasta que el bucle arranca (`data-armed`), la bola espera fuera: si no, se
+   vería un instante en reposo y luego desaparecería para caer. Escotilla: sin
+   JS aparece igual a los 1,5 s. */
+.root:not([data-armed]) .mascot {
+  opacity: 0;
+  animation: not-found-show 0s linear 1.5s forwards;
+}
+
+@keyframes not-found-show {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root:not([data-armed]) .mascot {
+    opacity: 1;
+    animation: none;
+  }
+}

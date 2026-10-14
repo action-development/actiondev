@@ -172,9 +172,18 @@ export interface Translations {
       alertSub: string;
     };
   };
+  /** 404 de escritorio (`ui/NotFoundView.tsx`). */
   notFound: {
+    /** Etiqueta de arriba a la derecha: «Error 404». */
+    code: string;
+    /** El `<h1>` (el «404» grande es dibujo). */
+    title: string;
     subtitle: string;
+    /** Delante de la ruta pedida. */
+    pathLabel: string;
     cta: string;
+    /** `aria-label` de los enlaces a otras páginas. */
+    navLabel: string;
   };
   /** Banner de consentimiento (`ui/CookieConsent.tsx`), condición para cargar GTM. */
   cookieConsent: {

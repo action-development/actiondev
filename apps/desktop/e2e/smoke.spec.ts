@@ -372,6 +372,17 @@ test.describe("SEO landing pages", () => {
     const response = await page.goto("/landing-inexistente");
     expect(response?.status()).toBe(404);
   });
+
+  test("404: el 0 es la mascota, un h1 y salida al inicio", async ({ page }) => {
+    await page.goto("/esto/no-existe");
+    const view = page.getByTestId("not-found");
+    await expect(view).toBeVisible();
+    await expect(view).toHaveAttribute("data-armed", "");
+    await expect(page.locator("h1")).toHaveCount(1);
+    await expect(page.getByTestId("not-found-mascot")).toBeVisible();
+    await expect(view).toContainText("/esto/no-existe");
+    await expect(page.getByTestId("not-found-home")).toHaveAttribute("href", "/");
+  });
 });
 
 test.describe("Contact shortcut popup", () => {

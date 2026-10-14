@@ -136,8 +136,12 @@ export const en: Translations = {
     },
   },
   notFound: {
-    subtitle: "The page you're looking for doesn't exist — or never did.",
+    code: "Error 404",
+    title: "This page doesn't exist",
+    subtitle: "The address may be misspelled or the page may have moved. Our mascot is looking for it, but it's nowhere to be found.",
+    pathLabel: "Nothing at",
     cta: "Back to home",
+    navLabel: "Other pages",
   },
   cookieConsent: {
     message:
