@@ -2,18 +2,25 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  HOP_HEIGHT,
+  DOT_GROW,
   INTRO_SESSION_KEY,
   MOBILE_TIMING_MAX_WIDTH,
+  type ArrivalGeometry,
+  type MascotPose,
+  arrivalPose,
   bodyPath,
   buildPlan,
   displayPercent,
-  effortPath,
   exitAt,
   finalProgress,
+  impactPath,
   mascotPose,
   progressAt,
+  speedPath,
+  veinPath,
+  wallAt,
 } from "@/lib/push-intro";
+import { LOGO_D, LOGO_DOT, LOGO_TRANSFORM, LOGO_VIEWBOX } from "./intro-logo";
 import styles from "./PushIntro.module.css";
 
 interface PushIntroProps {
@@ -63,9 +70,12 @@ type Stage = "waiting" | "pushing" | "exiting";
  * `docs/intro-empuje/ANALISIS.md` y `lib/push-intro.ts`).
  *
  * Una pared de tinta tapa la pantalla desde el primer paint (SSR incluido).
- * La mascota la empuja hacia la derecha botando —dos pausas apretando—,
- * detrás queda el panel claro con «ActionDev», y el panel baja como una
- * persiana dejando el rótulo quieto hasta descubrir la escena.
+ * La mascota la empuja a embestidas: rebota hacia atrás en parábola (con
+ * mortal en saltos alternos), coge carrerilla y se estampa —dos pausas
+ * apretando—, la pared avanza a golpes y
+ * detrás queda el panel claro con el logo, sin su punto final. Con la pared
+ * fuera, la mascota vuelve de un salto, aterriza en ese hueco y guiña. El
+ * panel baja como una persiana dejando el logo quieto hasta descubrir la escena.
  *
  * Hace de pantalla de carga: si la escena no está lista al llegar a la
  * pausa del 60 %, la mascota se queda ahí apretando (tiembla y suda) hasta
@@ -84,13 +94,20 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
 
   const rootRef = useRef<HTMLDivElement>(null);
   const mascotRef = useRef<HTMLDivElement>(null);
-  const hopRef = useRef<SVGGElement>(null);
+  const logoRef = useRef<SVGSVGElement>(null);
+  const scaleRef = useRef<SVGGElement>(null);
+  const shineDotRefs = useRef<(SVGCircleElement | null)[]>([]);
+  const posRef = useRef<SVGGElement>(null);
   const squashRef = useRef<SVGGElement>(null);
   const flatRef = useRef<SVGGElement>(null);
+  const spinRef = useRef<SVGGElement>(null);
+  const impactRef = useRef<SVGPathElement>(null);
+  const speedRef = useRef<SVGPathElement>(null);
+  const dustRefs = useRef<(SVGCircleElement | null)[]>([]);
   const bodyRef = useRef<SVGPathElement>(null);
   const eyeRefs = useRef<(SVGRectElement | null)[]>([]);
   const shineRef = useRef<SVGGElement>(null);
-  const effortRef = useRef<SVGPathElement>(null);
+  const veinRef = useRef<SVGPathElement>(null);
   const shadowRef = useRef<SVGEllipseElement>(null);
   const dropRef = useRef<SVGPathElement>(null);
 
@@ -152,11 +169,13 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
 
     const run = () => {
       const width = root.clientWidth;
-      const diameter = mascot.offsetWidth / 1.3;
+      const diameter = mascot.offsetWidth / 3;
       const timing = window.innerWidth <= MOBILE_TIMING_MAX_WIDTH ? "mobile" : "pc";
       const final = finalProgress(timing, diameter, width);
       const plan = buildPlan(timing, final);
       root.style.setProperty("--w", `${width}px`);
+      const height = root.clientHeight;
+      const arrival = arrivalGeometry(width, height, diameter / 2, wallAt(final));
 
       let t = 0;
       let stall = 0;
@@ -184,10 +203,17 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
         t = next;
 
         const p = progressAt(plan, t);
-        root.style.setProperty("--p", p.toFixed(5));
-        root.style.setProperty("--pw", Math.min(p, plan.wallMax).toFixed(5));
-        root.style.setProperty("--exit", exitAt(plan, t).toFixed(5));
-        paintMascot(p, stall, wait);
+        const wall = wallAt(p);
+        root.style.setProperty("--mw", wall.toFixed(5));
+        root.style.setProperty("--pw", Math.min(wall, plan.wallMax).toFixed(5));
+        const exit = exitAt(plan, t);
+        root.style.setProperty("--exit", exit.toFixed(5));
+        const shake =
+          t < plan.pushEnd
+            ? paintMascot(mascotPose(p, stall, wait))
+            : // El panel baja: la mascota sube lo mismo y se queda en su punto, como el logo.
+              paintMascot(arrivalPose(t - plan.pushEnd, arrival), (exit * height) / (diameter / 2));
+        root.style.setProperty("--shake", `${(shake * diameter) / 2}px`);
 
         const pct = Math.round(displayPercent(p, final) / 10) * 10;
         if (pct !== shownPercent) {
@@ -211,36 +237,87 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
       raf = requestAnimationFrame(tick);
     };
 
-    const paintMascot = (p: number, stall: number, wait: number) => {
-      const pose = mascotPose(p, stall, wait);
+    /**
+     * Dónde aterriza la mascota: el hueco del punto final del logo, con su
+     * borde izquierdo y su base, a `DOT_GROW` veces su tamaño. Todo en radios
+     * desde el sitio de reposo (pegada a la pared en `wall`, a media altura).
+     */
+    const arrivalGeometry = (width: number, height: number, r: number, wall: number): ArrivalGeometry => {
+      const restX = wall * width - r;
+      const restY = height / 2;
+      const origin = root.getBoundingClientRect();
+      const logo = logoRef.current?.getBoundingClientRect();
+      const k = logo ? logo.width / LOGO_VIEWBOX.w : 0;
+      const dotR = (LOGO_DOT.size * DOT_GROW * k) / 2 || r * 0.2;
+      const tx = logo ? logo.left - origin.left + LOGO_DOT.left * k + dotR : width / 2;
+      const ty = logo ? logo.top - origin.top + LOGO_DOT.bottom * k - dotR : restY;
+      return {
+        from: { x: (width + r * 1.2 - restX) / r, y: 0 },
+        to: { x: (tx - restX) / r, y: (restY - ty) / r },
+        scale: dotR / r,
+        lift: (0.3 * height) / r,
+      };
+    };
+
+    /** Pinta la pose y devuelve la sacudida (en radios) para la raíz. `lift` sube la mascota entera. */
+    const paintMascot = (pose: MascotPose, lift = 0) => {
       const n = (v: number) => v.toFixed(4);
-      hopRef.current?.setAttribute("transform", `translate(${n(pose.x)} ${n(-pose.hop * HOP_HEIGHT)})`);
-      squashRef.current?.setAttribute("transform", `translate(1 1) scale(${n(pose.sx)} ${n(pose.sy)}) translate(-1 -1)`);
+      const a = n(pose.anchor);
+      posRef.current?.setAttribute("transform", `translate(${n(pose.x)} ${n(-pose.y - lift)})`);
+      scaleRef.current?.setAttribute("transform", `scale(${n(pose.scale)})`);
+      squashRef.current?.setAttribute(
+        "transform",
+        `translate(${a} 1) scale(${n(pose.sx)} ${n(pose.sy)}) translate(-${a} -1)`,
+      );
       flatRef.current?.setAttribute("transform", `translate(${n(pose.flat)} 0)`);
+      spinRef.current?.setAttribute("transform", `rotate(${n(pose.rot)})`);
       bodyRef.current?.setAttribute("d", bodyPath(pose.flat));
       eyeRefs.current.forEach((eye, i) => {
         const { cx, side } = EYES[i];
+        // Guiña el ojo derecho (el segundo): se cierra en una raya.
+        const open = i === 1 ? pose.eyeOpen * (1 - 0.86 * pose.wink) : pose.eyeOpen;
         eye?.setAttribute(
           "transform",
-          `translate(${cx} ${EYE_CY}) rotate(${n(side * pose.eyeTilt)}) scale(1 ${n(pose.eyeOpen)}) translate(${-cx} ${-EYE_CY})`,
+          `translate(${cx} ${EYE_CY}) rotate(${n(side * pose.eyeTilt)}) scale(1 ${n(open)}) translate(${-cx} ${-EYE_CY})`,
         );
       });
       shineRef.current?.setAttribute("opacity", n(pose.shine));
-      effortRef.current?.setAttribute("d", effortPath(pose.effort));
-      effortRef.current?.setAttribute("opacity", n(pose.effort));
+      shineDotRefs.current[1]?.setAttribute("opacity", n(1 - pose.wink));
+      veinRef.current?.setAttribute("d", veinPath(pose.vein));
+      veinRef.current?.setAttribute("opacity", n(Math.min(1, pose.vein)));
+      impactRef.current?.setAttribute("d", impactPath(pose.impact));
+      speedRef.current?.setAttribute("d", speedPath(pose.speed, pose.x));
+      speedRef.current?.setAttribute("opacity", n(pose.speed));
+      dustRefs.current.forEach((puff, i) => {
+        if (!puff) return;
+        const d = pose.dust;
+        if (!d) {
+          puff.setAttribute("opacity", "0");
+          return;
+        }
+        const spread = (i - 1) * (0.5 + 0.9 * d.age);
+        puff.setAttribute("cx", n(d.x + spread));
+        puff.setAttribute("cy", n(0.92 - 0.25 * d.age * (i === 1 ? 1.4 : 1)));
+        puff.setAttribute("r", n(0.14 + 0.3 * d.age));
+        puff.setAttribute("opacity", n(0.32 * (1 - d.age)));
+      });
       const shadow = shadowRef.current;
       if (shadow) {
-        shadow.setAttribute("cx", n(1 + pose.sx * (pose.flat - 1) + pose.x));
-        shadow.setAttribute("rx", n(0.8 * pose.shadow * pose.sx));
-        shadow.setAttribute("ry", n(0.07 * pose.shadow));
+        shadow.setAttribute("cx", n(pose.x));
+        shadow.setAttribute("rx", n(0.85 * pose.shadow * pose.sx));
+        shadow.setAttribute("ry", n(0.08 * pose.shadow));
         shadow.setAttribute("opacity", n(0.16 * pose.shadow));
       }
       const d = pose.drop;
-      dropRef.current?.setAttribute("transform", `translate(${n(d.x)} ${n(d.y)}) rotate(${n(d.rot)}) scale(${n(d.scale)})`);
+      dropRef.current?.setAttribute(
+        "transform",
+        `translate(${n(d.x)} ${n(d.y)}) rotate(${n(d.rot)}) scale(${n(d.scale)})`,
+      );
       dropRef.current?.setAttribute("opacity", n(d.opacity));
+      return pose.shake;
     };
 
-    paintMascot(0, 0, 0);
+    paintMascot(mascotPose(0));
 
     // Arranca con la tipografía puesta (el rótulo no puede cambiar de fuente a
     // medio barrido) y con la escena lista o, si tarda, a los `READY_GRACE_MS`.
@@ -271,38 +348,73 @@ export function PushIntro({ ready, onReveal, onComplete, statusLabel }: PushIntr
     <div ref={rootRef} className={styles.root} data-testid="push-intro" data-state={stage}>
       <div aria-hidden className={styles.panel} />
       <div aria-hidden className={styles.word}>
-        <p className={styles.wordText}>ActionDev</p>
+        <svg
+          ref={logoRef}
+          className={styles.logo}
+          viewBox={`0 0 ${LOGO_VIEWBOX.w} ${LOGO_VIEWBOX.h}`}
+          focusable="false"
+          data-testid="push-intro-logo"
+        >
+          <path transform={LOGO_TRANSFORM} d={LOGO_D} />
+        </svg>
       </div>
       <div aria-hidden className={styles.wall} />
       <div ref={mascotRef} aria-hidden className={styles.mascot}>
-        <svg className={styles.mascotSvg} viewBox="-1.6 -1.75 2.6 2.9" focusable="false">
-          <ellipse ref={shadowRef} className={styles.ink} cx="0" cy="1.03" rx="0.8" ry="0.07" opacity="0.16" />
-          <g ref={hopRef}>
-            <g ref={squashRef}>
-              <g ref={flatRef}>
-                <path ref={bodyRef} className={styles.body} d={bodyPath(0)} />
-                {EYES.map((eye, i) => (
-                  <rect
-                    key={eye.cx}
-                    ref={(el) => {
-                      eyeRefs.current[i] = el;
-                    }}
-                    className={styles.ink}
-                    x={eye.x}
-                    y={EYE_Y}
-                    width={EYE_W}
-                    height={EYE_H}
-                    rx={EYE_W / 2}
-                  />
-                ))}
-                <g ref={shineRef} className={styles.shine}>
-                  {EYES.map((eye) => (
-                    <circle key={eye.shineX} cx={eye.shineX} cy={SHINE_Y} r={SHINE_R} />
-                  ))}
+        <svg className={styles.mascotSvg} viewBox="-5 -3.8 6 5.3" focusable="false">
+          <ellipse ref={shadowRef} className={styles.ink} cx="0" cy="1.03" rx="0.85" ry="0.08" opacity="0.16" />
+          {[0, 1, 2].map((i) => (
+            <circle
+              key={i}
+              ref={(el) => {
+                dustRefs.current[i] = el;
+              }}
+              className={styles.ink}
+              cx="0"
+              cy="0.92"
+              r="0"
+              opacity="0"
+            />
+          ))}
+          <path ref={speedRef} className={styles.lines} d="" opacity="0" />
+          <path ref={impactRef} className={styles.impact} d="" />
+          <g ref={posRef}>
+            <g ref={scaleRef}>
+              <g ref={squashRef}>
+                <g ref={flatRef}>
+                  <g ref={spinRef}>
+                    <path ref={bodyRef} className={styles.body} d={bodyPath(0)} />
+                    {EYES.map((eye, i) => (
+                      <rect
+                        key={eye.cx}
+                        ref={(el) => {
+                          eyeRefs.current[i] = el;
+                        }}
+                        className={styles.ink}
+                        x={eye.x}
+                        y={EYE_Y}
+                        width={EYE_W}
+                        height={EYE_H}
+                        rx={EYE_W / 2}
+                      />
+                    ))}
+                    <g ref={shineRef} className={styles.shine}>
+                      {EYES.map((eye, i) => (
+                        <circle
+                          key={eye.shineX}
+                          ref={(el) => {
+                            shineDotRefs.current[i] = el;
+                          }}
+                          cx={eye.shineX}
+                          cy={SHINE_Y}
+                          r={SHINE_R}
+                        />
+                      ))}
+                    </g>
+                    <path ref={veinRef} className={styles.vein} d="" opacity="0" />
+                  </g>
                 </g>
               </g>
             </g>
-            <path ref={effortRef} className={styles.effort} d={effortPath(0)} opacity="0" />
           </g>
           <path ref={dropRef} className={styles.ink} d={DROP_PATH} opacity="0" />
         </svg>

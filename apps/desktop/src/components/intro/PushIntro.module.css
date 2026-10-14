@@ -3,20 +3,21 @@
 /*                                                                 */
 /*  Capas de abajo arriba, como el original (docs/intro-empuje):   */
 /*  panel claro → rótulo → pared de tinta → mascota. El bucle rAF  */
-/*  solo escribe variables: --p (progreso, borde de la pared en    */
-/*  anchos de pantalla), --pw (el mismo con tope), --exit (bajada   */
-/*  del panel, 0-1) y --w (ancho en px).                           */
+/*  solo escribe variables: --mw (borde de la pared en anchos de    */
+/*  pantalla), --pw (el mismo con tope), --exit (bajada del panel, */
+/*  0-1), --shake (sacudida del golpe) y --w (ancho en px).        */
 /* ─────────────────────────────────────────────────────────────── */
 .root {
   --wall: var(--background);
-  --panel: var(--foreground);
+  /* Gris piedra de la marca (`grey` de docs/mobile-v2/DESIGN.md): papel, no blanco. */
+  --panel: #d9d5cc;
   --ink: var(--background);
   --mascot: var(--accent);
-  /* Diámetro de la mascota. Con 23vw mide 2,2 veces la altura de mayúscula
-     del rótulo, la misma proporción que el muñeco y «HUY PHAN» del original. */
-  --d: min(23vw, 40vh);
-  --p: 0;
+  /* Diámetro de la mascota: pequeña, para que los saltos tengan recorrido. */
+  --d: min(14vw, 25vh);
+  --mw: 0;
   --pw: 0;
+  --shake: 0px;
   --exit: 0;
   --w: 100vw;
 
@@ -25,7 +26,7 @@
   z-index: 2147483647;
   overflow: hidden;
   pointer-events: auto;
-  transform: translate3d(0, calc(var(--exit) * 100%), 0);
+  transform: translate3d(var(--shake), calc(var(--exit) * 100%), 0);
   will-change: transform;
 }
 
@@ -59,8 +60,9 @@
   background: var(--panel);
 }
 
-/* Contra-movimiento: sube lo mismo que baja la raíz, así el rótulo se queda
-   quieto en pantalla y el borde del panel lo va recortando. */
+/* Contra-movimiento: sube lo mismo que baja la raíz, así el logo se queda
+   quieto en pantalla y el borde del panel lo va recortando (la mascota, ya en
+   su punto, hace lo mismo desde el bucle). */
 .word {
   position: absolute;
   inset: 0;
@@ -70,15 +72,12 @@
   transform: translate3d(0, calc(var(--exit) * -100%), 0);
 }
 
-.wordText {
-  margin: 0;
-  color: var(--ink);
-  font-family: var(--font-primary);
-  font-weight: 700;
-  font-size: min(15vw, 26vh);
-  line-height: 1;
-  letter-spacing: -0.05em;
-  white-space: nowrap;
+/* Logo en tinta, sin el punto final: ese hueco es de la mascota. */
+.logo {
+  display: block;
+  width: min(78vw, 150vh);
+  height: auto;
+  fill: var(--ink);
 }
 
 /* Un bloque plano, sin textura ni sombra: su borde izquierdo ES el progreso. */
@@ -91,15 +90,16 @@
 }
 
 /* La caja acaba justo en la cara de la pared (x = 1 del viewBox): su borde
-   derecho va en `--p × ancho`. El centro de la bola (y = 0) está al 60,345 %
-   de su alto (1,75 / 2,9) y queda a media pantalla, como el rótulo. */
+   derecho va en `--mw × ancho`. El viewBox (-5 -3.8 6 5.3) deja sitio al
+   rebote hacia atrás y al salto; el centro de la bola en reposo (y = 0) está
+   al 71,698 % de su alto (3,8 / 5,3) y queda a media pantalla. */
 .mascot {
   position: absolute;
   top: 50%;
   left: 0;
-  width: calc(var(--d) * 1.3);
-  height: calc(var(--d) * 1.45);
-  transform: translate3d(calc(var(--p) * var(--w) - 100%), -60.345%, 0);
+  width: calc(var(--d) * 3);
+  height: calc(var(--d) * 2.65);
+  transform: translate3d(calc(var(--mw) * var(--w) - 100%), -71.698%, 0);
   will-change: transform;
 }
 
@@ -128,10 +128,26 @@
   fill: #fff;
 }
 
-.effort {
+.lines {
   fill: none;
   stroke: var(--ink);
-  stroke-width: 0.04;
+  stroke-width: 0.07;
+  stroke-linecap: round;
+}
+
+/* Vena de esfuerzo (💢): tinta sobre el cuerpo, más fina que las líneas. */
+.vein {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 0.055;
+  stroke-linecap: round;
+}
+
+/* Chispazo del golpe: cae sobre la pared, así que va en lima. */
+.impact {
+  fill: none;
+  stroke: var(--mascot);
+  stroke-width: 0.11;
   stroke-linecap: round;
 }
 

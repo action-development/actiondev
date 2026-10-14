@@ -205,7 +205,7 @@ El rojo funciona en la original porque es el único color y contrasta con el neg
 
 1. Mascota: **A**, bola pura que va botando, se aplasta contra la pared, entrecierra los ojos y suda.
 2. Paleta: **A**, pared tinta, panel claro, rótulo en tinta, la mascota lima es el único color.
-3. Rótulo: **«ActionDev»**, en una línea y respetando las mayúsculas tal cual.
+3. Rótulo: ~~«ActionDev»~~ → **el logo «action development.»** (cambio del cliente, mismo día), vectorizado y sin su punto final: ese hueco lo ocupa la mascota, que vuelve de un salto y guiña un ojo («jeje, soy yo»).
 4. Dónde: **escritorio y web móvil v2**, primero escritorio.
 
 **Escritorio: hecho.** `components/intro/PushIntro.tsx` (+ `PushIntro.module.css`), lógica pura en `lib/push-intro.ts` y tests en `src/__tests__/push-intro.test.ts`. Sustituye a `ui/LoadingScreen.tsx` (borrado) en `app/(site)/page.tsx`. Línea de tiempo idéntica al original; diferencias deliberadas:
@@ -214,6 +214,8 @@ El rojo funciona en la original porque es el único color y contrasta con el neg
 - Pose por progreso con `PUSHES_PER_WIDTH = 10/3`: picos de esfuerzo en p = 0,3, 0,6, 0,9 y 1,2, de modo que las dos pausas la congelan aplastada.
 - El progreso final se alarga solo si la mascota no saliera del todo (pantallas estrechas).
 - `prefers-reduced-motion`: sin empuje, fundido de 300 ms.
+- Más enérgica que el original (pedido del cliente): bola más pequeña (`min(14vw, 25vh)`), rebotes en parábola altos con mortal alterno, carrerilla y embestida; la pared solo avanza en el golpe. Esfuerzo = vena 💢 en la nuca (las tres rayitas sobre la cabeza se descartaron: parecían pelo).
+- Vuelta al logo: `ARRIVAL` = 0,55 s entre el fin del empuje y el `FINAL_HOLD`, que retrasa aviso y bajada del panel esos 0,55 s respecto al original.
 
 Vídeos de prueba (arnés Vite + Chromium headless) en `~/Documents/ActionDev/Marca/intro-empuje/`, incluida la comparativa sincronizada original/nuestra.
 

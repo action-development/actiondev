@@ -20,10 +20,10 @@ test("hero section renders canvas and key text", async ({ page }) => {
 
 test("la intro «empuje» tapa desde el primer paint, empuja y se retira con la escena lista", async ({ page }) => {
 	await page.goto("/");
-	// Pared de tinta desde el SSR; detrás, el rótulo (ver docs/intro-empuje)
+	// Pared de tinta desde el SSR; detrás, el logo (ver docs/intro-empuje)
 	const intro = page.getByTestId("push-intro");
 	await expect(intro).toBeVisible();
-	await expect(intro).toContainText("ActionDev");
+	await expect(intro.getByTestId("push-intro-logo")).toHaveCount(1);
 	// La mascota empuja (o ya está bajando el panel) y al final se desmonta
 	await expect(intro).toHaveAttribute("data-state", /pushing|exiting/, { timeout: 15_000 });
 	await expect(page.locator("canvas").first()).toBeVisible({ timeout: 15_000 });
