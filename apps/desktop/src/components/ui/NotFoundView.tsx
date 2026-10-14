@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { HoloButton } from "@/components/ui/HoloButton";
 import { LegalLinks } from "@/components/layout/LegalLinks";
@@ -60,6 +59,17 @@ function readablePath(path: string) {
   }
 }
 
+const noSubscribe = () => () => {};
+
+/**
+ * Ruta pedida, SOLO en el cliente: `global-not-found` se prerenderiza estático
+ * y en el servidor la ruta es `/_not-found`; pintarla allí descuadraba la
+ * hidratación (React #418). En el servidor y al hidratar vale `null`.
+ */
+function useRequestedPath() {
+  return useSyncExternalStore(noSubscribe, () => window.location.pathname, () => null);
+}
+
 /**
  * Cuerpo del 404 de escritorio: lo pintan `app/(site)/not-found.tsx` y
  * `app/global-not-found.tsx` (cliente por `useT()` y la mascota; los
@@ -75,7 +85,7 @@ function readablePath(path: string) {
  */
 export function NotFoundView() {
   const t = useT();
-  const pathname = usePathname();
+  const pathname = useRequestedPath();
 
   const rootRef = useRef<HTMLElement>(null);
   const slotRef = useRef<SVGCircleElement>(null);
@@ -310,9 +320,14 @@ export function NotFoundView() {
             {t.notFound.title}
           </h1>
           <p className="lede mx-auto">{t.notFound.subtitle}</p>
-          <p className="flex max-w-full flex-wrap items-baseline justify-center gap-x-3 gap-y-1">
-            <span className="micro-label">{t.notFound.pathLabel}</span>
-            <code className={styles.path}>{readablePath(pathname ?? "/")}</code>
+          {/* Alto reservado: la línea llega tras hidratar y no debe mover nada. */}
+          <p className="flex min-h-5 max-w-full flex-wrap items-baseline justify-center gap-x-3 gap-y-1">
+            {pathname && (
+              <>
+                <span className="micro-label">{t.notFound.pathLabel}</span>
+                <code className={styles.path}>{readablePath(pathname)}</code>
+              </>
+            )}
           </p>
         </div>
 
