@@ -1,0 +1,145 @@
+/* ─────────────────────────────────────────────────────────────── */
+/*  INTRO «EMPUJE»  (intro/PushIntro.tsx)                          */
+/*                                                                 */
+/*  Capas de abajo arriba, como el original (docs/intro-empuje):   */
+/*  panel claro → rótulo → pared de tinta → mascota. El bucle rAF  */
+/*  solo escribe variables: --p (progreso, borde de la pared en    */
+/*  anchos de pantalla), --pw (el mismo con tope), --exit (bajada   */
+/*  del panel, 0-1) y --w (ancho en px).                           */
+/* ─────────────────────────────────────────────────────────────── */
+.root {
+  --wall: var(--background);
+  --panel: var(--foreground);
+  --ink: var(--background);
+  --mascot: var(--accent);
+  /* Diámetro de la mascota. Con 23vw mide 2,2 veces la altura de mayúscula
+     del rótulo, la misma proporción que el muñeco y «HUY PHAN» del original. */
+  --d: min(23vw, 40vh);
+  --p: 0;
+  --pw: 0;
+  --exit: 0;
+  --w: 100vw;
+
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  overflow: hidden;
+  pointer-events: auto;
+  transform: translate3d(0, calc(var(--exit) * 100%), 0);
+  will-change: transform;
+}
+
+/* Escotilla sin JS: si el componente no llega a hidratar, la pared no puede
+   tapar la web para siempre. El bucle pone `data-armed` al montar. */
+.root:not([data-armed]) {
+  animation: push-intro-failsafe 0.3s linear 15s forwards;
+}
+
+@keyframes push-intro-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Bajando el panel ya se ve la escena: los clics le pertenecen. */
+.root[data-state="exiting"] {
+  pointer-events: none;
+}
+
+/* `prefers-reduced-motion`: sin empuje, fundido. */
+.root[data-reduced] {
+  opacity: 0;
+  transition: opacity 300ms linear;
+}
+
+.panel {
+  position: absolute;
+  inset: 0;
+  background: var(--panel);
+}
+
+/* Contra-movimiento: sube lo mismo que baja la raíz, así el rótulo se queda
+   quieto en pantalla y el borde del panel lo va recortando. */
+.word {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate3d(0, calc(var(--exit) * -100%), 0);
+}
+
+.wordText {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-primary);
+  font-weight: 700;
+  font-size: min(15vw, 26vh);
+  line-height: 1;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+}
+
+/* Un bloque plano, sin textura ni sombra: su borde izquierdo ES el progreso. */
+.wall {
+  position: absolute;
+  inset: 0;
+  background: var(--wall);
+  transform: translate3d(calc(var(--pw) * 100%), 0, 0);
+  will-change: transform;
+}
+
+/* La caja acaba justo en la cara de la pared (x = 1 del viewBox): su borde
+   derecho va en `--p × ancho`. El centro de la bola (y = 0) está al 60,345 %
+   de su alto (1,75 / 2,9) y queda a media pantalla, como el rótulo. */
+.mascot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: calc(var(--d) * 1.3);
+  height: calc(var(--d) * 1.45);
+  transform: translate3d(calc(var(--p) * var(--w) - 100%), -60.345%, 0);
+  will-change: transform;
+}
+
+.mascotSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Trazo del mismo color con unión redonda: suaviza las esquinas del lado
+   aplastado y lleva la cara justo hasta la pared (radio 0,985 + 0,015). */
+.body {
+  fill: var(--mascot);
+  stroke: var(--mascot);
+  stroke-width: 0.03;
+  stroke-linejoin: round;
+}
+
+.ink {
+  fill: var(--ink);
+}
+
+/* Brillo de los ojos: blanco puro, como en la mascota de marca. */
+.shine {
+  fill: #fff;
+}
+
+.effort {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 0.04;
+  stroke-linecap: round;
+}
+
+.status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

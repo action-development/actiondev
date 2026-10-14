@@ -4,9 +4,10 @@
  * Blinds — persiana de franjas horizontales en color de acento.
  *
  * Es SOLO la cortina: quién la cierra y cuándo la abre lo decide el padre
- * (`LoadingScreen` al arrancar, `PageTransition` al cambiar de ruta). Así el
- * mismo dibujo sirve para los dos momentos y el visitante lo lee como una única
- * pieza: la web "carga" tras la persiana y "cambia de pestaña" tras la persiana.
+ * (`PageTransition` al cambiar de ruta, `SceneCurtain` mientras carga una
+ * escena 3D). Así el mismo dibujo sirve para los dos momentos y el visitante lo
+ * lee como una única pieza. La carga de la home ya no es la persiana sino la
+ * intro «empuje» (`intro/PushIntro`).
  *
  * Mecánica: cada lama es un `div` a pantalla completa de ancho que escala en Y.
  * Cerrar = 0 → 1 con origen arriba; abrir = 1 → 0 con origen abajo. La lama `i`
@@ -16,7 +17,7 @@
  * `transition-property` no se interpola (interpolarlo deformaría la lama).
  *
  * Sin GSAP a propósito: el estado lo renderiza React y GSAP pelearía con la
- * reconciliación (ver nota de `LoadingScreen`). Las transiciones CSS respetan
+ * reconciliación (ver nota de `intro/PushIntro`). Las transiciones CSS respetan
  * `prefers-reduced-motion` desde `globals.css` sin código extra; el padre debe
  * usar `blindsDuration()` para no esperar 600 ms a una animación de 0,01 ms.
  *

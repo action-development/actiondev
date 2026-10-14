@@ -5,20 +5,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Header } from "@/components/layout/Header";
-import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { PushIntro } from "@/components/intro/PushIntro";
 import { usePageTransition } from "@/components/animations/PageTransition";
 import { PORT_CONTAINERS } from "@/data/port-containers";
 import { landings } from "@/data/landings";
 import { BRAND } from "@/lib/seo";
 import { loadGameScene } from "@/lib/scene-preload";
+import { INTRO_SESSION_KEY } from "@/lib/push-intro";
+import { useT } from "@/lib/i18n";
 
 // El loader es el de `lib/scene-preload`: el mismo que precarga al navegar.
 const GameScene = dynamic(
   () => loadGameScene().then((m) => m.GameScene),
   { ssr: false }
 );
-
-const SESSION_KEY = "action-loaded";
 
 /**
  * Arranca la descarga de Rapier en paralelo, no en cascada.
@@ -47,6 +47,7 @@ function prefetchPhysics() {
  */
 export default function HomePage() {
   const router = useRouter();
+  const t = useT();
   const { navigate, busy } = usePageTransition();
   /**
    * ¿Aterrizamos con la persiana de `PageTransition` ya cubriendo la pantalla?
@@ -59,26 +60,30 @@ export default function HomePage() {
    *
    * Solo se salta con la escena ya cargada alguna vez en esta sesión: en frío
    * hay que bajar el chunk de GameScene y los 2,2 MB de física, y para eso
-   * está la pantalla de carga con su `ready`. `busy` es `false` en SSR y en la
+   * está la intro («empuje», `components/intro/PushIntro`) con su `ready`. `busy` es `false` en SSR y en la
    * carga directa de `/`, así que la hidratación no se desajusta (y el
    * cortocircuito evita tocar `sessionStorage` en el servidor).
    */
-  const [skipLoader] = useState(() => busy && !!sessionStorage.getItem(SESSION_KEY));
+  const [skipLoader] = useState(() => busy && !!sessionStorage.getItem(INTRO_SESSION_KEY));
+  /** La intro está montada (de la pared negra hasta que el panel sale por abajo). */
   const [loading, setLoading] = useState(!skipLoader);
+  /** La intro aún tapa la escena: el juego espera en pausa. Se suelta al acabar
+   * el empuje, 0,6 s antes de que baje el panel, para que al abrirse ya se mueva. */
+  const [covered, setCovered] = useState(!skipLoader);
   const [gamePaused, setGamePaused] = useState(false);
   const [physicsActive, setPhysicsActive] = useState(false);
   const [loadingReady, setLoadingReady] = useState(false);
   const homeRef = useRef<HTMLElement>(null);
 
   // Fired once when GameWorld mounts + shaders are compiled.
-  // LoadingScreen manages its own minimum display time internally.
+  // Hasta entonces la intro se queda empujando en la pausa del 60 %.
   const gameReadyRef  = useRef(false);
   const revealStarted = useRef(false);
 
   const tryReveal = useCallback(() => {
     if (!gameReadyRef.current || revealStarted.current) return;
     revealStarted.current = true;
-    // Physics starts now — cubes fall while LoadingScreen counts to 100% and fades (~750ms).
+    // Physics starts now — cubes fall while the intro finishes pushing.
     setPhysicsActive(true);
     setLoadingReady(true);
   }, []);
@@ -89,9 +94,13 @@ export default function HomePage() {
     tryReveal();
   }, [tryReveal]);
 
-  // Called by LoadingScreen after its own fade-out completes
-  const handleLoadingComplete = useCallback(() => {
-    sessionStorage.setItem(SESSION_KEY, "1");
+  // Fin del empuje: el juego arranca detrás del panel, que aún tiene que bajar.
+  const handleIntroReveal = useCallback(() => {
+    setCovered(false);
+  }, []);
+
+  // Panel fuera (la intro ya guardó `INTRO_SESSION_KEY`): desmontarla.
+  const handleIntroComplete = useCallback(() => {
     setLoading(false);
   }, []);
 
@@ -110,7 +119,7 @@ export default function HomePage() {
   }, [router]);
 
   useEffect(() => {
-    if (sessionStorage.getItem(SESSION_KEY)) {
+    if (sessionStorage.getItem(INTRO_SESSION_KEY)) {
       // Return visit — chunk is cached, so game will mount fast. Pre-arm physics
       // so it starts the instant GameWorld mounts. loadingReady is NOT set here —
       // handleGameReady → tryReveal sets it once GameWorld actually signals ready,
@@ -201,8 +210,15 @@ export default function HomePage() {
           id="home"
           className="relative h-[100dvh] overflow-hidden"
         >
-          {loading && <LoadingScreen ready={loadingReady} onComplete={handleLoadingComplete} />}
-          <GameScene paused={loading || gamePaused} physicsPaused={gamePaused} renderPaused={gamePaused} physicsActive={physicsActive} onNavigate={handleNavigate} onReady={handleGameReady} />
+          {loading && (
+            <PushIntro
+              ready={loadingReady}
+              onReveal={handleIntroReveal}
+              onComplete={handleIntroComplete}
+              statusLabel={t.loading.ariaLabel}
+            />
+          )}
+          <GameScene paused={covered || gamePaused} physicsPaused={gamePaused} renderPaused={gamePaused} physicsActive={physicsActive} onNavigate={handleNavigate} onReady={handleGameReady} />
         </section>
       </main>
     </>

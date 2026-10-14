@@ -337,7 +337,7 @@ export function GameWorld({
     return () => gameState.reset();
   }, [gameState]);
 
-  // Pre-compila shaders con la pantalla de carga aún visible (ver LoadingScreen).
+  // Pre-compila shaders con la intro aún tapando (ver `intro/PushIntro`).
   useEffect(() => {
     gl.compile(scene, camera);
     onReady?.();

@@ -24,10 +24,10 @@ import { preloadScene } from "@/lib/scene-preload";
  *   se monta TAPADA → cambia `pathname` → abrir persiana → idle.
  *
  * El juego de la home navega por `usePageTransition().navigate(href)` con la
- * misma secuencia. Es la MISMA cortina que `LoadingScreen`: al aterrizar en `/`
- * en frío (primera visita de la sesión) la pantalla de carga ya está cerrada en
- * lima cuando esta se abre, así que se encadenan sin costura. Con la escena ya
- * cargada en la sesión, la home ni la monta y se queda con esta sola.
+ * misma secuencia. Al aterrizar en `/` en frío (primera visita de la sesión)
+ * esta persiana se abre sobre la pared negra de la intro de la home
+ * (`intro/PushIntro`), que ya está pintada y empieza a empujar. Con la escena
+ * ya cargada en la sesión, la home ni la monta y se queda con esta sola.
  *
  * `busy` dice si la persiana está en movimiento o cerrada. La home lo lee en su
  * primer render para saber que ya llega TAPADA y no montar su pantalla de carga

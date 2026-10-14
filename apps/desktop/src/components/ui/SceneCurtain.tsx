@@ -5,8 +5,8 @@ import { Blinds, blindsDuration } from "./Blinds";
 
 /**
  * Escotilla: si `ready` no llega nunca (WebGL caído, chunk que no baja) la
- * escena se quedaría tapada para siempre. Mismo criterio que el `STALL_TIMEOUT`
- * de `LoadingScreen`, más corto porque aquí no hay física ni shaders que
+ * escena se quedaría tapada para siempre. Mismo criterio que el `STALL_TIMEOUT_MS`
+ * de la intro de la home (`intro/PushIntro`), más corto porque aquí no hay física ni shaders que
  * precompilar: se abre igual y la escena entrará tarde, pero la página queda
  * utilizable.
  */
@@ -31,8 +31,7 @@ interface SceneCurtainProps {
  * primer frame. Va por encima del Header (`z-[60]`), como la de la transición:
  * media cápsula flotando sobre las lamas delataría que hay dos telones.
  *
- * Sin contador ni logo, igual que `LoadingScreen`; el rótulo sigue existiendo
- * para lectores de pantalla.
+ * Sin contador ni logo; el rótulo sigue existiendo para lectores de pantalla.
  */
 export function SceneCurtain({ ready, label, testId }: SceneCurtainProps) {
   const [stuck, setStuck] = useState(false);
