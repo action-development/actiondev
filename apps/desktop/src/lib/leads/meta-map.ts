@@ -12,7 +12,7 @@ import {
   type LeadStage,
 } from "@actiondev/shared";
 import { clean, singleLine, type ParsedLead } from "./parse";
-import { LEAD_LIMITS, isValidEmail, isValidPhone } from "./validation";
+import { LEAD_LIMITS, isValidEmail, isValidPhone, phoneDigits } from "./validation";
 
 /**
  * Lead de un formulario instantáneo de Meta (Graph API) → lead interno
@@ -147,15 +147,31 @@ function questionByValue(value: string): Question | undefined {
   return found.length === 1 ? found[0][0] : undefined;
 }
 
+/**
+ * Claves de las preguntas estándar de contacto. Meta las genera en el idioma
+ * del formulario: en inglés (`full_name`, `phone_number`…) o, con IF01
+ * (`es_ES`), en castellano (`nombre_y_apellidos`, `correo_electrónico`,
+ * `número_de_teléfono`, `nombre_de_la_empresa`). Se comparan normalizadas.
+ */
 const CONTACT_KEYS = {
-  fullName: ["full_name"],
-  firstName: ["first_name"],
-  lastName: ["last_name"],
-  email: ["email", "work_email"],
-  phone: ["phone_number", "work_phone_number", "phone"],
-  company: ["company_name", "company"],
+  fullName: ["full_name", "nombre_y_apellidos", "nombre_completo"],
+  firstName: ["first_name", "nombre"],
+  lastName: ["last_name", "apellidos"],
+  email: ["email", "work_email", "correo_electrónico", "correo_electrónico_del_trabajo"],
+  phone: ["phone_number", "work_phone_number", "phone", "número_de_teléfono", "número_de_teléfono_del_trabajo", "teléfono"],
+  company: ["company_name", "company", "nombre_de_la_empresa", "empresa"],
 } as const;
-const CONTACT_KEY_SET = new Set<string>(Object.values(CONTACT_KEYS).flat());
+const CONTACT_KEY_SET = new Set<string>(Object.values(CONTACT_KEYS).flat().map(normalizeAnswer));
+
+/** Campos ocultos de seguimiento del formulario (`utm_source`, `form_version`…): no son respuestas. */
+const isTrackingKey = (key: string) => /^(utm [a-z]+|form version)$/.test(normalizeAnswer(key));
+
+/** Lo mínimo que piden las reglas de Firestore y el ERP para guardar un teléfono que no se ha podido validar. */
+const fitsUncheckedPhone = (phone: string) =>
+  phone.length >= LEAD_LIMITS.phoneMin &&
+  phone.length <= LEAD_LIMITS.phoneMax &&
+  /^[0-9+()\-\s.]+$/.test(phone) &&
+  phoneDigits(phone) >= LEAD_LIMITS.phoneMin;
 
 /** `created_time` de Meta (`2026-10-08T20:15:04+0000`) → ISO 8601 UTC. */
 export function metaTimeToIso(value: string | undefined, now: Date = new Date()): string {
@@ -196,8 +212,10 @@ export function mapMetaLead(raw: MetaLead, options: MetaMapOptions = {}): MetaMa
       .filter(Boolean);
     if (values.length > 0) fields.push({ key: field.name.trim(), value: values.join(", ") });
   }
-  const byKey = (keys: readonly string[]) =>
-    fields.find((f) => keys.includes(f.key.toLowerCase()))?.value;
+  const byKey = (keys: readonly string[]) => {
+    const wanted = keys.map(normalizeAnswer);
+    return fields.find((f) => wanted.includes(normalizeAnswer(f.key)))?.value;
+  };
 
   // Contacto.
   const firstLast = [byKey(CONTACT_KEYS.firstName), byKey(CONTACT_KEYS.lastName)].filter(Boolean).join(" ");
@@ -206,17 +224,21 @@ export function mapMetaLead(raw: MetaLead, options: MetaMapOptions = {}): MetaMa
   const emailRaw = singleLine(byKey(CONTACT_KEYS.email) ?? "");
   const phoneRaw = singleLine(byKey(CONTACT_KEYS.phone) ?? "");
   const phone = toE164(phoneRaw) ?? phoneRaw;
-  if (!phone || !isValidPhone(phone)) return { ok: false, reason: "invalid_phone" };
+  // Un teléfono mal escrito (p. ej. con una cifra de menos) no tira el lead:
+  // se guarda tal cual, si cabe en las reglas, y se avisa en las notas.
+  const phoneChecked = isValidPhone(phone);
+  if (!phone || (!phoneChecked && !fitsUncheckedPhone(phone))) return { ok: false, reason: "invalid_phone" };
 
   // Preguntas.
   const extras: string[] = [];
+  if (!phoneChecked) extras.push(ellipsis(`Teléfono sin validar: ${phone}`, 160));
   let need: LeadNeed | undefined;
   let stage: LeadStage | undefined;
   let budget: LeadBudget | undefined;
   const p4: string[] = [];
 
   for (const { key, value } of fields) {
-    if (CONTACT_KEY_SET.has(key.toLowerCase())) continue;
+    if (CONTACT_KEY_SET.has(normalizeAnswer(key)) || isTrackingKey(key)) continue;
     const label = singleLine(key.replace(/_/g, " "));
     // Respuesta de opción que no casa: texto original a las notas, en una línea.
     const unmatched = () => extras.push(ellipsis(`${label}: ${singleLine(value)}`, 160));

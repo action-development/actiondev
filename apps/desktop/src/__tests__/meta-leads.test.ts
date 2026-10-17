@@ -171,6 +171,33 @@ describe("mapMetaLead", () => {
     expect(mapMetaLead(metaLead("../leads/x"))).toEqual({ ok: false, reason: "invalid_id" });
   });
 
+  it("lee las claves de contacto en castellano (IF01 es_ES) y deja fuera los campos de seguimiento", () => {
+    const raw = metaLead("8");
+    raw.field_data = [
+      { name: "utm_source", values: ["facebook"] },
+      { name: "utm_medium", values: ["instant_form"] },
+      { name: "form_version", values: ["if01_v1"] },
+      { name: "correo_electrónico", values: ["ana@empresa.es"] },
+      { name: "nombre_y_apellidos", values: ["Ana Pérez"] },
+      { name: "número_de_teléfono", values: ["+34600123456"] },
+      { name: "nombre_de_la_empresa", values: ["Empresa SL"] },
+      { name: "¿qué_necesitas?", values: ["aún_no_lo_tengo_claro"] },
+      { name: "¿en_qué_punto_estás?", values: ["es_una_idea"] },
+      { name: "presupuesto_orientativo", values: ["más_de_40.000_€"] },
+      { name: "en_una_frase:_¿qué_proceso_o_idea_quieres_resolver?", values: ["SaaS de gestión de proyectos"] },
+    ];
+    const r = ok(raw);
+    expect(r.lead).toMatchObject({ name: "Ana Pérez", email: "ana@empresa.es", phone: "+34600123456", company: "Empresa SL", need: "unsure", stage: "idea", budget: "gt40k" });
+    expect(r.lead.notes).toBe(`SaaS de gestión de proyectos\n\n[Formulario Meta · ${AD_NAME}]`);
+  });
+
+  it("un teléfono que no valida no tira el lead: se guarda tal cual y se avisa en las notas", () => {
+    const r = ok(metaLead("9", {}, { phone_number: "66875123" }));
+    expect(r.lead.phone).toBe("66875123");
+    expect(r.lead.notes).toContain("Teléfono sin validar: 66875123");
+    expect(mapMetaLead(metaLead("10", {}, { phone_number: "12345" }))).toEqual({ ok: false, reason: "invalid_phone" });
+  });
+
   it("sin anuncio ni fecha legible: etiqueta corta y hora actual", () => {
     const now = new Date("2026-10-09T08:00:00.000Z");
     const r = mapMetaLead(metaLead("6", { ad_name: undefined, campaign_name: undefined, created_time: "ayer" }), { now });
